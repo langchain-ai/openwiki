@@ -14,6 +14,8 @@ for the single page OpenWiki assigns you.
 1. Resolve the exact Git top-level with `git rev-parse --show-toplevel` (or
    `git -C <path> rev-parse --show-toplevel` for an explicit target).
 2. Call `openwiki_begin` with that absolute root and mode `init` or `update`.
+   An active run may have been started by native OpenWiki or another supported
+   host; always continue the durable run and queue returned by `openwiki_begin`.
 3. If `openwiki_begin` returns `status: "noop"`, report that no update is needed
    and stop.
 4. If it returns `phase: "planning"`:

@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 import {
   createRepositorySourceFingerprint,
+  createRepositorySourceSnapshot,
   getRepositoryChangedPaths,
 } from "../../src/agent/utils.ts";
 
@@ -122,6 +123,18 @@ afterEach(async () => {
 });
 
 describe("createRepositorySourceFingerprint", () => {
+  test("returns the fingerprint paired with the HEAD it observed", async () => {
+    const snapshot = await createRepositorySourceSnapshot(
+      repositoryRoot,
+      await OpenWikiIgnore.load(repositoryRoot),
+    );
+
+    expect(snapshot).toEqual({
+      fingerprint: await fingerprint(),
+      gitHead: await git(["rev-parse", "HEAD"]),
+    });
+  });
+
   test("is stable for identical source input and changes when HEAD changes", async () => {
     const before = await fingerprint();
     expect(await fingerprint()).toBe(before);

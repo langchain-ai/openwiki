@@ -3,7 +3,10 @@ import {
   CLAIMS_RECONCILIATION_GUIDANCE,
   CLAIMS_SUBSTANCE_GUIDANCE,
 } from "../claims/guidance.js";
-import type { ActiveBeginView } from "../generation/repository-run.js";
+import type {
+  ActiveBeginView,
+  RepositoryPageUpdateWindow,
+} from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
 import type { RecursionRole } from "./types.js";
 
@@ -51,7 +54,18 @@ export function createRepositoryPlannerPrompt(
 ): string {
   const updateContext =
     view.mode === "update"
-      ? `\nChanged repository paths:\n${formatList(view.changedPaths)}\n\nClaims requiring attention:\n${formatIssues(view.claimIssues)}`
+      ? `
+For update, evaluate each existing page inside its own committed update window.
+A page already advanced by a merged partial update must not be regenerated for
+changes at or before its baseline. Schedule it only when changes after that
+baseline, current Claims issues, language rewriting, navigation changes, or
+cross-page consistency require work.
+
+Committed per-page update windows:
+${formatPageUpdateWindows(view.pageUpdateWindows)}
+
+Claims requiring attention:
+${formatIssues(view.claimIssues)}`
       : "";
 
   const semanticContext = planningContext
@@ -224,4 +238,28 @@ function formatIssues(issues: ActiveBeginView["claimIssues"]): string {
         )
         .join("\n")
     : "- (none)";
+}
+
+/**
+ * Renders committed page baselines for repository update planning.
+ *
+ * @param windows - Stable page cohorts returned by the lifecycle.
+ * @returns Compact planner context with explicit unknown baselines.
+ */
+function formatPageUpdateWindows(
+  windows: readonly RepositoryPageUpdateWindow[],
+): string {
+  if (windows.length === 0) return "- (none)";
+  return windows
+    .map((window) => {
+      const baseline = window.fullReview
+        ? "unknown (full review required)"
+        : window.baseGitHead;
+      return [
+        `- Baseline ${baseline}:`,
+        `  - Pages: ${window.pages.join(", ") || "(none)"}`,
+        `  - Changed paths: ${window.changedPaths.join(", ") || "(none)"}`,
+      ].join("\n");
+    })
+    .join("\n");
 }

@@ -35,6 +35,7 @@ function createRunState(): RepositoryRunState {
     requiredRewritePages: [],
     initialPages: ["/openwiki/quickstart.md"],
     sourceFingerprint: `sha256:${"a".repeat(64)}`,
+    targetGitHead: "0123456789abcdef",
     planningContext: "Preserve the public API examples.",
     actor: {
       producerActor: "host-agent/codex",

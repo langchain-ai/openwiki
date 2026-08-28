@@ -433,6 +433,17 @@ describe("host integration registry", () => {
           },
         },
       },
+      cursor: {
+        producerActor: "cursor",
+        user: {
+          skillDirectory: ".cursor/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
+        },
+        project: {
+          skillDirectory: ".cursor/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -440,6 +451,7 @@ describe("host integration registry", () => {
       "codex",
       "claude",
       "opencode",
+      "cursor",
     ]);
     const userTargets = TARGETS.filter((target) => target.user !== null);
     expect(

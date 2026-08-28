@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f5bb8260efc50aa119b48db79c845c4f589b8e254514ca85631eb97a0ad5927c",
+  "pageVersion": "sha256:1da0d6747f2d76d52ebad0a8aeb070eefbedecb10ffb38c624850140d9e8816d",
   "claims": [
     {
       "id": "claim_35bcc7d94294470cbce1e5d06f9fb26f",
@@ -430,7 +430,7 @@
     },
     {
       "id": "claim_eab72e6bca834e98942f1e576f484ab6",
-      "statement": "finalize accepts an excludedPages set of pages whose jobs were skipped during an interrupted run and leaves them untouched, skipping their persistence, evidence recheck, and sidecar deletion; finishRepositoryRun derives this set from skipped jobs and passes it both to finalize and to the post-run durability assertion so skipped pages are exempt from Claims persistence and the no-orphan/durable-page checks.",
+      "statement": "finalize accepts an excludedPages set of pages whose jobs were skipped during an interrupted run and leaves them untouched, skipping their persistence, evidence recheck, and sidecar deletion; finishRepositoryRun validates that every skipped job carries its original page snapshot, derives skippedPages from the skipped jobs, and passes the set both to finalize and to the post-run durability assertion so skipped pages are exempt from Claims persistence and the no-orphan/durable-page checks.",
       "evidence": [
         {
           "resource": "repo://src/claims/brains/code/session.ts#L288-L292",
@@ -445,14 +445,38 @@
           "version": "repo-lines-v1:sha256:9eea345f80a0936bda069bf78e14266ed677def286a055f5e6b58f8490d29410:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYWRkYzJkOTU0YTEzMWVlNWQ1MmM4YmU1YzhjOTlkM2FmMzM3M2JlYzgzNzM4MTk4MWU0NjdjZDQ5MDQ5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YjlhMGIxNmI5OTEwYmFhNWQwYTRkY2FmZjhhNjBjNDI5NjMzYmYyYWUzY2JhY2M4MjAyOTA3NTgwZDEwY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlMjBmODM0MWE1YTdjOWQ1ZmZkYzkwOWZmN2Y1NDAwN2I4ZjY4ZTE0ODVhMTdiMWFjZWU0OGY1MzU3YjhhOTAifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1197-L1219",
-          "version": "repo-lines-v1:sha256:08e2cb16ea3b4f370e225523e7cc893bc3c532ad8b8a7c8ea290f57ba28926ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNDBhZDJiOWZhY2NkYjNlZmQyNmEyY2I5ODE4NmRmMTJhNDUxNDNkOWRlYjY0NTM5YTY4MmYzNGZkYTJjMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwNzUzYTdlYTQ1MmIxMzRkMzczOTFjMjM5ZjAzMWE2YzlhMmI2MTQzNzQ2MzdjOTk0MDlmYWQ4Yzk4Y2ZiODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZmRhMmZiMGI4NzViM2RlMTE4ODRiYTdiZTUzMDBhYmUyNDYzMTZlNTBlMDllODVlMTJhNzYyZmQ0OTkwNjEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1458-L1504",
+          "version": "repo-lines-v1:sha256:85dcc8e453b7e4c7d399b0a5ad84b2001c520435fc9547f06265f2c8a9ab8db6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ODgzNzdhNzEzZDVjZmUyMjcyZWFhZWFlYzY0MGVlMTY5ZjllMjMxZDZhYWVkYzhhZWNjYzFiNmVhMDFjN2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d392d14fcda149f986ef6e2d3eb67a72",
+      "statement": "At submit_page the run grounds each page individually before advancing the queue by running replacePageClaims (translating the proposed Claim set into confirm/update/add/retract operations), then claimsRuntime.finalize, then assertPageClaimsDurable, which reloads the freshly written sidecar and proves the page durable before the job is marked complete.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/page-jobs.ts#L382-L463",
+          "version": "repo-lines-v1:sha256:7fdb1bc08ef3a250b50f63978777993dad958dc40956adb1ea69ea17e47a831c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzN2Q3NTJjODYwYjdlY2RmNWRmNmRjNjU5YmE2YmJhMTJlNTA1NDk2NzFhMDE5YWEzY2NjM2I3ZjVlYTIzYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNjNhNWRhN2I2Mzc1N2Q5NjZhZTY2M2E5MGM3YmVkNmQ2MzNlMjg5OTg5NzI5YzFkOWM1NDg1YWNhZmI1MGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1198-L1215",
+          "version": "repo-lines-v1:sha256:925191a2b11fecef2b343fa5ec72471b99063d19d3cef855515eb3a46461c120:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjN2U2MjIwZDAyZWY1OGJlOTQyMzVmMWVjZGExNmY0NjhlMzZmMDMxNGI3YzA0MTIzZmE1OGFiMTAxYzYyMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_889629d642f14209b8283f65f631098d",
+      "statement": "assertPageClaimsDurable is the strict per-page proof that refuses the page when the sidecar was not persisted, its pageVersion hash does not match the current Markdown bytes, it carries no verification event, that event is not durably projected into the front-matter verified field, or the persisted Claim set differs from the session's expected set in count, statement, or evidence resources.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1259-L1336",
+          "version": "repo-lines-v1:sha256:868fb413687bc5c8a454a4bf8c959e1cf76e547dad84f1a35b5a79908578587c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5Yjg2MTIzZTE5M2FkYWMzYzZlNDg4MmVkN2M1Mjg1OGU0YzUyMjRjNDg4MmU2NmRiMzY0NWViMDUyNWM4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDdkZjJmZDdhM2RhNTYyNGU4NDBiM2M3Y2M2ZGIxODQzOTgyZTUyMmIwMzg5NjUxYjc4ZjY1YTk3MjVlMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMmE4ZTMwZTkwNGJlYmUxMDM0ZWQ5ZjBhNGM2NmNhMTY3NmNiYTk3MmNkMDg0ZjUwYzFlMmZiZTI2ZmM0MjgifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T03:39:43.412Z"
   }
 }

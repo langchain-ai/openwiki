@@ -26,16 +26,18 @@ sources:
     resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-cd8d06edadee75de8637208c
     resource: repo://src/claims/evidence/repository/resource.ts
+  - id: openwiki-source-1197594de038075f3570340c
+    resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-9bac7069736f3ea19ed36748
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-28T03:39:43.412Z
 ---
 
 # Grounded Claims
@@ -192,10 +194,47 @@ before its sidecar is written:
 
 The runtime exposes this through `ClaimsRuntime.finalize(at, excludedPages)`,
 which builds the OpenWiki producer verification event and forwards the skipped
-set. When a repository run finishes, it derives `skippedPages` from skipped jobs
-and passes them both to `finalize` and to the post-run durability assertion, so
-skipped pages are exempt from Claims persistence and from the "no orphan
-sidecar" / "every claimed page is durable" checks that gate the run.
+set.
+
+### Per-page proof at `submit_page`
+
+Each page job is grounded individually before its job is marked complete. On
+`submit_page`, after the page's Markdown is written and its front matter
+deterministically repaired, the run executes a fixed sequence:
+`replacePageClaims` translates the model's complete proposed Claim set into
+`confirm` / `update` / `add` / `retract` operations against the page's existing
+Claims, then `claimsRuntime.finalize` persists the dirty page, and finally
+`assertPageClaimsDurable` re-opens the freshly written sidecar and proves the
+page is durable before advancing the queue.
+
+`assertPageClaimsDurable` is the strict per-page proof. It re-reads the sidecar
+from disk and refuses the page when any of the following fail, so a partially or
+incorrectly persisted page cannot silently advance:
+
+- the sidecar was actually persisted and reloads;
+- its persisted `pageVersion` hash equals the current Markdown bytes
+  (`store.hashPage`);
+- it carries a durable `verification` event;
+- that verification event is durably projected into the page's front-matter
+  `verified` field (matching `by` and `at`);
+- the persisted Claim set has the same count as the session's expected set, and
+  every expected Claim is present with a matching `statement` and an equal
+  evidence resource set.
+
+The whole-run proof waits until every page job is complete (see below); the
+per-page proof lets `submit_page` fail fast and request a retry before the queue
+moves on.
+
+### Finishing a run: skipped pages and the whole-run proof
+
+When a repository run finishes, `finishRepositoryRun` first validates that every
+skipped page job carries its original `captureRepositoryPageSnapshot` capture,
+refusing to finish if any skipped job is missing its snapshot or its path no
+longer matches the job. It then derives `skippedPages` from the skipped jobs and
+passes the set both to `finalize` and to the post-run durability assertion
+(`assertRepositoryClaimsDurable`), so skipped pages are exempt from Claims
+persistence and from the "no orphan sidecar" / "every claimed page is durable"
+checks that gate the run.
 
 Finalization also removes orphaned sidecars (whose pages no longer exist),
 deletes sidecars for pages whose Markdown vanished during the run, and removes

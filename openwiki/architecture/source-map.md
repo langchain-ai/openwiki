@@ -8,6 +8,8 @@ sources:
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-69abc6f0f641147820a274bc
+    resource: repo://src/agent/utils.ts
   - id: openwiki-source-239b2968fb2bcd073e89cedc
     resource: repo://src/claims/brains/code/runtime.ts
   - id: openwiki-source-2b28ddc861d155a44b3cc432
@@ -22,6 +24,8 @@ sources:
     resource: repo://src/connectors/registry.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
+  - id: openwiki-source-674d6e5badef7368ab04f064
+    resource: repo://src/generation/page-manifest.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
@@ -50,10 +54,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-28T03:39:43.412Z
 ---
 
 # Source Map
@@ -82,10 +86,12 @@ before anything else.
   agent events into `OpenWikiRunEvent`s (`parseStreamEvent`,
   `parseAgentStreamChunk`).
 - **`src/config/constants.ts`** is the single large registry of stable strings:
-  the `openwiki` directory name and update-metadata path, and the provider
-  environment-variable key names and defaults (`OPENAI_API_KEY_ENV_KEY`,
-  `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex keys, and provider lookup helpers).
-  Nearly every subsystem imports its identifiers from here.
+  the `openwiki` directory name and the page-manifest/update-metadata paths, plus
+  the provider environment-variable key names and defaults for every supported
+  provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
+  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, and the
+  connector OAuth keys) and the `OpenWikiProvider` union. Nearly every subsystem
+  imports its identifiers from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
@@ -105,16 +111,21 @@ before anything else.
 Owns model/provider wiring, the agent tool loop, and the machinery that turns a
 run into wiki pages. Principal entry: `src/agent/index.ts`. Supporting owners
 include `src/agent/repository-runner.ts` (the native plan/page tool loop that
-calls into `generation/repository-run.ts`), `src/agent/docs-only-backend.ts`
+calls into `generation/repository-run.ts`), `src/agent/utils.ts` (run-context
+construction, content/source snapshots, and update-metadata persistence shared
+by the generation lifecycle), `src/agent/docs-only-backend.ts`
 (the sandboxed shell/filesystem backend), the OKF and translation middleware
 (`okf-middleware.ts`, `translation-middleware.ts`), the prompt builders
 (`prompt.ts`, `repository-prompts.ts`), read-boundary enforcement
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
 surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
-`repository_runner.ts` runs one fresh shell-free worker per pending page; on a
-worker that exits without submitting, it captures a `RepositoryPageSnapshot`
-via `captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
+`runNativeRepositoryGeneration` drives the full loop: it begins the run, runs
+the planning agent, then calls `runPendingPageAgents` to spawn one fresh
+shell-free worker per pending page, collecting skipped-page snapshots and
+passing them to `finishRepositoryRun`. On a worker that exits without
+submitting, `runPageAgent` captures a `RepositoryPageSnapshot` via
+`captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
 page and mark it `skipped`, collects those snapshots, and passes them to
 `finishRepositoryRun` so skipped pages are reconsidered on the next update.
 
@@ -126,6 +137,9 @@ durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
 `generating` phases and `pending`/`skipped`/`complete` page-job statuses) so
 runs resume after interruption. `src/generation/page-jobs.ts` builds the plan
 (`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
+`src/generation/page-manifest.ts` owns the committed page-correctness ledger
+(`openwiki/.page-manifest.json`, schema-versioned), recording each completed
+page's source fingerprint, page version, and producer provenance.
 `src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle's
 snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
 `skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
@@ -197,13 +211,23 @@ Owns credential acquisition and storage. Principal entries: `src/auth/oauth.ts`
 ### config — environment, home directory, and constants
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
-registry; `env.ts` loads and saves the OpenWiki `.env`; `openwiki-home.ts`
+registry (path constants, provider env keys, the `OpenWikiProvider` union, and
+defaults); `env.ts` loads and saves the OpenWiki `.env`; `openwiki-home.ts`
 resolves the home/wiki directories; `reasoning.ts` resolves reasoning settings.
 
 ### integrations — host-tool integration and MCP server surface
 
-Owns embedding OpenWiki into external hosts. `src/integrations/core/` provides
-the integration protocol, session manager, and repository-root resolution;
+Owns embedding OpenWiki into external hosts. `src/integrations/core/session-manager.ts`
+is the principal entry: `HostSessionManager` is a thin single-run MCP adapter over
+the transport-neutral lifecycle core, serializing one lifecycle operation at a time
+(`runOperation`) and mapping `RepositoryRunError` codes into stable
+`HostIntegrationError`s at the boundary. Its `begin`, `submitPlan`, `nextPage`,
+`submitPage`, and `finish` methods delegate to the `generation/repository-run.ts`
+lifecycle, and `tools()` returns exactly the five OpenWiki lifecycle tools
+(`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
+`openwiki_submit_page`, `openwiki_finish`) for an MCP transport to expose.
+`src/integrations/core/protocol.ts` defines the tool input schemas and host-id
+validation; `repository-root.ts` resolves the repository root.
 `src/integrations/mcp/server.ts` exposes OpenWiki over MCP (stdio in
 `stdio.ts`); `src/integrations/install/` handles host installation.
 

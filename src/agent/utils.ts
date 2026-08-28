@@ -16,7 +16,11 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../config/constants.js";
+import {
+  OPEN_WIKI_DIR,
+  PAGE_MANIFEST_PATH,
+  UPDATE_METADATA_PATH,
+} from "../config/constants.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
@@ -357,19 +361,36 @@ interface SourceStatusEntry {
 }
 
 /**
- * Hashes every model-visible repository source input for one semantic plan.
+ * Exact repository source identity captured for one semantic plan.
+ */
+export interface RepositorySourceSnapshot {
+  /**
+   * Versioned hash of every model-visible source input.
+   */
+  fingerprint: string;
+
+  /**
+   * Git commit observed by the fingerprint operation.
+   *
+   * @default undefined for an unborn branch.
+   */
+  gitHead?: string;
+}
+
+/**
+ * Hashes model-visible source input and returns its observed Git commit.
  *
  * Generated OpenWiki state and ignored paths are excluded. Git, stat, symlink,
  * and file-read failures reject because the fingerprint is a correctness gate.
  *
  * @param cwd - Absolute Git repository root.
  * @param openWikiIgnore - Ignore rules loaded for this run.
- * @returns A versioned `sha256:` fingerprint.
+ * @returns Paired source fingerprint and Git HEAD.
  */
-export async function createRepositorySourceFingerprint(
+export async function createRepositorySourceSnapshot(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
-): Promise<string> {
+): Promise<RepositorySourceSnapshot> {
   if (!path.isAbsolute(cwd)) {
     throw new Error("Repository source fingerprint requires an absolute root.");
   }
@@ -434,7 +455,26 @@ export async function createRepositorySourceFingerprint(
     );
   }
 
-  return `sha256:${hash.digest("hex")}`;
+  const fingerprint = `sha256:${hash.digest("hex")}`;
+  return {
+    fingerprint,
+    ...(head.startsWith("unborn:") ? {} : { gitHead: head }),
+  };
+}
+
+/**
+ * Hashes every model-visible repository source input for one semantic plan.
+ *
+ * @param cwd - Absolute Git repository root.
+ * @param openWikiIgnore - Ignore rules loaded for this run.
+ * @returns A versioned `sha256:` fingerprint.
+ */
+export async function createRepositorySourceFingerprint(
+  cwd: string,
+  openWikiIgnore: OpenWikiIgnore,
+): Promise<string> {
+  return (await createRepositorySourceSnapshot(cwd, openWikiIgnore))
+    .fingerprint;
 }
 
 /**
@@ -890,9 +930,10 @@ function isUpdateMetadataStatusLine(line: string): boolean {
   const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
 
-  return (
-    normalizedPath === UPDATE_METADATA_PATH ||
-    normalizedPath.endsWith(` -> ${UPDATE_METADATA_PATH}`)
+  return [PAGE_MANIFEST_PATH, UPDATE_METADATA_PATH].some(
+    (metadataPath) =>
+      normalizedPath === metadataPath ||
+      normalizedPath.endsWith(` -> ${metadataPath}`),
   );
 }
 

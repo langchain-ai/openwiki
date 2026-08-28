@@ -1,5 +1,6 @@
 import {
   chmod,
+  mkdir,
   mkdtemp,
   readFile,
   readdir,
@@ -39,6 +40,10 @@ const CODEX_ENTRY: HostMcpServerCommand = {
 const OPENCODE_ENTRY: HostMcpServerCommand = {
   command: "openwiki",
   args: ["mcp", "--host", "opencode"],
+};
+const CURSOR_ENTRY: HostMcpServerCommand = {
+  command: "openwiki",
+  args: ["mcp", "--host", "cursor"],
 };
 const OPENCODE_SHAPE = {
   type: "local",
@@ -177,6 +182,51 @@ describe("JSON MCP config ownership", () => {
     ).resolves.toBe(true);
     expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
       mcpServers: { openwiki: localEntry },
+    });
+  });
+
+  test("round-trips a Cursor entry in .cursor/mcp.json", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, ".cursor", "mcp.json");
+    await mkdir(path.dirname(filePath), { recursive: true });
+    await writeFile(
+      filePath,
+      `${JSON.stringify({ mcpServers: { other: { command: "other" } } })}\n`,
+      "utf8",
+    );
+
+    await expect(installJsonMcpEntry(filePath, CURSOR_ENTRY)).resolves.toBe(
+      true,
+    );
+    expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
+      mcpServers: { other: { command: "other" }, openwiki: CURSOR_ENTRY },
+    });
+    await expect(getJsonMcpEntryStatus(filePath, CURSOR_ENTRY)).resolves.toBe(
+      "installed",
+    );
+
+    await writeFile(
+      filePath,
+      `${JSON.stringify({ mcpServers: { openwiki: { command: "other-openwiki", args: [] } } })}\n`,
+      "utf8",
+    );
+    await expect(getJsonMcpEntryStatus(filePath, CURSOR_ENTRY)).resolves.toBe(
+      "modified",
+    );
+    await expect(
+      uninstallJsonMcpEntry(filePath, CURSOR_ENTRY),
+    ).rejects.toMatchObject({ code: "conflict" });
+
+    await writeFile(
+      filePath,
+      `${JSON.stringify({ mcpServers: { other: { command: "other" }, openwiki: CURSOR_ENTRY } })}\n`,
+      "utf8",
+    );
+    await expect(uninstallJsonMcpEntry(filePath, CURSOR_ENTRY)).resolves.toBe(
+      true,
+    );
+    expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
+      mcpServers: { other: { command: "other" } },
     });
   });
 });

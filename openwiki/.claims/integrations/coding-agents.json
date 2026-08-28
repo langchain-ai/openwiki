@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:78c632e9d37c4f456dae10fdf49844f3bae0d51d22ed1a33144b35af00a2033f",
+  "pageVersion": "sha256:c178cda8b1791ede75cabefd9f8e83b50a30c929c8a596d4309fc0b73d15e377",
   "claims": [
     {
       "id": "claim_244d2a0a18984ed9bfac7bdabf596487",
@@ -26,7 +26,7 @@
         },
         {
           "resource": "repo://src/integrations/core/session-manager.ts#L214-L252",
-          "version": "repo-lines-v1:sha256:1311bc2f715bdffd7310511d19c7fae2f6080ef614395864caaf67521862db2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZjE3MzRhNjk0ZWVjZDFmMzFiMWNmYTdjYzY4OTZlZjdkOTZmYzY1OTYyMDAwZjUzOTQ3NjBhYzkyMmVmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1MGQ3ZmRlNjc4YWEwOTU2MDBlYTE0OTg0Mjc3ZjYyNThhNWEzMjNhYzQ3NDY0ZTcyZmFkZTk2ZGE4NzUzZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTBlZjcyMzRmYWY2MGU1OGI5YjI2MTRiYmY5YTgyYzc3OTI3M2EyOWIxZTdjNmI4ODA1YjA5NjM5NTRkOGQifQ"
+          "version": "repo-lines-v1:sha256:b3e5359255e6e1c37ea9b3201031e31c39dec55a8ee3f8e5813c5fb330623563:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZjE3MzRhNjk0ZWVjZDFmMzFiMWNmYTdjYzY4OTZlZjdkOTZmYzY1OTYyMDAwZjUzOTQ3NjBhYzkyMmVmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1MGQ3ZmRlNjc4YWEwOTU2MDBlYTE0OTg0Mjc3ZjYyNThhNWEzMjNhYzQ3NDY0ZTcyZmFkZTk2ZGE4NzUzZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTBlZjcyMzRmYWY2MGU1OGI5YjI2MTRiYmY5YTgyYzc3OTI3M2EyOWIxZTdjNmI4ODA1YjA5NjM5NTRkOGQifQ"
         }
       ]
     },
@@ -64,7 +64,7 @@
         },
         {
           "resource": "repo://src/integrations/core/session-manager.ts#L230-L250",
-          "version": "repo-lines-v1:sha256:ddd625b747229c3c1873c52996a8cf0f8586fef3b71775227ad9fb2a72b0cf0a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWI4YzViZjg2Mzc0MzY3MWRlZjNmNjMwZWIyMzJkNTlhN2E2MzRhMDcwZmM0MzZlZWMzN2E4Njc0ZTZjMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NTYzYzgwNWM5OWZlMmY3NDNjYzZmYjFjZmRjYjBjNGQxNjc5YTQyZjA0ODBhMDk3ZDQ2MjJmM2Y2ZTZhOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNjE3MDZmOWE1NzgwYzQ5NDQzNmE3MzBlNzY0NjdkMTk3YjYwM2EwM2Y2YWMxZTM5MGJhZjhmM2M1ODllY2UifQ"
+          "version": "repo-lines-v1:sha256:982bc7da1ed5e40c7d9fc0d8c2fc36b42873cfa97dbfa144d78a99a14961a496:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWI4YzViZjg2Mzc0MzY3MWRlZjNmNjMwZWIyMzJkNTlhN2E2MzRhMDcwZmM0MzZlZWMzN2E4Njc0ZTZjMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NTYzYzgwNWM5OWZlMmY3NDNjYzZmYjFjZmRjYjBjNGQxNjc5YTQyZjA0ODBhMDk3ZDQ2MjJmM2Y2ZTZhOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyNjE3MDZmOWE1NzgwYzQ5NDQzNmE3MzBlNzY0NjdkMTk3YjYwM2EwM2Y2YWMxZTM5MGJhZjhmM2M1ODllY2UifQ"
         }
       ]
     },
@@ -138,7 +138,7 @@
       "evidence": [
         {
           "resource": "repo://src/generation/repository-run.ts#L86-L94",
-          "version": "repo-lines-v1:sha256:8765e7dcff647883ddf1382e01d2d0c2743605b055ff10ed047fe03b0eed0a62:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyYTJmOTk2ZjA4ZTY4MGJkMjkyMTM1YTZmYTQ5NzhiZGEyNmU2MDJkODRmMzNjYjFkNTk0Nzc1ZDQzMDRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4MDNkNmEwMWQ5OTEyYjIxNDJkYWRkMTIxZmE5NmMyYmM0NGJkNDQ1NzQ4YTA5NGM4ZDgyNjFiMjE3OTNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFlZmVkYjEwNWNlMGM2OTI3MjU4ZTI5ZWM0YWVhN2MxMGJkY2Y3YTc3NTY0YzY3MGI4MzgwZTE2YjE3YTIzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA5YjRkOWIwMWU0MjdmOWQwY2M2NmY2OGIyNDZlYTAxYTVkZGIyNDkxY2JhZWIzYTJhYzQxMjk2ZjlkMWFmMiJ9"
+          "version": "repo-lines-v1:sha256:111e0aad18798a46e40fdc0aac0b4d519fca86ec1949bb21166824e985a85c7f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyYTJmOTk2ZjA4ZTY4MGJkMjkyMTM1YTZmYTQ5NzhiZGEyNmU2MDJkODRmMzNjYjFkNTk0Nzc1ZDQzMDRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4MDNkNmEwMWQ5OTEyYjIxNDJkYWRkMTIxZmE5NmMyYmM0NGJkNDQ1NzQ4YTA5NGM4ZDgyNjFiMjE3OTNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFlZmVkYjEwNWNlMGM2OTI3MjU4ZTI5ZWM0YWVhN2MxMGJkY2Y3YTc3NTY0YzY3MGI4MzgwZTE2YjE3YTIzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA5YjRkOWIwMWU0MjdmOWQwY2M2NmY2OGIyNDZlYTAxYTVkZGIyNDkxY2JhZWIzYTJhYzQxMjk2ZjlkMWFmMiJ9"
         },
         {
           "resource": "repo://src/integrations/core/session-manager.ts#L124-L146",
@@ -176,11 +176,11 @@
     },
     {
       "id": "claim_5a1894ce8f96451ca6f1879cda0b7abf",
-      "statement": "HOST_TARGETS is the immutable registry of supported hosts (Codex, Claude Code, OpenCode), each declaring per-scope skill directory and MCP config kind: Codex uses .codex/config.toml (codex-toml), Claude Code uses .claude.json/.mcp.json (json), and OpenCode uses opencode.jsonc files (opencode-json).",
+      "statement": "HOST_TARGETS is the immutable registry of supported hosts (Codex, Claude Code, OpenCode, Cursor), each declaring per-scope skill directory and MCP config kind: Codex uses .codex/config.toml (codex-toml), Claude Code uses .claude.json/.mcp.json (json), OpenCode uses opencode.jsonc files (opencode-json), and Cursor uses .cursor/mcp.json (json).",
       "evidence": [
         {
-          "resource": "repo://src/integrations/install/registry.ts#L10-L65",
-          "version": "repo-lines-v1:sha256:a684b7b9e76e9365d90ad39b06db30fbd536372af98b2d095d69fbcf5fee881d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZWRmM2ZhZTlkZWQwN2NhNDNhNDA0ZjQwMmU0MTU5ZDU3NjQ4NTgxYTViYTFmYjAwNzA3ZGJlMjZjZTY0NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiN2M4NzgzMDdhYjA3ZjNhMzJhZjRlNWIyNDMxZWViZGM3M2RlZDM2YTc2NTkxN2I5MmY1NGZhYmRjNjRhNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0MGY2MzAzNDUyODA5NTZlZGRhZGM2MjEzNTNhMzE2NTVjMjBmYTFlNjc4ODAzOTQzMDI0ODg5NjI5NzBjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0OTMwNzRkMDhjNDY3N2ExNmIzOWRmNTJkNzVkZTRmYTgyNzk4ZWFjNWVlMWEwYThlZWIzOTEyZWJhMjlkMDEifQ"
+          "resource": "repo://src/integrations/install/registry.ts#L10-L78",
+          "version": "repo-lines-v1:sha256:b9f08e7104e6f10d8f92247967b38d131e3e9725e9346d93c11323dc1999fbe0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ZWRmM2ZhZTlkZWQwN2NhNDNhNDA0ZjQwMmU0MTU5ZDU3NjQ4NTgxYTViYTFmYjAwNzA3ZGJlMjZjZTY0NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0MGY2MzAzNDUyODA5NTZlZGRhZGM2MjEzNTNhMzE2NTVjMjBmYTFlNjc4ODAzOTQzMDI0ODg5NjI5NzBjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhOWNiOWM4MDUzZGFkZDA3MDA0NjQyODBhNGUwMTY1MDFkZmU1ZTkyYjhlN2IzMGJiMWJkYzk4OTQ1NjQ1ODQifQ"
         }
       ]
     },
@@ -217,12 +217,12 @@
       "statement": "Installation writes a .openwiki-install.json ownership receipt recording the owning package, OpenWiki version, host target, installed MCP command, and per-file SHA-256 hashes; inspectInstallation uses it to classify a skill destination as not-installed, installed (intact), or modified.",
       "evidence": [
         {
-          "resource": "repo://src/integrations/install/skill-bundle.ts#L12-L70",
-          "version": "repo-lines-v1:sha256:9f4a2205f52c621c146728ec92e84ad520e540d3c2cc94d5b32f8009d895acb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYjNmNmRmZTY5YzI2YmRhZWQxZjg5Zjc2ODEyYTM3MjY5Y2JlOTljN2Y4Y2VlYTNjZGU0ZmZkOWIyMGYxZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxOTAwMzgwYTYwMmQ2NmRjMTljNTYzMmY1ZjA5NjM0NWU1ZjUzYTMxY2M2NTkyYjdiNmFmODk2MTY5OTJhYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NTYyZTc5OTdlZTQ5Y2U5NzEyNzczMjE2ZDJlZTM2ZjEyNjlmMWUxZmQyY2Y2NjVlNTdhZDk1ZWM1Y2EzODgifQ"
+          "resource": "repo://src/integrations/install/skill-bundle.ts#L12-L43",
+          "version": "repo-lines-v1:sha256:08ed21aa7fa4f7e9acb4162a4a808cf2e179212fbf06416fec57b4c67d256fb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYjNmNmRmZTY5YzI2YmRhZWQxZjg5Zjc2ODEyYTM3MjY5Y2JlOTljN2Y4Y2VlYTNjZGU0ZmZkOWIyMGYxZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxOTAwMzgwYTYwMmQ2NmRjMTljNTYzMmY1ZjA5NjM0NWU1ZjUzYTMxY2M2NTkyYjdiNmFmODk2MTY5OTJhYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NTgxYjE4ZWM3ZGMwMTBkZDZhM2Y1OTBkMjc1YzdkMmUzOTk0OWQyZTg4ZmZjNzgyZjJkZmY4NjVlNWVlYjcifQ"
         },
         {
-          "resource": "repo://src/integrations/install/skill-bundle.ts#L93-L108",
-          "version": "repo-lines-v1:sha256:cad6a1c29137db4b0426022a48bb9bf094abc92fa4dc15151f3e2bedaaa23309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MWFkYzVlMGMwZjRiMTk5OGMwOWI1ZDFkNTM4NzBlOGEzNjYyZGRiM2QzM2UxYTU1NDljYWJkOWQ3ZTk0NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YWUyNTQzNzliNTE1NGY0ZTgxNWQ3YjU3ZDlmMzc0OTZjYjBhNjZhZDVmOGU5ZmI3MDM3ZGZjNjdhYWEwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNGQzMzgwMDc5YmRiN2FhODA1MmQwZDBkMWExNzNhYjkyYWZlNjgyNzNkZTZiNWVlYzJlNzdiMTY5MTlmOGYifQ"
+          "resource": "repo://src/integrations/install/skill-bundle.ts#L200-L226",
+          "version": "repo-lines-v1:sha256:d9be161097c7f41e9a4469a9b03bd80decb91be078202da9e02e712bef1441c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNGY4ZjA5YTUzMDdhNjMwNTc4OWNiYTJlNDNlMmVkMjEyYjI4YWM1Zjc2Y2ZlMmI0N2JlMzJhYmE0ODc5NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlZDU3NDZiMDQwMTU0YjZlZDA4YjYzNjU0YjU0YzgzMjk3ZWYxZWVlMmJjNGY2MWI3ZWJiNjZjN2Q1ODc1NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2MDE5ZDRkZWE0YTg5ZWUzOTVkNWZkMjRiNmY5NmYzOWIyMzBmY2U0ODNiOWRhNmM2NWVjZDdhY2EyMmM0ZmYifQ"
         }
       ]
     },
@@ -284,21 +284,21 @@
     },
     {
       "id": "claim_7f51d96921ab409a99f51e7a14f81783",
-      "statement": "Adding a new host is a registry-and-config change rather than a new skill or new tools — hosts share one canonical skill and the five MCP tools — with the full procedure and the local dogfood command pnpm integrations:dev documented in CONTRIBUTING.md.",
+      "statement": "Adding a new host is a registry-and-config change rather than a new skill or new tools — hosts share one canonical skill and the five MCP tools — and the local dogfood command pnpm integrations:dev <host> builds OpenWiki, refreshes the host skill at user scope, and records absolute paths to the current Node executable and dist/cli/cli.js so only pnpm build is needed after later source changes unless the bundled skill changes.",
       "evidence": [
         {
-          "resource": "repo://CONTRIBUTING.md#L35-L48",
-          "version": "repo-lines-v1:sha256:2431addae8db3affe8febe2dabcded84f56602e1f8414df43a8d6b4023911fec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE2OWQwZDAwZjJjNjc0ODg5NTk3MTI4NTA3ZDlkNDcxZjg5ZGI4MzY3YWE0YmEwNzQwY2JiYmZiYjc2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYzk1MGFkNjczOTExMWU4MWY2ODRkODk2M2QzY2JjODY4ZDc3ZjlmZjBlZWE0MGMxZTFhYTZkMmMzMjk5YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZTY4NzM1ZGYzZTgxZGNiNjBhNzFmZGQ4MTM5MWViMjUwMTlkNDY1NDc2N2UzOThjYmEzMGI3MDhkOWVmYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1Y2MzYmY1MDM2MmViYmM4YzI4MzRmMmQyY2U5YzZhYWUzNThjMTQ5YTRjMjEyOWUxNzAyOGQyNjc5YzdlMjEifQ"
+          "resource": "repo://CONTRIBUTING.md#L35-L53",
+          "version": "repo-lines-v1:sha256:21274a23e1722a2f4a6277aae081db618e441f7cfb09122dd80d8980e4c0dff4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE2OWQwZDAwZjJjNjc0ODg5NTk3MTI4NTA3ZDlkNDcxZjg5ZGI4MzY3YWE0YmEwNzQwY2JiYmZiYjc2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyNDExOWFjN2JmOWQwYWE0MzUyZTA1OTJhYWQ2MWMzMGE2ZGQxMDkzMDUxODU5NDMwM2Y3MzhhNDZlY2YwZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZTY4NzM1ZGYzZTgxZGNiNjBhNzFmZGQ4MTM5MWViMjUwMTlkNDY1NDc2N2UzOThjYmEzMGI3MDhkOWVmYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMWIwYmY0YTNlNzljMjE4MTdmNTgzY2JkNmVkYzZiOTFjYzhjNGVmMzQxYzdiZjg2ZWU4MjBlNTZhN2QzNTAifQ"
         },
         {
           "resource": "repo://CONTRIBUTING.md#L55-L85",
-          "version": "repo-lines-v1:sha256:fb6c748e75a8f1504c3ff432ef45e0358c96fa2a5bfc2f1dc7320ba732ca5be3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNjkzOGVjM2Q0OGVkMzNhNzU1OTRhMTNhODlhNzk3NzBhNGUwMGQzYjc5NGJiOTY5N2RmODliNzY2Njk4MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MTY0MWNiZDk1ZjJkYjdmN2E5NzliNmM1YjFkZDQwMDFkZWRkNjk3MTBjZDUzNmI5YjYzN2QyMDAxZTA1NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZGRhZjk3ZjRiZWQ5N2EwMDY0ZWEwNDgzZDVkYzg4YzdjNGI4OWJjNjBjMWY2OWI3Y2I5Zjg0ODg2YjgyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3MzViMjM3NDM3YmQ5NGY3Nzk2NzhhYTEyYTIzNTdiMDJhM2ZiNDA3YzFlODA5MmJlMTFlOTU0YTA4MjU5NmUifQ"
+          "version": "repo-lines-v1:sha256:fb6c748e75a8f1504c3ff432ef45e0358c96fa2a5bfc2f1dc7320ba732ca5be3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNjkzOGVjM2Q0OGVkMzNhNzU1OTRhMTNhODlhNzk3NzBhNGUwMGQzYjc5NGJiOTY5N2RmODliNzY2Njk4MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MTY0MWNiZDk1ZjJkYjdmN2E5NzliNmM1YjFkZDQwMDFkZWRkNjk3MTBjZDUzNmI5YjYzN2QyMDAxZTA1NmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhYzY5MTY4Yjg1MmExODUyMmMyODViNDQxODhlNjNhNGEzMDM3YjVkNWIzYjQ3M2EyZWVlYjg3MGFhNTMwZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3MzViMjM3NDM3YmQ5NGY3Nzk2NzhhYTEyYTIzNTdiMDJhM2ZiNDA3YzFlODA5MmJlMTFlOTU0YTA4MjU5NmUifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-28T03:39:43.412Z"
   }
 }

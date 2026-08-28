@@ -65,6 +65,7 @@ describe("runIntegrationsCommand", () => {
     vi.mocked(getHostIntegrationStatus)
       .mockResolvedValueOnce("installed")
       .mockResolvedValueOnce("modified")
+      .mockResolvedValueOnce("not-installed")
       .mockResolvedValueOnce("not-installed");
 
     await runIntegrationsCommand({
@@ -80,9 +81,10 @@ describe("runIntegrationsCommand", () => {
     expect(stdout.join("")).toBe(
       "codex\tinstalled\tCodex\n" +
         "claude\tmodified\tClaude Code\n" +
-        "opencode\tnot-installed\tOpenCode\n",
+        "opencode\tnot-installed\tOpenCode\n" +
+        "cursor\tnot-installed\tCursor\n",
     );
-    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(3);
+    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(4);
     expect(getHostIntegrationStatus).toHaveBeenCalledWith(
       expect.objectContaining({ id: "codex" }),
       { scope: "user", root: os.homedir() },

@@ -16,7 +16,9 @@ async function main() {
   const hostId = process.argv[2];
   const target = hostId ? getHostTarget(hostId) : undefined;
   if (!target || process.argv.length !== 3) {
-    throw new Error("Usage: pnpm integrations:dev <codex|claude|opencode>");
+    throw new Error(
+      "Usage: pnpm integrations:dev <codex|claude|opencode|cursor>",
+    );
   }
 
   const repositoryRoot = await realpath(

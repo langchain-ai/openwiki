@@ -41,11 +41,12 @@ async function createRepository(): Promise<string> {
 /**
  * Creates a host manager with a deterministic lifecycle clock.
  *
+ * @param host - Stable host identity for the manager.
  * @returns Validated empty host manager.
  */
-function createManager(): HostSessionManager {
+function createManager(host = "codex"): HostSessionManager {
   return HostSessionManager.create({
-    host: "codex",
+    host,
     now: () => new Date(RUN_TIMESTAMP),
   });
 }
@@ -148,6 +149,69 @@ afterEach(async () => {
 });
 
 describe("HostSessionManager", () => {
+  test("resumes one durable queue across different hosts", async () => {
+    const root = await createRepository();
+    const codex = createManager("codex");
+    const started = (await codex.begin({
+      root,
+      mode: "init",
+    })) as ActiveBeginView;
+    await codex.submitPlan({
+      runId: started.runId,
+      pages: [
+        {
+          path: "/openwiki/architecture.md",
+          title: "Architecture",
+          purpose: "Document the repository architecture.",
+          seedPaths: ["README.md"],
+        },
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Orient repository readers.",
+          seedPaths: ["README.md"],
+        },
+      ],
+    });
+    const first = (await codex.nextPage({
+      runId: started.runId,
+    })) as NextRepositoryPageResult;
+    if (first.status !== "pending") throw new Error("Expected first page.");
+    await writeFile(
+      path.join(root, "openwiki/architecture.md"),
+      quickstartPage().replaceAll("Quickstart", "Architecture"),
+      "utf8",
+    );
+    await codex.submitPage({
+      runId: started.runId,
+      jobId: first.job.id,
+      claims: [
+        {
+          statement: "The repository is introduced by its README.",
+          evidence: [{ resource: "repo://README.md" }],
+        },
+      ],
+    });
+
+    const claude = createManager("claude-code");
+    const resumed = (await claude.begin({
+      root,
+      mode: "init",
+    })) as ActiveBeginView;
+    expect(resumed).toMatchObject({
+      runId: started.runId,
+      resumed: true,
+      completedPages: 1,
+      totalPages: 2,
+    });
+    await expect(
+      claude.nextPage({ runId: resumed.runId }),
+    ).resolves.toMatchObject({
+      status: "pending",
+      job: { path: "/openwiki/quickstart.md" },
+    });
+  });
+
   test("exposes exactly the ordered five-call lifecycle", () => {
     expect(
       createManager()

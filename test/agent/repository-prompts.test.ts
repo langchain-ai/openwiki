@@ -27,6 +27,14 @@ function planningView(
     resumed: false,
     lastUpdate: null,
     changedPaths: ["src/auth.ts"],
+    pageUpdateWindows: [
+      {
+        baseGitHead: "abc123",
+        pages: ["/openwiki/auth.md"],
+        changedPaths: ["src/auth.ts"],
+        fullReview: false,
+      },
+    ],
     claimIssues: [
       {
         page: "/openwiki/auth.md",
@@ -83,6 +91,9 @@ describe("repository worker prompts", () => {
       "User: focus on auth. Connector: trace production incidents.",
     );
     expect(prompt).toContain("src/auth.ts");
+    expect(prompt).toContain("Baseline abc123");
+    expect(prompt).toContain("/openwiki/auth.md");
+    expect(prompt).toContain("inside its own committed update window");
     expect(prompt).toContain("claim_auth (stale)");
     expect(prompt).toContain("Prioritize operator safety.");
     expect(prompt).toContain("instructions array");
@@ -91,6 +102,24 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("trace representative end-to-end control");
     expect(prompt).toContain("focused tests and neighboring");
     expect(prompt).not.toContain("force flag");
+  });
+
+  test("renders unknown baselines as explicit full-review windows", () => {
+    const prompt = createRepositoryPlannerPrompt(
+      planningView({
+        pageUpdateWindows: [
+          {
+            pages: ["/openwiki/legacy.md"],
+            changedPaths: [],
+            fullReview: true,
+          },
+        ],
+      }),
+    );
+
+    expect(prompt).toContain("Baseline unknown (full review required)");
+    expect(prompt).toContain("Pages: /openwiki/legacy.md");
+    expect(prompt).toContain("Changed paths: (none)");
   });
 
   test("propagates page-specific instructions and complete existing Claims", () => {

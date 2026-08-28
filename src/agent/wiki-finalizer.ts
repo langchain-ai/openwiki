@@ -195,6 +195,13 @@ export interface WikiFinalizerOptions extends WikiLifecycleOptions {
   producerActor?: string;
 
   /**
+   * Page-specific producers for bodies completed by different sessions.
+   *
+   * @default undefined - every changed body uses `producerActor`.
+   */
+  producerActorsByPage?: ReadonlyMap<string, string>;
+
+  /**
    * Current page-owned Claims evidence projected into OKF sources before
    * generated provenance is reconciled.
    *
@@ -246,6 +253,7 @@ export async function finalizeWikiArtifacts({
   prepared,
   at,
   producerActor = OPENWIKI_PRODUCER_ACTOR,
+  producerActorsByPage,
   claimSources,
   runOperation = runWikiOperation,
 }: WikiFinalizerOptions): Promise<void> {
@@ -271,6 +279,7 @@ export async function finalizeWikiArtifacts({
       prepared.generatedProvenance,
       at,
       producerActor,
+      producerActorsByPage,
     ),
   );
 }

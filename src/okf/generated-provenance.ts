@@ -159,6 +159,7 @@ export async function snapshotGeneratedProvenance(
  * @param initialConcepts - Pre-run state keyed by virtual page path.
  * @param now - Shared run timestamp used for new generated events.
  * @param producerActor - Producer responsible for body changes in this run.
+ * @param producerActorsByPage - Page-specific producer overrides.
  */
 export async function finalizeGeneratedProvenance(
   backend: BackendProtocolV2,
@@ -166,11 +167,19 @@ export async function finalizeGeneratedProvenance(
   initialConcepts: GeneratedProvenanceSnapshot,
   now: string,
   producerActor: string,
+  producerActorsByPage?: ReadonlyMap<string, string>,
 ): Promise<void> {
   if (producerActor.trim().length === 0) {
     throw new Error(
       "Generated provenance requires a non-empty producer actor.",
     );
+  }
+  for (const [page, actor] of producerActorsByPage ?? []) {
+    if (actor.trim().length === 0) {
+      throw new Error(
+        `Generated provenance requires a non-empty producer actor for ${page}.`,
+      );
+    }
   }
 
   for (const page of await listWikiConceptPaths(backend, outputMode)) {
@@ -186,10 +195,11 @@ export async function finalizeGeneratedProvenance(
     const initial = initialConcepts.get(page);
     const bodyChanged =
       initial === undefined || initial.bodyHash !== hashConceptBody(content);
+    const pageProducerActor = producerActorsByPage?.get(page) ?? producerActor;
     const candidate = bodyChanged
       ? canonicalizeChangedConcept(
           removeFrontmatterField(
-            setGeneratedEvent(content, producerActor, now),
+            setGeneratedEvent(content, pageProducerActor, now),
             "timestamp",
           ),
         )
