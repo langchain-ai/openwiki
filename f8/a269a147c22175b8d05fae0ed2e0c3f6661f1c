@@ -1,0 +1,23 @@
+src/integrations/core/session-manager.ts
+  s_f485c61dd078af::t_f3445de090181f 216,233
+test/integrations/mcp-server.test.ts
+  s_f485c61dd078af::t_432499a9d51fba 308,313,316
+src/integrations/core/context.ts
+  s_f485c61dd078af::t_7a71d25e5ce2c8 25,27,29,39,56,58,66,86,174-175,179,181,183,190,193-194,196,198,201-208,212,219-224,228-231,234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f8a269a147c22175b8d05fae0ed2e0c3f6661f1c",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
