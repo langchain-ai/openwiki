@@ -924,9 +924,7 @@ function getLaunchAgentPath(): string {
  * @returns The `/Create` argument list, or null when the expression cannot be
  *   represented directly.
  */
-export function parseSchtasksTriggerArgs(
-  expression: string,
-): string[] | null {
+export function parseSchtasksTriggerArgs(expression: string): string[] | null {
   const parsed = parseSimpleCronFields(expression);
   if (!parsed) {
     return null;
@@ -1124,11 +1122,7 @@ async function removeSchtasksShim(): Promise<void> {
 
 async function isSchtasksTaskInstalled(): Promise<boolean> {
   try {
-    await execFileAsync("schtasks", [
-      "/Query",
-      "/TN",
-      getSchtasksTaskName(),
-    ]);
+    await execFileAsync("schtasks", ["/Query", "/TN", getSchtasksTaskName()]);
     return true;
   } catch {
     return false;

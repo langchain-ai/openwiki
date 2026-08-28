@@ -1,5 +1,13 @@
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import { createEmptyOnboardingConfig } from "../../src/setup/onboarding.ts";
 import type { OpenWikiOnboardingConfig } from "../../src/setup/onboarding.ts";
 
@@ -263,9 +271,12 @@ describe("installConnectorSchedule (win32 native install)", () => {
     });
 
     expect(result.nativeJobPath).toBeUndefined();
-    expect(result.warning).toMatch(/installing the Windows scheduled task failed/i);
+    expect(result.warning).toMatch(
+      /installing the Windows scheduled task failed/i,
+    );
     const remove = execFileMock.mock.calls.find(
-      ([command, args]) => command === "schtasks" && args[0] === "/Delete",
+      ([command, args]) =>
+        command === "schtasks" && (args as string[])[0] === "/Delete",
     );
     expect(remove?.[1]).toEqual(["/Delete", "/F", "/TN", TASK_NAME]);
     await expect(access(SHIM_PATH)).rejects.toThrow();
@@ -285,7 +296,8 @@ describe("installConnectorSchedule (win32 native install)", () => {
     expect(result.nativeJobPath).toBeUndefined();
     expect(result.warning).toMatch(/too complex/i);
     const remove = execFileMock.mock.calls.find(
-      ([command, args]) => command === "schtasks" && args[0] === "/Delete",
+      ([command, args]) =>
+        command === "schtasks" && (args as string[])[0] === "/Delete",
     );
     expect(remove?.[1]).toEqual(["/Delete", "/F", "/TN", TASK_NAME]);
     await expect(access(SHIM_PATH)).rejects.toThrow();
