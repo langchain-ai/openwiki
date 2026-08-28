@@ -34,6 +34,7 @@ Monorepo subproject scope:
 Monorepo root scope:
 - This is the monorepo ROOT run. Each subproject listed in openwiki/workspaces.json has its OWN detailed sub-wiki under <subproject>/openwiki/.
 - Do NOT deep-document the subprojects' internals here. Instead, link DOWN to each subproject's sub-wiki entrypoint (its openwiki/quickstart.md) and describe repository-wide concerns: the overall architecture, how subprojects fit together, shared tooling, and cross-cutting workflows.
+- CONSULT each subproject's sub-wiki entrypoint as read-only reference. Enumerate the subprojects from the workspaces manifest (openwiki/workspaces.json, or the generated openwiki/workspaces.md), read each one's openwiki/quickstart.md, and use them to align the repo-wide overview's scope, naming, and terminology with how each subproject describes itself. This is reference material only: do not copy, quote, or restate sub-wiki content into the root wiki, and do not treat consulting it as a substitute for the repository-wide synthesis above.
 - The file openwiki/workspaces.md is generated deterministically to aggregate links to the sub-wikis. Treat it as generated: link to it from openwiki/quickstart.md, but do not hand-maintain its per-subproject list.`.trim();
   }
 

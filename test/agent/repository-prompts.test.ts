@@ -209,6 +209,39 @@ describe("recursion role guidance in repository prompts", () => {
     expect(page).toContain("Monorepo root scope");
   });
 
+  test("root role consults sub-wiki quickstarts as read-only reference", () => {
+    const guidance = recursionRoleGuidance("root");
+
+    // Directs consulting each sub-wiki entrypoint...
+    expect(guidance).toMatch(/CONSULT each subproject's sub-wiki/);
+    expect(guidance).toContain("openwiki/quickstart.md");
+    // ...enumerated from the workspaces manifest...
+    expect(guidance).toContain("openwiki/workspaces.json");
+    expect(guidance).toContain("openwiki/workspaces.md");
+    // ...for scope/naming/terminology consistency...
+    expect(guidance).toMatch(/scope, naming, and terminology/);
+    // ...as read-only reference that must not be duplicated.
+    expect(guidance).toMatch(/read-only reference/);
+    expect(guidance).toMatch(/do not copy, quote, or restate sub-wiki content/);
+
+    // The consult guidance reaches both planner and page prompts.
+    const planner = createRepositoryPlannerPrompt(
+      planningView(),
+      undefined,
+      "root",
+    );
+    expect(planner).toMatch(/CONSULT each subproject's sub-wiki/);
+
+    const page = createRepositoryPagePrompt(pageJob(), [pageJob()], "en", "root");
+    expect(page).toMatch(/CONSULT each subproject's sub-wiki/);
+
+    // The subproject role must NOT gain the root's consult-the-quickstarts
+    // directive: sub-wikis stay a root-only read-only reference.
+    expect(recursionRoleGuidance("subproject")).not.toMatch(
+      /CONSULT each subproject's sub-wiki/,
+    );
+  });
+
   test("absent role adds no recursion section (backward compatible)", () => {
     expect(recursionRoleGuidance(undefined)).toBe("");
 
