@@ -1,0 +1,23 @@
+integrations/openwiki/SKILL.md
+  s_f485c61dd078af::t_0ce02c15b53cf3 8,15-19,32,34-36
+test/integrations/installer.test.ts
+  s_f485c61dd078af::t_dcc84a9a36a304 564,566-569
+integrations/openwiki/references/wiki-generation.md
+  s_f485c61dd078af::t_0ce02c15b53cf3 1-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "9f17c325f4a98382c9096f2c66e753097821bf65",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
