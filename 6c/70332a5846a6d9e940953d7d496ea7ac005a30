@@ -1,0 +1,33 @@
+integrations/openwiki/SKILL.md
+  s_f485c61dd078af::t_4e77eae8c9ccc7 15-16
+src/integrations/core/session-manager.ts
+  s_f485c61dd078af::t_c3d310dce761f5 233
+src/integrations/core/recall.ts
+  s_f485c61dd078af::t_0968d4f494f772 170-176,181
+  s_f485c61dd078af::t_6a747b838a8ed1 6,40,338-343
+  s_f485c61dd078af::t_0de3427391369d 247-251,283-287,379-383
+  s_f485c61dd078af::t_5a08ef47163b6f 334-335
+  s_f485c61dd078af::t_eb0e243b8f6c2e 220-224,254-258,261-265,296-298,301-303,336-337,363-365,368-370,386-390,399-401
+  s_f485c61dd078af::t_9633b1fdc9f063 4-5,7,36-39,41-42,98,100,103,105,108,110,113,115,169,179-180,182,216-219,225-231,233-246,252-253,259-260,266-282,288-295,299-300,304-332,344-362,366-367,371-378,384-385,391-398,402-412
+  s_f485c61dd078af::t_6917c114410042 8,232,333
+  s_f485c61dd078af::t_c4e01475912438 413
+test/integrations/mcp-server.test.ts
+  s_f485c61dd078af::t_0d6184dbeb85cd 253,320-321,323-324,326-328,332-333
+  s_f485c61dd078af::t_01068885c35649 334
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6c70332a5846a6d9e940953d7d496ea7ac005a30",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
