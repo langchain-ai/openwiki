@@ -1,0 +1,582 @@
+openwiki/architecture/overview.md
+  s_191cd32652ff7e::t_9b4109079489e4 42-43,46-154
+  s_abbe505740daec::t_c985686d104cc5 2-41,155-232
+src/agent/index.ts
+  s_abbe505740daec::t_bec6393c57e2d3 14,28,54-59,84,105,108,110,113,120-121,123,130,133,148-153,162,175,178-179,181-213,215-217,221-222,224-228,232-240,259-260,262,290-291,350-359,361-367,383-392,400-405,425,430-432,434-437,439-442,444-448,479-480,524,528,546-547,549,569-576,608,623-637,645,650,652-654,735-764,783-791,811,813-816,1081-1082,1085-1109,1118,1142,1148-1151,1156,1184-1185,1201-1202,1208-1210,1221-1222,1238-1245,1300-1329,1342,1344-1348,1350-1355,1383,1386,1400,1425,1446,1453-1455,1466,1808-1816,2208-2209,2211-2212
+test/config/constants.test.ts
+  s_abbe505740daec::t_d72610ba29657b 33-34,36-38,45-46,48-51,301-459,487-571,619-674
+  s_abbe505740daec::t_65d24857fcd486 675
+test/agent/bedrock-model.test.ts
+  s_abbe505740daec::t_de71016576df62 25,56,61,68-111,145-153
+  s_abbe505740daec::t_18ec7d323d385d 154
+src/config/constants.ts
+  s_abbe505740daec::t_627239fddfed87 2,18-23,41,64-66,70,72-73,471-474,482-489,896-962,1008-1060,1066-1076,1080-1134,1143,1149
+.changeset/lively-cursor-integration.md
+  s_abbe505740daec::t_2a1d8129e272e4 5
+.changeset/smooth-host-handoffs.md
+  s_abbe505740daec::t_ea2508947d4f9d 2,5
+.github/workflows/openwiki-update.yml
+  s_abbe505740daec::t_20b6d27952d14a 35-47,50-54,75,78-81,83,97-105
+.gitignore
+  s_abbe505740daec::t_bf2cb7ce8f8afe 28
+.prettierignore
+  s_abbe505740daec::t_ddaf455a392108 6
+CHANGELOG.md
+  s_abbe505740daec::t_a8be18fb318e40 3-102
+CLAUDE.md
+  s_abbe505740daec::t_2ba822ab2947cf 17
+CONTRIBUTING.md
+  s_abbe505740daec::t_6d9e934fcf179c 35-86
+DEVELOPMENT.md
+  s_abbe505740daec::t_29ec9f40a175fd 45,50,61
+README.md
+  s_abbe505740daec::t_f042068fb9910e 25-28,31,35-39,43,55-63,72-133,145-154,173-180,182,186,202,206,222,231,235,238,240,243,245,248-251,253-254,408-415,439-447,453,457-460,488,491-493
+examples/openwiki-update.yml
+  s_abbe505740daec::t_0389cddd9af825 36-37,52-55,57,71-79
+integrations/openwiki/SKILL.md
+  s_abbe505740daec::t_ac8b886f00261c 1-154
+integrations/openwiki/agents/openai.yaml
+  s_abbe505740daec::t_23557b3e6239de 1-4
+openwiki/.claims/architecture/agent-runtime.json
+  s_abbe505740daec::t_c4b169773ce7ac 1-478
+openwiki/.claims/architecture/overview.json
+  s_abbe505740daec::t_14cf8c9b0bc1bd 1-306
+openwiki/.claims/architecture/source-map.json
+  s_abbe505740daec::t_ae2ef560660b1b 1-384
+openwiki/.claims/concepts/grounded-claims.json
+  s_abbe505740daec::t_d323a251c24867 1-482
+openwiki/.claims/concepts/model-providers.json
+  s_abbe505740daec::t_bf06ee9fbe2cee 1-296
+openwiki/.claims/concepts/okf-output.json
+  s_abbe505740daec::t_f109ee937e7585 1-316
+openwiki/.claims/concepts/two-modes.json
+  s_abbe505740daec::t_a1bc05a2313cfe 1-220
+openwiki/.claims/integrations/coding-agents.json
+  s_abbe505740daec::t_3bd78d88662aea 1-304
+openwiki/.claims/integrations/connectors.json
+  s_abbe505740daec::t_c51bf385df6009 1-412
+openwiki/.claims/integrations/visualizer.json
+  s_abbe505740daec::t_3f343cf6c3d88c 1-388
+openwiki/.claims/operations/ci-scheduling.json
+  s_abbe505740daec::t_aaaf3a8c5639cf 1-244
+openwiki/.claims/operations/cli-reference.json
+  s_abbe505740daec::t_1a01ffe9201794 1-456
+openwiki/.claims/operations/configuration.json
+  s_abbe505740daec::t_c42ea028638ffe 1-284
+openwiki/.claims/operations/telemetry.json
+  s_abbe505740daec::t_fa79b33aad979a 1-402
+openwiki/.claims/quickstart.json
+  s_abbe505740daec::t_9d22e62c91b150 1-198
+openwiki/.claims/testing/overview.json
+  s_abbe505740daec::t_3a6aa6872613d9 1-452
+openwiki/.claims/workflows/claims-reconciliation.json
+  s_abbe505740daec::t_4311f6b89028eb 1-294
+openwiki/.claims/workflows/onboarding.json
+  s_abbe505740daec::t_cf9e4cae8a7d5e 1-322
+openwiki/.claims/workflows/personal-ingestion.json
+  s_abbe505740daec::t_6c73e2bcc04b89 1-276
+openwiki/.claims/workflows/repository-generation.json
+  s_abbe505740daec::t_67b644f7d7d5ee 1-534
+openwiki/.claims/workflows/wiki-finalization.json
+  s_abbe505740daec::t_331e6a9a196572 1-378
+openwiki/.last-update.json
+  s_abbe505740daec::t_d3b4f39af9bd80 2,4
+openwiki/.page-manifest.json
+  s_abbe505740daec::t_1e845c10d89ac4 1-134
+openwiki/architecture/agent-runtime.md
+  s_abbe505740daec::t_52b3f420e64187 1-138
+openwiki/architecture/index.md
+  s_abbe505740daec::t_1e2a10f29cf51b 3-5
+openwiki/architecture/source-map.md
+  s_abbe505740daec::t_3016290c58a9a1 1-289
+openwiki/concepts/grounded-claims.md
+  s_abbe505740daec::t_2abf617d83482c 1-297
+openwiki/concepts/index.md
+  s_abbe505740daec::t_8ba7d21a4e45c1 1-6
+openwiki/concepts/model-providers.md
+  s_abbe505740daec::t_bbce847f45b911 1-252
+openwiki/concepts/okf-output.md
+  s_abbe505740daec::t_12c5e9fc902e9d 1-240
+openwiki/concepts/two-modes.md
+  s_abbe505740daec::t_90ac81a37dd4ae 1-165
+openwiki/index.md
+  s_abbe505740daec::t_182a9e9ebf04d4 2,7,12,15-16
+openwiki/integrations/coding-agents.md
+  s_abbe505740daec::t_a95629d66afe63 1-290
+openwiki/integrations/connectors.md
+  s_abbe505740daec::t_a97de0a13aa189 2-48,51,53-60,62,64-68,70-72,74,76-80,82-89,91-94,96,98-101,103-113,115-117,119,121,123-131,133-138,140,142-145,147-156,158-159,161,163-166,168,170-174,176,178-184,186-256
+openwiki/integrations/index.md
+  s_abbe505740daec::t_20bf19fbc2f4f3 3-5
+openwiki/integrations/visualizer.md
+  s_abbe505740daec::t_d397d75c3994f5 1-238
+openwiki/operations/ci-scheduling.md
+  s_abbe505740daec::t_092561c4143797 1-267
+openwiki/operations/cli-reference.md
+  s_abbe505740daec::t_2eddf5fd3be458 1-212
+openwiki/operations/configuration.md
+  s_abbe505740daec::t_0951f242e583ee 2-31,34-93,96-243
+openwiki/operations/index.md
+  s_abbe505740daec::t_b9d6cd580fe119 3-6
+openwiki/operations/telemetry.md
+  s_abbe505740daec::t_8bf3d9c8384a8a 1-293
+openwiki/quickstart.md
+  s_abbe505740daec::t_b03ce41384a27a 2,4-30,33-191
+openwiki/testing/index.md
+  s_abbe505740daec::t_13e200f98a2487 3
+openwiki/testing/overview.md
+  s_abbe505740daec::t_ff073458a8f5c0 1-425
+openwiki/workflows/claims-reconciliation.md
+  s_abbe505740daec::t_fbdaa270538223 1-318
+openwiki/workflows/index.md
+  s_abbe505740daec::t_1e164c76f6ecf5 1-7
+openwiki/workflows/onboarding.md
+  s_abbe505740daec::t_0f904bc642e5c6 1-275
+openwiki/workflows/personal-ingestion.md
+  s_abbe505740daec::t_84286965312a31 1-215
+openwiki/workflows/repository-generation.md
+  s_abbe505740daec::t_5d890a0f202154 1-354
+openwiki/workflows/wiki-finalization.md
+  s_abbe505740daec::t_10da59f295bb3e 1-279
+package.json
+  s_abbe505740daec::t_c7cd15372d30e9 3,23,39,49,73,80
+pnpm-lock.yaml
+  s_abbe505740daec::t_9ba93d0944afc9 8,11,51-53,72-74,617-622,764-773,1168-1171,1186-1193,1197-1199,1268-1271,1275-1277,1289-1300,1343-1354,1362-1373,1605-1608,1628-1631,1635-1637,1641-1644,1660-1667,1671-1674,1686-1688,1747-1750,1761-1764,1773-1782,1805-1807,1835-1838,1858-1865,1882-1884,1897-1904,1928-1931,1942-1953,1961-1964,2038-2045,2078-2080,2146-2151,2155-2157,2333-2336,2340-2347,2359-2366,2396-2397,2407-2410,2433-2440,2445-2448,2544-2547,2563-2565,2588-2591,2631-2634,2642-2645,2652-2659,2709-2712,2737-2747,2756-2771,2820-2823,2901-2904,2948-2951,2978-2981,2992-2995,3162-3166,3751-3754,3932-3955,4388-4392,4401-4404,4412-4418,4478-4491,4494,4509-4520,4550-4555,4560-4568,4824-4825,4840-4845,4850-4851,4854-4855,4869-4872,4875-4878,4912-4913,4988-4989,4996-4999,5004-5044,5065-5066,5090-5100,5122-5125,5143-5144,5163-5180,5213-5214,5221-5228,5237-5244,5319-5322,5343-5344,5424-5427,5430-5431,5578-5579,5582-5585,5617-5622,5629,5641,5647-5648,5665-5668,5671-5674,5757-5758,5767-5768,5781-5782,5792,5821-5825,5833-5837,5842-5850,5922-5931,5952-5978,5985-6012,6059-6060,6133-6134,6171-6176,6198-6199,6208-6209,6313-6316
+pnpm-workspace.yaml
+  s_abbe505740daec::t_c3cff5d733a3b8 5-8,10,14,17
+scripts/copy-visualize-assets.cjs
+  s_abbe505740daec::t_373128d603a027 1-61
+scripts/install-local-integration.mjs
+  s_abbe505740daec::t_d860051afb7663 1-54
+src/agent/agent-backend.ts
+  s_abbe505740daec::t_e7a64060913e09 1-99
+src/agent/crash-guard.ts
+  s_abbe505740daec::t_f739da739d8720 94,108
+src/agent/docs-only-backend.ts
+  s_abbe505740daec::t_ad6fa79e8a5642 4,51-58,130-146,151,160-161,163,182-186,192-194,205-207,220-222,240,243,250-253,266,269,277-278,282-299,305-307,318-320,334-337,346-348,375-378,401-403,450-451,464-467,488-496,517-524,526-527,529,532,550-596,606,615,619-621,623-624,628-646,668-678
+src/agent/okf-middleware.ts
+  s_abbe505740daec::t_4c3671e6a5345f 5,7,16,18-22,29-48,55-56,58-59,66-76,92-95,99,102-120,125-126,133,149-150,152,202
+src/agent/openai-chatgpt-oauth.ts
+  s_abbe505740daec::t_8be90906edcd09 53-57,69-76
+src/agent/prompt.ts
+  s_abbe505740daec::t_e48be044de4ac6 27-30,33,57-66,74-77,80,104
+src/agent/prompts/code.ts
+  s_abbe505740daec::t_00d135e7e17c64 1-2,10-11,46,49,64-66,76,83,85
+src/agent/prompts/personal.ts
+  s_abbe505740daec::t_455e83ce2660bb 1-5,9,12-13,18,24,31,81,84,95-96,101-103,113,120,122,137,140-141,146,152,159,263-264,287-289,299,306,308,319,347,359,362-363,368,374,381,485-486,509-511,521,528,530,541,569,591,601
+src/agent/repository-prompts.ts
+  s_abbe505740daec::t_17ff65289009dc 1-226
+src/agent/repository-runner.ts
+  s_abbe505740daec::t_f3bebe91e2a3e3 1-594
+src/agent/translation-middleware.ts
+  s_abbe505740daec::t_a26972fc26cc99 8,22,101-102,133-140,179-185,258-263,328-333,359-362,381-383
+src/agent/types.ts
+  s_abbe505740daec::t_34866be04448c6 10-52,54
+src/agent/utils.ts
+  s_abbe505740daec::t_50d53934133a42 3-16,19-23,28-31,36,47,56-64,110-114,119-123,128,140-148,192,204-205,214,217-222,226,241-246,274,276,278-366,368-423,425-458,460-484,486-505,507-527,533,535-536,538-547,549,551-682,801-803,808,872-875,879-946
+src/agent/wiki-finalizer.ts
+  s_abbe505740daec::t_0f1dfa0b3c82e5 1-299
+src/agent/wiki-link-validator.ts
+  s_abbe505740daec::t_e8602471c53138 8
+src/agent/wiki-replacement.ts
+  s_abbe505740daec::t_01d4c586be3636 1-204
+src/auth/configure.ts
+  s_abbe505740daec::t_0910db7733212c 6,147
+src/claims/brains/code/paths.ts
+  s_abbe505740daec::t_ab98bb0ef412e3 1-144
+src/claims/brains/code/preflight.ts
+  s_abbe505740daec::t_81caba4d104f83 1-114
+src/claims/brains/code/runtime.ts
+  s_abbe505740daec::t_731a91cf017529 1-16,18-25,27-30,32-35,37-41,43-51,53-74,76-80,82,84-92,94-102,104-151,153-184
+src/claims/brains/code/session.ts
+  s_abbe505740daec::t_36ef153295450d 1-647
+src/claims/brains/code/store.ts
+  s_abbe505740daec::t_79255c48a9af57 1-702
+src/claims/brains/code/types.ts
+  s_abbe505740daec::t_bd49da355efba6 1-199
+src/claims/core/errors.ts
+  s_abbe505740daec::t_76c5d8450c99c5 1-82
+src/claims/core/mutations.ts
+  s_abbe505740daec::t_21a446bad19d42 1-318
+src/claims/core/resolver-cache.ts
+  s_abbe505740daec::t_d446f495bfe5a7 1-30
+src/claims/core/types.ts
+  s_abbe505740daec::t_a2349ebadf4194 1-164
+src/claims/evidence/repository/resolver.ts
+  s_abbe505740daec::t_9fbcab9e3c58da 1-815
+src/claims/evidence/repository/resource.ts
+  s_abbe505740daec::t_8446f97e968052 1-256
+src/claims/guidance.ts
+  s_abbe505740daec::t_b088e2894f774d 1-28
+src/cli/app/app.tsx
+  s_abbe505740daec::t_b426f2817f86fb 2,18,22-26,29,51-55,63,74-80,82-108,125-126,128,139-141,179-198,319,334-338,341-343,346-348,356-360,365-367,371-405,412,485,487,491,526-555,612-613,618,627,630,641,691,781,922,940,945,987,992
+src/cli/app/run-state.ts
+  s_abbe505740daec::t_c4ca600d2100eb 41
+src/cli/cli.tsx
+  s_abbe505740daec::t_b18aeeb9a6cd11 8,12,29-37,47-52,55-65,67-70,72-78,80-114
+src/cli/commands.ts
+  s_abbe505740daec::t_4008516f6e8da0 2,11-19,40-106,108,129,174-181,310-312,321,335,342-369,386-393,402,534-735,1062-1079,1102-1105,1115,1166-1181,1183,1190,1239-1243,1279-1282
+src/cli/components/chat.tsx
+  s_abbe505740daec::t_b23cafee12dab5 4,15,20-24,36,39,55,57,74-77,79-80,85,102,110-112,116-125,134,139,168,171-177,317-330,377-407,434,501,530-545,573-630,791,810,816,849-887
+src/cli/components/header.tsx
+  s_abbe505740daec::t_b06c08446aa924 8,55-57,73-80,113-118,172-177
+src/cli/components/panels.tsx
+  s_abbe505740daec::t_f695826aa0c669 4,104-108
+src/cli/components/run-view.tsx
+  s_abbe505740daec::t_8fbe07b2165c79 2,6-24,30-37,39,41-44,46-51,70-72,74-79,81-84,88-90,95-104,109-111,117-118,125,129-132,145-151,153-157,159-196,207,209-228,230,232,235,237,241-242,244-280,283-289,291-294,296-354,356-437,439-449,451-454,456-512,515-532,537-592
+src/cli/components/types.ts
+  s_abbe505740daec::t_532ccf0681958d 3,10-12,14-17,21-23,27-34,36-41,43-53
+src/cli/diagnostics/auth-fix.ts
+  s_abbe505740daec::t_01a1f6dd8d61a2 7,26,77,85,91
+src/cli/format.ts
+  s_abbe505740daec::t_d789582f2deb12 18,20-23,25
+src/cli/input/menu.ts
+  s_abbe505740daec::t_77f21337056640 7,11,29-33,82,114-137,170-174,263-303
+src/cli/input/types.ts
+  s_abbe505740daec::t_45adf0575089f9 2,57,68,97-108
+src/cli/integrations.ts
+  s_abbe505740daec::t_6eb3c0f98d557f 1-96
+src/cli/process-interrupt.ts
+  s_abbe505740daec::t_cbd9b2ab584bd0 1-29
+src/cli/run-log/activity.ts
+  s_abbe505740daec::t_32b55c75cd1d6f 1,4-9,12,14,16,18,21,23,26,28,32,34-111,113,115-116,119-127,129-131,133-139,141,143-151,155-156,158-179,183-184,186-194,197-200,204-205,207-237,239,243,249-250,253-256,260,263-272,275,277-279,281,284-285,287-288,291-308
+src/cli/run-log/progress.ts
+  s_abbe505740daec::t_b0859e8c5b37d8 1-79
+src/cli/run-log/reducer.ts
+  s_abbe505740daec::t_408597a7b6cc22 3-9,12-14,21-37,40-45,56-60,62-80,83-87,91-93,95,100-127,129-151,154,158-160,162,172-202,204-237,241,243-244,246-247,250-253,259-266,271,273-282,287-288,290,294-297,301,303-306,309-326,328-340,343-352,354,357-361
+src/cli/run-log/summary.ts
+  s_abbe505740daec::t_d250e28a408535 1-170
+src/cli/run-log/tool-input.ts
+  s_abbe505740daec::t_e612fb6697a98f 1-45
+src/cli/run-log/types.ts
+  s_abbe505740daec::t_d516ca3f4978ac 2,4-129,131,134,136-139,141,143,146,148,151,158,160,165,167,169,172-174,176,178,181,183,185,188,190,192,195,197,199,202,204,206,209-210,212,214-219,221-230
+src/cli/runners.ts
+  s_abbe505740daec::t_5da9af03812f5f 33,40,64,71-81,161,271,273-274
+src/cli/startup.ts
+  s_abbe505740daec::t_d429c9d0cd1913 17,136-141
+src/config/env.ts
+  s_abbe505740daec::t_6fa1a0ea23130b 36-37,60,63,65-68,70-71,73,75,78,85,119-120,135-136,138,199-200,288-291,294,375,404-418,427,435,476-477,479,482-483,536-541,554-602
+src/config/openwiki-home.ts
+  s_abbe505740daec::t_1329e72fd41829 6-40,48-51
+src/config/reasoning.ts
+  s_abbe505740daec::t_970ee6fe7c7108 1-101
+src/connectors/registry.ts
+  s_abbe505740daec::t_e991a4cb4d6411 9,30
+src/connectors/sources/git-repo.ts
+  s_abbe505740daec::t_fa94ca6666441d 12,72,75,125
+src/connectors/sources/gmail.ts
+  s_abbe505740daec::t_d46311135186aa 11,110,113,182
+src/connectors/sources/hackernews.ts
+  s_abbe505740daec::t_fb674d11bc0c72 11,122,125,258
+src/connectors/sources/langsmith/index.ts
+  s_abbe505740daec::t_3fb1a5f4d020da 2-5,49,196-198
+src/connectors/sources/langsmith/repo-config.ts
+  s_abbe505740daec::t_64242d0cf65452 52
+src/connectors/sources/langsmith/setup.ts
+  s_abbe505740daec::t_31b7c44f8ef12c 8,11,19-23,62-67,100-104
+src/connectors/sources/mcp.ts
+  s_abbe505740daec::t_8626b2abbfbf4f 9,53,56,181
+src/connectors/sources/slack.ts
+  s_abbe505740daec::t_ceafe3f30235e2 4,196,208,362
+src/connectors/sources/web-search.ts
+  s_abbe505740daec::t_7e666292ec7d01 12,83,86,99,109,112,173
+src/connectors/sources/x.ts
+  s_abbe505740daec::t_a14fa3b595d937 16-19,93,96,108,189
+src/connectors/tools.ts
+  s_abbe505740daec::t_18573c95d8b6b3 12,51,70,100,148,177
+src/generation/errors.ts
+  s_abbe505740daec::t_2cb519c907246e 1-24
+src/generation/page-jobs.ts
+  s_abbe505740daec::t_9acb43c4c6b343 1-549
+src/generation/page-manifest.ts
+  s_abbe505740daec::t_50ee925cedd889 1-416
+src/generation/repository-run.ts
+  s_abbe505740daec::t_03993d87863277 1-1620
+src/generation/run-state.ts
+  s_abbe505740daec::t_9ea5a8a6377314 1-363
+src/ingestion/code-mode.ts
+  s_abbe505740daec::t_292e6caf624956 6,10,157,192-197,202-205,312-319,360-361,374-377,379,393-401,419-434
+src/ingestion/ingestion.ts
+  s_abbe505740daec::t_08788d42234e50 19,21,313-314,343
+src/integrations/core/errors.ts
+  s_abbe505740daec::t_b44c13c2865231 1-27
+src/integrations/core/protocol.ts
+  s_abbe505740daec::t_5d56dccec13942 1-185
+src/integrations/core/repository-root.ts
+  s_abbe505740daec::t_09cbbf258b8b05 1-5,7-133
+src/integrations/core/session-manager.ts
+  s_abbe505740daec::t_d31bf1d2cabfc1 1-329
+src/integrations/install/atomic-file.ts
+  s_abbe505740daec::t_d4dfd7205cc643 1-34
+src/integrations/install/config-json.ts
+  s_abbe505740daec::t_284080c6c86393 1-175
+src/integrations/install/config-opencode.ts
+  s_abbe505740daec::t_5c8fa34b856131 1-477
+src/integrations/install/config-toml.ts
+  s_abbe505740daec::t_5a97e02d55f2ac 1-211
+src/integrations/install/install-paths.ts
+  s_abbe505740daec::t_862bc9df9b2ebd 1-323
+src/integrations/install/installer.ts
+  s_abbe505740daec::t_6419042b039d86 1-687
+src/integrations/install/registry.ts
+  s_abbe505740daec::t_fb2a480901a533 1-113
+src/integrations/install/skill-bundle.ts
+  s_abbe505740daec::t_e01f2ce4b47002 1-353
+src/integrations/install/types.ts
+  s_abbe505740daec::t_6eabe5e8afd2ae 1-176
+src/integrations/mcp/server.ts
+  s_abbe505740daec::t_ba13789b4c79cb 1-116
+src/integrations/mcp/stdio.ts
+  s_abbe505740daec::t_ad225ca707f69c 1-33
+src/mermaid/wiki.ts
+  s_abbe505740daec::t_fa601606bbae35 10
+src/okf/claim-sources.ts
+  s_abbe505740daec::t_ca5de05367553a 1-165
+src/okf/claims-verification.ts
+  s_abbe505740daec::t_464fa8900c5bd3 1-119
+src/okf/frontmatter.ts
+  s_abbe505740daec::t_1d883b812a4e9e 2,5-7,17-35,97-114,180,185-320,328-336,349-415,512-559,562-585,587-595,604-615,617-645,647-658,727-730,741-764,767-768,770-790,793-843,846-853
+src/okf/generated-provenance.ts
+  s_abbe505740daec::t_e0e8bd19872246 1-327
+src/okf/index-sync.ts
+  s_abbe505740daec::t_11afbefbe6cced 16,82-83,87-115,243
+src/platform/language.ts
+  s_abbe505740daec::t_649aabafce03b1 61-77
+src/scheduling/schedules.ts
+  s_abbe505740daec::t_7ca27ed111860f 10,12,171,183-185,817,823,834-841,853
+src/setup/credentials/components.tsx
+  s_abbe505740daec::t_49a7278a6ba956 3,37,90-91,125-126,351-370,710
+src/setup/credentials/constants.ts
+  s_abbe505740daec::t_c1bbd887f39050 7-11,59,88-93,151,153
+src/setup/credentials/persistence.ts
+  s_abbe505740daec::t_f6e8eeff4c3a0c 11,42,111-114
+src/setup/credentials/steps.ts
+  s_abbe505740daec::t_67eb1275e5f3a9 30,34,54,156,161-192
+src/setup/credentials/types.ts
+  s_abbe505740daec::t_d1daf25d1d4edc 4,55,123-125,162
+src/setup/credentials/use-init-setup.ts
+  s_abbe505740daec::t_60f51255ba1e3f 20,77-78,129,183-184,230-231,599-617,892-906,1228-1229,1626-1642,1646-1662,1681,2106-2135,2601,2621
+src/setup/credentials/view.tsx
+  s_abbe505740daec::t_45daf1387ec72e 4,11,28,112-114,172-174,257,277,312-320,501-517,622-623
+src/telemetry/config.ts
+  s_abbe505740daec::t_a6eb8acdce4b3b 3-6,39
+src/version.ts
+  s_abbe505740daec::t_7ea7ada1447d34 74-81
+src/visualize/client.ts
+  s_abbe505740daec::t_25bcfa1f2f1da6 216-222,327-332,528-531,536-545,779,881-947,950,952,955-957
+src/visualize/graph.ts
+  s_abbe505740daec::t_44405f2c724ded 140
+src/visualize/page.ts
+  s_abbe505740daec::t_2c0942e4976a24 2-6,8-30,32,58,68-69,72,74-84,93,96-102
+src/visualize/server.ts
+  s_abbe505740daec::t_d14bf34057836c 8,11-12,20-22,72-75,99,144-148,158-160,165,187-191
+src/visualize/static-export.ts
+  s_abbe505740daec::t_862d420f60da9c 1-80
+src/visualize/styles.css
+  s_abbe505740daec::t_1df71880c190a9 1-686
+test/agent/claims-agent-integration.test.ts
+  s_abbe505740daec::t_09f441862183fa 1-166
+test/agent/create-model.test.ts
+  s_abbe505740daec::t_4e3e26c3d6babc 1,14-20,26-33,37,42,45,51,63,103-126,155,159,161,166,187-226,247-449,455,460,463,469,490-499
+test/agent/create-openwiki-agent.test.ts
+  s_abbe505740daec::t_28a3db1a2df4da 30-47
+test/agent/docs-only-backend.test.ts
+  s_abbe505740daec::t_69f66962ecd948 6,13-23,137-308
+test/agent/frontmatter-validator.test.ts
+  s_abbe505740daec::t_4c8da3e109a1b1 11-12,14,23-27,62,71,78-185,251,253-266,269,271,319-320,322-323
+test/agent/gemini-retry.test.ts
+  s_abbe505740daec::t_95391d7dfc8aa0 3-6,10,36-43,49-53,55,67,75-76,80,86-92,98,101-102,106,109,114,119,122,127,132,134-175
+test/agent/hard-cutover.test.ts
+  s_abbe505740daec::t_bcdefd4a6228ef 1-28
+test/agent/index-middleware.test.ts
+  s_abbe505740daec::t_3baf215972df6d 1-2,7-10,12-13,19,33-39,51-95,119,203,333,347,475,495,503-517,529-530,544,557-558,566-912
+test/agent/openai-chatgpt-oauth.test.ts
+  s_abbe505740daec::t_13212251b45081 79,124,161-201
+test/agent/parse-stream-event.test.ts
+  s_abbe505740daec::t_4a6b960137c904 16,28,30,34,82,352-373
+test/agent/prompt-okf.test.ts
+  s_abbe505740daec::t_d54b73710b9144 5-17,19-20,22-26,40-77
+test/agent/prompt.test.ts
+  s_abbe505740daec::t_4ed8c8b3148b12 24,56,70,129,145,162,222-231,233-236,277,282,290-305
+test/agent/redaction.test.ts
+  s_abbe505740daec::t_02edbd52211977 256-261
+test/agent/repository-prompts.test.ts
+  s_abbe505740daec::t_77c43fff8eec82 1-168
+test/agent/repository-runner.test.ts
+  s_abbe505740daec::t_c4d10f7044ab49 1-708
+test/agent/repository-source-fingerprint.test.ts
+  s_abbe505740daec::t_64a402f8f0e9b3 1-387
+test/agent/run-metadata.test.ts
+  s_abbe505740daec::t_61ef86ed03e7e7 121,139-140,153-156,180,187-188,197-201
+test/agent/run-openwiki-agent-routing.test.ts
+  s_abbe505740daec::t_b6ee9ceee30c10 1-135
+test/agent/stream-modes.test.ts
+  s_abbe505740daec::t_10e10b9b5cac59 1-48
+test/agent/stream-redaction.test.ts
+  s_abbe505740daec::t_8b48bed099f905 74
+test/agent/translation-middleware.test.ts
+  s_abbe505740daec::t_d2743e5125a361 137-235,476
+test/agent/update-noop.test.ts
+  s_abbe505740daec::t_2b0595bc0979fd 1,11,67-89,105-119,214-288
+test/agent/utils.test.ts
+  s_abbe505740daec::t_46381535ba30b9 14,117-151
+test/agent/wiki-finalizer.test.ts
+  s_abbe505740daec::t_e930307eb0ccd0 1-338
+test/agent/wiki-link-validator.test.ts
+  s_abbe505740daec::t_0f44344948da30 382
+test/agent/wiki-prepared-state.test.ts
+  s_abbe505740daec::t_ec723d335e0efe 1-87
+test/agent/wiki-replacement.test.ts
+  s_abbe505740daec::t_05e9fd70a5720b 1-151
+test/claims/brains/code/paths.test.ts
+  s_abbe505740daec::t_235745c4203ec3 1-98
+test/claims/brains/code/preflight.test.ts
+  s_abbe505740daec::t_cdb7836616b31c 1-325
+test/claims/brains/code/runtime.test.ts
+  s_abbe505740daec::t_0ebbe58a37429a 1-577
+test/claims/brains/code/session.test.ts
+  s_abbe505740daec::t_bbc398e5fea423 1-529
+test/claims/brains/code/store.test.ts
+  s_abbe505740daec::t_30444d3e49912f 1-366
+test/claims/core/architecture.test.ts
+  s_abbe505740daec::t_8e985e25b1f370 1-46
+test/claims/core/errors.test.ts
+  s_abbe505740daec::t_a765b0755ef31f 1-58
+test/claims/core/mutations.test.ts
+  s_abbe505740daec::t_458c8b6c738460 1-437
+test/claims/evidence/repository/resolver.test.ts
+  s_abbe505740daec::t_821a2d5a049152 1-318
+test/claims/evidence/repository/resource.test.ts
+  s_abbe505740daec::t_c69bef93280b57 1-86
+test/cli/components/chat.test.tsx
+  s_abbe505740daec::t_abbb047dc7483c 46-61,63,72-73,82,85,91-130,140,156,171,180-199,208,213,233-243,248-249,254-256,261,288,424-505
+test/cli/components/header.test.tsx
+  s_abbe505740daec::t_eee000ad163fcb 7-11,17,24,72-81
+test/cli/components/run-view.test.tsx
+  s_abbe505740daec::t_a5db0ae62ae558 12-17,59-89,91,93-96,98-100,103-116,118-127,130,132-143,150,159-165,171-194,202-206,210,221-382,384-392
+test/cli/diagnostics/auth-fix.test.ts
+  s_abbe505740daec::t_afee9bda24e63a 1-2,10-17,56-73
+test/cli/format.test.ts
+  s_abbe505740daec::t_ae01e772c14065 3,14-20
+test/cli/input/menu.test.ts
+  s_abbe505740daec::t_1df9bad644396b 7,10,69-79,185-210
+test/cli/integrations-commands.test.ts
+  s_abbe505740daec::t_a0e249605cc375 1-214
+test/cli/integrations-runners.test.ts
+  s_abbe505740daec::t_e9ce73ba284e4e 1-236
+test/cli/process-interrupt.test.ts
+  s_abbe505740daec::t_c9bc0d00db9e58 1-39
+test/cli/run-log/activity.test.ts
+  s_abbe505740daec::t_ce7391794a2c64 1-106
+test/cli/run-log/reducer.test.ts
+  s_abbe505740daec::t_7a2935cce6092f 57-140,244-544
+test/cli/run-log/summary.test.ts
+  s_abbe505740daec::t_e345d41da11bbd 1-47
+test/cli/run-log/tool-input.test.ts
+  s_abbe505740daec::t_85da899c9e196e 5,8,11,16-19,22-23
+test/cli/runners.test.ts
+  s_abbe505740daec::t_dd0b0b6475e4fa 486-545
+test/cli/startup.test.ts
+  s_abbe505740daec::t_bab93aafb418ea 26,68-73,183-201,223-243
+test/cli/visualize-command.test.ts
+  s_abbe505740daec::t_ce799817e62c02 12,25,32-69
+test/config/env-behavior.test.ts
+  s_abbe505740daec::t_23c7e50856080f 19-20,23,26,51-55,63-64,67,70,514-574,591-667
+test/config/env.test.ts
+  s_abbe505740daec::t_49439d8623270c 128-135,151-154
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_abbe505740daec::t_3282195cce487e 195-197
+test/connectors/sources/langsmith/setup.test.ts
+  s_abbe505740daec::t_fc390a36f629b0 20,56-75,112-133
+test/copy-visualize-assets.test.ts
+  s_abbe505740daec::t_b12c13397d70c7 1-79
+test/generation/page-jobs.test.ts
+  s_abbe505740daec::t_929712b2ed16da 1-406
+test/generation/page-manifest.test.ts
+  s_abbe505740daec::t_8d050b5034c92b 1-388
+test/generation/repository-run.test.ts
+  s_abbe505740daec::t_cc22360db611ec 1-2077
+test/generation/run-state.test.ts
+  s_abbe505740daec::t_0975b3db991c56 1-170
+test/ingestion/code-mode.test.ts
+  s_abbe505740daec::t_4e6d76288363c7 5,17-26,41-112,136-154,289-330,443-459
+test/ingestion/ingestion-run.test.ts
+  s_abbe505740daec::t_b721e4fdf75706 55-70
+test/integrations/cli-dogfood.test.ts
+  s_abbe505740daec::t_b66d7e65923b42 1-281
+test/integrations/config-adapters.test.ts
+  s_abbe505740daec::t_f3e084cf56f93d 1-784
+test/integrations/installer.test.ts
+  s_abbe505740daec::t_e1cc72b74f7695 1-974
+test/integrations/mcp-server.test.ts
+  s_abbe505740daec::t_c7c313f5b8a4b0 1-346
+test/integrations/mcp-stdio.test.ts
+  s_abbe505740daec::t_c7213f89096815 1-41
+test/integrations/package-contents.test.ts
+  s_abbe505740daec::t_5b6f632719c3c0 1-111
+test/integrations/protocol.test.ts
+  s_abbe505740daec::t_b2f3e225a0ee4e 1-123
+test/integrations/repository-root.test.ts
+  s_abbe505740daec::t_093688dd87c748 1-79
+test/integrations/session-manager.test.ts
+  s_abbe505740daec::t_5cf98158bcebf6 1-402
+test/integrations/skill.test.ts
+  s_abbe505740daec::t_b5a6ee4101ada9 1-157
+test/okf/claim-sources.test.ts
+  s_abbe505740daec::t_0bed416167c0de 1-129
+test/okf/claims-verification.test.ts
+  s_abbe505740daec::t_879f0cf0addaf4 1-98
+test/okf/frontmatter.test.ts
+  s_abbe505740daec::t_ce0caf8a6cf263 9-10,13-15,49,54-60,62,131-397,459-467,649-675
+test/openai-compatible-responses.test.ts
+  s_abbe505740daec::t_206c4b228afa2d 1-48
+test/openai-compatible-streaming.test.ts
+  s_abbe505740daec::t_4dfd17a7fc0f39 1-67
+test/openwiki-home.test.ts
+  s_abbe505740daec::t_0746d2f065df65 1-222
+test/platform/language.test.ts
+  s_abbe505740daec::t_81eb6c0d7e3b92 2-5,37-52
+test/scheduling/schedules-launchd.test.ts
+  s_abbe505740daec::t_ceaca6aecd3ec2 65,122-123,233,243-260
+test/setup/credentials/components.test.tsx
+  s_abbe505740daec::t_b9451b59ed6a00 401-417
+test/setup/credentials/persistence.test.ts
+  s_abbe505740daec::t_9658a0b4ad3c71 102-121
+test/setup/credentials/steps.test.ts
+  s_abbe505740daec::t_aa0cf4d8fc28f1 37-38,118,199-225
+test/setup/credentials/view.test.tsx
+  s_abbe505740daec::t_a14e1ab9dacb7f 262-280
+test/setup/onboarding.test.ts
+  s_abbe505740daec::t_d678a607e6962c 7,18-20,22,76-81
+test/visualize/client-interaction.test.ts
+  s_abbe505740daec::t_e7000c66f72bc5 1-198
+test/visualize/page.test.ts
+  s_abbe505740daec::t_789e252ccc7c96 2-4,37-45,70-117
+test/visualize/server.test.ts
+  s_abbe505740daec::t_c0d3c40365c56c 97,156-166,226
+test/visualize/static-export.test.ts
+  s_abbe505740daec::t_ee70ccda6af313 1-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a28dfe03467726cdff4c52fc67446174db438eb8",
+  "prompts": {},
+  "sessions": {
+    "s_191cd32652ff7e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "71f72171-3004-40f4-8641-f69ffef1349d",
+        "model": "grok-4.6"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_abbe505740daec": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0493e-2e30-7ac3-9301-0f7d0b7a28d8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
