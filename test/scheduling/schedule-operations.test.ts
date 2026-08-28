@@ -106,7 +106,7 @@ describe("installConnectorSchedule", () => {
     expect(result.description.length).toBeGreaterThan(0);
   });
 
-  test("saves without native install on non-macOS platforms", async () => {
+  test("saves without native install on unsupported platforms", async () => {
     stubPlatform("linux");
 
     const result = await installConnectorSchedule({
@@ -117,7 +117,7 @@ describe("installConnectorSchedule", () => {
 
     expect(result.expression).toBe("0 2 * * *");
     expect(result.nativeJobPath).toBeUndefined();
-    expect(result.warning).toMatch(/macOS-only/i);
+    expect(result.warning).toMatch(/macOS and Windows only/i);
   });
 });
 
@@ -354,7 +354,7 @@ describe("resumeConnectorSchedules", () => {
     expect(result.connectorIds).toEqual([]);
   });
 
-  test("clears pausedAt and surfaces the non-macOS install warning", async () => {
+  test("clears pausedAt and surfaces the unsupported-platform warning", async () => {
     stubPlatform("linux");
 
     const config = configWithSchedule("0 2 * * *", {
@@ -369,7 +369,7 @@ describe("resumeConnectorSchedules", () => {
     expect(result.connectorIds).toEqual(["all"]);
     expect(result.config.ingestionSchedule?.pausedAt).toBeUndefined();
     expect(result.warnings).toContain(
-      "Schedule saved, but native installation is currently macOS-only.",
+      "Schedule saved, but native installation is currently supported on macOS and Windows only.",
     );
   });
 });

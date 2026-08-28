@@ -22,7 +22,8 @@ export type OnboardingSourceScheduleConfig = {
   description: string;
   expression: string;
   /**
-   * Path of the installed native scheduler job (launchd plist on macOS).
+   * Path of the installed native scheduler job (a launchd plist on macOS or
+   * a Task Scheduler command shim on Windows).
    *
    * @deprecated legacy key spelling retained for reading old configs; new
    * writes use {@link nativeJobPath}.
