@@ -1,0 +1,36 @@
+test/integrations/mcp-server.test.ts
+  s_f485c61dd078af::t_119445fc183e26 2,97,102-107,145,153-154,253-257,302-344
+  s_f485c61dd078af::t_9eb2a2f2e6863b 258,276,294-301
+  s_f485c61dd078af::t_911151512da7a0 259-275,277-293
+test/integrations/installer.test.ts
+  s_f485c61dd078af::t_a7b61dcfcc7702 564-565
+src/integrations/core/recall.ts
+  s_f485c61dd078af::t_fc016c9d597af2 1-15,17-251
+  s_f485c61dd078af::t_bc3d9d7a6430f9 16
+integrations/openwiki/SKILL.md
+  s_f485c61dd078af::t_0f93f959272446 3,8-30
+  s_f485c61dd078af::t_c91de741e4c75a 31
+src/integrations/core/protocol.ts
+  s_f485c61dd078af::t_e43a157b70e36c 15,22-45
+  s_f485c61dd078af::t_86b0a3352c02a8 46
+src/integrations/core/session-manager.ts
+  s_f485c61dd078af::t_4bda1d973dfca8 15,22,27,152-162,224,230-236
+src/integrations/mcp/server.ts
+  s_f485c61dd078af::t_6cc2e876bea3a8 11-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "faf9506589887d66d86c8ad8cf4d980778533deb",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
