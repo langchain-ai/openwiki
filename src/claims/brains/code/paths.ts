@@ -13,7 +13,6 @@ export const RESERVED_WIKI_FILES: ReadonlySet<string> = new Set([
   "index.md",
   "log.md",
   "instructions.md",
-  "_plan.md",
 ]);
 
 /**
@@ -56,9 +55,8 @@ export function normalizeClaimsToolPagePath(page: string): string {
 /**
  * Canonicalizes a model-supplied generated Markdown path.
  *
- * Unlike {@link normalizeClaimsToolPagePath}, this permits structural and
- * temporary wiki pages that do not own Claims. Claims implementation files
- * remain unavailable.
+ * Unlike {@link normalizeClaimsToolPagePath}, this permits structural generated
+ * pages that do not own Claims. Claims implementation files remain unavailable.
  *
  * @param page - Agent-supplied canonical, repository-relative, or wiki-relative path.
  * @returns Canonical `/openwiki/...md` path for a generated Markdown file.

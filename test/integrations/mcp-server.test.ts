@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -7,6 +7,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { z } from "zod";
+import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 import { HostIntegrationError } from "../../src/integrations/core/errors.ts";
 import type { ProtocolTool } from "../../src/integrations/core/protocol.ts";
 import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
@@ -14,12 +15,11 @@ import {
   createOpenWikiMcpServer,
   type HostToolProvider,
 } from "../../src/integrations/mcp/server.ts";
-import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 
 const temporaryRoots: string[] = [];
 
 /**
- * Connected in-memory MCP fixture used by adapter tests.
+ * Connected in-memory MCP fixture used by transport tests.
  */
 interface ConnectedMcpFixture {
   /**
@@ -34,32 +34,20 @@ interface ConnectedMcpFixture {
 }
 
 /**
- * Creates an isolated repository root for an MCP lifecycle test.
+ * Creates a transport-neutral provider from explicit test tools.
  *
- * @returns Absolute temporary repository path.
- */
-async function createRepository(): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-mcp-"));
-  temporaryRoots.push(root);
-  execFileSync("git", ["init", "--quiet", root]);
-  return root;
-}
-
-/**
- * Creates a transport-neutral tool provider from explicit test tools.
- *
- * @param tools - Tools returned to the MCP adapter.
- * @returns Minimal lifecycle provider used by adapter tests.
+ * @param tools - Complete tool list exposed through the adapter.
+ * @returns Minimal host tool provider.
  */
 function provider(...tools: ProtocolTool[]): HostToolProvider {
   return { tools: () => tools };
 }
 
 /**
- * Connects an MCP client and server through an in-memory transport pair.
+ * Connects an MCP client and server through linked memory transports.
  *
- * @param toolProvider - Lifecycle tools registered by the server.
- * @returns Connected client and server.
+ * @param toolProvider - Lifecycle provider registered by the server.
+ * @returns Connected client/server fixture.
  */
 async function connect(
   toolProvider: HostToolProvider,
@@ -68,95 +56,107 @@ async function connect(
   const client = new Client({ name: "openwiki-test", version: "1.0.0" });
   const [clientTransport, serverTransport] =
     InMemoryTransport.createLinkedPair();
-
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   return { client, server };
 }
 
 /**
- * Closes both halves of a connected in-memory MCP fixture.
+ * Closes both halves of one connected transport fixture.
  *
- * @param client - Connected MCP client.
- * @param server - Connected MCP server.
+ * @param fixture - Connected MCP client and server.
  */
-async function close(client: Client, server: McpServer): Promise<void> {
-  await client.close();
-  if (server.isConnected()) {
-    await server.close();
-  }
+async function close(fixture: ConnectedMcpFixture): Promise<void> {
+  await fixture.client.close();
+  if (fixture.server.isConnected()) await fixture.server.close();
+}
+
+/**
+ * Creates an isolated Git repository containing stable Claim evidence.
+ *
+ * @returns Absolute temporary repository root.
+ */
+async function createRepository(): Promise<string> {
+  const root = await mkdtemp(path.join(os.tmpdir(), "openwiki-mcp-"));
+  temporaryRoots.push(root);
+  execFileSync("git", ["init", "--quiet", root]);
+  await writeFile(path.join(root, "README.md"), "# Repository\n", "utf8");
+  return root;
 }
 
 afterEach(async () => {
   vi.restoreAllMocks();
   await Promise.all(
-    temporaryRoots.splice(0).map((root) =>
-      rm(root, {
-        recursive: true,
-        force: true,
-      }),
-    ),
+    temporaryRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
 describe("OpenWiki MCP adapter", () => {
-  test("advertises lifecycle, Claims, and native-host authoring guidance", async () => {
-    const begin = vi.fn(() => Promise.resolve({ runId: "run-1" }));
-    const inspect = vi.fn(() => Promise.resolve({ pages: [] }));
-    const resolve = vi.fn(() => Promise.resolve({ pages: [] }));
-    const finish = vi.fn(() => Promise.resolve({ status: "complete" }));
+  test("advertises exactly the five lifecycle calls and workflow guidance", async () => {
+    const schema = z.object({ runId: z.string().optional() }).strict();
+    const handle = () => Promise.resolve({ status: "ok" });
     const fixture = await connect(
       provider(
         {
           name: "openwiki_begin",
           description: "Begin.",
-          schema: z.object({ mode: z.enum(["init", "update"]) }).strict(),
-          handle: begin,
+          schema,
+          handle,
         },
         {
-          name: "openwiki_inspect_claims",
-          description: "Inspect Claims.",
-          schema: z.object({ runId: z.string() }).strict(),
-          handle: inspect,
+          name: "openwiki_submit_plan",
+          description: "Submit plan.",
+          schema,
+          handle,
         },
         {
-          name: "openwiki_resolve_claims",
-          description: "Resolve Claims.",
-          schema: z.object({ runId: z.string() }).strict(),
-          handle: resolve,
+          name: "openwiki_next_page",
+          description: "Next page.",
+          schema,
+          handle,
+        },
+        {
+          name: "openwiki_submit_page",
+          description: "Submit page.",
+          schema,
+          handle,
         },
         {
           name: "openwiki_finish",
           description: "Finish.",
-          schema: z.object({ runId: z.string() }).strict(),
-          handle: finish,
+          schema,
+          handle,
         },
       ),
     );
 
     try {
-      const listed = await fixture.client.listTools();
-
-      expect(listed.tools.map((tool) => tool.name)).toEqual([
+      expect(
+        (await fixture.client.listTools()).tools.map(({ name }) => name),
+      ).toEqual([
         "openwiki_begin",
-        "openwiki_inspect_claims",
-        "openwiki_resolve_claims",
+        "openwiki_submit_plan",
+        "openwiki_next_page",
+        "openwiki_submit_page",
         "openwiki_finish",
       ]);
-      expect(listed.tools.map((tool) => tool.name)).not.toEqual(
-        expect.arrayContaining(["read_file", "write_file", "edit_file"]),
-      );
       const instructions = fixture.client.getInstructions();
-      expect(instructions).toContain("Use the host's native repository tools");
-      expect(instructions).toContain("Resolve the absolute Git top-level");
-      expect(instructions).toContain("openwiki_inspect_claims");
-      expect(instructions).toContain("openwiki_resolve_claims");
-      expect(instructions).toContain("Call openwiki_finish after authoring");
-      expect(instructions).toContain("openwiki/_plan.md");
-      expect(instructions).toContain("openwiki/_skeleton.md");
-      expect(instructions).not.toContain("logs, plans, or skeletons");
+      expect(instructions).toContain("host's native\nrepository tools");
+      expect(instructions).toContain("openwiki_submit_plan");
+      expect(instructions).toContain("openwiki_next_page");
+      expect(instructions).toContain("openwiki_submit_page");
+      expect(instructions).toContain("same Claim id and statement verbatim");
+      expect(instructions).toContain(
+        "stale or unresolved marker as a requirement to recheck",
+      );
+      expect(instructions).toContain("Never report\nsuccess before finish");
+      expect(instructions).toContain("source\ndrift invalidated the plan");
+      expect(instructions).not.toContain("openwiki_inspect_claims");
+      expect(instructions).not.toContain("openwiki_resolve_claims");
     } finally {
-      await close(fixture.client, fixture.server);
+      await close(fixture);
     }
   });
 
@@ -166,7 +166,7 @@ describe("OpenWiki MCP adapter", () => {
         name: "openwiki_begin",
         description: "Begin.",
         schema: z.object({ mode: z.literal("init") }).strict(),
-        handle: () => Promise.resolve({ runId: "run-1", mode: "init" }),
+        handle: () => Promise.resolve({ status: "active", mode: "init" }),
       }),
     );
 
@@ -175,173 +175,118 @@ describe("OpenWiki MCP adapter", () => {
         name: "openwiki_begin",
         arguments: { mode: "init" },
       });
-
       expect(result).toMatchObject({
         content: [
           {
             type: "text",
-            text: JSON.stringify({ runId: "run-1", mode: "init" }),
+            text: JSON.stringify({ status: "active", mode: "init" }),
           },
         ],
-        structuredContent: { runId: "run-1", mode: "init" },
+        structuredContent: { status: "active", mode: "init" },
       });
     } finally {
-      await close(fixture.client, fixture.server);
+      await close(fixture);
     }
   });
 
-  test("rejects invalid input before entering the lifecycle core", async () => {
-    const handle = vi.fn(() => Promise.resolve({ runId: "unreachable" }));
-    const fixture = await connect(
-      provider({
-        name: "openwiki_begin",
-        description: "Begin.",
-        schema: z.object({ mode: z.literal("init") }).strict(),
-        handle,
-      }),
-    );
-
-    try {
-      const result = await fixture.client.callTool({
-        name: "openwiki_begin",
-        arguments: { mode: "update", extra: true },
-      });
-
-      expect(result.isError).toBe(true);
-      expect(handle).not.toHaveBeenCalled();
-    } finally {
-      await close(fixture.client, fixture.server);
-    }
-  });
-
-  test("preserves domain error codes", async () => {
-    const fixture = await connect(
-      provider({
-        name: "openwiki_finish",
-        description: "Finish.",
-        schema: z.object({ runId: z.string() }).strict(),
-        handle: () =>
-          Promise.reject(
-            new HostIntegrationError(
-              "invalid_state",
-              "No matching OpenWiki run is active.",
-            ),
-          ),
-      }),
-    );
-
-    try {
-      const result = await fixture.client.callTool({
-        name: "openwiki_finish",
-        arguments: { runId: "missing" },
-      });
-
-      expect(result).toMatchObject({
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: "invalid_state: No matching OpenWiki run is active.",
-          },
-        ],
-      });
-    } finally {
-      await close(fixture.client, fixture.server);
-    }
-  });
-
-  test("does not expose unknown exception details", async () => {
+  test("preserves bounded host errors and hides unknown failures", async () => {
     const stderr = vi
       .spyOn(process.stderr, "write")
       .mockImplementation(() => true);
     const fixture = await connect(
-      provider({
-        name: "openwiki_finish",
-        description: "Finish.",
-        schema: z.object({ runId: z.string() }).strict(),
-        handle: () => Promise.reject(new Error("SENSITIVE_EXCEPTION_SENTINEL")),
-      }),
+      provider(
+        {
+          name: "openwiki_next_page",
+          description: "Next page.",
+          schema: z.object({ runId: z.string() }).strict(),
+          handle: () =>
+            Promise.reject(
+              new HostIntegrationError("invalid_state", "No active run."),
+            ),
+        },
+        {
+          name: "openwiki_finish",
+          description: "Finish.",
+          schema: z.object({ runId: z.string() }).strict(),
+          handle: () => Promise.reject(new Error("SENSITIVE_SENTINEL")),
+        },
+      ),
     );
 
     try {
-      const result = await fixture.client.callTool({
-        name: "openwiki_finish",
-        arguments: { runId: "run-1" },
+      await expect(
+        fixture.client.callTool({
+          name: "openwiki_next_page",
+          arguments: { runId: "run" },
+        }),
+      ).resolves.toMatchObject({
+        isError: true,
+        content: [{ text: "invalid_state: No active run." }],
       });
-      const serialized = JSON.stringify(result);
-
-      expect(result.isError).toBe(true);
-      expect(serialized).toContain("OpenWiki MCP operation failed.");
-      expect(serialized).not.toContain("SENSITIVE_EXCEPTION_SENTINEL");
-      expect(stderr).toHaveBeenCalledWith("OpenWiki MCP operation failed.\n");
+      const unknown = await fixture.client.callTool({
+        name: "openwiki_finish",
+        arguments: { runId: "run" },
+      });
+      expect(JSON.stringify(unknown)).toContain(
+        "OpenWiki MCP operation failed.",
+      );
+      expect(JSON.stringify(unknown)).not.toContain("SENSITIVE_SENTINEL");
       expect(JSON.stringify(stderr.mock.calls)).not.toContain(
-        "SENSITIVE_EXCEPTION_SENTINEL",
+        "SENSITIVE_SENTINEL",
       );
     } finally {
-      await close(fixture.client, fixture.server);
+      await close(fixture);
     }
   });
 });
 
-describe("OpenWiki MCP lifecycle transport", () => {
-  test("initializes, begins, and finishes through a real linked transport", async () => {
+describe("OpenWiki MCP lifecycle smoke test", () => {
+  test("completes one factual init page through all five transport calls", async () => {
     const root = await createRepository();
-    const wikiRoot = path.join(root, "openwiki");
-    await writeFile(path.join(root, "README.md"), "# Repository\n", "utf8");
-    const manager = HostSessionManager.create({ host: "codex" });
-    const fixture = await connect(manager);
+    const fixture = await connect(
+      HostSessionManager.create({
+        host: "codex",
+        now: () => new Date("2026-08-24T12:00:00.000Z"),
+      }),
+    );
 
     try {
-      const listed = await fixture.client.listTools();
-      expect(listed.tools.map((tool) => tool.name)).toEqual([
-        "openwiki_begin",
-        "openwiki_inspect_claims",
-        "openwiki_resolve_claims",
-        "openwiki_finish",
-      ]);
-
       const begin = await fixture.client.callTool({
         name: "openwiki_begin",
         arguments: { root, mode: "init" },
       });
-      expect(begin.isError).not.toBe(true);
       const { runId } = z
-        .object({ runId: z.string() })
+        .object({ runId: z.string().uuid() })
         .parse(begin.structuredContent);
 
-      const inspected = await fixture.client.callTool({
-        name: "openwiki_inspect_claims",
-        arguments: { runId, pages: ["openwiki/quickstart.md"] },
-      });
-      expect(inspected).toMatchObject({
-        structuredContent: {
-          pages: [{ page: "/openwiki/quickstart.md", claims: [] }],
-        },
-      });
-
-      const resolved = await fixture.client.callTool({
-        name: "openwiki_resolve_claims",
+      const accepted = await fixture.client.callTool({
+        name: "openwiki_submit_plan",
         arguments: {
           runId,
           pages: [
             {
-              page: "openwiki/quickstart.md",
-              operations: [
-                {
-                  op: "add",
-                  statement: "The repository has a README.",
-                  evidence: [{ resource: "repo://README.md" }],
-                },
-              ],
+              path: "/openwiki/quickstart.md",
+              title: "Quickstart",
+              purpose: "Orient repository readers.",
+              seedPaths: ["README.md"],
             },
           ],
         },
       });
-      expect(resolved.isError).not.toBe(true);
+      expect(accepted.structuredContent).toEqual({
+        status: "accepted",
+        totalPages: 1,
+      });
 
-      await mkdir(wikiRoot, { recursive: true });
+      const next = await fixture.client.callTool({
+        name: "openwiki_next_page",
+        arguments: { runId },
+      });
+      const { job } = z
+        .object({ job: z.object({ id: z.string().uuid() }) })
+        .parse(next.structuredContent);
       await writeFile(
-        path.join(wikiRoot, "quickstart.md"),
+        path.join(root, "openwiki/quickstart.md"),
         [
           "---",
           "type: Guide",
@@ -351,32 +296,51 @@ describe("OpenWiki MCP lifecycle transport", () => {
           "",
           "# Quickstart",
           "",
-          "Host-authored documentation.",
+          "The repository is introduced by its README.",
           "",
         ].join("\n"),
         "utf8",
       );
 
-      const finish = await fixture.client.callTool({
-        name: "openwiki_finish",
-        arguments: { runId },
+      const submitted = await fixture.client.callTool({
+        name: "openwiki_submit_page",
+        arguments: {
+          runId,
+          jobId: job.id,
+          claims: [
+            {
+              statement: "The repository is introduced by its README.",
+              evidence: [{ resource: "repo://README.md" }],
+            },
+          ],
+        },
       });
-      expect(finish).toMatchObject({
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ status: "complete" }),
-          },
-        ],
+      expect(submitted.structuredContent).toMatchObject({
+        status: "complete",
+        page: "/openwiki/quickstart.md",
+        remaining: 0,
+      });
+      await expect(
+        fixture.client.callTool({
+          name: "openwiki_next_page",
+          arguments: { runId },
+        }),
+      ).resolves.toMatchObject({ structuredContent: { status: "complete" } });
+      await expect(
+        fixture.client.callTool({
+          name: "openwiki_finish",
+          arguments: { runId },
+        }),
+      ).resolves.toMatchObject({
         structuredContent: { status: "complete" },
       });
       await expect(
         new ClaimsStore(root).loadPage("/openwiki/quickstart.md"),
       ).resolves.toMatchObject({
-        claims: [{ statement: "The repository has a README." }],
+        claims: [{ statement: "The repository is introduced by its README." }],
       });
     } finally {
-      await close(fixture.client, fixture.server);
+      await close(fixture);
     }
   });
 });

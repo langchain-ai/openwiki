@@ -37,21 +37,30 @@ typechecks, builds, and runs the Vitest suite with coverage.
 Install an integration backed by the current checkout with:
 
 ```sh
-pnpm integrations:dev <codex|claude>
+pnpm integrations:dev <codex|claude|opencode|cursor>
 ```
 
 The command builds OpenWiki, refreshes the host skill, and records absolute
 paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
-agent after installation. Codex and Claude Code install at user scope. Later source changes only require `pnpm build` unless
-the bundled skill itself changes. Rerun `integrations:dev` to refresh the skill
-or after switching Node installations.
+agent after installation. Codex, Claude Code, OpenCode, and Cursor install at
+user scope. Later source changes only require `pnpm build` unless the bundled
+skill itself changes. Rerun `integrations:dev` to refresh the skill or after
+switching Node installations.
+
+User-scope destinations match each host's own conventions: Codex writes under
+`~/.agents` and `~/.codex`, Claude Code under `~/.claude`, OpenCode under
+`~/.config/opencode` (OpenCode's global configuration directory on every
+supported platform), and Cursor under `~/.cursor`.
 
 ## Adding a coding-agent integration
 
-OpenWiki host integrations share one canonical skill and four MCP tools:
-`openwiki_begin`, `openwiki_inspect_claims`, `openwiki_resolve_claims`, and
-`openwiki_finish`. Add host-specific behavior to the registry and config
-boundary rather than copying the skill or adding host-specific tools.
+OpenWiki host integrations share one canonical skill and five MCP tools:
+`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
+`openwiki_submit_page`, and `openwiki_finish`. Add host-specific behavior to the
+registry and config boundary rather than copying the skill or adding
+host-specific tools. The host model researches and authors only the current
+OpenWiki PageJob; OpenWiki owns durable run state, Claims reconciliation,
+finalization, metadata, provenance, and managed setup files.
 
 1. Confirm the host discovers repository skills and local stdio MCP servers.
    Document the supported user and project paths; use `null` for an unsupported

@@ -9,6 +9,7 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { openWikiConnectorsDisplayPath } from "../../config/openwiki-home.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -79,11 +80,10 @@ async function ingest(
   if (!config.enabled) {
     return {
       connectorId: "web-search",
-      message:
-        "Web Search connector is not enabled. Set enabled=true in ~/.openwiki/connectors/web-search/config.json.",
+      message: `Web Search connector is not enabled. Set enabled=true in ${openWikiConnectorsDisplayPath}/web-search/config.json.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/web-search/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/web-search/state.json`,
       status: "skipped",
       warnings,
     };
@@ -96,7 +96,7 @@ async function ingest(
       message: `${OPENWIKI_TAVILY_API_KEY_ENV_KEY} is required for Web Search ingestion.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/web-search/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/web-search/state.json`,
       status: "error",
       warnings,
     };
@@ -106,11 +106,10 @@ async function ingest(
   if (queries.length === 0) {
     return {
       connectorId: "web-search",
-      message:
-        "No web search queries configured. Add queries to ~/.openwiki/connectors/web-search/config.json.",
+      message: `No web search queries configured. Add queries to ${openWikiConnectorsDisplayPath}/web-search/config.json.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/web-search/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/web-search/state.json`,
       status: "skipped",
       warnings,
     };
@@ -171,7 +170,7 @@ async function ingest(
     }.`,
     rawFiles,
     runId,
-    statePath: "~/.openwiki/connectors/web-search/state.json",
+    statePath: `${openWikiConnectorsDisplayPath}/web-search/state.json`,
     status: "success",
     warnings,
   };

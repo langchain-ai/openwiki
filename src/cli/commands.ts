@@ -1,4 +1,5 @@
 import { isValidModelId, normalizeModelId } from "../config/constants.js";
+import { openWikiLocalWikiDisplayPath } from "../config/openwiki-home.js";
 import type { OpenWikiCommand } from "../agent/types.js";
 import { resolveLanguage } from "../platform/language.js";
 import { isAuthProviderId } from "../auth/providers.js";
@@ -1111,8 +1112,7 @@ export const helpContent: HelpContent = {
     },
     {
       label: "openwiki personal",
-      description:
-        "Run OpenWiki as your local personal brain over configured sources, writing to ~/.openwiki/wiki.",
+      description: `Run OpenWiki as your local personal brain over configured sources, writing to ${openWikiLocalWikiDisplayPath}.`,
     },
     {
       label: "openwiki",
@@ -1187,7 +1187,7 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate initial OpenWiki documentation. Defaults to code mode; use personal to initialize the local personal brain.",
+        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",

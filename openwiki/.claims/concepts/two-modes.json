@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1f20b2d0755187863b358f1e9e0b404e29376f56fbad9876d9d66024546b7b61",
+  "claims": [
+    {
+      "id": "claim_b7c92dfb63db42c6ab9db3a60115cec9",
+      "statement": "OpenWiki runs in one of two user-facing run modes, OpenWikiRunMode, which is either \"personal\" or \"code\".",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L26-L26",
+          "version": "repo-lines-v1:sha256:5fbf660a3481165dcac9b1673584bdb7ddf8429aa1e161ab446c960ab321ed37:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiZjY2MGEzNDgxMTY1ZGNhYzliMTY3MzU4NGJkYjdkZGY4NDI5YWExZTE2MWFiNDQ2Yzk2MGFiMzIxZWQzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0YTVjOGIwMzFhODQzZmViNmIxMDRmNDFhY2RjNjllNGIwMTE1NjI3ZGEwOTYxYjk2NmVlNTNiOTVkNDJlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTI1YjA1MWRjODEyZDFjNmJkNjBhMTNkYzllZDRiZWM3YzI1MWQ3M2Q3NzU1YTU1MjY3ODliZmU2MTVmMzM4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bfd11589d8204b4c8157beac2b56c697",
+      "statement": "Each parsed run command carries both the resolved run mode and a modeSource discriminator recording how the mode was chosen: \"default\", \"option\", or \"positional\".",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L146-L167",
+          "version": "repo-lines-v1:sha256:8deaa57433ad06c3b3a36d4305f6cf3cddc5b5065071da7eb211a271c20bd648:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZjA3ZjQ4OTI5NDMxMjkwNWM5Y2MxOTI0Y2RiNmJkZDE3NWNjMTIwMDM2MjhlZGRiYTk5YzNkZWIxYjY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNTMxMGFlZDliYzJhODVjYjU1NzE5OWYxZTkwYTI4MTIyYjQ3MDUyYmM1NzU1MzUwMDZhOTNlNDJmZGEwYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MDU5MDI0ZDQ1NjRhZTBmZWJhNWQ3MzhlM2I0OTUxNTczMGY1Mjg5OTdhOTM1ZWQ3ZGNmMDBkODQxNWRkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTc5YTNhMWU5YjRhMTYwOGY4NGJhNmQ1ZTBkOTIwNzYwNzVkZTNjOTliZDgyZThjZDkyODNjMzY5NzQ2YmQifQ"
+        },
+        {
+          "resource": "repo://src/cli/commands.ts#L984-L998",
+          "version": "repo-lines-v1:sha256:f404ce6bc018aba019d88a04cdda2eacd72f4f293f2c5ce7d1974652108c450d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NWZhMGYxMTE3YjVlYTQwNDM0MTQwZGRlMWEzNDBjNzIwZGRiZjMyNjIxMmUxOTE4MzhkNGIxNTZkMzE2YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZmIyYjJjNjY0YzNhY2Y2ZDBjNjI4NzhhMGM2Yjg3NGE4ZjVmOTUwNDQxYWViYzI2OGZkNTE5NjBjZGM4YWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71a41a041e41413a833ad22f6e845321",
+      "statement": "The run mode maps to an internal OpenWikiOutputMode (\"local-wiki\" | \"repository\"): code maps to repository and personal maps to local-wiki, and this output mode is what the rest of the run branches on.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/types.ts#L2-L2",
+          "version": "repo-lines-v1:sha256:a76e02262a6bcc244c44ba062d45d22010317d6499f8a7317ce19111177516c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc2ZTAyMjYyYTZiY2MyNDRjNDRiYTA2MmQ0NWQyMjAxMDMxN2Q2NDk5ZjhhNzMxN2NlMTkxMTExNzc1MTZjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZjYTNkZmYxZmJjMWY3ODA5YjM3ZjRiZTdlYmYyZjQzYzE5YWMyNjU5YjM3MDExNDlkYzhkM2EzYjRjYTVhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZiM2YwOTBhNzQ2MTM3NzA2N2Q4ZTBkNjU1YzA4YTE4MzQ0MzQyM2FmYTdjYjVjN2FiMGUzMzk5ZGEwMjIxOSJ9"
+        },
+        {
+          "resource": "repo://src/cli/run-mode.ts#L47-L55",
+          "version": "repo-lines-v1:sha256:ec9d4250dad04cfc0cfb71fae76830663f9d337b248178900c26b55cd6ba1d33:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEwMzMyNzI2YzIwNDAzYjUxMGI5MmIyNDVlYTIxM2YyZDNjNGZmNjAwYmU5MDgxZTczNTE1NTliZTAyMGNiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmIyMWY4ZDU2NjZkZDJlZDAwMmVmOGYyMGQ5YjA4YTA4N2M3NzMyNDdkMjVhYzVkNTg5Njc5NGJlZGM1NjQyMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_435db5203ae2430cbe84482efbf7be66",
+      "statement": "Mode selection happens at argument-parse time: a mode word as the first argument selects the mode as a positional, otherwise parsing defaults to code mode with modeSource \"default\".",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L525-L531",
+          "version": "repo-lines-v1:sha256:625ed7d691b6f368d2005560a5d40f112b720e523b244c5ed5d3caa1a5de7eb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDA4ZjIyYWQ5OGVlZjRmYThkMjA0Mzc1ZjJjMzcwNzNkZjliNzA0ZGM2MjM4ZjYxZDk1MjZiMjJjYzlkNGNjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc0MGM1YmMwYTQ1MGRmN2E3YTM2Yzg2NTk5MTljMGZiOGFjYzZkYWYzODhiMDdjZjVmNDEzMzM2MThlYzJiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_960e477e6c5c455398e94bac32b079bf",
+      "statement": "When an init or update command is requested while the mode is still at its default source, the parser explicitly pins the mode to code, so bare openwiki, openwiki --init, and openwiki --update run in code mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L972-L974",
+          "version": "repo-lines-v1:sha256:8419512428149639cc9fd589d04f36b939166fbe0587d04804d2165a659eb992:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRiNjg5MzRkMDcxN2FjZTM5ZDA0ODJhNDkyYzhiZTRkYzg4YTFkNGNhOGU5Yzg0MDM4MmJiOWI5YTA1NWM3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzgwNWQ2Njk4OTFlZWVmZGQ1ODU5MzczMjJjYTJkOThjNTFhMjNjY2U5OGE1YjQ0NTIyMGMwMGVjOGUwMjA2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEzMGIyYTk0ZTRmMTc1ZTNmOTA2NWMzMWJiNDllZDY5NzM1Y2RkMzZjNmMwYTY2YjIzMjQyMGIyZmVmMGQzOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c993e9191be841f9b9eb0cc7b4dba643",
+      "statement": "A mode word in the first positional slot selects the mode even when flags precede it (e.g. openwiki --print code --update); otherwise the word would be treated as the user message and target the default wiki.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L947-L959",
+          "version": "repo-lines-v1:sha256:5e4ec6caea62daa6961e61c2578f9b0aae53406aabf31b32ae050db1ddc517e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YjE2YTg1YTJiOTA0YmUzZDhlOTNlNDc5Y2RjMzhhNTUyYTFkNDJjODcxNGViOTVkODZlYTAzNGQ3OGQzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmM2E1MDYzMzBiMGU1NDBiZjM1ZDYwZGM2ZjZlNTNmZDBkNmE0ZjllNGM3NGIyOTI0NGQ0YzMyZmNjMTkxZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjZThkY2U5YTYwOGY4OWI2YWE2YzAwOTkxM2JjNzA3OGExMzQ1YjM4ZjY0YWFmZWNmNjllMzRjZTI2YTgwNjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd69d3b469e4413d916ee4c098f69974",
+      "statement": "The --mode <personal|code> flag (and its --mode= form) validates the value and sets the mode with source \"option\", rejecting an unrecognized value with an \"Invalid mode\" error.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L815-L864",
+          "version": "repo-lines-v1:sha256:c0d1be879c84ffd86237d746dc9f24ccd6db8237b879bf30466c9e655078bd67:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MjhlYjdjMTIzNzA4ZTBmNzhiNWVhN2MyMDdiYzJjOGU1NmRmOTEzZDRlNjZmYTk5MTYzMDYzM2NmYzliNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NWIwODkyYjVjMTk0NWU5NTliNDEzYmQ2NTkwZjU2ZmM1MzBjMzQ2NDhkMDA4Njg0ZTRlZmRhYTA0YTkwNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f64341e9a688452a8060c0c0c8c1ca4a",
+      "statement": "resolveExplicitMode rejects a second explicit mode that conflicts with an already-explicit one with a \"Conflicting modes\" error, while accepting a repeat of the current mode or an override of a still-default mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L1001-L1017",
+          "version": "repo-lines-v1:sha256:7ca5b465d44d95c0ab4ca887cfc4055538aec19d1fc317585bbc9134c080106f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NWM5NmMyMmU0Njc4MjdiMTMyNGU0NzIwMmU5YzQ5OTNjNTY3ZDNmMmFkZjM0N2QwYzZkYmRmZmZlNjhkZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZDVjNGY4OTM0ZmI5YjM2ODk3MzE2MGM0ODkzNWVhNzFkMTljYmQwYzdiZWZjNDczYzk5ZTg3NzMyZTQzZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56db7dfdb10046548001846f849eccd8",
+      "statement": "getRunModeCwd returns the code runtime's working directory (process.cwd() by default) in code mode and the local wiki directory (openWikiLocalWikiDir) in personal mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/run-mode.ts#L40-L45",
+          "version": "repo-lines-v1:sha256:86e51c6cceaf64392d97ee833adf229e5182913fbd5519d8b82d84a427313858:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI5NzQ2OGQwMTIzYzVlNzhiZTRkOTdiZDQ2NWZhMjdhNDk4MmVlODlkNGY5YzQyYjU4ZTQ4MTBhZTczZWVkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTExODY0ZjBlZDQ2ZWEzMzEyZGQyMDBiNmQ2MjU3YjAyNzZlZjgyODJiMTIzODIzMTY0MDJmMThmMTM3ZTFjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI2YmJkNmQ4NjhlZTUyZGQwYmZhZmZiMjA5NDkxMjFlYzdiNTVlMjkyY2VmZDY2NzJmNWYyZDY0YmM0MzdiYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_271724602ae145e2a917e574e600d323",
+      "statement": "In repository output mode the generated wiki lives under the openwiki/ subdirectory of the repository root, while in local-wiki output mode the wiki is the root of the local wiki directory with pages written directly under /.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/prompt.ts#L100-L108",
+          "version": "repo-lines-v1:sha256:8e6fe0c04e0cf23ad8e358ab6285da5729f5a2813ec766c7c39a23c11382be1e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY2YzA1YzAwNTUzNTA2ZTUwMzRjOGU5NjU3ZWI0Y2FkMmQ0YzBhODUzMjdlOWQxMzgxMmMxMGYwM2VlZmE0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjZhMmM1NzhlODI3NTgzMDdhMzQwYTViNTNjMDhjMTA0ZTc2NGU0OTljZTA4YWFlN2QxZDVkMDI4YjJhZWUyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTg1YmU4NDJkYzc2MGQ5MmY4NjMyZTdkZjk3ZjEyMzcwZjI5MDMzNmM5OTg5NDllNmQwN2M3NDdmZTI1NjNlMyJ9"
+        },
+        {
+          "resource": "repo://src/agent/utils.ts#L736-L741",
+          "version": "repo-lines-v1:sha256:68f17356422c8aa019abe0665e82b3d3fe36cd50467b01c7dc69dad30a94851a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmExNWZiNzA3M2I1YjQ0M2VlZTBjNzc4YTIyMDY1MDJiMzVkMWYxODMzZjUzM2M0NjA2Mjg4OWVmZGJmOGU5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjdjZjE4N2Y1ZTU0ODA1N2I1YjdmMWU5Yjc5YzhiNGEwMDVjMmRiNWI5Y2NjZmE0Y2EwNGRkMTIwZDk1YjgwOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_07666b5e78c34af7a8dbae1369025d5d",
+      "statement": "The docs-only write boundary refuses writes outside openwiki/ during repository init/update runs but is relaxed in local-wiki mode, where writes are always allowed.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L511-L533",
+          "version": "repo-lines-v1:sha256:d4d5dee1a013dee66812128826564986be035574261dc47d35af6b17e15b89ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NzcyZTYwMzAxOGU5NzRiM2M1ZjlmYTcwYTBlNGE5Mjc3OWE2YmRiODA2MDk0ODNkZjQzZjkzY2NiMTQzMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZWRhM2Q3NjNjZmQzYTgxNWVhOTY2ZTEzYmI3NjcwZWE3MTY2YTZmZTJmNGYzODI2MDU4OWJhZGNhNDc5MDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2994efd2e4144f569f744d52cb2b5b7e",
+      "statement": "Grounded Claims state is implementation-owned only in repository output mode: writes into Claims state paths are refused and shell execute commands referencing Claims state are rejected, and this boundary applies only when outputMode is repository.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L487-L495",
+          "version": "repo-lines-v1:sha256:8b6cb863c0831d62af864f8049fe44fa61ac867aa07b5be0058b7bcabeabd6b5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzgyNTQ2YjE0YWQ2OGFmNjU5NDhmZmY4NDhhNGRkOGNmZDJlODNjZTQ5ZmRmYjVlNGNhNTAyZDY1MzJlMmE0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc4MzI3YjI5MDRjNzM2NzlhZjVkN2IxMGFiMzkxYjgxZWI3MzRmNTI3YjNjZjJmOGE5NjkyMjJhNTA0OTg5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVkMjY3MDYxNzc0MGFmNDYzODZjNjc5MjA5OGI0YTBkNTkxMDdjODQ1YmMxYTdlMTFiMmYzZmZiZWFkODliMiJ9"
+        },
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L570-L572",
+          "version": "repo-lines-v1:sha256:400c00a1e17f399fd50ba8dd56e3927be05c7a415b312ec6e4d726945f7c00e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ5NWM5NTVlYjExNGVlZWEwMTUyYTYxNjEyNjdhMmEzODVlZDE5MjVhNmNkNTJhMzNiZjE0MmIzNjJmNzA2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmUzNjFjYTEyOTJjZGFlMmUzZjc0YmNkNmQ5M2NiZGIzY2QxZTM3M2ZhNTYyMjRlZTZlOTc2NmMzOTY2NDMxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JiMTVlOTRkZTQwOWYyNGE5OGY0MmE4NWM4NmY0ZmI0YTA0YzQ4YTc4ZDc5OTBhNzY5YTljMjFiYjViMDIzYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2acfcd0e9a1f4778b02f0289bbb7429f",
+      "statement": "Host-driven coding-agent runs (Codex, Claude Code, OpenCode) currently support repository code wikis only, not personal brains, and use only repository source and tests as context.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L100-L102",
+          "version": "repo-lines-v1:sha256:3650625f1a3ea296759963ed5192dab33599d9869368f946fffa4e6c2ec58021:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI4NGFmMjYzYjg0ZTlkOGRjNzcyYjEzNjU4ODYyNjZlNzBiZGQyYzUwMTBlNDI1NGQyZWEzZjQ1ZDEzZGFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjM2U3MTA4Y2U2MTgwZjQwMjgwMGY0OGEzYWI1YzJjOGEzYWM0OGZiMWFmYTNmMTNjY2ZjNGJiOGM0ODhiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIxNmM2ZTk4Zjk1NzRkMjUxMGRmNThhNDI5MDgzNTMxMjZlZDUzNDMyNjM4ZmVlZjY0ODVkMTdjNzU5YzUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQzYzJhMDQ0NjNmNGFhMzFmNjZjMTM5MTljYmNkNzkzODkwYjA1OTliOWFmNDU4OGI2N2U0OTVlMjVmYjhjNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_21d8573c787243c290bf8aca0baa6ea0",
+      "statement": "Connector ingestion tools are a personal/local-wiki capability: createOpenWikiConnectorTools returns no tools when the output mode is repository, so code-mode runs are never handed connector ingestion.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/tools.ts#L25-L35",
+          "version": "repo-lines-v1:sha256:3ecf9092e8d5bbb22b6b5118173bec56d80a39f68913ef6fc1ebc14f92fd2b6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzY2NWM4ZTkzNWFjODdmZjJiYjkzYTY4NjU0NWJhMzAyNzBkYmY0MDMxMjVjNGZmZjEyY2I3NjMzOTJmMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjk0OWRjMTljOTNhZDQyMTRmZDMyMzc4NDczNDJiMTI1NjgxZTYyMGFmNGU1Yzc4YzE3ZmJhOWRjNDExMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZWYwMjI5MDk2MGJiOTA1MGIzZWY1OTcxZDBjZGU0ZGU1MThhMjY0OTRlNzdkMDE5ZmMyYjY3YjgyMjNmNTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1fd17f1234248f6bd00d62ee08c714a",
+      "statement": "Personal ingestion runs execute against the local wiki directory as their working directory and use the local-wiki output mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L175-L188",
+          "version": "repo-lines-v1:sha256:0132b170c3b297344ed3b2f63857100c5c82f53bf10666072b5e68dc1cd5dabd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjMzNjcxN2Y5MDQxZmJmOWVhN2ViZTg3MmU4NjNiMTMzYmY2M2U1YzUzYmMxODNlMDM4ZWIxMWI2M2VlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkZjZjZjNhNjc0NGM0N2U4Yjg5MDg2ZmZmMTNlMTg3ODczZTE5ZDRkOThlMzM0M2NhOTkyODFhMThiZmJhNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZjhmNmM0ZTY5ODA3Mjc5YjQ1YmY0NTE4NjQxMDliNDI1NGM2YjQyZDcxYTE1YTU3OWFjZGY3YzM4N2NlNzcifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L89-L102",
+          "version": "repo-lines-v1:sha256:4931c380016e9bb8aa0fd4a9064bbbd3b295750554448865c85afe65654065d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1OGRjNjUyYzk4ODNhNTQ5MzkwMzkzNGRjZTE4M2EwODEyYWIwYmMwNGE0ZWJiOTUxODE3YjM1NTAxZjI0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2Y2Y5YTczN2FhMzYxZmRkZDBhMjIwODhkOGE4ZmQyZGIxNDQzODRiMWY2YmVjYzZmZjdlZGZiZjI1NzE4YzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cff3f2c8b684495dbb13f8ef48befdb3",
+      "statement": "The OpenWiki home directory defaults to ~/.openwiki but is overridden by the OPENWIKI_CONFIG_DIR environment variable, which expands a leading ~ and resolves relative paths.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L6-L29",
+          "version": "repo-lines-v1:sha256:6d53d46f788c607d5c467b436b0a39563dd562bf5120b0823c98735275d42ed0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZWEzMTQ1OWFiOGQzYWYyNmVlMzU2NjEwMGU3ZTg5ZjBkOTQwNWJiNDY4MjMzNzE3MWEyYjg4MjljMmM5ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlODhiNmFmYjBiZjA0MTNhZDU1MGVhZWFjMzUzZGIyZDk3NjhkMDE2ZDYxYjJiNGZjZmM1MTRjZTUyNzVmMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ODYzZGQxODFhYjgxMjBkM2I5OGRlYTQ0ZjA2ZTM4YTQyOGE1M2NkN2Q1NGNhODUzZDgzMGE0OTcxYTllMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b371c22eb29e4e9e88513e6c28b06053",
+      "statement": "The personal wiki, connectors, conversation history, and skills live as subdirectories of the OpenWiki home, and the personal wiki directory is the wiki subdirectory of whichever home is in effect.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L41-L50",
+          "version": "repo-lines-v1:sha256:08560d4dd538ec269c0cb04861f2a6d82eb2c6d85d85a8d8fddc726cc02e5708:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYTM0ZGQ2NGMyYzVhMGE4OTg3OTgwNTdjZTFkZGUxOTFmMmVhZTk2MDhiY2VhZmY4ZDM4ZjQ5MTRiYzI0YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzhkNTg5NzkzMmZmMWM2ZWQ0ODRjOWMxODI5ZDIzZjRmY2IyMjQ0ODY1MGE1ODlkMzhmNzM4ZTIwNjQ5NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkOTkwOTljNzQ0MGRhYzRlNmYxMWU4NjcxYWFlMzlmMjhkZTZiMjU0ZWY0NTNmM2I1NWZhYzJlYzM3Y2M5YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiZmY2YjQ0MDcxMjY3NzJmMzgxYjVhY2EyZGE1OTZmOGUxN2NiN2EyYTZkODllYjY0N2Y0MzU4YWQ3MWRlZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_540016ce699946e598a97cb908fdd2e2",
+      "statement": "ensureOpenWikiHome creates the home and its subdirectories with owner-only 0o700 permissions and restricts the home directory to the current user.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L73-L81",
+          "version": "repo-lines-v1:sha256:460af70b5568be4695957d2a82c31a2eef290dc9116701b475346aba60dfe6c7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQyM2YwYWJlZWIwOTIwM2U4ZmU0YTQ2MTkyNWJhZTY3NTY4MDk0N2Q0MjdhNDdhYTk0NWQxZjRhMjIyYjc2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhYmUzYjQ2ZDMwYWEyMGJiNjBiMTcyYmE4NWJjNzc4MTBiN2MwMzAyNjIyNWRmYjBhZDJjZjM5MWVmMmU5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjIyYTcwMjgwNzhlMmNjYjJiYjM3ZTMxZTk1ZTc2M2ExNDcyYjAzODNlY2M1MWM3Zjk3OWU0NDUzZTE5ZDc5NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d8f850b5c4e416e91f98f4143fb8b05",
+      "statement": "The OPENWIKI_CONFIG_DIR override merely selects a separate state directory; OpenWiki does not move or delete an existing ~/.openwiki directory.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L134-L140",
+          "version": "repo-lines-v1:sha256:ecf3c524d5f2cadc27fe91dd80d487241533bd003dcf6b5aa6a6b6b7c16c8521:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYxMTZmYTEzMzQxMDY3NTVjNmFiYjU4OGEwZWJiNjZmN2NhNmNkOTRkMmVjMGM4NmRkZmE5NjVmMzY4Njk4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJjNjQ4MDkxMDk0MmFjZWUwMzgxYjQ5MzRhODZlOGIyZWU5MzhmMzAyODExMjk3MTRjNDlkZGE0OTE0MjVkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ3OGI3NmNjNzE3ZmM1MzhjYTMxMGU4YmIxNmIyOTQyOGU3MTExY2ZiMjMzMWZiMzhlYjRhMzc5MmM4ZDQ1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGViOGExZmUyMjc1MjRkZGMxNTM4NDQ4NDU2MmZkZWJhMTJjNTkxOTM4ZTkzN2YxYTE3MjQ5NzljODU4ZWVhNyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

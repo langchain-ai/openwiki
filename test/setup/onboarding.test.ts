@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 const originalHome = process.env.HOME;
+const originalConfigDir = process.env.OPENWIKI_CONFIG_DIR;
 const tempHomes: string[] = [];
 
 async function createTempHome(): Promise<string> {
@@ -14,7 +15,11 @@ async function createTempHome(): Promise<string> {
 
 async function loadOnboardingModule(home: string) {
   vi.resetModules();
+  // `os.homedir()` reads USERPROFILE on Windows and ignores HOME, so setting
+  // HOME alone leaves the real ~/.openwiki exposed there. Point the config dir
+  // at the temp home explicitly so the isolation holds on every platform.
   process.env.HOME = home;
+  process.env.OPENWIKI_CONFIG_DIR = path.join(home, ".openwiki");
   return await import("../../src/setup/onboarding.ts");
 }
 
@@ -66,6 +71,12 @@ afterEach(async () => {
     delete process.env.HOME;
   } else {
     process.env.HOME = originalHome;
+  }
+
+  if (originalConfigDir === undefined) {
+    delete process.env.OPENWIKI_CONFIG_DIR;
+  } else {
+    process.env.OPENWIKI_CONFIG_DIR = originalConfigDir;
   }
 
   await Promise.all(

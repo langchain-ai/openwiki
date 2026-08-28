@@ -7,7 +7,9 @@ import { CronExpressionParser } from "cron-parser";
 import cronstrue from "cronstrue";
 import {
   ensureOpenWikiHome,
+  OPENWIKI_CONFIG_DIR_ENV_KEY,
   openWikiHomeDir,
+  resolveOpenWikiHomeDir,
 } from "../config/openwiki-home.js";
 import type { ConnectorId } from "../connectors/types.js";
 import type { OpenWikiOnboardingConfig } from "../setup/onboarding.js";
@@ -166,6 +168,7 @@ export async function installConnectorSchedule({
   const launchAgentsDir = getLaunchAgentsDir();
   const logsDir = path.join(openWikiHomeDir, "logs");
   const plistPath = getLaunchAgentPath();
+  const configuredDir = process.env[OPENWIKI_CONFIG_DIR_ENV_KEY]?.trim();
 
   await ensureOpenWikiHome();
   await mkdir(launchAgentsDir, { recursive: true, mode: 0o700 });
@@ -177,6 +180,9 @@ export async function installConnectorSchedule({
       cwd,
       label,
       logPath: path.join(logsDir, "ingestion.schedule.log"),
+      openWikiConfigDir: configuredDir
+        ? resolveOpenWikiHomeDir(process.env)
+        : undefined,
     }),
     {
       encoding: "utf8",
@@ -808,11 +814,13 @@ function createLaunchAgentPlist({
   cwd,
   label,
   logPath,
+  openWikiConfigDir,
 }: {
   calendarInterval: CalendarInterval;
   cwd: string;
   label: string;
   logPath: string;
+  openWikiConfigDir?: string;
 }): string {
   const cliPath = process.argv[1] ? path.resolve(process.argv[1]) : "";
   const programArguments = [
@@ -823,6 +831,14 @@ function createLaunchAgentPlist({
     "--scheduled",
     "--print",
   ];
+  const environmentVariables = openWikiConfigDir
+    ? `
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>${OPENWIKI_CONFIG_DIR_ENV_KEY}</key>
+    <string>${escapePlist(openWikiConfigDir)}</string>
+  </dict>`
+    : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -834,6 +850,7 @@ function createLaunchAgentPlist({
   <array>
 ${programArguments.map((arg) => `    <string>${escapePlist(arg)}</string>`).join("\n")}
   </array>
+${environmentVariables}
   <key>WorkingDirectory</key>
   <string>${escapePlist(cwd)}</string>
   <key>StandardOutPath</key>

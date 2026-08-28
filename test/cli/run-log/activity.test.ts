@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { OpenWikiRunEvent } from "../../../src/agent/types.ts";
 import {
   buildActivityTreeLines,
+  buildExplorationTreeLines,
   getToolPathActivities,
   isOpenWikiPagePath,
 } from "../../../src/cli/run-log/activity.ts";
@@ -51,7 +52,6 @@ describe("getToolPathActivities", () => {
 describe("isOpenWikiPagePath", () => {
   test("includes persistent Markdown pages only", () => {
     expect(isOpenWikiPagePath("openwiki/quickstart.md")).toBe(true);
-    expect(isOpenWikiPagePath("openwiki/_plan.md")).toBe(false);
     expect(isOpenWikiPagePath("openwiki/.last-update.json")).toBe(false);
     expect(isOpenWikiPagePath(".claims/quickstart.json")).toBe(false);
   });
@@ -73,6 +73,34 @@ describe("buildActivityTreeLines", () => {
       "└─ test/",
       "   └─ agent/",
       "      └─ index.test.ts",
+    ]);
+  });
+});
+
+describe("buildExplorationTreeLines", () => {
+  test("renders every explored file and highlights the active read", () => {
+    expect(
+      buildExplorationTreeLines(
+        [
+          "src/agent/index.ts",
+          "src/agent/prompt.ts",
+          "src/integrations/core/protocol.ts",
+          "test/agent/index.test.ts",
+        ],
+        "src/integrations/core/session-manager.ts",
+      ),
+    ).toEqual([
+      { active: false, label: "├─ src/" },
+      { active: false, label: "│  ├─ agent/" },
+      { active: false, label: "│  │  ├─ index.ts" },
+      { active: false, label: "│  │  └─ prompt.ts" },
+      { active: false, label: "│  └─ integrations/" },
+      { active: false, label: "│     └─ core/" },
+      { active: false, label: "│        ├─ protocol.ts" },
+      { active: true, label: "│        └─ session-manager.ts" },
+      { active: false, label: "└─ test/" },
+      { active: false, label: "   └─ agent/" },
+      { active: false, label: "      └─ index.test.ts" },
     ]);
   });
 });

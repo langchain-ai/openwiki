@@ -110,6 +110,7 @@ async function runStandardCommand(
         {showFirstRunNotice ? <FirstRunNotice /> : null}
         <App command={command} />
       </>,
+      { exitOnCtrlC: false },
     );
   }
 }

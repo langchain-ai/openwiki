@@ -45,13 +45,13 @@ export interface PageClaims {
    * Last successful complete Claims reconciliation for this page.
    *
    * Older schema-v1 sidecars omit this optional field and remain unverified
-   * until the page actively participates in `resolve_claims`.
+   * until the page actively participates in Claims reconciliation.
    */
   verification?: ClaimsVerificationEvent;
 }
 
 /**
- * Input accepted by the code-brain `resolve_claims` tool.
+ * Input accepted by the code-brain Claims reconciliation boundary.
  */
 export interface ResolveClaimsInput {
   /**
@@ -181,21 +181,6 @@ export interface InspectedClaim {
    * @default undefined when no issue is known.
    */
   issue?: InspectedClaimIssue;
-}
-
-/**
- * Compact inspected Claims grouped under their owning generated page.
- */
-export interface InspectedPageClaims {
-  /**
-   * Canonical generated-page path owning the returned claims.
-   */
-  page: string;
-
-  /**
-   * Selected or complete model-facing Claims for the page.
-   */
-  claims: InspectedClaim[];
 }
 
 /**

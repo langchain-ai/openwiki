@@ -18,6 +18,25 @@ export function appendRunLogEvent(
   event: OpenWikiRunEvent,
   nextLogId: React.MutableRefObject<number>,
 ): RunLogItem[] {
+  if (event.type === "repository_progress") {
+    const existing = log.find((item) => item.type === "repository_progress");
+    const progress: RunLogItem = {
+      id: existing?.id ?? nextLogId.current++,
+      type: "repository_progress",
+      stage: event.stage,
+      ...(event.resumed === undefined ? {} : { resumed: event.resumed }),
+      ...(event.page === undefined ? {} : { page: event.page }),
+      ...(event.pageIndex === undefined ? {} : { pageIndex: event.pageIndex }),
+      ...(event.pageCount === undefined ? {} : { pageCount: event.pageCount }),
+    };
+
+    return existing
+      ? log.map((item) =>
+          item.type === "repository_progress" ? progress : item,
+        )
+      : [progress, ...log];
+  }
+
   if (event.type === "text") {
     if (event.source === "subgraph" || event.text.length === 0) {
       return log;
@@ -161,6 +180,17 @@ function completeToolLogItem(
             : [],
         )
       : [];
+  const exploredPaths =
+    event.status === "finished"
+      ? log.flatMap((item) =>
+          item.type === "activity" &&
+          item.activityOperation === "read" &&
+          item.activityScope === "repository" &&
+          getActiveToolCallIds(item).includes(event.id)
+            ? [item.activityPath]
+            : [],
+        )
+      : [];
 
   const touchedActivityIds = new Set(
     log
@@ -173,7 +203,7 @@ function completeToolLogItem(
   );
   const completed = log.map((item, index): RunLogItem => {
     if (index === matchingIndex && item.type === "tool") {
-      return completeToolGroupItem(item, event, writtenPaths);
+      return completeToolGroupItem(item, event, writtenPaths, exploredPaths);
     }
 
     if (
@@ -214,6 +244,7 @@ function completeToolGroupItem(
   item: RunToolLogItem,
   event: Extract<OpenWikiRunEvent, { type: "tool_end" }>,
   writtenPaths: string[] = [],
+  exploredPaths: string[] = [],
 ): RunLogItem {
   const actionCount = item.actionCount ?? 1;
   const readCount = item.readCount ?? 0;
@@ -239,6 +270,9 @@ function completeToolGroupItem(
     activeToolCallIds,
     content: counts,
     errorCount,
+    exploredPaths: [
+      ...new Set([...(item.exploredPaths ?? []), ...exploredPaths]),
+    ],
     writtenPaths: [...new Set([...(item.writtenPaths ?? []), ...writtenPaths])],
     status:
       activeToolCallIds.length > 0

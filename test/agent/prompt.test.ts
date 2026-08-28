@@ -21,7 +21,7 @@ function emptyContext(overrides: Partial<RunContext> = {}): RunContext {
 
 describe("createSystemPrompt output language", () => {
   test("instructs the agent to write wiki documentation in the selected language", () => {
-    const prompt = createSystemPrompt("init", "repository", "zh-CN");
+    const prompt = createSystemPrompt("init", "local-wiki", "zh-CN");
 
     expect(prompt).toContain("Output language:");
     expect(prompt).toContain(
@@ -53,7 +53,7 @@ describe("createSystemPrompt output language", () => {
   });
 
   test("preserves the existing prompt behavior when no language is supplied", () => {
-    expect(createSystemPrompt("init", "repository")).not.toContain(
+    expect(createSystemPrompt("init", "local-wiki")).not.toContain(
       "Output language:",
     );
   });
@@ -67,7 +67,7 @@ describe("createSystemPrompt output language", () => {
  * type non-absolute host paths into filesystem tools and crash the run.
  */
 describe("createSystemPrompt filesystem path guidance", () => {
-  const commands = ["init", "update", "chat"] as const;
+  const commands = ["chat"] as const;
 
   describe("repository mode", () => {
     for (const command of commands) {
@@ -126,7 +126,7 @@ describe("createSystemPrompt filesystem path guidance", () => {
     // warns against host *absolute* paths (/Users/...), since a repo has no
     // ~/.openwiki/wiki to confuse; local-wiki update additionally forbids ~ and
     // the wiki home. Both keep host paths out of the filesystem tools.
-    expect(createSystemPrompt("update", "repository")).toMatch(
+    expect(createSystemPrompt("chat", "repository")).toMatch(
       /Never pass host absolute paths like \/Users\/\.\.\. to filesystem tools/,
     );
     expect(createSystemPrompt("update", "local-wiki")).toMatch(
@@ -142,7 +142,7 @@ describe("createSystemPrompt filesystem path guidance", () => {
  * fills in over later runs instead of code guessing forever.
  */
 describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
-  for (const outputMode of ["repository", "local-wiki"] as const) {
+  for (const outputMode of ["local-wiki"] as const) {
     test(`${outputMode} mode: instructs the agent to enrich and clear the mark`, () => {
       const prompt = createSystemPrompt("update", outputMode);
 
@@ -159,7 +159,7 @@ describe("createSystemPrompt openwiki_generated enrichment guidance", () => {
  * it alone so the model never adds, edits, or clears a marker code manages.
  */
 describe("createSystemPrompt translation-marker guidance", () => {
-  for (const outputMode of ["repository", "local-wiki"] as const) {
+  for (const outputMode of ["local-wiki"] as const) {
     test(`${outputMode} mode: tells the agent to ignore the pending marker`, () => {
       const prompt = createSystemPrompt("update", outputMode);
 
@@ -219,23 +219,21 @@ describe("createUserPrompt", () => {
     );
   });
 
-  test("init embeds the wiki goal for the resolved subject", () => {
-    const prompt = createUserPrompt(
-      "init",
-      emptyContext({ wikiGoal: "Explain the CLI" }),
-      null,
-      "repository",
-    );
+  test("rejects repository init before building a user prompt", () => {
+    expect(() =>
+      createUserPrompt(
+        "init",
+        emptyContext({ wikiGoal: "Explain the CLI" }),
+        null,
+        "repository",
+      ),
+    ).toThrow("Repository generation does not use shared agent prompts.");
+  });
 
-    expect(prompt).toContain("Initialize OpenWiki documentation for");
-    // Repository mode resolves the subject to the repo, not the personal brain.
-    expect(prompt).toContain("this repository");
-    // The wiki goal is interpolated into the brief; the git summary is not part
-    // of the user prompt (it rides the run context for the agent, not the
-    // template), so only the goal is asserted here.
-    expect(prompt).toContain("Explain the CLI");
-    // No user message means no appended instruction block.
-    expect(prompt).not.toContain("Additional user instruction:");
+  test("rejects repository init before building a system prompt", () => {
+    expect(() => createSystemPrompt("init", "repository")).toThrow(
+      "Repository generation does not use shared agent prompts.",
+    );
   });
 
   test("init uses the personal-brain subject label in local-wiki mode", () => {
@@ -276,12 +274,12 @@ describe("createUserPrompt", () => {
     expect(prompt).toContain("No previous OpenWiki update metadata was found.");
   });
 
-  test("appends a trimmed user instruction block when a message is supplied", () => {
+  test("appends a trimmed user instruction block for local-wiki generation", () => {
     const prompt = createUserPrompt(
       "init",
       emptyContext(),
       "  focus on auth  ",
-      "repository",
+      "local-wiki",
     );
 
     expect(prompt).toContain("Additional user instruction:");
@@ -290,109 +288,19 @@ describe("createUserPrompt", () => {
     expect(prompt).not.toContain("  focus on auth  ");
   });
 
-  test("does not inject global Claims debt into repository updates", () => {
-    const prompt = createUserPrompt(
-      "update",
-      emptyContext(),
-      null,
-      "repository",
-      "/repo",
-    );
-
-    expect(prompt).not.toContain("Grounding issues that must be reconciled:");
-    expect(prompt).toContain(
-      "Determine the affected documentation from repository changes rather than from Claims debt",
-    );
-  });
-
-  test("explains that page-local Claims notes are relevant-only", () => {
-    const prompt = createUserPrompt(
-      "update",
-      emptyContext(),
-      null,
-      "repository",
-      "/repo",
-    );
-
-    expect(prompt).toContain(
-      "inspect and resolve only affected propositions relevant to this task",
-    );
+  test("rejects repository update before building a user prompt", () => {
+    expect(() =>
+      createUserPrompt("update", emptyContext(), null, "repository", "/repo"),
+    ).toThrow("Repository generation does not use shared agent prompts.");
   });
 });
 
-describe("createSystemPrompt Claims workflow", () => {
-  test("combines Claims authoring with init-only breadth and QA reviewers", () => {
+describe("createSystemPrompt repository generation guards", () => {
+  test("rejects repository init and update", () => {
     for (const command of ["init", "update"] as const) {
-      const prompt = createSystemPrompt(command, "repository");
-
-      expect(prompt).toContain("resolve_claims");
-      expect(prompt).toContain(
-        "Claims currently support repository evidence only",
+      expect(() => createSystemPrompt(command, "repository")).toThrow(
+        "Repository generation does not use shared agent prompts.",
       );
-      expect(prompt).toContain(
-        "Do not invent repository evidence for connector-derived facts",
-      );
-      expect(prompt).toContain("Leave LangSmith-only facts unclaimed");
-      expect(prompt).toContain("substantive system truth");
-      expect(prompt).toContain("connect multiple components");
-      expect(prompt).toContain("materiality test");
-      expect(prompt).toContain("architectural model");
-      expect(prompt).toContain(
-        "Completeness takes priority over minimizing Claim count",
-      );
-      expect(prompt).toContain(
-        "same function or component already supports another Claim",
-      );
-      expect(prompt).toContain("semantically duplicate Claims");
-      expect(prompt).not.toContain("update_claims");
-      expect(prompt).not.toContain("fetch_claims");
-      if (command === "update") {
-        expect(prompt).toContain("inspect_claims");
-        expect(prompt).toContain(
-          "edits limited to style or navigation require no Claims call",
-        );
-        expect(prompt).toContain("resolve_claims is a required authoring step");
-        expect(prompt).toContain(
-          "before the first write_file or edit_file call for that page",
-        );
-        expect(prompt).toContain("Never defer this until after writing");
-        expect(prompt).toContain(
-          "Do not backfill Claims for unrelated existing prose",
-        );
-        expect(prompt).toContain(
-          "Do not write first and reconcile Claims afterward",
-        );
-        expect(prompt).not.toContain("lazily migrate");
-        expect(prompt).toContain(
-          "Inspect and resolve only IDs relevant to the current task",
-        );
-        expect(prompt).toContain("one concise, atomic proposition");
-        expect(prompt).toContain("Split lists, compound summaries");
-        expect(prompt).toContain(
-          "note IDs from every affected page together in one inspect_claims call",
-        );
-        expect(prompt).toContain("Use the pages selector only as a fallback");
-        expect(prompt).toContain(
-          "every page and its operations into one resolve_claims call",
-        );
-      }
-      expect(prompt).toContain(
-        "Never use execute to create, edit, move, or delete generated wiki files",
-      );
-      expect(prompt).not.toContain("_skeleton.md");
-      if (command === "init") {
-        expect(prompt).toContain("skeleton-critic");
-        expect(prompt).toContain("wiki-question-finder");
-        expect(prompt).toContain("wiki-answer-verifier");
-        expect(prompt).toContain(
-          "Maintain affected propositions with resolve_claims",
-        );
-        expect(prompt).toContain("subagents never mutate Claims or Markdown");
-      } else {
-        expect(prompt).not.toContain("skeleton-critic");
-        expect(prompt).not.toContain("wiki-question-finder");
-        expect(prompt).not.toContain("wiki-answer-verifier");
-      }
     }
   });
 });

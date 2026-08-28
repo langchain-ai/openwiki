@@ -5,12 +5,7 @@ import type { OpenWikiOutputMode } from "./types.js";
 /**
  * Reserved or control files that never carry agent-authored concept links.
  */
-const EXCLUDED_FILES = new Set([
-  "index.md",
-  "log.md",
-  "_plan.md",
-  "INSTRUCTIONS.md",
-]);
+const EXCLUDED_FILES = new Set(["index.md", "log.md", "INSTRUCTIONS.md"]);
 
 /**
  * Matches a Markdown inline link, capturing its text and destination. Image

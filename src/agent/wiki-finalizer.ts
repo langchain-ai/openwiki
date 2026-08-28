@@ -1,9 +1,12 @@
 import type { BackendProtocolV2 } from "deepagents";
 import { validateWikiMermaid } from "../mermaid/wiki.js";
 import {
+  deserializeGeneratedProvenance,
   finalizeGeneratedProvenance,
+  serializeGeneratedProvenance,
   snapshotGeneratedProvenance,
   type GeneratedProvenanceSnapshot,
+  type PersistedGeneratedProvenanceSnapshot,
 } from "../okf/generated-provenance.js";
 import {
   synchronizeClaimSources,
@@ -127,6 +130,42 @@ export interface PreparedWikiState {
 }
 
 /**
+ * JSON-safe deterministic preparation state stored in `.run.json`.
+ */
+export interface PersistedPreparedWikiState {
+  /**
+   * Exact pre-authoring provenance baseline used during finalization.
+   */
+  generatedProvenance: PersistedGeneratedProvenanceSnapshot;
+}
+
+/**
+ * Serializes the preparation state required by deterministic finalization.
+ */
+export function serializePreparedWikiState(
+  prepared: PreparedWikiState,
+): PersistedPreparedWikiState {
+  return {
+    generatedProvenance: serializeGeneratedProvenance(
+      prepared.generatedProvenance,
+    ),
+  };
+}
+
+/**
+ * Recreates deterministic finalization state after process restart.
+ */
+export function deserializePreparedWikiState(
+  persisted: PersistedPreparedWikiState,
+): PreparedWikiState {
+  return {
+    generatedProvenance: deserializeGeneratedProvenance(
+      persisted.generatedProvenance,
+    ),
+  };
+}
+
+/**
  * Inputs required to finalize a prepared wiki after authoring.
  */
 export interface WikiFinalizerOptions extends WikiLifecycleOptions {
@@ -154,6 +193,13 @@ export interface WikiFinalizerOptions extends WikiLifecycleOptions {
    * changed prose.
    */
   producerActor?: string;
+
+  /**
+   * Page-specific producers for bodies completed by different sessions.
+   *
+   * @default undefined - every changed body uses `producerActor`.
+   */
+  producerActorsByPage?: ReadonlyMap<string, string>;
 
   /**
    * Current page-owned Claims evidence projected into OKF sources before
@@ -207,6 +253,7 @@ export async function finalizeWikiArtifacts({
   prepared,
   at,
   producerActor = OPENWIKI_PRODUCER_ACTOR,
+  producerActorsByPage,
   claimSources,
   runOperation = runWikiOperation,
 }: WikiFinalizerOptions): Promise<void> {
@@ -232,6 +279,7 @@ export async function finalizeWikiArtifacts({
       prepared.generatedProvenance,
       at,
       producerActor,
+      producerActorsByPage,
     ),
   );
 }

@@ -4,6 +4,11 @@ import {
   OPENWIKI_TAVILY_API_KEY_ENV_KEY,
   OPENWIKI_X_CLIENT_ID_ENV_KEY,
 } from "../../config/constants.js";
+import {
+  openWikiConnectorsDisplayPath,
+  openWikiEnvDisplayPath,
+  openWikiLocalWikiDisplayPath,
+} from "../../config/openwiki-home.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { LangSmithRegion } from "../../connectors/sources/langsmith/setup.js";
 import type {
@@ -57,8 +62,7 @@ export const ONBOARDING_TEMPLATES = [
 
 export const RUN_MODE_OPTIONS = [
   {
-    description:
-      "Build a local personal brain wiki in ~/.openwiki/wiki from configured sources.",
+    description: `Build a local personal brain wiki in ${openWikiLocalWikiDisplayPath} from configured sources.`,
     id: "personal",
     name: "Personal",
   },
@@ -150,9 +154,9 @@ export const SOURCE_OPTIONS = [
     ],
     id: "custom-mcp",
     instructions: [
-      "Edit ~/.openwiki/connectors/custom-mcp/config.json after setup.",
+      `Edit ${openWikiConnectorsDisplayPath}/custom-mcp/config.json after setup.`,
       'Set "enabled": true and an HTTP or stdio "transport".',
-      "Put secrets only in ~/.openwiki/.env; reference them as ${ENV_NAME} in headers/env.",
+      `Put secrets only in ${openWikiEnvDisplayPath}; reference them as \${ENV_NAME} in headers/env.`,
       "Prefer allowedTools and MCP readOnlyHint. Optionally set readOnlyOperations for a fixed pull recipe.",
       "Do not allowlist mutating tools. This is a built-in generic MCP source, not a plugin loader.",
     ],

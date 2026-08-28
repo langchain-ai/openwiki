@@ -64,7 +64,9 @@ describe("runIntegrationsCommand", () => {
   test("lists every registry host with a stable tabular status", async () => {
     vi.mocked(getHostIntegrationStatus)
       .mockResolvedValueOnce("installed")
-      .mockResolvedValueOnce("modified");
+      .mockResolvedValueOnce("modified")
+      .mockResolvedValueOnce("not-installed")
+      .mockResolvedValueOnce("not-installed");
 
     await runIntegrationsCommand({
       kind: "integrations",
@@ -77,9 +79,12 @@ describe("runIntegrationsCommand", () => {
     });
 
     expect(stdout.join("")).toBe(
-      "codex\tinstalled\tCodex\n" + "claude\tmodified\tClaude Code\n",
+      "codex\tinstalled\tCodex\n" +
+        "claude\tmodified\tClaude Code\n" +
+        "opencode\tnot-installed\tOpenCode\n" +
+        "cursor\tnot-installed\tCursor\n",
     );
-    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(2);
+    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(4);
     expect(getHostIntegrationStatus).toHaveBeenCalledWith(
       expect.objectContaining({ id: "codex" }),
       { scope: "user", root: os.homedir() },
@@ -209,6 +214,7 @@ describe("runIntegrationsCommand", () => {
 describe("runMcpCommand", () => {
   test.each([
     ["claude", "claude-code"],
+    ["opencode", "opencode"],
     ["custom-host", "custom-host"],
   ])(
     "starts a rootless %s MCP server with producer %s",

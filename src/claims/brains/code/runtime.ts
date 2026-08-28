@@ -8,43 +8,58 @@ import {
   synchronizeClaimsVerification,
 } from "../../../okf/claims-verification.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../../../version.js";
+import { ClaimsPersistenceError } from "../../core/errors.js";
 import { RepositoryEvidenceResolver } from "../../evidence/repository/resolver.js";
 import { runClaimsPreflight } from "./preflight.js";
 import { ClaimSession } from "./session.js";
 import { ClaimsStore } from "./store.js";
+import type { GroundingIssue } from "./types.js";
 
 /**
- * Prepared repository Claims state for one init or update run.
+ * Strict repository Claims state rebuilt for each active process.
  */
 export interface ClaimsRuntime {
   /**
-   * Run-scoped working state used by tools, middleware, and finalization.
+   * Process-local Claim session for inspecting and replacing page Claims.
    */
   session: ClaimSession;
 
   /**
-   * Number of lazy page-local issues, used for diagnostics only.
+   * Number of stable preflight issues detected when the runtime was prepared.
    */
   issueCount: number;
 
   /**
-   * Persists dirty Claims, projects durable verification, and cleans orphans.
+   * Stable preflight issues supplied to planning and required-page augmentation.
    */
-  finalize(at?: string): Promise<void>;
+  issues: readonly GroundingIssue[];
+
+  /**
+   * Persists Claims and synchronizes verification/page versions or rejects.
+   */
+  finalize(at?: string, excludedPages?: ReadonlySet<string>): Promise<void>;
 }
 
 /**
- * Prepares Claims only for repository init and update runs.
- *
- * Update preparation detects evidence debt for page-local read notes without
- * turning it into mandatory agent work or blocking an update no-op.
+ * Preparation behavior that differs only when resuming an interrupted init.
+ */
+export interface PrepareClaimsRuntimeOptions {
+  /**
+   * Load current-run sidecars instead of starting with empty init state.
+   */
+  resumeInit?: boolean;
+}
+
+/**
+ * Builds strict Claims state for repository init/update.
  *
  * @param command - Current OpenWiki command.
  * @param outputMode - Current output target.
  * @param cwd - Absolute repository root.
  * @param openWikiIgnore - Repository read-boundary rules.
- * @param onWarning - Optional sink for non-fatal Claims degradation.
- * @returns Prepared Claims runtime, or `undefined` outside code generation.
+ * @param onWarning - Optional sink notified before strict warning rejection.
+ * @param options - Fresh-init or resumed-init preparation behavior.
+ * @returns `undefined` outside repository generation.
  */
 export async function prepareClaimsRuntime(
   command: OpenWikiCommand,
@@ -52,6 +67,7 @@ export async function prepareClaimsRuntime(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
   onWarning: (message: string) => void = () => undefined,
+  options: PrepareClaimsRuntimeOptions = {},
 ): Promise<ClaimsRuntime | undefined> {
   if (outputMode !== "repository" || command === "chat") {
     return undefined;
@@ -63,31 +79,16 @@ export async function prepareClaimsRuntime(
     openWikiIgnore,
   });
 
-  if (command === "init") {
+  const freshInit = command === "init" && options.resumeInit !== true;
+
+  if (freshInit) {
     const session = new ClaimSession({
       resolver,
       persisted: new Map(),
       issues: [],
       orphanPages: await store.discoverSidecarPages(),
-      ungroundedPages: [],
     });
-    return {
-      session,
-      issueCount: 0,
-      finalize: async (at = new Date().toISOString()) => {
-        const result = await session.finalize(store, {
-          by: OPENWIKI_PRODUCER_ACTOR,
-          at,
-        });
-        reportWarnings(result.warnings, onWarning);
-        await finalizeVerificationProjection(
-          session,
-          store,
-          result.verificationByPage,
-          onWarning,
-        );
-      },
-    };
+    return buildClaimsRuntime(session, [], store, onWarning);
   }
 
   const preflight = await runClaimsPreflight(store, resolver);
@@ -96,43 +97,81 @@ export async function prepareClaimsRuntime(
     persisted: preflight.persisted,
     issues: preflight.issues,
     orphanPages: preflight.orphanPages,
-    ungroundedPages: preflight.ungroundedPages,
   });
+  return buildClaimsRuntime(session, preflight.issues, store, onWarning);
+}
+
+/**
+ * Binds a Claim session to strict persistence and verification finalization.
+ *
+ * @param session - Process-local Claims working state.
+ * @param issues - Stable preflight issues exposed to planning.
+ * @param store - Repository Claims persistence boundary.
+ * @param onWarning - Caller-owned strict-warning notification sink.
+ * @returns Runtime facade used by the repository lifecycle.
+ */
+function buildClaimsRuntime(
+  session: ClaimSession,
+  issues: readonly GroundingIssue[],
+  store: ClaimsStore,
+  onWarning: (message: string) => void,
+): ClaimsRuntime {
   return {
     session,
-    issueCount: preflight.issues.length,
-    finalize: async (at = new Date().toISOString()) => {
-      const result = await session.finalize(store, {
-        by: OPENWIKI_PRODUCER_ACTOR,
-        at,
-      });
-      reportWarnings(result.warnings, onWarning);
-      await finalizeVerificationProjection(
-        session,
+    issueCount: issues.length,
+    issues: [...issues],
+    finalize: async (
+      at = new Date().toISOString(),
+      excludedPages: ReadonlySet<string> = new Set(),
+    ) => {
+      const result = await session.finalize(
         store,
-        result.verificationByPage,
-        onWarning,
+        {
+          by: OPENWIKI_PRODUCER_ACTOR,
+          at,
+        },
+        excludedPages,
       );
+      const warnings = [...result.warnings];
+      warnings.push(
+        ...(await finalizeVerificationProjection(
+          session,
+          store,
+          result.verificationByPage,
+        )),
+      );
+      for (const warning of warnings) onWarning(warning);
+      if (warnings.length > 0) {
+        throw new ClaimsPersistenceError(
+          `Claims finalization was not fully durable: ${warnings.join("; ")}`,
+        );
+      }
     },
   };
 }
 
 /**
- * Projects durable verification, synchronizes affected sidecar page hashes,
- * and restores exact Markdown when a page-local hash refresh cannot persist.
+ * Synchronizes verification metadata and rolls back stamps with stale versions.
+ *
+ * @param session - Process-local Claims working state.
+ * @param store - Repository Claims and Markdown persistence boundary.
+ * @param verificationByPage - Durable verification eligibility by factual page.
+ * @returns Page-version synchronization warnings requiring run failure.
  */
 async function finalizeVerificationProjection(
   session: ClaimSession,
   store: ClaimsStore,
   verificationByPage: Parameters<typeof synchronizeClaimsVerification>[1],
-  onWarning: (message: string) => void,
-): Promise<void> {
+): Promise<string[]> {
   const originals = await synchronizeClaimsVerification(
     store,
     verificationByPage,
   );
+  // Deterministic finalizers may have changed code-owned frontmatter without
+  // changing the verification event. Refresh every represented page so Claims
+  // sidecars always describe the final Markdown bytes.
   const refreshed = await session.refreshPageVersions(store, [
-    ...originals.keys(),
+    ...verificationByPage.keys(),
   ]);
   const unsafeStamps = refreshed.failedPages.filter(
     (page) =>
@@ -142,24 +181,5 @@ async function finalizeVerificationProjection(
   if (unsafeStamps.length > 0) {
     await rollbackClaimsVerification(store, originals, unsafeStamps);
   }
-  reportWarnings(refreshed.warnings, onWarning);
-}
-
-/**
- * Delivers best-effort warnings without allowing a diagnostic sink to fail a run.
- *
- * @param warnings - Finalization warnings in stable processing order.
- * @param onWarning - Optional caller-owned warning sink.
- */
-function reportWarnings(
-  warnings: readonly string[],
-  onWarning: (message: string) => void,
-): void {
-  for (const warning of warnings) {
-    try {
-      onWarning(warning);
-    } catch {
-      // Diagnostics must not turn successful fallback into a failed run.
-    }
-  }
+  return [...refreshed.warnings];
 }

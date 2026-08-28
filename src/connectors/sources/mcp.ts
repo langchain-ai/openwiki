@@ -6,6 +6,7 @@ import {
   writeConnectorState,
   writeRawJson,
 } from "../io.js";
+import { openWikiConnectorsDisplayPath } from "../../config/openwiki-home.js";
 import { executeMcpReadOnlyOperations, listMcpTools } from "../mcp-client.js";
 import { sanitizeMcpTransport } from "../mcp-runtime.js";
 import type {
@@ -49,10 +50,10 @@ async function ingestMcpConnector(
   if (!config.enabled) {
     return {
       connectorId,
-      message: `${definition.displayName} is not enabled. Configure ~/.openwiki/connectors/${connectorId}/config.json with an MCP transport.`,
+      message: `${definition.displayName} is not enabled. Configure ${openWikiConnectorsDisplayPath}/${connectorId}/config.json with an MCP transport.`,
       rawFiles: [],
       runId,
-      statePath: `~/.openwiki/connectors/${connectorId}/state.json`,
+      statePath: `${openWikiConnectorsDisplayPath}/${connectorId}/state.json`,
       status: "skipped",
       warnings,
     };
@@ -177,7 +178,7 @@ async function finishMcpRun({
     message,
     rawFiles,
     runId,
-    statePath: `~/.openwiki/connectors/${connectorId}/state.json`,
+    statePath: `${openWikiConnectorsDisplayPath}/${connectorId}/state.json`,
     status,
     warnings,
   };

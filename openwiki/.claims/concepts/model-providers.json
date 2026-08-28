@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7184f4f9896e5ddd001bafc00558e5bfac684857918eadf98910366e7dad98cb",
+  "claims": [
+    {
+      "id": "claim_881dbd60dd434311a4774d72dabe29af",
+      "statement": "PROVIDER_CONFIGS in src/config/constants.ts is the declarative registry that is the single source of truth for each model provider's label, model options, environment keys, base URL, and authentication method, accessed through helpers such as getProviderConfig, getProviderApiKeyEnvKey, getProviderAuthMethod, and resolveProviderBaseUrl.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L168-L231",
+          "version": "repo-lines-v1:sha256:94dfa82866a3782f2bd51e8d1674ec7c3e95d8a41505571eba5c2273f6c181a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZjU4ZGJiODVkZGNlNTcxMTVhMjg4ODgxMWY1ZjRhMDBkODg4OTNmYzJkMjdhZmJkYTJmOGFjZjRkNDFjYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0ZGVlM2JmMThhY2VkYzM2Mzk5MGIzMDIxNzNjZTY5NzZhMDQ3YjVkZjMyZDdlMjhiZTA4ZTgxZjdlZmEzNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjM2RmNTJkZDkyYzZhYThiZTI2NjQ4NWZjYzhhMDdlMjQ0NGZjMDNlMDJjMTZiMWMxZmFmNTM0OTllNWZmZmQifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L249-L406",
+          "version": "repo-lines-v1:sha256:d45be38d477e5840338be358374a37a7dbd6ea91568b671a8f1a06a962eab9ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzYmZhZjljZDhmZjJhZjAzOTdmMTBiODM5ZGJkODc1YWQ0NDgzMDJkNTQxOGMzOGE1ZjVlN2EyOWQ4YmM4NGMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYTFkMWE2MzM5MDIyOWM3OTgzNDdlODNhMDQwNTQ0MWM5NDAwMDM1Mjg0YWQxNjhjMWJmNmNkZjFkNzBhMzcwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjNjBjYTRiNDcyNjUyZTMyMDNmZjcyMzY4NGQyZTAyNzY0ZTJkZTgyYWQ0YmZiNGU4YjZlYTI2ZjgyMDYwMjZjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWMwMGQwNzFlZDEzODRhOTIyNjg0M2Y2NGZkNjNkMTgwZWJmMTU2MDIzMzdkY2ZiNGIxOTcwNDA4NWM3ZTUzIn0"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L415-L497",
+          "version": "repo-lines-v1:sha256:096b88ca6d4bf1c61d2a9efca15dfeb771d767bcccdb6654bc3c8b3e1e502a22:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YzU3ZTQyMDRhYWY0YTMzYzY0ZGE5OWU1MTBiOGJlYzQ1YjViYjYyMDQxM2I5ZTg4OTA4NGJiOGY5NjM0NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1MjBmODY4YjNiYjAwYzE3ZDJjYTc3M2VlYjJiNzY4NmIwMzZhZGY1YTFhODMyNjRhNDQ3ZTdlMGIzY2I1MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNTIwMzUzZWRlMGZlMTkwM2Y2Zjk2ZDA3MWQ3Yjc1ODhhZjQ1ODU4MjAxM2EyNGJjYjYwYzQxNjk3NTkxNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e156af3a42264d3289fc7adc2fbe1d60",
+      "statement": "The active provider is resolved by resolveConfiguredProvider, which prefers the OPENWIKI_PROVIDER value (normalized case-insensitively) and otherwise infers a provider from whichever recognized API-key env variable is present, falling back to DEFAULT_PROVIDER (\"openai\").",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L803-L851",
+          "version": "repo-lines-v1:sha256:af495d906269679892996703f66c525f29aaf7d30f52efa2e8f8939d95e0c5da:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3YmMwZmNkMmRlM2NmMzA1ZTkzMTFlYjk3OGJkMWVhMDFmYWU4NWIzYTVhOWI0NDdjYzA0ZGRlYTI0ZjhkY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OGIzYTUzMmM2YjVhNDZlMzEwOThkNmQ0MWIzNGJjYzg3OTE5MjNkMzBjMDA4YmVmNzczMjU5Y2MyOTI3MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhODcxNjg3YTI4YTlkYTdkNzUxYzdiYjE4ZWRkZjExNGY1MGM5Y2E4ZmMxZDM3YWIzYjc3ZGQwYTk5MDdkYWUifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L99-L99",
+          "version": "repo-lines-v1:sha256:6e24dd433647f55f39004d4399349b92c931bc08c09d355bc02b73d7bb92aa47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ViNGQ4ZTg3OTU1YWE4MzM0MWFhZmZiZTYyNjQ3OTRkY2M5NTI0MzNhODNmNzE2N2ZhNWQ5ZTJmMzUxNzZjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc3M2M0N2Q1N2RkZjNiMDNlOTZjNDVkODdkYmIzZmEzOTI4ZGFkNTgwMzg1MWQ3MWJiMTRlZTFkZjFiNmM0YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0d85c0ea30c4eee9fb02c58f215a67a",
+      "statement": "Each provider declares one of four ProviderAuthMethod values (api-key, oauth, aws-sdk, external-cli); a config that omits authMethod is implicitly api-key, and the method determines required env keys and how the client is built.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L117-L124",
+          "version": "repo-lines-v1:sha256:e16c14fd3c212ed6b0eb2f3d50faf7bf4b2bb5445dbe81f4347d353434a3c850:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA0OGNhMzRmZTI3NmVjODZlZjkyNTI1NTIwMWMyNzQ2MmIzOTc1YTZkZmMzZWQ0ZTAyZWE1ODMxZWZkNWUyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTBjMTM0ZGRjNjIxMmQ4ZmJjOGM4NDhmMjM1M2Y4Mzc1NTBlMGQ3Y2UyYjNhOGJlMDA2ZmE2Njk5YzUzYmE3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjYxNDgwMzNiYjEwZmFkNTVlNDY0NzhhMGI2MzIyNDU4MjRlZTUyYzM3ODA4MDJiMDQxNzU5YWMyM2I1NWJkZiJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L429-L462",
+          "version": "repo-lines-v1:sha256:46efbd54fd523b40fbf8af9eb1f20a054f13c03b42ab79cdc30818b540494308:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MGQwYzVkYzBhNGI4NWM4NTdiZThhYzFmOGE5OGVlYTc5OWIxNWIwMjIwZWQzNDc4MGExODMyZDk1ZjBiNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYjhjYzNjOTYxZGIzNWM1YWE0ZGI4ZjQxNjEzZGQ1MjI1ZWM3OTMyNjk2ZTk5ZTVhMzM1Mjk2OTBjNWNmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMmE3OGNhOTkzYzZmZjZmODlhODg5NDRhZjFmZWU1MDJiYmQ1NjNjMTVhYmEzYTM5NDEyOTZhYzUxMzRkNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f4b068d42ba441db8665ef9eabb2e58",
+      "statement": "Each provider's built-in base URL can be overridden by its baseUrlEnvKey via resolveProviderBaseUrl, and the openai-compatible provider has no default endpoint (requiresBaseUrl) so it requires OPENAI_COMPATIBLE_BASE_URL, whose validation rejects a URL ending in /chat/completions.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L352-L358",
+          "version": "repo-lines-v1:sha256:5f8e9e0232a719c9a8ab087f86f1486d55d861bbdae0ee3d5657747092130b31:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U1ZjI3ZGM1NTZkYzMzMTAxMDQ1YzJhMjU0N2JmNTNhOWM3MmRiOTdmZDA4ZmQ2NjY3NGRkMzdiM2M3OTYyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhNTAyOTdkZjUyNzY4NmYwZjNmMjc2MTc5ZmQ1M2ZhODY2YTJjMTQxZGI4OWY0NzNjNmRkOGMyMjkyNmZjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI2MGFlMTY5MzY1ZmI2MGEyZGIyMDU4NGI5MGU0OGU4MjhjMzExMDA5MDk5MjY5NjhmMTQyZmYwMDllMmUzZCJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L621-L644",
+          "version": "repo-lines-v1:sha256:69608d15f5ff62ab831a7057e4dfd0a1b44ee92719a34ab45607593e13d57393:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDg2ZGNlNjIzMTc2NzVmY2NiOWJiMzZjY2Y2OWQwYTU5N2IzYjMyOWI1MWEzM2ZmOTA5OGQ5NGJiZGFjZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYTUzYTZiOTgyOWU3YjFiMjI3NjVmZDMxZmQ2NjEyNGY0ZWNmNmM3ODE3ZmQwODFhNGFlYzBhOTA4ZjcxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2YjAwNGE3NThjNDc0ZjcxNGI2NGU1ODA5MjUyY2VlMDJhODllODliY2NmZGM2N2Y2N2I3MmE4YTdkM2Q0MzEifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L712-L743",
+          "version": "repo-lines-v1:sha256:4e212a8b83dd194aeec75adf4abb62b15ffa11d558e5da4f0ad092f650635d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMGQyMmI2YjNjNzEzNGE4ZTQ1ZTUzODY5NTI5Y2FkOWNkZGJjMzNlNzUxNzk0NzIyZWI2NjNlOTAyZTBmNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MjdmOTdjNjU1NmZiZDE2MmM2YmQxOGE1OTA3NTlmODVkNDI2ODRhOGY4MjQzOTNkYzFlNWYyODA5YTNmMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_55decb1225f048e2a28047d3bd9a10c9",
+      "statement": "The openai-chatgpt provider authenticates model calls against the ChatGPT Codex backend (https://chatgpt.com/backend-api/codex) using a ported Codex CLI Authorization-Code + PKCE browser login (loginWithChatGPT) that opens auth.openai.com and captures the code on a loopback server bound only to localhost:1455 at /auth/callback.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L12-L34",
+          "version": "repo-lines-v1:sha256:764a0f01c39a0ae4b22c824cf52d09c612a1e1edc44762a565021b4182118a45:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YzYzODc3MTYzYzcwYzJmMjgwOGM5OTBlYTBlZmRmMzAzNzM4ODU3OTJlMDRmOTgyMmQ0YTJhMGM3MDljMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkMDBjOWZkMjNiZjI4ZWY4MDA4MTM3MjEyMmNlZDljNDkxZWYxMWM2MWZhYWMyN2NlYWFkMjQ4MTY3ZTdjZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwNmI3MGQwZjA2YWFiNmQ5NGE2MGEyMWEyNjM5MDE0ZjM4NDgzNjY5OThmMWI1ZmI4NWMxMjQxMWViNDc2MGYifQ"
+        },
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L423-L529",
+          "version": "repo-lines-v1:sha256:ba9dd352052930a65b3b413bea4eed34ef8ad37e29666067fd7d5449ea025e06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTU1OGZkMjAyZDgwZWU0Y2VjNTAzOTFhMWYxYTQ0NjcyNjJhOTBiNDRjZGE0ZDU5MzYzOTE0YmYyNzQzOTI0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5YzczODhhZjQwMjFhMjk4MzM1YTM0M2Y2YzI3YWJhYWJhOGQwN2YyNzc0NWQ5N2VlZWRhOTBhMWVhYTZiNGQ5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2NDk2ZWFhM2Q1NGI1ZjExZjVhOWYwZWRmYTU4ZmU4ZDc5YjFmMjEzY2EwNjk2OTMzZmQxMzQwYjBjMGNmNDMzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_59509298bb4649b3ac94c5d09f781b58",
+      "statement": "The ChatGPT login verifies the OAuth state on callback and provides a manual-paste fallback (submitManual / parseManualCallbackInput) that accepts the full redirect URL or a bare code so headless environments can complete the flow.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L379-L421",
+          "version": "repo-lines-v1:sha256:94853576b9d6e976bc432f21b536dec760690d93ef9bd9d584698ab3612948e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZmQyMzk3ZmQ1ZjAyMjNiMzk0NmQ3YjQwZmQxZDk3ODVhNjdjZDg1NjRjYTQyM2E2OTE5Y2RmYTY5YjhlYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3YjdiYTA3NWI0MzM2M2FkNTE3ODBmY2EyNzEzYjM0ODNkZDMxNjJjOGZmNWNjODdhZjFmNTNjYjljNjRlNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZTEwNDI1ZjFjZmMwOTMwMzA0ZWIzNzI3ZTRiNmNhYzA1Y2RmMmZiZGRlOTk5MTIzYjg4ZGUxNzhjMTI0NmIifQ"
+        },
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L465-L516",
+          "version": "repo-lines-v1:sha256:c2241b85b1a6bc04db5af41c9a059f1061b823d878477ac12344b453d5421cef:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZWE4YWZjNWFlMTMyMzM3M2FmZTJlODkxOTM1NTIyNmIyMzkyZTlmMWZhYWM5ODJjMTBmZTk2NWI0ZmFiMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyM2IxZjEyZmFlYjE1ZDk3YzMyMDAwZjhlMTI1YWE2MDdlOTA4YmE2OGEwZmQyMzIwZTI3ZjcwNmYxM2JmMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0NTg4N2MzMDE4YTNmMDMwMWJjYTAyMTFkM2ZmZjEwNjk5ZGVkMWIyNDI2MzNkNWQ1OWRiNjYwN2M1NjQ4OTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b94e27a93369433c8366d58121720f0d",
+      "statement": "The ChatGPT access-token JWT is decoded by decodeChatGptIdentity to extract the mandatory chatgpt_account_id (required on every Codex request) plus best-effort email and plan_type used only for display, without signature verification.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L257-L292",
+          "version": "repo-lines-v1:sha256:474626b089c777525530d63416110670839d05478b7d92d310eda3c92a3b8f47:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4ZDFmNjZmZTQ2ZGYwNTE5Y2M0ZTU2YzRjMjU3MjA3ODFlMzg4ODFkODgzM2FiOTVkY2U3NjlmNGVjNmJjZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjM2RkYjhjYzMxOWMyOWE4M2MwYmIyY2JmMDJmNGQ4ODZiNmM0NDg3ZGY2NWI2ZjIyYWMxODBhNTk0N2U3YjAifQ"
+        },
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L357-L371",
+          "version": "repo-lines-v1:sha256:cb131588c4dd31e28ddc482607bcb03aa9029a390cefd7a93e9fd55be6ad6101:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MTIxYTdjMTA2ZGRiNzllYzVlNDhkOGQyN2E2ZDQ5ZmQwMzc5ZTZiZmIyMzJmODQwN2RmNWMyZjMxMTg5YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96bac6aac7a04e2bb9c7f2caaf6546cc",
+      "statement": "codexTokensToEnv is the single contract mapping CodexTokens to the ChatGPT env keys OPENAI_CHATGPT_ACCESS_TOKEN, OPENAI_CHATGPT_REFRESH_TOKEN, OPENAI_CHATGPT_EXPIRES_AT (epoch ms), OPENAI_CHATGPT_ACCOUNT_ID, and optional OPENAI_CHATGPT_EMAIL/OPENAI_CHATGPT_PLAN, and readCodexTokensFromEnv returns null unless access token, refresh token, and account id are all present.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L177-L214",
+          "version": "repo-lines-v1:sha256:befe0a1133605d753b67c22e51ebc9e675b45c5c05bf25452b9d230300b20c51:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZDVkMzUxMWE5MTE4YWM5MjhlNmE4MzY2MTEwZjczOWFmNTU5ZDU2Njc4MDMwN2EwOTIyNDg5M2I4NGI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwYzc2MTA1OTg5NDg4OTEzNWM3MmFiNDZkZGFmM2E1Zjc1YWRmNjE0M2M5ODk5NWQyYjlkNjliMGMzOTg2OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmOThjZmE2ODJhYWRlMWNjZDEzNDEwYzMxM2MyN2U2NGJlODljNzc5ZWFiZDkwNjAyODVkZTZiZWUzY2ZhNDcifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L23-L30",
+          "version": "repo-lines-v1:sha256:5a8716c6d90314b355f18374959697e2f5658a6bfc91f898a0642b9ff5f589bc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQyNjk3OWU3YjY0YjNmMzg2MjYzZmY3MmZmMjMxMDYzZTc2MDI5ODQxNjRmZjI5OTg4ZjA1ZDA4YmUwYmIwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI4NDRiZmYwM2FhZGZjMDRmMDJiNzE3YTAwNzFlZTg1NmUyY2I4ZjQ2NTNiMGE3NjFmMzVjYWUyYWQ0MzU1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWZhNGM1NjAzZWE2MzQ0NTM5MTMyY2QwN2EyYzIwYTkyNzc4ZDRiNDhhZTFjOThmZmY0N2U2M2IxNDlhMzNiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzFiMGEyNTU5NjgzZDc1MzBiZWVmYTE0OGYzNDY4ZTU1NzAxMTI5YzEwMzRhY2VhYjM1MWVkMjhjNzc3NzFlOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f465f00930cc4d1e8fceb62b25cadc83",
+      "statement": "OpenWiki has no background ChatGPT token refresh loop; ensureFreshChatGptTokens runs once at run startup before the model is built, refreshing and persisting rotated tokens when the persisted token is expired or within the 60-second near-expiry threshold, and failing with a re-login message when no usable token set exists.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1250-L1274",
+          "version": "repo-lines-v1:sha256:b5411929e5fb9f4918bcd70da576618de797baf38e0b454bb128cc60cd412955:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlYmZhMzEzNGM2N2IyZGY4MWZjMmZhOGVhOWQ1M2I4ZTUyNTA1ZjU0YzYyMDEwYmJlNjI3ZDZiNTkwYWNhNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzhhZWUxOWFlM2E0Y2UxNjdkYmU5NWFiMmE1M2NmMGIxN2JmNjk1MWU1ZWY5ZTRmYTE3NWQ1NjEyY2RhYzEifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L321-L325",
+          "version": "repo-lines-v1:sha256:a3e1f86afe6451d04b6614ea513960bdbf154312106e5e69cfaf0dd58e74b32f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBjYzI1NjliOTYzYjg4Njk1NGEwZDk4NWYwN2JhYTUyMzNiNTk1NWQwZWEyNTFmOGIyMDdkYzJhZWU5MzY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkxYmFlMGJkYTQxZWQ2YTY1YzYwYTg1Y2ZlZDE0N2Q5MzcwODk4YWM2NTcwYzE1MWI4MTVjNDU4ZDQ5OTUyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM0YjcxNDE0MmVjOTk1ZmQ0Y2Q1NjhmODUzOTM0ODhmZWUzMjJiMjUzMTE2NGZiOWMyOWE2YzlkNTEyN2QwNiJ9"
+        },
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L147-L151",
+          "version": "repo-lines-v1:sha256:4a0b3507ad833647793b881cbfe35343d9aedd41965a73b1c69884f9bdc0964e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgzMWI3YmUyMTA2YjIwZjk4NDRiMzE5MjhmMDBkYjZkMmMyNTY1OGFmOWJmZTAxYjQwNTIxMGEzNTQyZDVmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTIwNDBlMDk1YTk0ZTJhZGE3NGU0MjFmMzcxODc1MWE5MWE4MTBiZmQ2NmY0OGY0ZTkzOWM3Yjc0ODBlYjY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWVhYWY1ZTVhZmMzMjI1MDhhMWU0OTk3NTE3YmI4Yzg0ODUyY2YzMTVkMTEyODA2MTNjN2FkODE3MjA0ODQ0YSJ9"
+        },
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L531-L557",
+          "version": "repo-lines-v1:sha256:700019e3c04f10eb29e6f04f886c3aab44d2f1f3f4c4b752d3b74e4d6f6e97d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d39d5f80a114a49b6babcc297e9af6d",
+      "statement": "For the openai-chatgpt provider, createModel builds a ChatOpenAI Responses-API client pointed at CODEX_RESPONSES_BASE_URL with useResponsesApi, zdrEnabled (store:false, required by the Codex backend), forced streaming, the chatgpt-account-id/originator/OpenAI-Beta headers, and a createCodexFetch wrapper that adapts the request body at the fetch boundary.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1161-L1197",
+          "version": "repo-lines-v1:sha256:672a9291b93a0cd3503cd47cb5fae2d9a3546f6d791dbc095197146c28afbd52:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZmNhNTM3NjU0NzAzYmI1NTExNmZkZjAzYmM0ZmI4ODIwNmExNmU5MGIwNDQwZGJlYTNlNTJiOTA0ZDIwNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxYTU3NTJlM2VlNzA1OWNjOGEyNThmYTljY2MyZjQwNzA3NDczMTJkYWEwMzVjOWI0YTM2MzBjMjQxNmY0ZDgifQ"
+        },
+        {
+          "resource": "repo://src/agent/openai-chatgpt-oauth.ts#L48-L145",
+          "version": "repo-lines-v1:sha256:77dc2d90ec9a94dc4791b12672ddf1af519f36df354fa92a86610128b1ad93ff:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NGI0NjI5M2M2M2M5YWZjNzJiN2RhM2JkMWI5MWZjNjdjNjE4M2JmN2ExMzk4ZDllYTNkZDllZGUxODg0ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZmVlNmRmMGYxZWU0MmY2NjkxZjRkOTY2ZDY3M2ZkMDk0NzkyNGIzOTg2ZDRjYzgxNzA3YzE1YjU4NDFlM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwODdiYmFlZWQwNTFmZDYzZjI2YTA2MDE0ZmQ5ZjA3NTcwNDExOGQ1OTNmZGJhNGUwODkwM2Y1YzA5Njk1NTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d1756b0508240ed951711bc48067c97",
+      "statement": "The gemini-enterprise provider is keyless: it authenticates through Google Application Default Credentials against GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION (defaulting to \"global\"), so getMissingProviderEnvKey treats a missing project as the blocking requirement and getProviderCredentialHint points to gcloud application-default login or GOOGLE_APPLICATION_CREDENTIALS.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L374-L391",
+          "version": "repo-lines-v1:sha256:e7d915cbcee1e6b4bde1409392135a4c53a503bda6228a4280a4e7897bf003b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyOTkxODZkMDYyMmZhYmVjMDZjOTZmMTkyMDI5ZTBkNDM1NTU5NGQ5N2I2ZjIzY2VkZjQ1ZmE1ZTdlOTZhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMjFkZDRiMTUwOWQ4ZmQ1MjAyZTQzMDQ2MTU5MTg1OGFlMTM1ZjJiOTg0NGE0NzYxZDI2YTA4MTcxZGU0NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZTQ0ZWFkMzIzODBhYzZjMDc3ZDJlMDVlYTE5NDc0MzhkN2U3NzdhZjA2MjgxYjhiNTM0N2MxMzMzZDg0ZmQifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L548-L557",
+          "version": "repo-lines-v1:sha256:e90d9bd907e16c06bedaea033fa50afbc6eb0bb874e6640d5fe0b6c76b05ecb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYjJjNDg0YmVlNmYxN2E0Y2MzM2U0MTgyNDc1ZjI1Y2M4NzA1Y2ViZjdkOTgyNTY4NTM3ZDIzNjA3YThhZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMDIxNGZlZjM5YmM0ZTM5NmM3OTk3ZjJkOTgxMjA1YTY5NTFjYzI3ZGFhZWYyZWM0NTI0OTJkMTI3MWZmZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOTM4M2ExOTU3Y2I1MDIwZmRmNDAxMTVmYjM1NTc1YzQwMDVmYzRkZTYyZGM2MmIzZGIzZWY2N2UyNzhhNmUifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L585-L594",
+          "version": "repo-lines-v1:sha256:ef23bce93668e4c21ac2bf0470a5fdd49106887023c0205120d85540a54ec8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYTFiMWQ2ZTI5OGIyYWQ2N2FiZDk1ZGRmZDVhMDVlZDc1MDUwOGFkZjQ1NTMyM2IwNzliYTNlMzk3MjNhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYWRkMTUyYzY3NDMwOGMyNzk2ODRiNDU5ODk5ZDYxNGY4NDY3ZjdhMmM2ZWViNjA0YmM4N2Y1Zjk3MjFiZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZTQ3YzQwZGUyMTk4YWM1ZGM4YjdiZGE4NGY3NmE4ZDIwNzQ4ZmEwYTNiM2YzZDU5ZGYwNjIyYTU0ODcwZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7563660b103644abbaf3bd241ce72e20",
+      "statement": "createGeminiEnterpriseModel routes a single Vertex project+region+ADC credential to different transports keyed off the model ID via resolveVertexSurface: gemini (ChatGoogle generateContent), anthropic (AnthropicVertex via ChatAnthropic createClient), and openai-maas (Vertex OpenAI-compatible endpoint from vertexOpenAIBaseUrl).",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1337-L1410",
+          "version": "repo-lines-v1:sha256:7c7acf0409eab5a696adcb9048378a7507e2b6e7f843ee2e696eb1eec767fa27:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNjQ4MGM2NWEyMWNlMjBmODhhYzQyZTEyMDhlNmRlNDY0N2FhZTE5ZjRjNGE5MmViYTU2MTYyY2Q0ZmIyODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmE0MjdjMDAwN2U4MGUxMWY1YmM3OTllYTI4ZGM3ZWYxMDFmMTg3Y2NhMDgyOWNhZmVkOGRlOTQ0Zjk3NTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwM2IxZTcwNTY3ODMyMjEyZWZiNjI3ZTc0YjFhOTMyZDIxODIzOTU3ZDlkYTM1Nzc1OGM0ZTU1Yjg1YmZkZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNzc4ZGFkM2MyMzQ0N2QxMzkwNDU1NDFmN2ZjNTBkOWY0MmRjMjc1ODRhOTdhMzBkZGVlMWY5ZjkzNjlhNzkifQ"
+        },
+        {
+          "resource": "repo://src/agent/vertex-surface.ts#L4-L46",
+          "version": "repo-lines-v1:sha256:bca8df648b9aaa11cd43bc60e62da0896b03e45e780b219f08318693a2ca12b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0MDVhOTg1MjBjYTQxZDg0YWVhMDZhNDQxYjkzODZkN2U1MWMwM2E2MmZlZDI0Yjk2MmFlZTkzNTI1YzM0OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzVhZjEwYTQzZTJhNTU0OWYwMjJiZGNiMDk1MDU4Mzc2ZjkwMDAwZTg4YmQ5ZjRhNGQ3YWZmOTQxMzJiNmIifQ"
+        },
+        {
+          "resource": "repo://src/agent/vertex-surface.ts#L81-L91",
+          "version": "repo-lines-v1:sha256:3db8703d812c93bdd82d198c2c0b594da469de7c8595730cb362d40afc124109:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMjVjYWZjN2QzOGQ2ODcwNTlmYTg2NDg4Yzc3ZjgzOGIwZDA2ODQ2MDdlZDhjOWYyZGMzOTE4YWM2MjFlNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1ODdmN2M1NzY5YmU3ZTkyYmFjZTM1NGY5ZmIxYzcyZmNhNjgxYTJhMzYwZjljNWViY2ExNDFlZjg0MmY4OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1MWNjNTQ5YThiMDg5MTA0OGRiMjg0Njg2MGU5Y2FjNDQ1MWY0MTY5Yzc0ZWI4ZWUyZWM3NDBmMzQxNDBiYmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_276ce732754646a8975b5287161e5221",
+      "statement": "The Vertex openai-maas surface injects a fresh ADC bearer token on every request via createVertexAuthFetch (the OpenAI SDK's apiKey is only a placeholder the Authorization header overwrites), while the Claude-on-Vertex surface uses withAnthropicAuthEnvNeutralized to remove ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN around the AnthropicVertex constructor so a leftover key cannot clobber the Google OAuth token.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1349-L1402",
+          "version": "repo-lines-v1:sha256:bcf987fb8e5d2367175270b008cdbd1a7c59a19629b71a8a027649c39f28a293:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhYmQzYmMwMTA1MDRmZDBiZDQxNmEyMTM3ZGE5NWViN2U5OWY5M2FiOTcxNGRiNDRiOTMyYWQ0OTY3MjYzYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYmNkYzFkNWJjNTA1NjcwOTM2ZjNlYzY1ODZkOTAzMzYxY2M3YmJlMWU3OTFiMjQzMzY4MzJiMTA5NWJkZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3OWJhOGIzZDMzNDhlZjJiZDkxMDY2MjAxYmViMzFkYzNhOGRhZDY5Mzc0ZjAwNWMzY2Y0YjI1MjZiY2E0MzAifQ"
+        },
+        {
+          "resource": "repo://src/agent/vertex-surface.ts#L93-L171",
+          "version": "repo-lines-v1:sha256:c355c01b07b3f8c4feed5fd67170cbc33ab8f2e5c900eeb6f961fcffb969cf66:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3N2M5NmI1ODE4MGE1ZDkwOWYxOGMyODE4N2JjYzM1N2NmOTUwYWU5OTIyZDc3MzM3YzNiYjZiMGQ5YTM0ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMTBmNzAxYWJlNDE0MDk3OWIzYTc4YjdhZTE1NGJiMzQwNGQ1Y2VjM2M3M2U2MmFhMzgyYjE2NjBkNDI0YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_93bbc7939e9b4a979809d34b4bd84055",
+      "statement": "The bedrock provider delegates authentication to the AWS SDK credential provider chain (aws-sdk method): getMissingProviderEnvKey gives AWS_BEARER_TOKEN_BEDROCK precedence, validates the legacy and standard AWS key pairs (rejecting a partial pair but allowing an absent one), and Bedrock requires a region resolved from BEDROCK_AWS_REGION with fallbacks to AWS_REGION and AWS_DEFAULT_REGION.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L260-L273",
+          "version": "repo-lines-v1:sha256:13837d155bddf886c1281a488f705d17909cea7570ac2ea91f1006e18fa04958:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMGIyMjJlZDFiMTQ0Zjk2Y2U3ZTllYjM2OWJkNDMyNzE1ZTQ0MTliMGJjOWJmYjJmOGQ4YzkwZDkwMDI5MDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NmYyNzEwZTg3YzcyNmYwZjBhZmUxZmZlODkwOTYzODQ2ZjM5YzUzZjA5NWE1NTY2ZGFlNzIxYzVmNjdhYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NzdiY2ZmYWFjM2FkZWQ3ZDQ0ZDE3M2YwYWQ1N2EyYjUzNWFlZjQzZTViZjg2ZDIzZDMxYWJiOWIxNzBhMTcifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L506-L557",
+          "version": "repo-lines-v1:sha256:a801c23fd47dd03cffad24a54201c6e866760fa9842fa813d604255759fa3d89:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZWVmY2U3ZmM2NGQ3YmJiMDNjYjNlYjkwNGVhMTc2YzllODQyNDVkNTUwMTZhYTA0MjQ2MjZmMmQ0MDA2ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhNmFlMGI3NGRmNzUzN2FmNzA3OTBmNzRiN2ZiOGExNmFlZDEzYWU5ODgyMTUzYWZjOGUyNmIxMjMwNzZmMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOTM4M2ExOTU3Y2I1MDIwZmRmNDAxMTVmYjM1NTc1YzQwMDVmYzRkZTYyZGM2MmIzZGIzZWY2N2UyNzhhNmUifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L681-L694",
+          "version": "repo-lines-v1:sha256:13ee0738686e1db554aebdb1babba669b43cefb54ca98625a1336fe21f12e02d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwOTBmMTJkMGIwMWQ2ZTI2ZmIxYThiMzUwM2RkZTg5OTA4ZWMyZDJhYmQyOWU3NTg2OTdmYjU4MzhmNWY0OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYzRjOTk0ZWYwMzg1NzQ0OTVmODM1MTJmNzQyOGY1MDgyOTU5MDhmYzVmNmIxOWM2NzExZjZlYTEwZWVmYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyN2I4Y2UyMzBhNjM1ZWE1MWViN2FlYWQ0Mzk3ZGMyNmRhODdkZmYyZGQ3ZmQ5ODg0YTg5MWU0YzE3YmIzODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_429fa9f3d5d34917842b0211782b5386",
+      "statement": "The copilot provider uses the github-cli external-cli adapter to reuse a token from an authenticated gh CLI: resolveExternalCliCredential runs gh auth token and injects it into COPILOT_API_KEY for the current process only, deliberately never writing it to the env file, and derives the gh --hostname from COPILOT_BASE_URL.",
+      "evidence": [
+        {
+          "resource": "repo://src/auth/external-cli-auth.ts#L107-L156",
+          "version": "repo-lines-v1:sha256:531883aea0d875a5208a29bb4aa0e91311f6627a303f491035db0d228a54421e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZjkzOGUzMGZmMTg2MmNmZDk1MGJhYzU2MjFlMDI3MTVmNTI3Y2E1NjE0MzQwZTZlNWJhMWQ2Y2JiY2U2NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNjgxMzIzYTQzNTgxOTA4OTRmOTg2MDJiM2M1N2I5ZjAxMGJiYzc5OTNkOWViNDg2ZmFhYTA0NmY0ZjJkNTQifQ"
+        },
+        {
+          "resource": "repo://src/auth/external-cli-auth.ts#L25-L67",
+          "version": "repo-lines-v1:sha256:3fd52017566b4f1ec3a140a73ae5343e303e7e6237617108c8c97be0be98577e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZjk3YjZiMTBiYTgzMTQzZDZkMGNhMjJkMWZkMDMyZjI5ZTNiZWVhNjE0ZGU4Mzc3N2E2YzZhMzEwNTQyZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhZDNiNzFkZTM2NjQ2MzdlZjcyOTUzMDg1ZTMzOWIwM2U5NmJjNTg5NGE1NGZiYWVjOWRmODBmYzViZjdhNjIifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L274-L296",
+          "version": "repo-lines-v1:sha256:d344ff3328005f958432e04516d25f10d371ba4fc49ea82d2eadba12b0fb6e99:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNTU3ZDc1MzdlY2RkZTYyZGRkMmUyYmNmYTM3NTA2NDRmMThhNTdhMWMxYjRjNWU1N2QyYWIwYzE2YWZhNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMzgyMTJiY2JkYjgwM2RiNzRlNWE1OTcwNDE1YWJkZWMxYmE2M2JjODQzZjdiN2JmNDY0ZjAyYjI0MjAzMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1YWIyMzFlYWQ4MGZhMjRiYmJiMDIxOThlN2ExZDI3NmVlNjk4MmEzYjcxMjBlYTFiZDM3MTNjM2Q1Y2FjYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd56d082239844a0a31ce600d9407675",
+      "statement": "All managed settings and credentials are persisted to ~/.openwiki/.env, and MANAGED_ENV_KEYS in src/config/env.ts is the single ordered source of truth from which the credential diagnostics list and the agent debug key dump are derived so they cannot drift.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L172-L194",
+          "version": "repo-lines-v1:sha256:98cda4e6692570f6652ef52fa1391df0080bc484cb23a4551007e88034bf7971:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NGI5OWYxYzI3MTk3ZmIyNTRkYTBlMTc5ODZiNTc2Mjc4YzZhODkyNjIwOTg3NjdjMmQ0NzI2ZjU4OTdlNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
+        },
+        {
+          "resource": "repo://src/config/env.ts#L78-L163",
+          "version": "repo-lines-v1:sha256:dca3114c68bd65edc0452dee4a021a3d25b181e9355e0ac8a8e3b2267a06ba14:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ZGMxNzc2NThmNzgyMDU4NGU3YzI3M2ViNGZmNjAzM2U5ZGE0OWJhMGQyNmFkMDAwNjJjODFkZGEwZWFkNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NjJlZGM5ZDI3NDA1NGZmNzUxMTViOThiOGI5ZDhkMjgyNjNlNmI0NWU2NzViMjJmZWVkNmUwM2UyMjFjNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYzUyMWQ4YTk2NTVkNDg5NTg1ZDE1YTlhOGQ0Yjg5NzMzOGU4NDgzNTM0OWI5YjI3ZGFkNDA4YjAzYTYwYzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6841c5c6b1dd484bbfebb28311c6e2ec",
+      "statement": "loadOpenWikiEnv populates process.env only for keys not already set so a shell export wins over the saved value, and it snapshots saved values at first load so the setup wizard can pre-fill from the saved config rather than a shadowing shell variable.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L245-L282",
+          "version": "repo-lines-v1:sha256:72be8177e1a87f7e7ca5a9d82b31464b99fcfc8f344132a0ec6f21588cfc7e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiY2UyMDUwZTdkNmVkMjA5YjI2YjFlYWVhZTU5NThiNmM3MGNmZWZmOGIzNjQ0M2RmZDRmMWExYmI0MGY1NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYjg0NDliYjgwZmQxOTEyODJjNGQzM2NhMDljMjFlYTM1YzgyZDIxYjU2NDczM2RiNzhhYWU4ZTAzODlhZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_03bc2a1fda4246d3be53b3085d0a0e76",
+      "statement": "saveOpenWikiEnv serializes writes through a queue, drops empty values (empty string means not set), creates the home directory as 0700, and writes atomically by writing a 0600 temp file and renaming it into place so a crash mid-write cannot truncate the credential file, updating process.env only for keys not already exported in the shell.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/env.ts#L298-L360",
+          "version": "repo-lines-v1:sha256:660d98bae2f80391d69687bc15b6335e2ed7f6fef2fc7e1de9e5f74a92e7d5f8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzUxZDljMDg0ZGVkYzJkMGFiNDNmM2QzNWMxMmIwYzY1YjNlN2I3OGJmMzI4YzFmOGYxM2JlMDcxNmY1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YmFhNWJkNzU4OGFiNjVmNDEwMjk4YmQ3OWFiMDMyMDMwMGFiMzcxYWFlNWRmYzUxMzI4Y2YyOWFhZmQwNTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ab94735f75b40ef9877a0e19913297f",
+      "statement": "The setup wizard computes credential env updates purely via buildCredentialEnvUpdates, mapping collected values to the selected provider's env keys, writing the provider key only when it changes, and expanding collected ChatGPT CodexTokens through codexTokensToEnv, before the caller persists them via saveOpenWikiEnv.",
+      "evidence": [
+        {
+          "resource": "repo://src/setup/credentials/persistence.ts#L15-L120",
+          "version": "repo-lines-v1:sha256:81cd93aedb80cf77aca56236629a3e4fbc49c1da2620f222acaea922fa1e7618:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NjIzN2YyOGNkYmE2ZGM5MTM2MmUxYThkMTU5ZDY0NWIwNTI4NDVjYmQ5MTIyNTI5YTcwY2IyNWNiZjVlNWNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MDE3MjhmODJjNzIxMmFmMWIzNmZmMDZmODY3ZGE0MGUxNTllNjVhODAwMDA5OGM1YmExMWJkMzgwZDFlMDcxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMmVkYTQ2YzFlOWRkY2RkNzEyMGI3NGE1ODM2ZmMxNjFhZGQ5NDc0MDE3MWE3MGQ0OGM2Yjk1Y2JiMWEwZjMzIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

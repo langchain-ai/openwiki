@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
+import { parse } from "yaml";
 import {
   ensureCodeModeRepoSetup,
   runCodeModeConnectors,
@@ -12,6 +13,16 @@ const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
 
 const tempRepos: string[] = [];
+
+interface WorkflowStep {
+  name?: string;
+  id?: string;
+  "continue-on-error"?: boolean;
+  if?: string;
+  run?: string;
+  uses?: string;
+  with?: Record<string, unknown>;
+}
 
 async function createTempRepo(): Promise<string> {
   const repo = await mkdtemp(path.join(tmpdir(), "openwiki-code-mode-"));
@@ -25,6 +36,78 @@ async function readIfPresent(filePath: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+function parseWorkflowSteps(workflow: string): WorkflowStep[] {
+  const document = parse(workflow) as {
+    jobs?: { update?: { steps?: unknown } };
+  };
+  const steps = document.jobs?.update?.steps;
+  if (!Array.isArray(steps)) {
+    throw new Error("Expected the OpenWiki workflow to define update steps.");
+  }
+  return steps as WorkflowStep[];
+}
+
+function requireWorkflowStep(
+  steps: readonly WorkflowStep[],
+  name: string,
+): WorkflowStep {
+  const step = steps.find((candidate) => candidate.name === name);
+  if (step === undefined) {
+    throw new Error(`Expected the OpenWiki workflow to define ${name}.`);
+  }
+  return step;
+}
+
+function expectFailurePreservingWorkflow(workflow: string): void {
+  const steps = parseWorkflowSteps(workflow);
+  const run = requireWorkflowStep(steps, "Run OpenWiki");
+  const cleanup = requireWorkflowStep(
+    steps,
+    "Remove transient OpenWiki run state",
+  );
+  const pullRequest = requireWorkflowStep(
+    steps,
+    "Create OpenWiki update pull request",
+  );
+  const propagate = requireWorkflowStep(steps, "Propagate OpenWiki failure");
+
+  expect(run.id).toBe("openwiki");
+  expect(run["continue-on-error"]).toBe(true);
+  expect(cleanup.if).toBe("${{ !cancelled() }}");
+  expect(cleanup.run).toBe("rm -f -- openwiki/.run.json");
+  expect(pullRequest.if).toBe("${{ !cancelled() }}");
+  expect(pullRequest.uses).toMatch(
+    /^peter-evans\/create-pull-request@[a-f0-9]{40}$/u,
+  );
+  expect(pullRequest.with?.branch).toBe("openwiki/update");
+  expect(pullRequest.with?.["commit-message"]).toBe("docs: update OpenWiki");
+  expect(pullRequest.with?.title).toBe("docs: update OpenWiki");
+  expect(pullRequest.with?.["add-paths"]).toBe(
+    "openwiki\nAGENTS.md\nCLAUDE.md\n.github/workflows/openwiki-update.yml\n",
+  );
+  expect(pullRequest.with?.body).toContain(
+    "OpenWiki result: ${{ steps.openwiki.outcome }}",
+  );
+  expect(pullRequest.with?.body).toContain(
+    "pages completed before the failure",
+  );
+  expect(pullRequest.with?.body).toContain(
+    "baseline for the next scheduled run",
+  );
+  expect(propagate.if).toBe("${{ steps.openwiki.outcome == 'failure' }}");
+  expect(propagate.run).toBe("exit 1");
+
+  expect(steps.indexOf(run)).toBeLessThan(steps.indexOf(cleanup));
+  expect(steps.indexOf(cleanup)).toBeLessThan(steps.indexOf(pullRequest));
+  expect(steps.indexOf(pullRequest)).toBeLessThan(steps.indexOf(propagate));
+  expect(
+    steps
+      .map((step) => step.run)
+      .filter((command): command is string => command !== undefined)
+      .join("\n"),
+  ).not.toContain("openwiki/update");
 }
 
 afterEach(async () => {
@@ -201,6 +284,48 @@ describe("ensureCodeModeRepoSetup workflow", () => {
     ]) {
       expect(workflow).toContain(managedPath);
     }
+  });
+
+  test("publishes completed pages before propagating an OpenWiki failure", async () => {
+    const repo = await createTempRepo();
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+    const generated = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    if (generated === null) {
+      throw new Error("expected the generated workflow to exist");
+    }
+
+    const repoRoot = path.resolve(import.meta.dirname, "..", "..");
+    const [example, dogfood] = await Promise.all([
+      readFile(path.join(repoRoot, "examples", "openwiki-update.yml"), "utf8"),
+      readFile(
+        path.join(repoRoot, ".github", "workflows", "openwiki-update.yml"),
+        "utf8",
+      ),
+    ]);
+
+    for (const workflow of [generated, example, dogfood]) {
+      expectFailurePreservingWorkflow(workflow);
+    }
+
+    const dogfoodSteps = parseWorkflowSteps(dogfood);
+    const run = requireWorkflowStep(dogfoodSteps, "Run OpenWiki");
+    const restore = requireWorkflowStep(
+      dogfoodSteps,
+      "Restore protected workflow file",
+    );
+    const cleanup = requireWorkflowStep(
+      dogfoodSteps,
+      "Remove transient OpenWiki run state",
+    );
+    expect(restore.if).toBe("${{ !cancelled() }}");
+    expect(dogfoodSteps.indexOf(run)).toBeLessThan(
+      dogfoodSteps.indexOf(restore),
+    );
+    expect(dogfoodSteps.indexOf(restore)).toBeLessThan(
+      dogfoodSteps.indexOf(cleanup),
+    );
   });
 
   test("wires the LangSmith connector read key into the workflow env", async () => {

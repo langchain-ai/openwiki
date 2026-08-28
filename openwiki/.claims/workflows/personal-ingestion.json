@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:bf8bf3823081b84a0e7366c6fe1b278f325279f39358d2e905ed063dbd31e858",
+  "claims": [
+    {
+      "id": "claim_2c2c25ddb0d546a397521ccdb56c10ed",
+      "statement": "runOpenWikiIngestion is the personal-mode ingestion orchestrator: it loads env, ensures the OpenWiki home, reads the onboarding config, builds the connector registry, resolves the target to source instances, runs each source, and returns one SourceIngestionResult per source instance.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L65-L105",
+          "version": "repo-lines-v1:sha256:5c3b9628b32c90947b890ece791501226249199b7ebda03098ec1268148313f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNzM4NTQ2YzA5MjY3Nzg5YzlkNmRkYWM2NjJlNzgyMTM0YWEwZDk1NDNhZjJkOTAwOWZhYjM1MjRhN2JmMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4OTI0NWQxZmYyNjU4ZDQ2NzY1ZTJiZWQ2NDMwZDJmY2E4ODk1YTg2MjY2NTUzOTI3NDIwMThiMGI0ZjI4OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4MzA2NDRmY2NiZDUwMjhhNjlkMWQ5NDIxZjY4ZjgyM2Q4OTEwYWYyZWZhZTZhMTVkNjYwYjdjYzNlNmVmZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2bbb02b7828b4cb9a2ceb26d3bc23df3",
+      "statement": "Personal-mode ingestion runs each source's agent update with outputMode \"local-wiki\", and connector-derived facts are synthesized under confidence labels into local wiki pages rather than being turned into grounded repository Claims (the personal prompts never mention Claim submission).",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/okf-middleware.ts#L39-L57",
+          "version": "repo-lines-v1:sha256:d62fcee72c4875485847aa0173a3ff2aea82a3bbfc4814d5d3a37b5e9b79c1c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDBiNzZkOWM5ZjIwZmY3OWJkMmEyMjZhOGVkOTM2NjRlNDU2NGE4ZjUwODkxZmQ5NzY0OTQ2YzQxZmM3ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMTYzZjc3ODZjNDJjYTg4OTI3MGY3NTNhNzgwNjI2NDI2YzAzZjk3M2EwNWFkZWFlZGQ0ZmE0ZDI3MGYwZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxYmUxNGE1MDllOWU4OGZkZjVhMzNiNjNjM2IxOTdiNDU0Y2I3Y2RkZjM5NzQ4MDExMjhhYjdhZTJkMjcxYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4YmYyN2NhMzBlZGQ3MzI1YjAzYTUxZjc5NWIzYjMzZWUwZmNlN2QwZmRmYjUzOTIzNmQ5NDNlZTBiM2I4NWEifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L175-L188",
+          "version": "repo-lines-v1:sha256:0132b170c3b297344ed3b2f63857100c5c82f53bf10666072b5e68dc1cd5dabd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjMzNjcxN2Y5MDQxZmJmOWVhN2ViZTg3MmU4NjNiMTMzYmY2M2U1YzUzYmMxODNlMDM4ZWIxMWI2M2VlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkZjZjZjNhNjc0NGM0N2U4Yjg5MDg2ZmZmMTNlMTg3ODczZTE5ZDRkOThlMzM0M2NhOTkyODFhMThiZmJhNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZjhmNmM0ZTY5ODA3Mjc5YjQ1YmY0NTE4NjQxMDliNDI1NGM2YjQyZDcxYTE1YTU3OWFjZGY3YzM4N2NlNzcifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L349-L362",
+          "version": "repo-lines-v1:sha256:d493fbdf29071c9024a05526703efa4abdc7d055fd23832198968afac4bae870:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZGQ1MjQxOThjMjhiN2U0ZWNjYmE4ZmJkZTdlNGM3OGUzOWJiMjZhOGM2YjU3OWNiMjE5YzhmNjQzMWJiYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhOWY0MGNhNWE4ZDIwMjliZTgyMGQwZjc5MDczNDZjOTE1YjUzYTYzOGQ0YzdlNDBmNmI3YTA4Y2M2OWFjNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMzcwODZiNmQ0MGUyZDA3YTc3YjdiYjMzYmRhZTYxZTRjNDM2ZDFjNzIzNWVjMmEwYTRkN2UyMjExODc1NGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4025303e78e24966b9cf7153b03b2763",
+      "statement": "parseIngestionTarget maps a raw string to one of three IngestionTarget shapes: the literal \"all\", a connector id (checked before the source-instance branch and returned as the bare string), or a { kind: \"source-instance\", id } target; any other value is accepted only if it passes isSafeSourceInstanceId.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L107-L122",
+          "version": "repo-lines-v1:sha256:b68cadee9b5140cab63049793c0bce9277d8ab1d6425b000486cce8ffa750adc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzdmOTNhNWViM2I2MGJlNzQ0YmJlZTJkMWM0MDgyM2FiY2RjZTNkM2E3NzhlYzk5NjZjMmVjZjlmZjQ0YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MzhkNGVmMTZjMGRlZTE3NjIwZDU4ZDM0N2RiY2IyMTNhYzE3Zjk4ODc4ZTA1MGExODc0YTFmZmFjMTE0NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzNDRiNjRkMmMwNWYyZDVkZGUzN2FjNTBhN2NmNGU4NzgyNTkyYjU1MDFhY2IwMmQzYTZiODIwY2VmODU4MzkifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L36-L41",
+          "version": "repo-lines-v1:sha256:19caf404db63368c3922b1dba2f7d418fed1485444f2ce2c2c313a60aac3be27:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFmZjJkZGRhMjhkNjhlMDBhMDg0MDM2MDE4MjljM2EwNjkwNzAxMDdiOWRjOTE0MWFiYjNlNmRjYTNjMzM1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGY1MTlkOWU1YTk4NzgzZGNlMThmOTNiNzJhMmE2ZjE5ZmYxYWQ2ODNjMjM1MWQ1YmYwZTY3YmM3MTg3YTQwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTkwMmFkZmFjOWE5MjI1ZWZkNTlkNGRkODNkNjNmOGJiNmIyMTgxMTRjNTgwYTIyZjRkZTA3MWQ3ZjNlMzJkNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc919472427e49cc805446db3e28caf3",
+      "statement": "isSafeSourceInstanceId is a containment gate requiring a source-instance id to match ^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$ (alphanumeric first char, up to 120 chars, no separators or ..), because the id later names a per-source path segment; unsafe values parse to null.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L116-L121",
+          "version": "repo-lines-v1:sha256:eda0c5ca74062a9db5dce5428a3de881e8c305f5e41dd43c24c0c8bf5f57225f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1NmM2ODVjYmNmN2E2YmFkODg4ZGVhMGU4ZWNiYjk2YmYzNmRhNzcyZThmMTg5MmE2ODA2MDk4MDg5ZWU2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdmZDhlZDg5MGE4ZGZmMWRkOTNhNWI5MzM0OWNmNzY3MzExNmViMjJhZjBmYzU5YjQwZmRlZjY2ZDgzMmUxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZhZjNjMDY2ZGNlM2UyYTlhY2VmOGRkNDVjMzZiZDIxNzQ1ZmFlOTE1MDMyMWM2ODFlZDcyODI1MWU0NWU0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTgyNDM2NjBiYjcyN2I2MTE5ZGExNDBlMjdiYjFjNzRhMDMwNjAwYzFmYmEwNjMyNGRiMDFhMmUyNWM4Y2YyOSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L251-L253",
+          "version": "repo-lines-v1:sha256:564295b65a3ba17d1fb05ae2c74603476d5ab4a2954d20042caf53b098d14594:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAwOTM2NTQ5OTNlZDY1MzVjNmMxNTljZWExODIyOTUyOTM3YjU2ODE1OTZjMzEzOTVjZjc4ZjFkYWQzZDU4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmQwZjJkM2EzYWFkYTI3NTg2NDU3OGQwYTQzOTE1NjM4ZDU0M2ZlY2EyYzk0ODU4ZGI5NDEyMTFlODZjZWYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE0YjNjNDc2YTE3OGE1YTRhNDNkMzY1Yzc1MDVmMmQ3ZTA5Mjc0YWQ5NzJjZWIwNjU2OTcyMjdlZmMwNGUzMiJ9"
+        },
+        {
+          "resource": "repo://test/ingestion/ingestion.test.ts#L39-L72",
+          "version": "repo-lines-v1:sha256:6035dc1e1f61ef6614c80659c22ebbe7b939f82e2d6c49e9b35fee0b43c540f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMWJiNWZiYjcyNjQ5Mjc5ZjY3MzM5MjRmYjczNzkxNTNhNGE2ZjM0MjcxNTdhNTdhMGRiZjdjYWNlNjNmMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyN2M0NTc0MzUxZTAyN2I1NDAyZWVhZTBkYjI0NmNkNzI1ZjU2NTVkZjYyMDQwODkyNWQzNWY4ZmU1ZjY1N2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3a289511bad4b0fa76d0f721def714f",
+      "statement": "resolveIngestionSourceInstances selects only source instances that have a connectedAt timestamp and a valid connectorId, then matches all instances for target \"all\", instances whose connectorId equals a connector-id target, or the single instance whose id equals a source-instance target.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L222-L249",
+          "version": "repo-lines-v1:sha256:8bdb76035dd9ddd6876d538e3f0853ec340bdaa47bcaca0927b72b7f40c2c79d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNzIzZmE1OWRhNzliODVhYmY0MzNiODZkMDAwNDUwYzM5NjU1MzY4N2U0ZDM0MDQwMDY1NDY5MGNkNDVkOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczMTY2NmNkMDE2ZmNjNWZhMTExN2FjODkzOWVlNzM2OWI5OTdmZGFkMjJhYmQ1NDA5ZTk2MGRlMTY2ZGI3MjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_811b3325a4274d98b781f68e92c6d7a1",
+      "statement": "When the ingestion target is not \"all\" and no configured source matched, runOpenWikiIngestion throws an error identifying the unmatched target.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L255-L257",
+          "version": "repo-lines-v1:sha256:0185da4e82b58f13040bc9a9e54a0c7124df87dae25c318ecd46411fe3aeb747:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU2NDJjN2FiNmQ5M2FiN2JmYjMzMTNhYzBjN2MxMjBiM2VlNzg5NTczMThkMmY3N2FjOTUzODM3MDc5ZDFlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmUxYTQxOGFjMzM0MTE4MzRkOGVlZTJmMzg2N2QxMWIyNTdhY2JmZWM2YzcxMmZiYTMxZGQ2MWI3OWRjOTdjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDdlZGFhMWI4NmViZmMyYWYzMjIwNWJmMTg4ZmU4YjE2MTdkNzM5YjJhMzI4OGU3Zjk1NDRlZWViODBlOGFlMSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L83-L87",
+          "version": "repo-lines-v1:sha256:fd352afcbd8ba945df851d42a3433db4acea66b8d1f1d237114696ce4440dde6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRkMmQxOTkyNGZiZTZjZmY4OWRjZjExYmM4Y2VjN2MyNWU0YTNkZDJhOWNjNTlkZjM5NGEyNjEwY2RmMDY2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFhMjBjOTc4ZjIzMWExOWM5MDlkNDQyMDcwMDI5YjQyYjJjYjkzMDEzMDUxZmU2NmU1NWY4ZWJkMDkyOTdjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRlN2IxZTVjNGU2MjhkZDhmMjRlMTM1Yzc0N2Y1OTRkYWFmYjgwYjg2NzI1MjI1N2Y1NDU4ZTUyZDVlNWMxNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a391b5b83c54cf590753c23e3cc28d0",
+      "statement": "The scheduledOnly flag (set by --scheduled) causes resolveIngestionSourceInstances to skip every source unless config.ingestionSchedule exists and is not paused (pausedAt unset), so a scheduled run no-ops when the user has paused ingestion while a manual run always proceeds.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L418-L431",
+          "version": "repo-lines-v1:sha256:611b8e97d45a98d1e9d3cafebe32f7b526f75599723436e36ee51f02e146b18e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYjBjN2Q1MDhmOTRhNzk1ZWI5MGUwYTE0ZTE2MzFkNzg0OGZiZTI1YmQ0NjAzOWRjYzMwYTZmZTNmYjZkZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyNzUzY2I0ZTdjZTBlMmEzNzZiMWQ4MGNlMzc0MjQwNGYwZDFiOTFjYTMyMzI0MTZlZWQ5Yjg2NDZkZjA1MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MjE0MDA5MDE1NWYxNWU2ODIzZjEzNTQ4ZjQyNDA5MDk4ODZjNGJjZTIxYjMyMjEwYWNjMjkzNTAzMTMwM2QifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L232-L237",
+          "version": "repo-lines-v1:sha256:1878beec08c31d5ba4c8060c4ad4676c5a5d82063b9325ecee7436f320e920d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY4ZGQ0MTIzMGM1N2QzOGMxM2QyNmIxMGIwNzE3MDEyYzI2ZWIyYTY0OTg0MjYzNzEwMGFjN2NmZDBiNDg1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODUxZDQzOTliNjIyNTdjOTJhYWE5NGFiZDA4ZmVlNDU1MjcxYTc4OWI0OGFiMTcyMmExMThlMTc5MDhiYTU4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZmOTM2Mzk1OTE3ODBiNjQ2ZjQxNDNhNzYyNTUxZWZmMWRkMjE0ZjYzOWQwOWVhOWY5Mjk1MWM3MTY0ZmIwYSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L74-L80",
+          "version": "repo-lines-v1:sha256:8cfd7a7e10a67316099342424e38e41034da1f2f45eb882bbd40ad393d6f5cbf:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNiYWI3MmQ4NDNhNWYyMTc2MTYzMTY1ZDhkYTg1NDEyZWRlNGQyMDg1ZGJlZGRhMjY3ZGZmOTIyMmNlYjQ5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjljM2JhZmIyNjliYzI3NzY5YmU2N2Q3YTE1ZmVkZTY4ZjRlMWFjNWZiYzBmZGMxOTEwZjMyODZiOTQxNGRmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU4OWU1MTQ3OTVlYWQ3NDBiOGU1MzQwZmY5YWM4YjI0ZjM5YjAxMDFlYTI2YjA5NzI5NzBjZTdhZDg2ZTM4YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_443759d2771540d0bba210fff89ab26d",
+      "statement": "A source runs a pre-agent deterministic pull only when isDeterministicConnector is true, i.e. the connector's supportsAgenticDiscovery flag is false; agentic-discovery connectors skip the pull and let the agent gather data during its run.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/types.ts#L15-L23",
+          "version": "repo-lines-v1:sha256:8d1fdcbd8f48851dc43993c4ef9112415a7c050cba3d4e84e32dee33445344cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZmNTVjMmJlMmU0MmU1ZGExNGI0N2FhOGE4YmY4MmEwZGNkMTg2NGRkZGM5ZDRjYjZlYWY5M2Y3ZjM2NDc3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWI5OGY1Y2E0MjBlNzNiYzFjNGVmOTYxZmY5Mzk5MTllMTg1YzcwYWEzYmE0YzgwZjA4NDdjMmNlYzBkNGIyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQ2MGQ5NWFkNDQzMmYwMDMzYmY2Zjk4ZGJjZDZkZGNlNzJkN2EyZjkwOGE2NTJmOWI3NDY1MDdhNGUyM2U3MSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L144-L152",
+          "version": "repo-lines-v1:sha256:38c78d89e287fd4c8d2ca35d1f25727bf13f1a0a0535d6d85804fd9b87ea92a2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1OTVmNGVlNWZmNjNkNTA5NTA0MTlkYzM0NDE0NTEzODUxZGM5NzM2ZmQxN2E0ZjdiZmE5MzBiMjYxYjZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY0MGIyMTJiZjU4MGUyZDFkMjg0MjIwZTQwZDE0M2MwNDY0NzRhZjM4OWFiMDZhMWY1ODY3NWZiMWRiOTFlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDJhMzY0MTM5MjkyZGQ2ZDgzZjdkZGViMDg5ODJiMGQ5ODQ0NTg1OWE4OWIyYWRiOTUxZTA2OGVjNWU1ZDhlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDhiZDEyYjM5ZGE4ZTllZjVjMDYxMzliZjVlMDFhMTlmYjQzZjQ1MmRmZTgyOWRlZTM1YzMzZTgyZjcyMTAxZSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L266-L268",
+          "version": "repo-lines-v1:sha256:059d91264c4b18bbdc65b0cbb1baf1386c8c0a4fbbba0ef43285a3a60748506a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODU2N2YwMDE3OGFkZDIyYjAwMjVjYTdhZGU4ODI1ZDIyMWY1Nzg2Mzk0NGJmOGNiMjc3OTdhYWMwMzdmMjU0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWY5MzgzNjIxMGE4ZmYxNjRiZDA2MWJiYTQxZDVhYTBjNDE1YTc0MDE3MjJmNWFiZWFlZDlkZWJhYmFlNmE4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM2N2NmZjE1ZGI3NWZjNjljODUyZGQyZTYzZjMyNGM0NjY0YTY4MTIwNDBlYWQ1OTIzYWUxMGNiMjg5NmMzYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aea7591fec2b4346972ff9da4aee1bb4",
+      "statement": "The deterministic pull passes the source instance's connectorConfig and instanceId together with a fixed 24-hour window (INGESTION_WINDOW_HOURS) as windowHours to connector.ingest.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L145-L151",
+          "version": "repo-lines-v1:sha256:90588758237e7d193b82e1944abc6cf9544adebeb2c156490536afe29aaab57a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q1YjRhNzJiN2Y4NTJmZTg5YjVkOTE2YWYyODk1MjQ0ZGY4MWJiNDgzMzE1Y2Q4NjgzYWUyZjY0ZmMyNDZiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRlNzg1YWZhMzc3ZWQzZWJhODJmZDFiZGE5NDFlNzUzNGFhMjVkMjIxMjg4MWMwYjBhZjUxMjQwODg3OWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTYzYzk5OTg4ZDczODIzZDEzZjMzZjJjYjY5Njg0MTQ5MjIwY2RmZTBmY2ViNGMzYmEyOTQzNmM3MWFmYTkxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE3ZWE1MmQwYjA3Y2EyMWYyNGYxOWI0OWVkMmExOTJjM2Y5NWM4NGY3ODM4ODgyYzczYTI4M2Y5YWMwYzZjNyJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L34-L34",
+          "version": "repo-lines-v1:sha256:b1481b7b7fd042ab8709312b4c63d59d9337c8ed615b3cb554c1733f1b0b36ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE0ODFiN2I3ZmQwNDJhYjg3MDkzMTJiNGM2M2Q1OWQ5MzM3YzhlZDYxNWIzY2I1NTRjMTczM2YxYjBiMzZjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE0ODFiN2I3ZmQwNDJhYjg3MDkzMTJiNGM2M2Q1OWQ5MzM3YzhlZDYxNWIzY2I1NTRjMTczM2YxYjBiMzZjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTE0MDA5ODExODJjMzg2MWQ5Y2MwODE2MTExZWY1MDY4ODU4ODQ4NjQ2ZGZlNzlmMWIwMzY3YzZiYzlmNTdjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQzMzUzYzJhOGJhNjdkOTE5NDZjODdlZjFlYTIxMjI5YTBmNzY4ZDRhZjEyZmY3MmJjNDMzZGY4YTlhNjUzYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_41f52792eff846538e32b72cee2af5dc",
+      "statement": "A deterministic pull whose status is \"error\" and which produced zero raw files short-circuits the source with status \"error\" and the agent is not run; a pull that produced some raw files proceeds to the agent run.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L152-L173",
+          "version": "repo-lines-v1:sha256:8e60ae13994c42aece235b246cc37e67becffbd7f5a78810f370a5cb4f45bd86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmNDBiMjEyYmY1ODBlMmQxZDI4NDIyMGU0MGQxNDNjMDQ2NDc0YWYzODlhYjA2YTFmNTg2NzVmYjFkYjkxZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNDQ3Yjc5ZWNiY2ZhZWZkZTQzMTA0NTVkZTA1ZTY1OWZhMWQwMDY2MmZlNzhlYjljYzQ1ODMyNTEyMjk2ZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4NmEyMGY3MGIxYTI1ZTQwZjMyYmI2NzU2MTI3YWYxODgwZDcwMzM2ODZlYzM5NzRmMGVjMzQxYmZmMTEzNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2YmY0Y2M0MjBkYTg4MWI1MzQ5MGZiNGRhMTQ2ODk2NDRjOWYxODMwNDE2OWNkYmZiMjgyYWY4ZDgyY2RkMWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d269ecf202494ccd87ac4302946cc287",
+      "statement": "createSourceUpdateMessage builds the agent user message with two variants: with a deterministic pull it lists the pull status/message and host-filesystem raw data paths and instructs use of shell tools, and without one it points at the connector config path and directs data gathering via connector/MCP tools; both scope work to the 24-hour window, mark source content as untrusted evidence, and forbid running other sources' ingestion.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L270-L347",
+          "version": "repo-lines-v1:sha256:a3e646bfeb25dcdb0ee717572de603e5f076b197c9665e41dfbf467e30e6038d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMWI2MzdjNTc5MDczZmRmZWRmOTBkMDBhNmIxYjVhZTE3ZDJhMWVmMTRiNGZhMjFlNzZjYmFlMWRkYjc3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMGNjOTIwM2VhYjUzNzhmMmZkY2E5MjY0YzFiMjQ3NzY2YzFkMjExMDgwMWYxYzgzOWRhZDM1NjQ3YjU2OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MWNhN2UyYmFjMDI4YzA2ZWVkYjcyNjE5MDFiZTFkYjAwMTNmNjAwYzk0Y2QyYWQ3ZmY1MDZiYzc2YWUxOWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c6b25cbb23be4a6f84820f7570e7d9fe",
+      "statement": "createSourceSynthesisPolicy directs the agent to route findings into canonical cross-source local-wiki pages (/themes.md, /commitments.md, /personal-logistics.md, /open-questions.md, /quickstart.md, /sources/<id>.md), apply confidence labels (confirmed, source-backed, contested, watchlist, saved-context), and preserve conflicting facts in a Contested section rather than overwriting one side.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L349-L362",
+          "version": "repo-lines-v1:sha256:d493fbdf29071c9024a05526703efa4abdc7d055fd23832198968afac4bae870:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZGQ1MjQxOThjMjhiN2U0ZWNjYmE4ZmJkZTdlNGM3OGUzOWJiMjZhOGM2YjU3OWNiMjE5YzhmNjQzMWJiYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhOWY0MGNhNWE4ZDIwMjliZTgyMGQwZjc5MDczNDZjOTE1YjUzYTYzOGQ0YzdlNDBmNmI3YTA4Y2M2OWFjNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyMzcwODZiNmQ0MGUyZDA3YTc3YjdiYjMzYmRhZTYxZTRjNDM2ZDFjNzIzNWVjMmEwYTRkN2UyMjExODc1NGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_67ec662cdf1c46c68d3b2c54399e3d2a",
+      "statement": "createConnectorSynthesisGuidance appends per-connector guidance selected by connector id (e.g. Gmail classification, Notion page selection, X saved-context, Hacker News watchlist, LangSmith runtime analysis), and this same guidance builder is reused by code-mode ingestion in runCodeModeConnectors.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L134-L137",
+          "version": "repo-lines-v1:sha256:436ed9eede415248d933fcf3e54eb3d26855a6352577fc7a3b650b7f2ab3850e:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE5ZTFlMjA2Mjk1ZmJiMDlkNzhmZWNmYTNjNTRiMDcyYjYxNzkzYmQ1MTViZjZjZWQ2ZjIyMDkyMTEyMGY5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjQ5ZDMwZjUzZDcwOGUzZWRjNWUzNmNkYWYzZGE2ZmI1ZGQwZGFmNzcxMjkxYmQwM2M4ZjFlZmM2YzE3ODg3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZhOTkzMjFhZDM2YzAzYzBiYzMzZmFkZjBjNWJiM2NlZjllNzJhNzI1N2Q2MTIxNWU2YjQ5NWFiZWEzMTNiMSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L364-L417",
+          "version": "repo-lines-v1:sha256:ceee5c3c707e7be5e6dc6fb44cf4deb5df087c1cb591986dd7ce83f6d120fdb5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MzI4ZDMyZjE0MTk4NTMwZDZhNTBiZTRjNDBmZjNiMTZlM2VkNmU0NDBjNDg3ZWFkMzM3MzZlOTI4MTMxOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhOWY0MGNhNWE4ZDIwMjliZTgyMGQwZjc5MDczNDZjOTE1YjUzYTYzOGQ0YzdlNDBmNmI3YTA4Y2M2OWFjNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZThiMzEzOWY5NTQxNjI3MzE5OGMyNzMwOGRiZWJhNzJkNDNkM2NlOTNiZmQzNDE0ZDk5NzdlZjU4ZmYzMjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e42687a02e24310ad3e6695713ce3df",
+      "statement": "The per-source agent run uses runOpenWikiAgent(\"update\", ...) with a fresh thread id from createOpenWikiThreadId and isFollowup false, wrapped once in withRunTelemetry so per-source ingestion update runs are recorded in telemetry like CLI update runs.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L175-L198",
+          "version": "repo-lines-v1:sha256:795572e1f03a775a68d514d3b67b92f9c09ac4811e29c6a1c4aa916fbb50eee5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjMzNjcxN2Y5MDQxZmJmOWVhN2ViZTg3MmU4NjNiMTMzYmY2M2U1YzUzYmMxODNlMDM4ZWIxMWI2M2VlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkZjZjZjNhNjc0NGM0N2U4Yjg5MDg2ZmZmMTNlMTg3ODczZTE5ZDRkOThlMzM0M2NhOTkyODFhMThiZmJhNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NDA4ZmM3MGU2YjVjMThmYThhOWMwYzk0ZmE0MjA5NDc5MDJiY2FhNjIxOGRkZmIzYTE4MzMxZGRiMTk2MmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2cb453494db245c3a3a1cc3eeccec69d",
+      "statement": "An error thrown during a source's run is caught, emitted to the event stream, and returned as a status \"error\" SourceIngestionResult with empty rawFiles, so one failing source never aborts the remaining sources.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L209-L219",
+          "version": "repo-lines-v1:sha256:3ea0bac330012f236ed5d20ac1a05c1ecdfe0976fe4383b34a8410b5a71a254c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZGJmODM4NzUzNjg5NjZmMzEzYWU2Mzk1MzljNDAzNzAwNDViYTUzZTJlMmNlZTkzYmI2N2Q1ZGExN2I5ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZDFiNTJjZGZlMGYzY2Q5NTAwMmEzOTUwOGQ4ZmE0ODhiZTljZGE1NDRhMTZhODZhMTU0MDRjMTg3NTI5MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkYTRkNzNlNzAxYmM4ZWVmZGRiNmJjOTY5ZDIwOGQwZWU1MmRlMjMyMDAyOWRmMDkwMDA2YjUwYmVlOTQxNjgifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L89-L102",
+          "version": "repo-lines-v1:sha256:4931c380016e9bb8aa0fd4a9064bbbd3b295750554448865c85afe65654065d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1OGRjNjUyYzk4ODNhNTQ5MzkwMzkzNGRjZTE4M2EwODEyYWIwYmMwNGE0ZWJiOTUxODE3YjM1NTAxZjI0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2Y2Y5YTczN2FhMzYxZmRkZDBhMjIwODhkOGE4ZmQyZGIxNDQzODRiMWY2YmVjYzZmZjdlZGZiZjI1NzE4YzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34f12717bee34c74847075125874cfb8",
+      "statement": "Each source instance yields exactly one SourceIngestionResult whose status is agent-updated, error, or skipped, and runOpenWikiIngestion returns { results } aggregating them all.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L200-L208",
+          "version": "repo-lines-v1:sha256:edfed59bbf7729799bbcafc236e6a809d62ae370c962b2accb0f1b575954294b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY3N2ZlMWYxY2QxYmEyY2ZjYzcwYTY2MWVlYjFhYjhhOWMyZjRlMmQxMmE5ZWYyNGQ1MTk4NjY0MmMwMTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNmODIyYjhkMTg5ODk2YmQ0OTE3NDI4ODM2MjQ2M2EyZDFjYjVlNTYzMzIzOTM1NWE5MmU2YWZmNTc0OGJjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTU5MzRmNTRjZDU3NTVjYTgyMGMwMjhhZjQ0OWFkZDkwMDgxNWFmNjYzYzczOWNlZGE3ZGM5MWZiOGU0MmIxYyJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L43-L55",
+          "version": "repo-lines-v1:sha256:eed7595bd29dbccdbaa79cc9470031a5386bc363a941fe88e24e458377442664:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwOTU0Mjk4MDczM2U0OWYxOGNmYjUyNTA4YzdjM2YwMTFmZWM0M2Q1OTA0Y2ZlYTEwODhjMmM4NzFjZTZjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZjMzMjU2NzEzYTMxZTVjZjkzZGZmODcyMTQ4MjkwNjM2OWQ5ZmE4YTU3M2ExZDBiMjAwMzE1ZWQ3MjNjZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZGEzMWU3NDQyODI0NmE1ZjUwZTMwZjRkNmIzMjIzMzU2ODdmOTU0ZTU3M2I3ZDI4NDZhZTZkYWE1MmI3MzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c6686e32d3e84e9c857cc4bd5c480968",
+      "statement": "runIngestCommand streams text events to stdout, prints a per-source ingestion summary line, and sets a non-zero process exit code when any source result has status \"error\".",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/runners.ts#L151-L184",
+          "version": "repo-lines-v1:sha256:f33ddf50cb6e30c0585fe81f2383e4348a40f98a639ceb4a811597e9a860c50f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ZGY3NGQ5OTVkMTA1ZDA4NzFkNjhjNGQ4MDQ0MGQzMjIwZTI4YzY4NDAzZjFiN2UzZTk0YWVjMWVmMjQxNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjOTQ0ZWQ0YjE5Y2ZhNDE2ZWRiZjlkY2M4MWE5ZGU3ZmJlOGNkMDk5NDdhOGM2YTRmN2ZlMDcxNjFmOWJlZTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56f22f91471743e8a32caa7aef618a27",
+      "statement": "Personal-mode ingestion uses a fixed 24-hour window, whereas code-mode ingestion (runCodeModeConnectors) derives its window from the elapsed time since the last documented commit recorded in the update metadata file, using no floor on the first run.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L104-L133",
+          "version": "repo-lines-v1:sha256:ad8930cbb4775c206f2456fe81367a5cc9fd7dcf08d87a89a1b97aa0903bfe2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYmY5MDhhYTY2MjIwMDMxYzc0MmI1ZWZmOTVjM2IyN2JjYjNiNTkyMDNhYWQxZGM0NDMwMmU0Yjc2MTgzODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MjVkMTRkNjJmYjk4MGI1OTYyZWE1NDY2OTkwMjQ5Yzg0Yjk0NmI3NTAwNmIwZTI0MjA4NjU3NjYzYjkxMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4MzNlZmE0ZjkxMTViOTlkNmJkYjA3ZTc5ZGJlZGRiMzE2NGRiY2U0MTVhYjllM2NkZjhkNzYyMWZkZTc4YzMifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L160-L189",
+          "version": "repo-lines-v1:sha256:3d8e3595e82b111f14c7b17676e5e70bd6fc15b89d016a1b5f5f18fb1df0fd13:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MGQ2ZTMyZmUxYTFmNjhlMDZjZjU0ZmZjOWExMDY2YjEzOGU0YjA2NjE5YzA5YjQ3YmJmMWNjMjRiNTA4YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjODQ1Njg1ODEzYTY5ZGU0YzM1Y2ViMzBhNGZjOTQxMWQ4NzA3MTJmY2MwYzljMWM1NmQ0ZWUyYTdlOWVjOWQifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L34-L34",
+          "version": "repo-lines-v1:sha256:b1481b7b7fd042ab8709312b4c63d59d9337c8ed615b3cb554c1733f1b0b36ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE0ODFiN2I3ZmQwNDJhYjg3MDkzMTJiNGM2M2Q1OWQ5MzM3YzhlZDYxNWIzY2I1NTRjMTczM2YxYjBiMzZjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE0ODFiN2I3ZmQwNDJhYjg3MDkzMTJiNGM2M2Q1OWQ5MzM3YzhlZDYxNWIzY2I1NTRjMTczM2YxYjBiMzZjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTE0MDA5ODExODJjMzg2MWQ5Y2MwODE2MTExZWY1MDY4ODU4ODQ4NjQ2ZGZlNzlmMWIwMzY3YzZiYzlmNTdjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQzMzUzYzJhOGJhNjdkOTE5NDZjODdlZjFlYTIxMjI5YTBmNzY4ZDRhZjEyZmY3MmJjNDMzZGY4YTlhNjUzYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3bb070c7dbb445c9bff8f9dd41276aa0",
+      "statement": "Connectors are categorized by a mode field (\"personal\" or \"code\"); the personal-mode built-in connectors (google, x, slack, hackernews, web-search, git-repo, custom-mcp, notion) are the sources personal ingestion runs against, and connector ingestion tools are disabled for repository (code) output mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/registry.ts#L24-L52",
+          "version": "repo-lines-v1:sha256:4c5f2a82c040a44ca3d6a63d7bcdfa0598bbbdcc01591f9d9e8704259c68e040:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzkyNTIxNDdjZmVlYTUwYWY5ZjE0MmQ3MGM0MzQzYzJmOThmNzlmYTBkMWI1ZTQwYzRiOTYxYmY1YjZhNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MWNjN2EzOTFiMDYwNzE2ZjM0ZjhjOWRkMGU0ZmYyMmRjYWE5MGE0MDBiYzk3ZjkxNzkyMjk3YmFkZDcwNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ZDcxZTFmY2RlZmMyMTBlZmY2YmFhYTkwZTRiOWFlNzNjMjAwYzQ4OWZlOTY2YTNjZmY2YzVjNWZjZWU0ZjAifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/gmail.ts#L65-L77",
+          "version": "repo-lines-v1:sha256:9ed769e576d6abc7fe86f593d5760a431018d76dc596d42cd5b96645c896aa60:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiNThjNzIxZjYyMWQyYmQ3ZWE3YmI4MDg2NGUzNWU2YWIwNzY4M2ZhY2IwZmM5ZTgzNTJhNzU4MGNkZGMwYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzNmNkNjYwN2MxZDI1MTdkNDgxNzE1NGQ4ZTQ1MTAzYjQ3NTg1YTZkOTMyOWRiZWU3Y2MxMjU4MjFjZTY5YjkifQ"
+        },
+        {
+          "resource": "repo://src/connectors/tools.ts#L25-L36",
+          "version": "repo-lines-v1:sha256:4d1a958666f9c0c77142f80e9a58c011c6d154534d1d24bb69d5e8273a77b053:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzY2NWM4ZTkzNWFjODdmZjJiYjkzYTY4NjU0NWJhMzAyNzBkYmY0MDMxMjVjNGZmZjEyY2I3NjMzOTJmMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjk0OWRjMTljOTNhZDQyMTRmZDMyMzc4NDczNDJiMTI1NjgxZTYyMGFmNGU1Yzc4YzE3ZmJhOWRjNDExMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMmM0YjIwNjBmZDRmMzBmYjZhYjJiYmFjYTM2NGFkODljZTg0Nzg2ZmIyNGQxOTMyYjAyM2JjYWIyZDBhMjMifQ"
+        },
+        {
+          "resource": "repo://src/connectors/types.ts#L15-L23",
+          "version": "repo-lines-v1:sha256:8d1fdcbd8f48851dc43993c4ef9112415a7c050cba3d4e84e32dee33445344cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZmNTVjMmJlMmU0MmU1ZGExNGI0N2FhOGE4YmY4MmEwZGNkMTg2NGRkZGM5ZDRjYjZlYWY5M2Y3ZjM2NDc3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWI5OGY1Y2E0MjBlNzNiYzFjNGVmOTYxZmY5Mzk5MTllMTg1YzcwYWEzYmE0YzgwZjA4NDdjMmNlYzBkNGIyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQ2MGQ5NWFkNDQzMmYwMDMzYmY2Zjk4ZGJjZDZkZGNlNzJkN2EyZjkwOGE2NTJmOWI3NDY1MDdhNGUyM2U3MSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

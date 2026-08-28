@@ -14,6 +14,12 @@ const OKF_STRING_FIELDS = [
   "timestamp",
 ];
 
+const OKF_OPTIONAL_STRING_FIELDS = [
+  "description",
+  "resource",
+  "timestamp",
+] as const;
+
 /**
  * Lifecycle states defined by OKF v0.2 §5.4; an absent `status` means stable.
  */
@@ -39,28 +45,6 @@ export const OPENWIKI_GENERATED_FIELD = "openwiki_generated";
  */
 export const OPENWIKI_TRANSLATION_PENDING_FIELD =
   "openwiki_translation_pending";
-
-/**
- * Extension fields that must survive a deterministic front-matter regeneration.
- *
- * When a page fails OKF validation its front matter is rebuilt from a minimal
- * derived block, which would otherwise drop every extension field. Fields listed
- * here are carried across that rebuild so control markers are not lost when a
- * page happens to be both non-conformant and, say, pending translation.
- */
-const PRESERVED_EXTENSION_FIELDS = [OPENWIKI_TRANSLATION_PENDING_FIELD];
-
-/**
- * OKF v0.2 provenance/trust/lifecycle families (SPEC §5) that must survive the
- * deterministic type-less rebuild. Unlike {@link PRESERVED_EXTENSION_FIELDS}
- * these hold structured mappings or lists rather than scalar strings, so they
- * are carried across verbatim as complete raw fields rather than re-quoted.
- *
- * `generated` and Claims-derived `sources` are code-owned. Listing them here
- * keeps deterministic provenance from being discarded when a page also
- * happens to trip the type-less repair path.
- */
-const PRESERVED_STRUCTURED_FIELDS = ["generated", "verified", "sources"];
 
 /**
  * Matches a leading YAML front-matter block and captures its inner text.
@@ -109,6 +93,24 @@ export interface FrontmatterIssue {
  */
 export type FrontmatterValidation =
   { valid: true } | { valid: false; issues: FrontmatterIssue[] };
+
+/** Result of deterministically repairing one Markdown concept in memory. */
+export interface FrontmatterRepair {
+  /** Whether the returned Markdown differs from the input. */
+  changed: boolean;
+
+  /** Repaired Markdown, including the original authored body. */
+  content: string;
+}
+
+/** Result of repairing and re-validating one persisted Markdown concept. */
+export interface PersistedFrontmatterRepair {
+  /** Whether a repaired version was written. */
+  changed: boolean;
+
+  /** Validation of the final bytes that could be read from storage. */
+  validation: FrontmatterValidation;
+}
 
 /**
  * Parses and validates OKF front matter while tolerating producer extensions.
@@ -323,7 +325,15 @@ export async function validatePersistedFile(
   backend: BackendProtocolV2,
   filePath: string,
 ): Promise<FrontmatterValidation> {
-  const read = await backend.readRaw(filePath);
+  let read;
+  try {
+    read = await backend.readRaw(filePath);
+  } catch (error) {
+    return invalid(
+      "file_read_failed",
+      `Could not read the final Markdown text: ${errorMessage(error)}.`,
+    );
+  }
   const content = read.data?.content;
   if (read.error || content === undefined || content instanceof Uint8Array) {
     return invalid(
@@ -334,6 +344,73 @@ export async function validatePersistedFile(
   return validateOkfFrontmatter(
     Array.isArray(content) ? content.join("\n") : content,
   );
+}
+
+/**
+ * Repairs recognized OKF metadata, persists it only when necessary, and proves
+ * the final stored bytes. Read and write failures are returned as structured
+ * validation issues because callers choose whether storage is a fatal boundary.
+ */
+export async function repairPersistedFile(
+  backend: BackendProtocolV2,
+  filePath: string,
+  conceptType: string = "Reference",
+): Promise<PersistedFrontmatterRepair> {
+  let read;
+  try {
+    read = await backend.readRaw(filePath);
+  } catch (error) {
+    return {
+      changed: false,
+      validation: invalid(
+        "file_read_failed",
+        `Could not read the final Markdown text: ${errorMessage(error)}.`,
+      ),
+    };
+  }
+  const stored = read.data?.content;
+  if (read.error || stored === undefined || stored instanceof Uint8Array) {
+    return {
+      changed: false,
+      validation: invalid(
+        "file_read_failed",
+        `Could not read the final Markdown text: ${read.error ?? "no text data"}.`,
+      ),
+    };
+  }
+
+  const content = Array.isArray(stored) ? stored.join("\n") : stored;
+  const repaired = repairOkfFrontmatter(content, filePath, conceptType);
+  if (!repaired.changed) {
+    return { changed: false, validation: validateOkfFrontmatter(content) };
+  }
+
+  let write;
+  try {
+    write = await backend.write(filePath, repaired.content);
+  } catch (error) {
+    return {
+      changed: false,
+      validation: invalid(
+        "file_write_failed",
+        `Could not persist repaired Markdown text: ${errorMessage(error)}.`,
+      ),
+    };
+  }
+  if (write.error) {
+    return {
+      changed: false,
+      validation: invalid(
+        "file_write_failed",
+        `Could not persist repaired Markdown text: ${write.error}.`,
+      ),
+    };
+  }
+
+  return {
+    changed: true,
+    validation: await validatePersistedFile(backend, filePath),
+  };
 }
 
 /**
@@ -432,25 +509,13 @@ export function setFrontmatterField(
   value: string,
 ): string {
   const line = `${key}: ${JSON.stringify(value)}`;
-  const { block, body } = splitFrontmatter(content);
-  if (block === undefined) {
-    return `---\n${line}\n---\n\n${content}`;
-  }
-
-  const lines = block.split("\n");
-  const index = lines.findIndex((current) => isFieldLine(current, key));
-  if (index === -1) {
-    lines.push(line);
-  } else {
-    lines[index] = line;
-  }
-  return `---\n${lines.join("\n")}\n---\n${body}`;
+  return replaceFrontmatterFieldBlock(content, key, [line]);
 }
 
 /**
  * Stamps the code-owned OKF `generated` provenance event on a page (SPEC §5.1),
- * setting or replacing a `generated: {by, at}` flow mapping and preserving every
- * other front-matter line byte-for-byte.
+ * setting or replacing a `generated: { by, at }` flow mapping and preserving
+ * every other front-matter line byte-for-byte.
  *
  * `generated` is a mapping, not a scalar, so it cannot go through
  * {@link setFrontmatterField}. The value is emitted as a single-line flow
@@ -470,20 +535,8 @@ export function setGeneratedEvent(
     at === undefined
       ? `by: ${JSON.stringify(by)}`
       : `by: ${JSON.stringify(by)}, at: ${JSON.stringify(at)}`;
-  const line = `generated: {${members}}`;
-  const { block, body } = splitFrontmatter(content);
-  if (block === undefined) {
-    return `---\n${line}\n---\n\n${content}`;
-  }
-
-  const lines = block.split("\n");
-  const index = lines.findIndex((current) => isFieldLine(current, "generated"));
-  if (index === -1) {
-    lines.push(line);
-  } else {
-    lines[index] = line;
-  }
-  return `---\n${lines.join("\n")}\n---\n${body}`;
+  const line = `generated: { ${members} }`;
+  return replaceFrontmatterFieldBlock(content, "generated", [line]);
 }
 
 /**
@@ -548,40 +601,7 @@ export function setOkfVerified(
  * the field was the block's only line, the now-empty block is dropped entirely.
  */
 export function removeFrontmatterField(content: string, key: string): string {
-  const { block, body } = splitFrontmatter(content);
-  if (block === undefined) return content;
-
-  const kept = block.split("\n").filter((line) => !isFieldLine(line, key));
-  if (kept.length === block.split("\n").length) return content;
-  if (kept.length === 0) return body.replace(/^\r?\n/u, "");
-  return `---\n${kept.join("\n")}\n---\n${body}`;
-}
-
-/**
- * Returns the complete raw front-matter field declaring the given top-level
- * key, including indented continuation lines, or undefined when absent. Used
- * to carry structured provenance across a deterministic rebuild without
- * parsing and re-rendering it.
- */
-function rawFrontmatterField(content: string, key: string): string | undefined {
-  const { block } = splitFrontmatter(content);
-  if (block === undefined) return undefined;
-  const lines = block.split("\n");
-  const start = lines.findIndex((line) => isFieldLine(line, key));
-  if (start === -1) return undefined;
-  const end = findFrontmatterFieldEnd(lines, start);
-  return lines.slice(start, end).join("\n");
-}
-
-/**
- * Appends a complete raw front-matter field verbatim, preserving every existing
- * line. A page with no block is returned unchanged, since the rebuild path
- * always constructs one before calling this.
- */
-function appendFrontmatterField(content: string, rawField: string): string {
-  const { block, body } = splitFrontmatter(content);
-  if (block === undefined) return content;
-  return `---\n${block}\n${rawField}\n---\n${body}`;
+  return replaceFrontmatterFieldBlock(content, key, []);
 }
 
 /**
@@ -610,6 +630,18 @@ function replaceFrontmatterFieldBlock(
   const next = [...lines.slice(0, start), ...replacement, ...lines.slice(end)];
   if (next.length === 0) return body.replace(/^\r?\n/u, "");
   return `---\n${next.join("\n")}\n---\n${body}`;
+}
+
+/** Renders and replaces one complete structured YAML field. */
+function setFrontmatterValue(
+  content: string,
+  key: string,
+  value: unknown,
+): string {
+  const replacement = stringify({ [key]: value }, { lineWidth: 0 })
+    .trimEnd()
+    .split("\n");
+  return replaceFrontmatterFieldBlock(content, key, replacement);
 }
 
 /**
@@ -692,14 +724,10 @@ export function renderFrontmatter(
 /**
  * Guarantees a page has valid OKF front matter without destroying good data.
  *
- * Rule: if the front matter parses and has a non-empty `type`, the page is left
- * unchanged. Otherwise (no front matter, unparseable YAML, or a missing `type`)
- * its front matter is replaced with a minimal block derived from the body and
- * tagged `openwiki_generated` for later agent review.
- *
- * Pages that already have a `type` are kept even when optional fields like
- * `title` are junk, so an author's `type` and custom fields are never
- * overwritten; the index generator already ignores unusable optional fields.
+ * Valid pages are left byte-for-byte unchanged. Invalid recognized fields are
+ * repaired or removed conservatively; an unusable YAML block falls back to a
+ * minimal derived block tagged `openwiki_generated` for later agent review.
+ * Producer extensions survive whenever the original YAML mapping is parseable.
  * Never throws. Returns the new content and whether it changed.
  *
  * `conceptType` is the localized fallback used for a repaired page's `type`; it
@@ -710,37 +738,117 @@ export function normalizeConceptContent(
   filePath: string,
   conceptType: string = "Reference",
 ): { changed: boolean; content: string } {
-  if (hasUsableConceptType(content)) {
-    return { changed: false, content };
-  }
-  const { body } = splitFrontmatter(content);
-  const derived = deriveMinimalFrontmatter(body, filePath, conceptType);
-  const front = renderFrontmatter(derived, { generated: true });
-  let rebuilt = `${front}${body.replace(/^\s+/u, "")}`;
-  for (const field of PRESERVED_EXTENSION_FIELDS) {
-    const value = readFrontmatterField(content, field);
-    if (value !== undefined) {
-      rebuilt = setFrontmatterField(rebuilt, field, value);
-    }
-  }
-  for (const field of PRESERVED_STRUCTURED_FIELDS) {
-    const rawField = rawFrontmatterField(content, field);
-    if (rawField !== undefined) {
-      rebuilt = appendFrontmatterField(rebuilt, rawField);
-    }
-  }
-  return { changed: true, content: rebuilt };
+  return repairOkfFrontmatter(content, filePath, conceptType);
 }
 
 /**
- * Reports whether a page already declares a usable OKF `type`, meaning its
- * front matter parses and `type` is a non-empty string.
+ * Deterministically repairs every recognized OKF field while preserving the
+ * authored Markdown body and producer extension fields whenever the YAML map
+ * remains parseable.
+ *
+ * Invalid optional scalar fields are removed, except `title`, which is derived
+ * from the first H1 or filename. Invalid list families retain only conformant
+ * entries. Trust assertions that cannot be proven conformant are removed rather
+ * than rewritten into a false assertion. Missing or invalid `type` receives the
+ * localized fallback and marks the metadata as derived.
+ *
+ * If the YAML mapping itself is unusable, or a raw representation cannot be
+ * repaired safely, the deterministic last resort is a minimal valid block. In
+ * all cases the returned content passes {@link validateOkfFrontmatter}.
  */
-function hasUsableConceptType(content: string): boolean {
+export function repairOkfFrontmatter(
+  content: string,
+  filePath: string,
+  conceptType: string = "Reference",
+): FrontmatterRepair {
+  if (validateOkfFrontmatter(content).valid) {
+    return { changed: false, content };
+  }
+
   const fields = parseFrontmatterFields(content);
-  return (
-    fields !== undefined &&
-    typeof fields.type === "string" &&
-    fields.type.trim() !== ""
-  );
+  const { body } = splitFrontmatter(content);
+  const fallbackType = isNonEmptyString(conceptType)
+    ? conceptType
+    : "Reference";
+  const derived = deriveMinimalFrontmatter(body, filePath, fallbackType);
+  if (!fields) return rebuildMinimalConcept(content, body, derived);
+
+  let repaired = content;
+  const typeWasDerived = !isNonEmptyString(fields.type);
+  if (typeWasDerived) {
+    repaired = setFrontmatterField(repaired, "type", derived.type);
+    repaired = setFrontmatterValue(repaired, OPENWIKI_GENERATED_FIELD, true);
+  }
+  if (
+    (typeWasDerived && !Object.hasOwn(fields, "title")) ||
+    (Object.hasOwn(fields, "title") && !isNonEmptyString(fields.title))
+  ) {
+    repaired = setFrontmatterField(repaired, "title", derived.title);
+  }
+  for (const field of OKF_OPTIONAL_STRING_FIELDS) {
+    if (Object.hasOwn(fields, field) && !isNonEmptyString(fields[field])) {
+      repaired = removeFrontmatterField(repaired, field);
+    }
+  }
+
+  if (Object.hasOwn(fields, "tags")) {
+    const tags = Array.isArray(fields.tags)
+      ? fields.tags.filter(isNonEmptyString)
+      : [];
+    repaired =
+      tags.length > 0
+        ? setFrontmatterValue(repaired, "tags", tags)
+        : removeFrontmatterField(repaired, "tags");
+  }
+  if (Object.hasOwn(fields, "generated") && !isActorEvent(fields.generated)) {
+    repaired = removeFrontmatterField(repaired, "generated");
+  }
+  if (Object.hasOwn(fields, "verified")) {
+    const candidates = Array.isArray(fields.verified)
+      ? fields.verified
+      : [fields.verified];
+    const events = candidates.filter(
+      (event): event is Record<string, unknown> =>
+        isRecord(event) && isActorEvent(event),
+    );
+    repaired = setOkfVerified(repaired, events);
+  }
+  if (Object.hasOwn(fields, "sources")) {
+    const sources = Array.isArray(fields.sources)
+      ? fields.sources.filter(
+          (source): source is Record<string, unknown> =>
+            isRecord(source) && isNonEmptyString(source.resource),
+        )
+      : [];
+    repaired = setOkfSources(repaired, sources);
+  }
+  if (
+    Object.hasOwn(fields, "status") &&
+    (typeof fields.status !== "string" ||
+      !OKF_STATUS_VALUES.includes(fields.status))
+  ) {
+    repaired = removeFrontmatterField(repaired, "status");
+  }
+  if (
+    Object.hasOwn(fields, "stale_after") &&
+    (typeof fields.stale_after !== "string" ||
+      !isIsoDateTimeWithOffset(fields.stale_after))
+  ) {
+    repaired = removeFrontmatterField(repaired, "stale_after");
+  }
+
+  if (validateOkfFrontmatter(repaired).valid) {
+    return { changed: repaired !== content, content: repaired };
+  }
+  return rebuildMinimalConcept(content, body, derived);
+}
+
+/** Replaces unusable YAML with the smallest truthful valid OKF block. */
+function rebuildMinimalConcept(
+  original: string,
+  body: string,
+  derived: DerivedFrontmatter,
+): FrontmatterRepair {
+  const rebuilt = `${renderFrontmatter(derived, { generated: true })}${body}`;
+  return { changed: rebuilt !== original, content: rebuilt };
 }

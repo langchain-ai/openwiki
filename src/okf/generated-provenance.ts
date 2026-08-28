@@ -3,6 +3,7 @@ import type { BackendProtocolV2 } from "deepagents";
 import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
   parseFrontmatterFields,
+  repairOkfFrontmatter,
   removeFrontmatterField,
   setGeneratedEvent,
   splitFrontmatter,
@@ -49,6 +50,81 @@ interface ConceptSnapshot {
 export type GeneratedProvenanceSnapshot = ReadonlyMap<string, ConceptSnapshot>;
 
 /**
+ * JSON-safe representation of one pre-run generated-page baseline.
+ */
+export interface PersistedGeneratedProvenanceEntry {
+  /**
+   * Canonical virtual path of the generated Markdown page.
+   */
+  page: string;
+
+  /**
+   * Hash of the page body before this run began authoring.
+   */
+  bodyHash: string;
+
+  /**
+   * Existing generated-provenance metadata, when the page had it.
+   */
+  generated?: {
+    /**
+     * Producer recorded in the page's generated metadata.
+     */
+    by: string;
+
+    /**
+     * Generation timestamp recorded by the prior successful run.
+     */
+    at?: string;
+  };
+}
+
+/**
+ * Deterministically ordered persisted provenance baseline.
+ */
+export type PersistedGeneratedProvenanceSnapshot =
+  PersistedGeneratedProvenanceEntry[];
+
+/**
+ * Serializes the exact pre-authoring baseline without changing its meaning.
+ */
+export function serializeGeneratedProvenance(
+  snapshot: GeneratedProvenanceSnapshot,
+): PersistedGeneratedProvenanceSnapshot {
+  return [...snapshot.entries()]
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .map(([page, value]) => ({
+      page,
+      bodyHash: value.bodyHash,
+      ...(value.generated
+        ? {
+            generated: {
+              by: value.generated.by,
+              ...(value.generated.at ? { at: value.generated.at } : {}),
+            },
+          }
+        : {}),
+    }));
+}
+
+/**
+ * Recreates the in-memory provenance baseline after process restart.
+ */
+export function deserializeGeneratedProvenance(
+  persisted: PersistedGeneratedProvenanceSnapshot,
+): GeneratedProvenanceSnapshot {
+  return new Map(
+    persisted.map(({ page, bodyHash, generated }) => [
+      page,
+      {
+        bodyHash,
+        ...(generated ? { generated: { ...generated } } : {}),
+      },
+    ]),
+  );
+}
+
+/**
  * Captures finalization inputs for every concept present before the agent runs.
  * Only hashes and the prior producer event are retained, keeping the snapshot
  * bounded without creating temporary files beside generated documentation.
@@ -83,6 +159,7 @@ export async function snapshotGeneratedProvenance(
  * @param initialConcepts - Pre-run state keyed by virtual page path.
  * @param now - Shared run timestamp used for new generated events.
  * @param producerActor - Producer responsible for body changes in this run.
+ * @param producerActorsByPage - Page-specific producer overrides.
  */
 export async function finalizeGeneratedProvenance(
   backend: BackendProtocolV2,
@@ -90,34 +167,68 @@ export async function finalizeGeneratedProvenance(
   initialConcepts: GeneratedProvenanceSnapshot,
   now: string,
   producerActor: string,
+  producerActorsByPage?: ReadonlyMap<string, string>,
 ): Promise<void> {
   if (producerActor.trim().length === 0) {
     throw new Error(
       "Generated provenance requires a non-empty producer actor.",
     );
   }
+  for (const [page, actor] of producerActorsByPage ?? []) {
+    if (actor.trim().length === 0) {
+      throw new Error(
+        `Generated provenance requires a non-empty producer actor for ${page}.`,
+      );
+    }
+  }
 
   for (const page of await listWikiConceptPaths(backend, outputMode)) {
-    const content = await readRequiredContent(backend, page);
+    let content: string;
+    try {
+      content = await readRequiredContent(backend, page);
+    } catch {
+      // Generated provenance is optional trust metadata. If a page cannot be
+      // read during this best-effort pass, preserve the rest of the finalized
+      // wiki instead of failing the complete run.
+      continue;
+    }
     const initial = initialConcepts.get(page);
     const bodyChanged =
       initial === undefined || initial.bodyHash !== hashConceptBody(content);
-    const reconciled = bodyChanged
-      ? removeFrontmatterField(
-          setGeneratedEvent(content, producerActor, now),
-          "timestamp",
+    const pageProducerActor = producerActorsByPage?.get(page) ?? producerActor;
+    const candidate = bodyChanged
+      ? canonicalizeChangedConcept(
+          removeFrontmatterField(
+            setGeneratedEvent(content, pageProducerActor, now),
+            "timestamp",
+          ),
         )
       : restoreGeneratedEvent(content, initial.generated);
+    const reconciled = repairOkfFrontmatter(candidate, page).content;
 
     if (reconciled !== content) {
       const result = await backend.write(page, reconciled);
-      if (result.error) {
-        throw new Error(
-          `Unable to finalize generated provenance for ${page}: ${result.error}`,
-        );
-      }
+      // A provenance write is useful but not essential page content. The
+      // deterministic fallback is the already-persisted unstamped/stale page;
+      // later finalizers can still synchronize Claims against those bytes.
+      if (result.error) continue;
     }
   }
+}
+
+/**
+ * Applies OpenWiki's minimal byte-level format to a concept changed this run.
+ *
+ * Only terminal line endings are canonicalized. Prose wrapping, indentation,
+ * tables, and every other producer-authored Markdown choice remain untouched.
+ * Existing no-op pages never pass through this function, preserving their
+ * bytes exactly.
+ *
+ * @param content - Changed or newly created concept content.
+ * @returns Content ending in exactly one LF line ending.
+ */
+function canonicalizeChangedConcept(content: string): string {
+  return `${content.replace(/[\r\n]*$/u, "")}\n`;
 }
 
 /**
@@ -187,9 +298,22 @@ function restoreGeneratedEvent(
   content: string,
   generated?: GeneratedEvent,
 ): string {
+  if (generated && sameGeneratedEvent(readGeneratedEvent(content), generated)) {
+    return content;
+  }
   return generated
     ? setGeneratedEvent(content, generated.by, generated.at)
     : removeFrontmatterField(content, "generated");
+}
+
+/**
+ * Compares two valid producer events by meaning rather than YAML formatting.
+ */
+function sameGeneratedEvent(
+  left: GeneratedEvent | undefined,
+  right: GeneratedEvent,
+): boolean {
+  return left?.by === right.by && left.at === right.at;
 }
 
 /**

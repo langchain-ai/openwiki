@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d9fec99a602b674accda34271a6c6d39ab9e7d18dc07d95c343cb772f5216f3a",
+  "claims": [
+    {
+      "id": "claim_da05ca1b44a042d9ab9a5935194059af",
+      "statement": "OpenWiki telemetry is opt-out and emits exactly one PostHog event, TELEMETRY_RUN_EVENT (\"openwiki_run\"), per completed init or update run, carrying command/outcome/environment and (on failure) error classification.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/config.ts#L26-L30",
+          "version": "repo-lines-v1:sha256:f35f5b4f7d917e58730fcf5c05e7e1a1b90e1633440ad92d44bb1bc7822479a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJiMzlkOTgwMzlmYjUxMDI3MTBkNjk1ZGQ1YjAzNTdmMjc3OTdkYzA4YjQ0ODM2NzliNWM1ZGIzY2M5MGYwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjcyMmZiMTJlNjU1ZjNjZjIyNTAwODdiODcwMTI4MGMyZGU1NGUxZjc2ZmFiNDhlZmVlNmY3NGEzNzEyMGRiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDIzNjRmMTg4Y2JmYmU0ZmNhYzJlZWEwZGRiNjc0ZjRlOTQzYjAzNTczOWU0ZjE4ZWU1NTgwM2ExNWFkYTdmNiJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/record-run-safe.ts#L49-L53",
+          "version": "repo-lines-v1:sha256:eb4fc6df19a013a4300070cd514e43c577835b6bbbef99abaa8179bdbfa243f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QxMTk5MjFhZjdmZTc2NTA1YTM3YzBjYjIyZjE5MmM3NDE1ZjU0YWNhM2YzZjJiMjY5YTNiZjFhMWM3NzUyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2EwOWE1NGM4MDFhNGEwYmMzZWI4ODJiZDIzMGFhOWE1YzFkODJiYTllN2MwZDdjMzIyM2IxYTdkZWZhZThiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2FmYjlkMTA1ZjU3MTQ5NjA2MTBmZjRiZmZjOGY4MGQ0MDY0Njg4YTk2YzM4MzZmMGQ4ZGU4Mjc3MzkxMmI2MyJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L74-L125",
+          "version": "repo-lines-v1:sha256:d1ea5dce1baa86c22ba336d9687ba7d23c78d0546627d9e411da2d418e5e0bbe:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NGQyYzhhNTI5NjRjNzI4YTVlYzg2MDBjYTcwNjM3OGRlNTg0YjZkZTAxNTIyOTM0OWZjZDAxNjY2NDIyZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMjAwYmE5MWUxNmIwNTU2NjhjNGNjOTQwZWY4NGJhOTEwYTQxZTNiMGM4NTJmMzBiNGQzZDEwZTgyMTJkMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYTZmZDU2ZDAxZjc4YzZlOGQ0NmFhMTc2ZTI5YjI3NjNjNTliMWViMGQ3YzEyODk0YjlhYjJiODgxMjdiYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07d0e818dcec47b49a57a16da986a6f7",
+      "statement": "isTelemetryDisabled returns true when OPENWIKI_TELEMETRY_DISABLED or DO_NOT_TRACK is set to a truthy value, and recordRun short-circuits (sending nothing) when it is disabled.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/gates.ts#L26-L33",
+          "version": "repo-lines-v1:sha256:897c449e70086df57d3f2cf097e7ba0bfc4102d99f0cd89da4ad674bffbc1cd3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc4YTgyN2VlMTJlODg2ZDE5NTFmZTVmYjUyZTYwOTkwZjIwZDMxMWVkOTZkOWQwOTdkNzJmZGFjZWE5YjJlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJjNTk4ZjcyYjJhN2ZlNDRjMTIyMmE3NWU5YTgzYzJmNThhZTdjY2M5NzAzYjIzNjM4YjBiNTkxZDhjM2FlOCJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L81-L90",
+          "version": "repo-lines-v1:sha256:608ed5b3d1a65f6639fe8223f45faefc692eef3a92c3acc5d6bffcfaa3c9c750:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZDkzMDg1OTE2NzJkNjcxODA1NjE5NjUxMGIxOTk2MjYzODc4ODQxMjQ2NDdiOGY3NjQ0NzBiZTk2MTQ0ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L135-L142",
+          "version": "repo-lines-v1:sha256:2cc70ab4644d4fc67d44087c12e4ab4da6706a8f967bdaf8a9d50a638a7da9c1:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3NDY2ZWMxZTgzNGIwMzcyZmM5N2VlMWMwOGU5MWM2YmNkZDVmZDJhN2VhY2Y1MjYxYWRjMjlkMGUxODIxYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGE3MjMxZjBjMDJhYmM5M2IzN2ViODMxYjEyNDk0NGI0ZmY2YmNkMTZhZTQzMjUwYjdjZDFkNDhlNTQ2ZDk3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjMzOTllMzk3NWZjYzBlZjhkMzE3YTZiYmJlYmQ0MDljMWEzODU3YmRhYWE2NDI4YzhjMjE5NTFhMWNlMGI0MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_80fd5116ab8b4028b3276fa5993da5a8",
+      "statement": "CI runs are still sent but are tagged ci:true and attributed to a per-provider sentinel id (ci-<provider>) rather than a unique install id, so ephemeral runners never inflate the human install count; only explicit opt-out stops sending.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/gates.ts#L35-L59",
+          "version": "repo-lines-v1:sha256:d54e4b0034cf2992d5718bca2ba4d45c628a33c60474eb03757d7ed65c4f371d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiY2FhYzQ3OThkNzk1NjY0YWZlNTA5OGMwZGFmYTIyYWYzOWMwY2JlYTFmOTliODA0ZmJkMGYzY2U1Yzg1NmUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L144-L146",
+          "version": "repo-lines-v1:sha256:6949dff2231cb33a5916fd063b9f9914514dc1202bc7a6e629c1fa8674a6f37b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1OTVmNGVlNWZmNjNkNTA5NTA0MTlkYzM0NDE0NTEzODUxZGM5NzM2ZmQxN2E0ZjdiZmE5MzBiMjYxYjZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQxNWJiN2YzNjM5M2VlZTRmMjY0NDM1ZDE3ZjJlM2FjMmQ2OWU2YTEyY2Y0YzA0NTAwMWY1MjZkNjEzY2IwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQwMTc5YzM4OGQ3NTE5NzVlZDdiYzUxZjA4NWMyYmJjMmFkN2I5MTBkNmIwYzJiNWQ4NDk1ZWJhYTA3NmYwNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e531c35bc0a4109addd693eb90336f6",
+      "statement": "Every event is stamped with production provenance derived from build origin (isProductionBuild, true only when running from dist/, not from NODE_ENV) and a build_channel that is \"official\" only for npm-published upstream builds, so real usage and official-release signal can be separated from dev/fork telemetry.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/gates.ts#L1-L23",
+          "version": "repo-lines-v1:sha256:07a1979e2fd99a3029dd73c513e63f8332f5dcd3620355c550caf86984582651:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMzQyMmFhNjQ0OGU0YjcxNzQwYjVjMWNiNzMyNDkyMjVmYmY1MjY2MTg5NDc0MjAzNTI5Mjg3MzNkMDI2ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MGUzMGY3MmE2MTUyMTRlZTc3NjU0NTg4NmI3YTFjMzM3ZjM0MjJmYmQ2MzU0ZDdiMmQ3NTgxNTFhZGU5YTYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L61-L79",
+          "version": "repo-lines-v1:sha256:69b33280e56805e95d71c79bc9634dcb07c5d4686be1ef1ff871a8a50021002b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxOGZhY2MzMjY3Mjg2MDJiM2QzZTVkMDk5NjJmNjBkNjljOTdlYTkxYzE1ZmE4MWZmYjAxMTI0MzI1MjEzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyOGE0YTFhYmJlMzI0MTQyMDQ5MGJjZTAzYWU4ZTY3MDQyZDZmMDUwMzU1MWViYjY1MTcwNzA1MDJmMmQ3ZGEifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L103-L116",
+          "version": "repo-lines-v1:sha256:280a02b6abad09bfd090db0d0889ea3e1abc02ac0a1037cdffa2fac90b4d9a12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ODNjMTczY2FmNWM1NTRkMDZjZDBmMmQ5MzA1ZWM2YjJhNTYzNDViYTQwMGU0NGYxOGZmNTQzZDA5YmYwYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ZTk5ODAxMzBkMTFjZTYzY2RmODJlNjRiZTlmMjBiNWZkZDAyMGYxMTMyNmE3ZGUwNjdhOTc5NDZiNWRjNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ZTMwNGY1MzZlMjE1OTg2NGEyNTI2ZTYyMGYwZjhhZjM5NTdlYmM4MjA2Y2NkMjVjZGI4NjJhYmNjNmQxZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNjliYmM4Nzg3YTMxY2Y5M2I3MDVmMTRjOTExZTllY2Y0MzI0NTQ5OTc3Yzc4NjY2ZDVjNzA0Y2U5ZmE3ZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc0c2550c3934d85a5b0584248a13d9a",
+      "statement": "Identity is an anonymous per-machine random-UUID install id stored at ~/.openwiki/install-id with owner-only permissions (file 0o600, home dir 0o700), created lazily; the id has no relationship to the user, machine, or repository.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/config.ts#L15-L18",
+          "version": "repo-lines-v1:sha256:601d23f0cc67fffe637e2c9d952cb5cc599261f710c43f82b13f96b7d099cb4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2ZmM0ODAzODA2YWQyZTNmM2UzYmY4NjA5ZWM2ODRlZDQ2ZThkZTJiNmFjM2Y1NDM2ZmIyZDU2NWQ3YThhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjMyMGZkZWJjYTk5YmNhMTI4YzhiNDBmNGQ2MThkYTEwOTJjZjFmYmYzODFhMWE5YzE1YzQ2OTliMTMwNDgzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY5MzYzOTQ0OWU4MTYxNDFmNzZmZWMyZjU5MGEyNTBjY2M0YTgzYTg2YWM5YmYyZTNjY2I1NGRhNzJiMWEzMCJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/install-id.ts#L8-L38",
+          "version": "repo-lines-v1:sha256:0bffa590d524b8fb2439fa321bc20ddcd3c9ebb0c6df72f464a6c73bba818e44:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NmQwMjAyYTFkNzRlYmQwZjRlMDBmYWQwMmNlNDEyMjIwNGVjMTk2Y2M0NTJiYTczYWQ5NzcwYWRhZDYwZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMDM5NWZjZTkzZDdhYmE2MjllMmI0MDhmYmEzNjVmMzFjZDUwMTVjMWYzZGFiZTAwNjI0Njg3YTJlNWZmYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71aafdf65786476c9a8e06cc4d52dbec",
+      "statement": "firstRunNoticePending returns true only on the run that mints the install id (isNew), returns false and mints no id when opted out or in CI (noticeSuppressed), and never throws; the CLI calls it once at startup before any event is sent and renders single-sourced disclosure copy from config.ts.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/cli.tsx#L72-L103",
+          "version": "repo-lines-v1:sha256:edd0bf0c5088e418c235581469f5d602b6ce3ffc3727292bb86815e46a33ea99:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZGVkNGE4ZWJjOTFjYzM0NTU0ZGJiMzVkYWQ2MGVkN2YyMThlMzZkOWFkMGRlM2IwMDBjYTRlYzJhOTFkOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1OTE3YmM5YTExM2E0Y2NhOGY4MTIxNTBmZmY1ZGRlOTc3NGE2NjA3NjBlMDAzMTliZGQyYjc3MDg0Mzc2NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZjI3NzA3YTcyMWNmMWY5NGQ2M2Q1ZWJhY2E4NGIxNmE5YmE5MTQxOGI1MWRjYjQ2NmE0ZDY0NjgwYWUwYzAifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/config.ts#L32-L41",
+          "version": "repo-lines-v1:sha256:16dc1e2d45aeaa4a066b135e3702c4b43a8a193a65e3ce9e87a71f719112d0e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiYWZjNWM2M2M0NWZkMzIxMTg0MTRjOTE2YjgzNjIzYTY1NDkyZGM3NzcyOTZmOWU3NTMwMDEwZTUwMmQwYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNmM1Yjc2YzgwNzRlNmM5MGI1N2I3ZDRhMThmYTUzOWUxMTdkMWI5ZWIyNzIzODJmNmEyMDMzYjhlNGNjZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L61-L68",
+          "version": "repo-lines-v1:sha256:3ce729df72a9a10aec58d4b8dbf8b70eb52aad807a128f2fc4bf150ef0be9481:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDE4ZmFjYzMyNjcyODYwMmIzZDNlNWQwOTk2MmY2MGQ2OWM5N2VhOTFjMTVmYTgxZmZiMDExMjQzMjUyMTM3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2VlOGJkY2IwODBlMTYzMmZjNjVhZmNmMzc0OWE4N2E0N2M4YTg2YTA4YTgzOWFiMzU0NTJjZDU1ODQ1ZjJiMyJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/install-id.ts#L40-L59",
+          "version": "repo-lines-v1:sha256:ddf0ef75a718f8b0f18b3130732adc3e7e1e2a5b6328267b98dbf86998979be8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1N2JjYWJhOTVhMWFmN2U2ZTM0N2UxZjg1ZWJjYTVhZDE5MTg3NWU2YjJhM2I3OTA2Njg5MGM3ZWJjMTM1NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NzNkZWM1MWIwYjgxODRiNmEzOWI2M2Y4ZTgxZmRiNzRiYmQyNDljMTk3NTRmMjVhOTkwYzljYTI5MGY2MzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_41af8302f7d04c7fb3f409b2331f5580",
+      "statement": "withRunTelemetry is the single boundary that records an openwiki_run event, wrapping the whole setup->connectors->agent sequence so a throw anywhere in it is recorded exactly once, and it rethrows the original error after recording so the CLI still owns the failure UX.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/runners.ts#L289-L320",
+          "version": "repo-lines-v1:sha256:98d51c73b43689e03b327ec8605f550cb0a2fffcb9dc064c96185cad0730746c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMzdjODQ2MWM0YTkxODJkMTg4MDYxMmMyMWE1ZWExMTk4ZTU1MjAwNGU5ZGQyZTMzYzE2MGQwZWRmODMxNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ODhmMmU4NTdiMDE0MGRiYTU3NTFhZjdlNzVjYmQ4ZjVlNTJjNDFkODY4NzZkM2FkNmVhNmUxYWIxNTc3YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YjM3NGQ3MDMwZmUxODU1ZDVmOGEzZTZlZWVmOGQ1YzFiM2I4YTk0M2I3YTliNzU5OTFkNjI0NmM4M2ZjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ODkzMzIxODhlMGY4YTUyMDlkZTNjOWQzMjE0ZjdhYjgwNTY4MTg4M2RkMDMzYTMwYjRiODkwYzdlYTY3NjYifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L188-L193",
+          "version": "repo-lines-v1:sha256:a027e0da08c09d97311e4798e0e06c939eedb5d11c2028e0b36607979dd299b3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU5OTljNTU5YjM1NTEwM2MyNTViYzIwYTI4OGIyZDg5Y2Y4Y2ViZTJmNDVmYTc0NGYzNTgwMjBmMTMyZDFkMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjUxYmJjNTkwY2E1OGFmZTAwYmNiYzE4OWI2NTc1ZjZmMmQ5MGRiM2Y3MDRjMjFlZTBjYWNiNDcxYzdhMDgxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDJmYjk5YTg2ZDgxMzk1MDg4NGY5YmUwYjViNjAyOWFkYzNmYjRmZTY4OWRlZDhhZTQ5ZDAzMzI2NTg0NGY4YyJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/with-run-telemetry.ts#L39-L85",
+          "version": "repo-lines-v1:sha256:1d8f62ee9ca7860a6fd35f59943bd1800202523be70135050759354f151f3a98:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzhmNDYwNmI4ZWY1NWM3YjUyZDg2YzdhMDc3YzYxMDdhYTdmMzdkNWQwOGE4OWJlOTUzMDVhOGUxZjhmNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_940292b473ac43d9b69287888701a256",
+      "statement": "withRunTelemetry threads a mutable RunTelemetryContext through the run: the agent publishes the resolved provider onto it the instant resolution succeeds and publishes a noop outcome for an update short-circuit; a clean return defaults to success and a throw records failure with describeErrorForTelemetry diagnostics.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L243-L250",
+          "version": "repo-lines-v1:sha256:dad168ab58b0857d13b7d105990e16ee8465dae24c6225995bdc8657173a28d5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1OTVmNGVlNWZmNjNkNTA5NTA0MTlkYzM0NDE0NTEzODUxZGM5NzM2ZmQxN2E0ZjdiZmE5MzBiMjYxYjZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcwYjhiNmE3NTE1Njg4ZGIzZDAxZDk4M2RmZGY2ZDQzYjkzMDUwNzJlYmYwYTg2MmIyNzBlNjk0ZTI5NDc1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWYxOGJhNDE5M2EyODNiZDM3ZWVkYTQ4Mzk5NjhlZTMzODViOWJmZTIwNDYxYWRmNTk4NmU2MGJmMzI0MmQ1ZCJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/with-run-telemetry.ts#L17-L37",
+          "version": "repo-lines-v1:sha256:458ac0f28448043dcc07fde597e89039e3c06b31c744e5def499c731967a6d05:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMjRjN2Q2OTcwZWNkZmQ4YmZlZTBkNTFiYWMzMjJmMDVjMjEwMTEzODM2ZTk4Y2UyMDlkOTBkNjdmZmMzZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhMGQ4MzAyN2Q0ODQxMDYzN2E1ODNjZmMyOWYwYzE3NjE0MGRiZDI0NjgwYjFlZTM3YzNiMTdiZGIxMGRkOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NWYxNWU1NTcyMjk1OTg5ZmI3NTYyMzk4OTRhZDIxZDhjMDc4ODMzOTkyYjE5MTkwZWJhMmQ5YmNiN2Q4YTYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/with-run-telemetry.ts#L65-L83",
+          "version": "repo-lines-v1:sha256:d7a153be844ba09cf48090ff8e87e96b17c8d8081b369073d66fa59ba1e50a64:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMzE2MDEzZmUyYWQ4MzRkZTc5MmY3NTc0ZDliZTI0MzA5NzhkODE4YjlmMDk4NDJlNzRkZjJlZDhkNjFlNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmNGViYWMyMTgxNWI4YmI0NTk1ZTI4ZjJjOGM1ODhiMjY4YmQ5NTkwZDk4MGI1ZWY2ZTU5YWVlOGI3OWJjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_048bbdd89da14655adc5ad266c94de99",
+      "statement": "recordRunSafe is the run-lifecycle-to-telemetry bridge: it drops chat (so only init/update emit events), maps output mode to the brain mode, and attaches setup fields (mode, provider, configuredConnectors) on init only, omitting them on updates; like recordRun it never throws.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/record-run-safe.ts#L36-L75",
+          "version": "repo-lines-v1:sha256:8ead39ffa3bfd066c5a72c36dd96c289dab3d90ebb75f3b794bf057cba4d803a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzOTNiY2RhMmY4YjQ3MmFmNTNkZjQ5ZDZiOWFhMzIyZTNmYzQ4YmY0Y2FkN2JkNTI3NGIyMDdkOWRkYjRlYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMDgyYzQ1OGVjMmU3M2ZjNDExZjBlMjM2MjJjMGExMTg0ZWY2YjlkZTEzNTk3OGRlY2E2NTFhMTYyYWEzMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_296016ca3fb34046bf45caf867c86a40",
+      "statement": "buildRunEvent is a pure builder (no IO, no process state) that is the single source of truth for the openwiki_run payload, spreading in setup and failure fields only when present, so successful and update payloads omit them; this keeps the production sender and the seed script from drifting apart.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/senders.ts#L66-L125",
+          "version": "repo-lines-v1:sha256:68a0f180587a45b13292bc95d8af7d0ac9a67f32229b2a59428c1cb658459379:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYjFlMjY1ZTI1NDQ1OGM0YzBhNGEyZjA3MzZkNzE0MzU0N2VmZGNlMWIxNjdhZmExOTEyOTE0MmI2NWU4ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYTZmZDU2ZDAxZjc4YzZlOGQ0NmFhMTc2ZTI5YjI3NjNjNTliMWViMGQ3YzEyODk0YjlhYjJiODgxMjdiYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f52c1df41a1409fbbd1fcf05c4e0015",
+      "statement": "Configured connector ids are flattened into boolean connector_<id> properties (present = configured) rather than an array, making connector adoption a dimension without array unnesting.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/senders.ts#L241-L250",
+          "version": "repo-lines-v1:sha256:2ad21f3f23c7ad1bc1fb9366b7d5e8908d3e79de654c64d1493134a833680ad4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNzlmYmUwMjlhMWU2OTA3NDg1Y2M5MmRkOWYzYjdmMjliNTE5ZmYyOWFhZWJlNjI5OTMyZDEzOTVkNWNhYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2OTcxOThlZWRmOWYzNmJiMjIwYjcyZDZhOGE1ZjkwYWVlOGZkZDcwN2ViMjA2OWE4NjU1ZjZmN2YzN2FkNTEifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/types.ts#L146-L151",
+          "version": "repo-lines-v1:sha256:f6f4ab79efcbed14bef3a3a3b209737e7f4a96e8fecedc802993fb52b5208b6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyYTJmOTk2ZjA4ZTY4MGJkMjkyMTM1YTZmYTQ5NzhiZGEyNmU2MDJkODRmMzNjYjFkNTk0Nzc1ZDQzMDRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc3M2MxZWFmNTJlNDIyMTBhZDIyYzUwZjY1ODQxOWNjOTgwN2UxMTk5N2Y0MzZiYjc0N2M1ZmRlMDFkMmQ3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTc5MzgwYjljYTcyYmZlY2Y0MzAxZjllYjRiYTZjNjM0MDU3MmVmODU5YjY0YjM5MTczMmNiMGU5ODI0ODU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI4NjE3NWM0NmNjMzgxNmEwNTFmMDIyZTA4OWJiNjE5YTFjMmFiYTVkMjRjZWQyMjY3YTQ1YjJjYjAxNTM3MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6de891cbf24a45da81800694876cb138",
+      "statement": "The event is sent via PostHog captureImmediate (whose promise is the single HTTP request) awaited under a 3s FLUSH_TIMEOUT_MS bound, deliberately not the queued capture()+shutdown flush path that can drop events, and the timeout guarantees telemetry never stalls the short-lived CLI.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/client.ts#L10-L69",
+          "version": "repo-lines-v1:sha256:c92a8eb921b6b27ecdae2a40d6053933b32c2b76b9b3b80e09b815a53c8ef252:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5NjJjZGI4M2FmNzMwY2MwNGYwMjRhOGY5OGJiMzZiMTIwMGU2MDM2YzUzY2MyYTMyZWMzODk3OGJmYmEyZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjOGYzYTM1YTVmMWQwMTU5NTY5MGU1NDM5MDZkZjdhZDIyNzFhZTAyZWE1NDQ0M2Y5MmRkN2Q4NmIxMmIxZDcifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/config.ts#L20-L24",
+          "version": "repo-lines-v1:sha256:f1ab3a3be1a8ecaa6be18ce27141737db93fd5f2c9602dd5f85ae01a4251a6ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVkOGVjMGQ5NTVjMzc0NmIwNGRhMDQxMGIxNDI5ODJmYTQyOWJiMGVlYTg0YTQ3ZDAxZDcxYmVhODcxNzUzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTBmZWRkOTgyYTQ0ZjI0OWFhNjQ0OTA3ZmExZTA5MTBkZTFjNDA4NDVlMDA4YTZhYTMwNzQ5OTVmYThjMTliNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRhY2M3MDZmODU3YzRkMjkyZGY4ZDE0YjJkY2YwMjU1ZjI5ZGFlYmQzNjM3NDM5ZDJkZDY1ZGZmNWM5MDFjNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_25d78688f180409f973cbeaa45a35366",
+      "statement": "capture returns false (sends nothing) when no PostHog key is configured.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/client.ts#L22-L26",
+          "version": "repo-lines-v1:sha256:7cbd04e07b5146e56935a9c4b747c4fb8223985b5748252be752467190d8244e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTIwZTJiOWI2MGNjZWQ0NjdmZTIzOTI3NzI4YmE4ZjE2YjViNzEwNWU0YmQ3ZTJiNGI1ODMyZWQ4YjE0NjBhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNkNDZiNTQ3NTY0Y2U3MDBmNDU5NzUxYmU1M2ViY2MxNzViMjU4NWMwMGEzYmJlNjQzM2QzY2I0NjJlNTQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI2ZjFhNWQ4YmU3YWQ3YjcyMTQyMzdhYjIwYzRhZDRlYjdiMzdlM2U2ZTc1YzA5ZGNmMGU0NTI3ZDc5NDU4ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bba6cb3f5b144c48af342dbf864c646",
+      "statement": "The --telemetry-file tee writes the exact record to an unguessable owner-only (0o600) scratch sibling opened with flag \"wx\" (refusing to follow a pre-planted symlink) and atomically renames it into place, defeating symlink attacks and permission leakage in shared directories; a failed tee logs to stderr but never fails the run.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/senders.ts#L156-L165",
+          "version": "repo-lines-v1:sha256:2b582e66bb30a4048330544ef38b3c1fe5a108813d10276e48c8a95671f9aa08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiYTdmODQ3NmFhODZjMzUzYjMzOTEwYzc3ZmViOWY0YmM3ZmQ4MTQ1MGI0MTkxMDkzZjhlNjVkYzRhYjEzZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3ZmRhZTM1ODdhZDg1NWVjNDA5Y2M5MmViZTA4NzNkMTIyNjQxNGExM2YwOTE5YjgwZWJlNDhmYzhlN2U1MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L252-L291",
+          "version": "repo-lines-v1:sha256:33c85e5ee6e444323a2211b69c6422e01b76b57cf632526570b16b7c98002633:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYzE3OWFiODUyY2Q3ZGM0MzFjYzFhNGJkMDI4YTFhNzBkNjhmMzAwNzk5MGVmNWEyMWFhYTJmZTE4Y2VhYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7ace948f7334142861b1139ab32f1ac",
+      "statement": "Every event sets $process_person_profile:false so PostHog never builds a person (unique-install counts still work off the install-id distinctId) and sends disableGeoip:true so no server-side geoip enrichment occurs, with the raw client IP additionally discarded server-side.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/client.ts#L38-L50",
+          "version": "repo-lines-v1:sha256:3a0d091daad9bc259e7d179183c11a9f75f20f3239e765cce878cffabe4c182d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNDNiMGM4YWEyOWZmMmIzNWJkYTBmOTBjM2RlODQ5MWQ3NmY0NjE1NDRiNjQ4MmFmZWZiNmNmNmZhMmY3ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNjdhZGIzMTY3NWQ5NTE1YmM1ZGU0YmRjMWUxMzY1MjUzY2YxNGQ0ZjJmYjAxZjk4NjJhNDYwYzU0MWJjMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZTg2NTc2MGI5YzFlNmM1NzIwOWIyMzhkNWI2MGZlNTBlM2Q3NjM0NzUxMzkxNzk5NjUxZDk4ZDA0M2RjYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYjBhYzNkMTgxMTkxZWUwYWFmZTNjNTRjNmZlZDgyMDMwOTJlMTkzOGQ0ZWEwOWVlMDQ3NjJjNWNlZmE1NWQifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L116-L123",
+          "version": "repo-lines-v1:sha256:fa5fac5a33159666ac14861c7e9bf835a0cfc101289cda7c2c728a97d722a270:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNThlOTk4MDEzMGQxMWNlNjNjZGY4MmU2NGJlOWYyMGI1ZmRkMDIwZjExMzI2YTdkZTA2N2E5Nzk0NmI1ZGM1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjQ0ZTRkZmE5ZDM3ZmNlOTkzZmZiMWVhZDRkNTE0NjllNGIzZjg0NzU5NzlhOGQ5ZjNkOGE3YTMzZTBlMDg1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTIwNDBlMDk1YTk0ZTJhZGE3NGU0MjFmMzcxODc1MWE5MWE4MTBiZmQ2NmY0OGY0ZTkzOWM3Yjc0ODBlYjY3MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_60056a07b52044f4b0b88d7ac973a2cb",
+      "statement": "Raw error strings, messages, and provider strings never enter the telemetry payload; the failure path emits only closed-set enum members and bare integers.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/errors.ts#L128-L146",
+          "version": "repo-lines-v1:sha256:39acf34510935f43d2e1bb9ec985a948d6930273315328793217165e73426ad8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMjUzM2Q1MDU3NWI5MGRkMzAzNmUzMGRjNzcxMTgzZmY0MTBlMDMwZWI2NDBmMmE4OTJmMTJmMzljYTU2ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMzhmNDE1Njg5ZTkyYTM3MzYxN2RlNGU4NWJhM2UyYmRhZWU5ZjdkMjUyYzFhYTQ3MjA5NzY2MDJjYmQxYTUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/senders.ts#L84-L99",
+          "version": "repo-lines-v1:sha256:816b23ad9e0c95372a3c843315e24e9705152da3f1db2f3456b11f00d03f00ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZTE3NmEyNzMwNmQzZmQ4OTdmZTQ0YWZiOTcxMjRhZjFiMGFmOWU5MWNlYzc4MTJhMTc0Njc4NDIzMjVhNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2MxOTc2NDBmOWRkNjM4YzAwNTlhMWIxMTA1MjliMTc2ZWFlNjgzMmYyNTU5Nzc1YTNkOWE3ZDAwNzRhZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhNTYwMmEwMmIwZTg3ZjIzZjNjYjRhMTBkN2UxOWRkNDM1ZGIwMTg3ZDM1ZjQyN2RjODZhMDk3ZmQ5ODlkODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZTMwNGY1MzZlMjE1OTg2NGEyNTI2ZTYyMGYwZjhhZjM5NTdlYmM4MjA2Y2NkMjVjZGI4NjJhYmNjNmQxZDgifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/types.ts#L1-L11",
+          "version": "repo-lines-v1:sha256:cda836f1abb2b2e6c1dca329f0bf1f690a1e306448751973bdc2a321d7331fac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NWQ0OGNhNGM5YWI0YTcxMGEwOTZlNmIyZmFkOTlmZmFlZWY4NmEzMWU3YWZlZjczOTNhMjdmNWNmOTJjZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a40f0f6306a54fba97d68c59b5370f3c",
+      "statement": "TelemetryErrorClass is a closed set of failure families with agent_error as the residual bucket for anything matching no rule (the quality meter that should trend toward zero).",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/errors.ts#L136-L146",
+          "version": "repo-lines-v1:sha256:dbac89f046f3f2c466f68ac28daf65aeb788cd2112307a6543332478440a51e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNjU1YzgxMmJlYzViYWQwYTcyYmQzZTRlZDFjOWU0MGFjNmU2MWY1YjMxZjFiZDAyZTFmNjcwM2FiMTU1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmODJjMzVhZGJkMzA3ZmQ2NWJlN2RkYmJjMTc4ODc4OWFiZTA5Njk3ZjBiZTBlYjM5Njk1MDVmYTM2ZDkxZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMzhmNDE1Njg5ZTkyYTM3MzYxN2RlNGU4NWJhM2UyYmRhZWU5ZjdkMjUyYzFhYTQ3MjA5NzY2MDJjYmQxYTUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/types.ts#L1-L25",
+          "version": "repo-lines-v1:sha256:520e53b710ecab07b95458ef9b032df4596f2d9e6df1521975d3ff4d8b8db409:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMWM0NzY2MzZkOWY2OWRhMDg5YTc3YjNlNjUyNTE5YTViYjgzZDBjMTFiYWY5MmExMzg2ZmQwYTgzZWExNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyOGU1OWY5YWE4MTI0OTNkYTdhMzY5MWY0M2M1ZDU2NWZlZmIwZGM3MDI0NjIyNmVlZTdiNzc5NzBiZWI4MjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2bade26f492447d81e6883912826b7c",
+      "statement": "inStage/inStageSync bracket a pipeline stage (config->build->run->finalize) and stamp thrown errors with an ErrorOriginTag carried on a non-enumerable symbol so it never serializes into a payload or JSON dump; the tag records stage and, for owned families, the class/detail decided at the throw site, with first tag winning.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/errors.ts#L312-L339",
+          "version": "repo-lines-v1:sha256:11592b8f971f961de16493ca060396a8d54a9e248986fe495a597857a0bc53d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjYzg0MTg2MzQ5MGNmNDgzYjQ5ZWY5MmVjYTBlN2VmYTg0MDg0ZjNmYTg3MjU2N2RlYzI2MGMwZDZjZjhlZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZTk2NmJjYmJiZjE4NTEyZWQzYjA4YjYwYTlkYzUwZDdlOGJkMWNkNDQyZDQ0YzRmMDEzZjg1NjlhZmE3MzUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/errors.ts#L360-L390",
+          "version": "repo-lines-v1:sha256:b0042cff437796de262442c68ba2317e747732f748c3461edb044addea988f83:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzMjcyZDQ5ZDg1MmZlNzc4M2NhYzVmNjJiNTE3NzMyZmY3ZGJhNjA4OWZiYzM5ZDc5NDQyMjY1MzE2YzgzZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiZTUwMzk1MTQ3NjY4NGRjN2VjYmExNWM3OTM2NDUzMDkwZDZlMjdmN2NjOGM3MzFkNzYxZjQxM2UwMmRlZGQifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/errors.ts#L457-L497",
+          "version": "repo-lines-v1:sha256:6f0b6c44f40ece0f57f8ea27f3278fe89b311a0cf38001b87e63fdfc3fae7133:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0Y2M5NWYxMDZhODIxMzdiYTM2ZmMyNTYwMzZkNjUyYTdkMWM5MmIyNDBjMTU0OGIzYTc3MzQ1YTk1OTA1OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMzIyZWFkMWYyNTBjMjBkN2I1NzVhMDZkYzg2YWFlYTkzNDRhYmZmYjc4OGJmOGQ3NDZjMTdkZjU0NjQ3ZTMifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/types.ts#L43-L49",
+          "version": "repo-lines-v1:sha256:9e6c86021a8b0f3b99de4784c27fe238f8600ac02b357f75297d1f876517a799:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y0ZGMwYTFiNGFhOWIxZTMyZmEzNzAxZjZmNDEwNzU0YTE2NDdlNTlhZDU1MTA4ZTc5OGJlZWQxODQ1ZWE0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjdmYTYwMTA1NmM5ZjkzNDRkMDY0YmM3MGNjYWU4ODZhZWY0ZDg3MDdkMTdiM2Q5MmY0ZTY0NTFmYWE4YTBlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDExYWZjYjZhNTA1NWRmOTRkMWU2NTI0OWU0ZGJjMjJlYWVkMDc3ZDBmZDQ3YWUyNTBjNzVmMDM3YzU1NTM5ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c02f504b8c7472e9a6da96a5bc980bd",
+      "statement": "Classification walks a nearest-first, cycle-safe, depth-bounded (MAX_UNWRAP_DEPTH=32) unwrap chain so a provider error hidden inside a wrapper or AggregateError is recovered rather than collapsing into the residual: classifyError returns the first named class, readErrorOrigin returns the first owned-family tag, and firstStatusInChain surfaces the nearest HTTP status.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/errors.ts#L272-L287",
+          "version": "repo-lines-v1:sha256:53e95f3c80cf0e97e004ddf683ae47290559a26ef07adfee575d35d861b1424a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljZjNiNzMxNmYxM2ZlOTJkYzY3NDEwNzhiOTMzOTZjYjcwNGZhY2I1N2I0NDA5MmFjNjcwNmVmYmNlN2ViOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1YzAyMzZhYjI5ZDQ5NWY1MDk1YjhmYmM2YjEwOWFmZjdmNGU0ODBkMDJlNzM1MDQ2M2ZhNzkyMDVjOTQ4MWYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/errors.ts#L408-L444",
+          "version": "repo-lines-v1:sha256:34bc8b7d3dc29165644708d6f220f178c05d08797bf05fd5e6b9241705b69500:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2Yjg1ZGI4ZTI4YjI4ODZlMzExMmRjZDJhZjgzNzA5NjYzNjEwOWFkNjdkNzQyZDhlZDY5ZDg1MDVmM2JhYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwZGY1MWVjMWUxMjZhNzY0NzZkMGNlY2EyZjY4MDBmMDM4ODhjMDQ0YTRjOWMyMThmMTEwM2Y5NjdjMGYzOWYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/errors.ts#L66-L146",
+          "version": "repo-lines-v1:sha256:73c878f2addb49f0e835971247c1072d236415b0c2dbe3e03991e81d0914e7de:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZmNlYWM5Mzg4MDM3YTZjNGUyNjdkODBmZWUzOTM0ODI0ODliOWM5ZGEwMDFmMTFhMGUxM2FhMjYyMTM3YTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMzhmNDE1Njg5ZTkyYTM3MzYxN2RlNGU4NWJhM2UyYmRhZWU5ZjdkMjUyYzFhYTQ3MjA5NzY2MDJjYmQxYTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce946a047dec4a09865abee68c98953d",
+      "statement": "A build_error/stream_open origin tag is overridden by the raw classification when the failure carries a provider signal (a provider_error classification, or an HTTP status paired with any named class), so a disguised provider failure at the first round trip is attributed to the provider rather than counted as an OpenWiki build bug, while a signal-less stream-setup failure keeps its tag.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/errors.ts#L641-L680",
+          "version": "repo-lines-v1:sha256:04557b67517d9bfc2e8d224458ad5266670287c23b55efcb29ba28246c7fca58:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMTIxYjU3N2U0OGM5YzhkYmE5ZjAzMGE3ODU4ZTIxMjFkZjJhZWRlN2FlNDk2MmIwZGI3MWUyNDY0ZGRkNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4ODBkMTY3ZDRkNjdiYjg5NGUyNmYwODc1MGRhZDBlMzQ3YTliNjE5ZDliZWRhNDAxZmM1MzJiOGU5YmY0N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwNGJiZWY5ODE2NmIxZGIzYWUzZTRhYThhNGU3YmY0MTFjOTJkN2ZlZWJlMzRmZTNiNzVjYmVmYzFlZWZkZmEifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/errors.ts#L682-L714",
+          "version": "repo-lines-v1:sha256:3ef8ccd780b6adcacd01b33190c6b9e0e4628202c95b5059e574bf64b4d54b1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3bc30d70cd1a47649a5d35dbe99354e7",
+      "statement": "errorDetail is the anonymity spine: normalizeErrorDetail validates each observed detail against a hardcoded per-family allowlist (FIXED_ERROR_DETAILS) and drops off-list values to undefined; connector_error/tool_error carry a registry id validated at the tag site instead.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L111-L147",
+          "version": "repo-lines-v1:sha256:7aa9524169fbd576132f4e8deaffec2702ae77fc15a7ac1c3bde9eda68cb9d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkM2FmMmI3NzZmZDgzM2ExNGUxZWE0NzZjNTFkOTEwYTdmMzQyZTU5NjdhYTZjY2IwMzBmOGNiYzA3ZjUxMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyNzA1Y2YwMDZhZWVmYjc2MjcxODUyZmNhNzFkMDQxZTYxZmNlN2M1M2E3Mzk0N2MwZGEwNmNhODdjNWY3NmMifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L7-L63",
+          "version": "repo-lines-v1:sha256:2a3128e612768fec16a3abf8f6f292b04532f667cb06d1b5311f6c70131416a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNzkwMjc2ODk4ODNjOTg5MjczZWYzNmFkOWE0MzVmMzVjNDViZmRjNDlkMjI0ZjYzNTNiODc1NDAxYzVlNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmZWJmN2RkNGU2YzgzNDQ1YjYyODE2Yjc1YzQ0YzA3MzI2YWYzN2E0YzExYmVmODdiZGM4ZjJlMzUwZGI4NzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_28224c74f90940c4bed2df78bb73c441",
+      "statement": "For the residual agent_error bucket the detail is the innermost error's own name (innermostErrorName from the cause chain), gated by isSafeErrorIdentifier (a bare identifier of at most 64 chars) so a name carrying a path, URL, space, or user value is rejected and the anonymity envelope stays closed.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/errors.ts#L596-L623",
+          "version": "repo-lines-v1:sha256:14fc1a0ca237cf09c53fc91d9123ddf35de2b98cf6c04d24552488a301cc0da8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxNWRlYjllMTY3YmNlZGEzYTZiMmZkN2E2NTcxYzNlZTU5ZDlkYWVjZWIyZWZjNzA3YWNmNTI1ZWI3MGM4Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0MDE5NjY3MjA0OTU1NWM4NzFmNWZlNWU2OGJlOGVmZmI2MWJiZjc3ZWZmZjVmNDJmYzQ1YjAxZWE0NWU1MGYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/errors.ts#L663-L668",
+          "version": "repo-lines-v1:sha256:9a2422399988ef4ad65e5ce42aff0ce0b98d43dc0ec0289960530edb0b188892:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyMDEzYjcxNjRlMjYyZWE4NjBmMmE5YTdkZDNmYmE2MTMzNWU1ZTAzNWY3Yzg4MTA5NTZjNmU3YzJjNmVkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjk2Yjg5NThiM2YyYzkxNzcyYTVlZDVjZDY2OTM2OTE1ODkzMWFhODYxMTlkNTkxODAxYzRjMWE1MDRhOTNkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDNlYTFlMjJhYjI0NjVlZjBmMDk0NDczZjBiNjQxZTk2NjlhZWZjOWY4OWUyZTlmNGE0ZjNlZmViNjY0ZjcxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQ0YjA1ODE0MzJlNDY2ZDI1M2UzNjQyZjBmNjE0MzVkMjk4Y2VkNzI1YWRmZWVjMDQxNTY3ZjlhMGMyZjdlNSJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L134-L138",
+          "version": "repo-lines-v1:sha256:e70502ad43f5ff91b34d92f58ac518b4f0a01bd20b65a533406f6b8ca9329972:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE4NjliYjQ0MGVkMWMwY2I1MjQ0MzM2NmI0M2U2MDRjOTgyNTg3NDFlOTAyZDlmYjIwMDgyMTMwMTU2NjZhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWZmYzRmOTY2MmY4N2ExYzA3YjMxYmFlMjk2YTAwMjlkMDk0M2U4ZWM3NmM4YTE2YzkyYmE5MzM5OGFjZmY4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA3MWYyMTFlNDZhODhlZDFhZWExZmU4NDgxMzc4OWJlMDM2OTM5ZGIwYWEwNWQ5MTUzZjcyZTIzYzAyODE2YSJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L65-L91",
+          "version": "repo-lines-v1:sha256:7c0b55dfb431cded89de7b223b07433661f88b185486b6dae56914b9e0053b20:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZWUxZWQ5NjBhNmNlMDAxYTY0YjQ2ZDU3YWMzM2UyMmU1ZDhjM2RhMTkzMmJmM2ZhYjdkZDFmNDYxYTgzNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4YjVjNzdlNWQ2NTY3NDg0OTdjNmE5NGI3NjQ4MGI5ZDRjMDM1MTQ2ZjFkYmExZGYxNWNjNzZlMWZiM2MxNzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_180129bbaefa434698750cb86e34a375",
+      "statement": "deriveOwner is the single source of owner truth mapping (class, detail, stage) to environment/provider/openwiki/unowned/control, encoding cross-owner exceptions PostHog cannot derive: provider_error auth/quota_exceeded and network_error dns/refused route to environment, and filesystem_error at finalize routes to openwiki.",
+      "evidence": [
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L149-L197",
+          "version": "repo-lines-v1:sha256:e852d928f5f1ae881d34ffa392beafa85b65e7243afe28af49484b2a0d1b780f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlNTM3YzVhMjNjMGNmOGU1MmE5NjBjNDY3MDk1ZTcwZWZkYTZhZjc3NWJmNWM3NjU4YjllZGI1M2VhYzFmMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/taxonomy.ts#L93-L109",
+          "version": "repo-lines-v1:sha256:86498aca1a31167f1e7b3f8dcb4e49e05214f4dd552c78fb1dd68d83217d895a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNDBkN2E1YTRkNzBhNmQxYmRkZWJkMWEzNzk5ODQwMTNmNGI0N2I3YjJkMjAwMmFjNjBkMTk1MmJlODRkZWYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/types.ts#L27-L41",
+          "version": "repo-lines-v1:sha256:261b3843428331eefd60112bedebd8f19ba8368a3a09e172a0a1b79c01514d9a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNmFmMmNlOTlkMTdhNTJmMWQ4ZWI3MTA1MzI2NzZiZWU1YjZhNjgyNGI4NTc0NGFmNjY2OTMzMTdiZDBkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MmM2MzU2ZTdiNjMxZGI2Y2UxY2ZlODE4MzdhMzMyYTU0MjYyNzVhN2MyMmM2M2QwNjYyYzU3MWYzMjg0YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5OTc1MjM2ZjUyODMyYTRhNDNhZGRkNTBhZWEyYWMwNjJjZGI2ODU0ZjljZTMyZGU4OWJhZDZlNmJjN2RmNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1bc2f82d115a4e8fa035b18e4fe8f9f3",
+      "statement": "Telemetry behavior is verified under test/telemetry with posthog-node and ci-info mocked for determinism, covering event shape/gating, the run wrapper, the run-fact bridge, the no-key send path, and the install-id lifecycle.",
+      "evidence": [
+        {
+          "resource": "repo://test/telemetry/client-no-key.test.ts",
+          "version": "repo-file-v1:sha256:534e21bfd067371fcdcbaeee38045894f8c310575b4ff838b79eda441d382222"
+        },
+        {
+          "resource": "repo://test/telemetry/record-run-safe.test.ts",
+          "version": "repo-file-v1:sha256:b5afec78e0e66dc0e78e9894c57b4dec789a7ee7cf2be17916a463ed6d493574"
+        },
+        {
+          "resource": "repo://test/telemetry/telemetry-install-id.test.ts",
+          "version": "repo-file-v1:sha256:26319164ee14f93fd5cb38045292071e8dd2e66a9b8fbb467f56655b27afe4cf"
+        },
+        {
+          "resource": "repo://test/telemetry/telemetry.test.ts#L13-L59",
+          "version": "repo-lines-v1:sha256:0d33745f82756f0148dc452516aa16aa11c18ae4ba663974feebf74068e657f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwZDdhZmUzNmM2MDdiNGE0OWNmZjk3MWQ2Y2Q1ZWY5ZmE1M2E1MTlmYWM2ZjliMGY3ZjE0YmQ4MmE5ODg5NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjdjOTA2YmNmZDQyMWMzMDY0MWZjMGQ0NmQ4NzVmNThjYmEzYjRhNjZiZjczMTMwNjJmNjA0OGI3MDY0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4ZTM2OTkzZWY1ODc5NmE3NzdkNGQ2ODg0NzVhYzBmYmUxZjA1ZjRjZGQzNWMzMjdlODM0ZTYyNDJiMTU5YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMjlkYTA2YWQ4OTc2NzQ1MjY0YWI0YTFkODU5Y2UwMTFmNmYyYjViMTMwODI4ODJlZDVhMTQ5YWU2YzYyNDkifQ"
+        },
+        {
+          "resource": "repo://test/telemetry/with-run-telemetry.test.ts",
+          "version": "repo-file-v1:sha256:4b733c755b29921d39acc8b6e9180a1034e00664abc84d79f7fbda2dc1bafb3e"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

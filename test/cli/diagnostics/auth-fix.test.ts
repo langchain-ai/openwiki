@@ -1,10 +1,19 @@
-import { describe, expect, test } from "vitest";
+import path from "node:path";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   getAuthFix,
   getAuthFixSteps,
   type AuthFix,
 } from "../../../src/cli/diagnostics/auth-fix.ts";
 import { getProviderApiKeyEnvKey } from "../../../src/config/constants.ts";
+
+const originalConfigDir = process.env.OPENWIKI_CONFIG_DIR;
+
+afterEach(() => {
+  if (originalConfigDir === undefined) delete process.env.OPENWIKI_CONFIG_DIR;
+  else process.env.OPENWIKI_CONFIG_DIR = originalConfigDir;
+  vi.resetModules();
+});
 
 describe("getAuthFixSteps", () => {
   test("returns AWS credential-chain guidance for aws-sdk providers", () => {
@@ -43,6 +52,24 @@ describe("getAuthFixSteps", () => {
     expect(steps).toEqual([
       "Re-enter your key: re-run openwiki --init, or edit ~/.openwiki/.env.",
     ]);
+  });
+
+  test("uses the configured env file in remediation steps", async () => {
+    process.env.OPENWIKI_CONFIG_DIR = "custom-openwiki-state";
+    vi.resetModules();
+    const { getAuthFixSteps: getConfiguredAuthFixSteps } =
+      await import("../../../src/cli/diagnostics/auth-fix.ts");
+
+    const steps = getConfiguredAuthFixSteps({
+      apiKeyEnvKey: "ANTHROPIC_API_KEY",
+      keyFromShell: true,
+      provider: "anthropic",
+    });
+    const expectedEnvPath = `${path.resolve("custom-openwiki-state")}/.env`;
+
+    expect(steps).toHaveLength(2);
+    expect(steps.every((step) => step.includes(expectedEnvPath))).toBe(true);
+    expect(steps.some((step) => step.includes("~/.openwiki/.env"))).toBe(false);
   });
 });
 

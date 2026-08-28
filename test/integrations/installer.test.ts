@@ -129,13 +129,22 @@ function userOptions(root: string): InstallOptions {
 async function seedConfig(root: string, target: HostTarget): Promise<void> {
   const destination = configPath(root, target);
   await mkdir(path.dirname(destination), { recursive: true });
+  const kind = target.project.mcpConfig.kind;
   const content =
-    target.project.mcpConfig.kind === "json"
+    kind === "json"
       ? `${JSON.stringify({
           note: CONFIG_SENTINEL,
           mcpServers: { other: { command: "other" } },
         })}\n`
-      : `model = "${CONFIG_SENTINEL}"\n\n`;
+      : kind === "opencode-json"
+        ? [
+            "{",
+            `  // ${CONFIG_SENTINEL}`,
+            '  "mcp": { "other": { "type": "remote", "url": "https://example.com" } }',
+            "}",
+            "",
+          ].join("\n")
+        : `model = "${CONFIG_SENTINEL}"\n\n`;
   await writeFile(destination, content, { encoding: "utf8", mode: 0o600 });
   await chmod(destination, 0o600);
 }
@@ -152,13 +161,26 @@ async function expectManagedConfig(
 ): Promise<void> {
   const content = await readFile(configPath(root, target), "utf8");
   expect(content).toContain(CONFIG_SENTINEL);
-  if (target.project.mcpConfig.kind === "json") {
+  const kind = target.project.mcpConfig.kind;
+  if (kind === "json") {
     expect(JSON.parse(content)).toMatchObject({
       mcpServers: {
         other: { command: "other" },
         openwiki: {
           command: "openwiki",
           args: ["mcp", "--host", target.id],
+        },
+      },
+    });
+  } else if (kind === "opencode-json") {
+    const parsed: unknown = JSON.parse(content.replace(/^\s*\/\/.*$/gmu, ""));
+    expect(parsed).toMatchObject({
+      mcp: {
+        other: { type: "remote", url: "https://example.com" },
+        openwiki: {
+          type: "local",
+          command: ["openwiki", "mcp", "--host", target.id],
+          enabled: true,
         },
       },
     });
@@ -308,7 +330,9 @@ async function writeMalformedConfig(
   const content =
     target.project.mcpConfig.kind === "json"
       ? "{ malformed json\n"
-      : "# OPENWIKI:MCP:START\n";
+      : target.project.mcpConfig.kind === "opencode-json"
+        ? "{ malformed jsonc\n"
+        : "# OPENWIKI:MCP:START\n";
   await mkdir(path.dirname(destination), { recursive: true });
   await writeFile(destination, content, "utf8");
   return content;
@@ -326,7 +350,8 @@ async function modifyManagedConfig(
 ): Promise<void> {
   const destination = configPath(root, target);
   const content = await readFile(destination, "utf8");
-  if (target.project.mcpConfig.kind === "json") {
+  const kind = target.project.mcpConfig.kind;
+  if (kind === "json") {
     const parsed: unknown = JSON.parse(content);
     if (!isRecord(parsed) || !isRecord(parsed.mcpServers)) {
       throw new Error("Expected an MCP server mapping.");
@@ -335,6 +360,12 @@ async function modifyManagedConfig(
     await writeFile(
       destination,
       `${JSON.stringify(parsed, null, 2)}\n`,
+      "utf8",
+    );
+  } else if (kind === "opencode-json") {
+    await writeFile(
+      destination,
+      content.replace('"type": "local"', '"type": "custom"'),
       "utf8",
     );
   } else {
@@ -385,10 +416,43 @@ describe("host integration registry", () => {
           mcpConfig: { kind: "json", relativePath: ".mcp.json" },
         },
       },
+      opencode: {
+        producerActor: "opencode",
+        user: {
+          skillDirectory: ".config/opencode/skills/openwiki",
+          mcpConfig: {
+            kind: "opencode-json",
+            relativePath: ".config/opencode/opencode.jsonc",
+          },
+        },
+        project: {
+          skillDirectory: ".opencode/skills/openwiki",
+          mcpConfig: {
+            kind: "opencode-json",
+            relativePath: "opencode.jsonc",
+          },
+        },
+      },
+      cursor: {
+        producerActor: "cursor",
+        user: {
+          skillDirectory: ".cursor/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
+        },
+        project: {
+          skillDirectory: ".cursor/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
-    expect(TARGETS.map((target) => target.id)).toEqual(["codex", "claude"]);
+    expect(TARGETS.map((target) => target.id)).toEqual([
+      "codex",
+      "claude",
+      "opencode",
+      "cursor",
+    ]);
     const userTargets = TARGETS.filter((target) => target.user !== null);
     expect(
       new Set(userTargets.map((target) => target.user?.skillDirectory)).size,
@@ -547,9 +611,20 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
     ).resolves.toMatchObject({ changed: true });
 
     const content = await readFile(configPath(root, target), "utf8");
-    if (target.project.mcpConfig.kind === "json") {
+    const kind = target.project.mcpConfig.kind;
+    if (kind === "json") {
       expect(JSON.parse(content)).toMatchObject({
         mcpServers: { openwiki: localCommand },
+      });
+    } else if (kind === "opencode-json") {
+      expect(JSON.parse(content)).toMatchObject({
+        mcp: {
+          openwiki: {
+            type: "local",
+            command: [localCommand.command, ...localCommand.args],
+            enabled: true,
+          },
+        },
       });
     } else {
       expect(content).toContain(
@@ -834,22 +909,24 @@ describe("host integration scope ownership", () => {
 });
 
 describe("project integration root resolution", () => {
-  test("installs from a subdirectory at the Git repository root", async () => {
-    const root = await createProject();
-    const nested = path.join(root, "packages", "example");
-    await mkdir(nested, { recursive: true });
-    const target = HOST_TARGETS.codex;
-    const installer = new HostIntegrationInstaller();
+  test.each(TARGETS)(
+    "$displayName installs from a subdirectory at the Git repository root",
+    async (target) => {
+      const root = await createProject();
+      const nested = path.join(root, "packages", "example");
+      await mkdir(nested, { recursive: true });
+      const installer = new HostIntegrationInstaller();
 
-    const result = await installer.install(target, projectOptions(nested));
+      const result = await installer.install(target, projectOptions(nested));
 
-    expect(result.skillDirectory).toBe(skillPath(root, target));
-    expect(result.mcpConfig).toBe(configPath(root, target));
-    await access(skillPath(root, target));
-    await expect(
-      access(path.join(nested, target.project.skillDirectory)),
-    ).rejects.toThrow();
-  });
+      expect(result.skillDirectory).toBe(skillPath(root, target));
+      expect(result.mcpConfig).toBe(configPath(root, target));
+      await access(skillPath(root, target));
+      await expect(
+        access(path.join(nested, target.project.skillDirectory)),
+      ).rejects.toThrow();
+    },
+  );
 
   test("rejects project installation outside a Git repository", async () => {
     const directory = await createDirectory();

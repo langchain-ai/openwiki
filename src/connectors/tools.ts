@@ -9,6 +9,7 @@ import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
   getConnectorConfigPath,
   getConnectorRawDir,
+  openWikiConnectorsDisplayPath,
   openWikiHomeDir,
   openWikiLocalWikiDir,
   resolveConnectorRawPath,
@@ -47,8 +48,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_list_mcp_tools",
-      description:
-        'List live MCP tools for a configured MCP connector and write discovery under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"github"}. Use exact returned tool names. MCP-backed connectors: custom-mcp, github, newrelic, notion, sentry.',
+      description: `List live MCP tools for a configured MCP connector and write discovery under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"github"}. Use exact returned tool names. MCP-backed connectors: custom-mcp, github, newrelic, notion, sentry.`,
       schema: {
         type: "object",
         properties: {
@@ -67,8 +67,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_call_mcp_tool",
-      description:
-        'Call one exact discovered read-only MCP tool and write the result under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"github","toolName":"exact_tool_name","args":{"owner":"langchain-ai","repo":"openwiki"}}. MCP-backed connectors: custom-mcp, github, newrelic, notion, sentry.',
+      description: `Call one exact discovered read-only MCP tool and write the result under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"github","toolName":"exact_tool_name","args":{"owner":"langchain-ai","repo":"openwiki"}}. MCP-backed connectors: custom-mcp, github, newrelic, notion, sentry.`,
       schema: {
         type: "object",
         properties: {
@@ -98,8 +97,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_ingest_connector",
-      description:
-        'Run deterministic ingestion for one built-in connector and write raw data/manifests under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"x","streams":["bookmarks"],"limit":1}.',
+      description: `Run deterministic ingestion for one built-in connector and write raw data/manifests under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"x","streams":["bookmarks"],"limit":1}.`,
       schema: {
         type: "object",
         properties: {
@@ -150,8 +148,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_list_raw_items",
-      description:
-        'List raw files for a connector under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"x"}.',
+      description: `List raw files for a connector under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"x"}.`,
       schema: {
         type: "object",
         properties: {
@@ -183,8 +180,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_read_raw_item",
-      description:
-        'Read a raw connector file by connector ID and relative path. Only files inside ~/.openwiki/connectors/<id>/raw are allowed. Input: {"connectorId":"x","path":"2026-.../bookmarks.json","maxBytes":50000}.',
+      description: `Read a raw connector file by connector ID and relative path. Only files inside ${openWikiConnectorsDisplayPath}/<id>/raw are allowed. Input: {"connectorId":"x","path":"2026-.../bookmarks.json","maxBytes":50000}.`,
       schema: {
         type: "object",
         properties: {

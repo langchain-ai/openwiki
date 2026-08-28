@@ -42,6 +42,40 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://docs.anthropic.com/en/docs/claude-code/mcp",
   },
+  opencode: {
+    id: "opencode",
+    displayName: "OpenCode",
+    producerActor: "opencode",
+    user: {
+      skillDirectory: ".config/opencode/skills/openwiki",
+      mcpConfig: {
+        kind: "opencode-json",
+        relativePath: ".config/opencode/opencode.jsonc",
+      },
+    },
+    project: {
+      skillDirectory: ".opencode/skills/openwiki",
+      mcpConfig: {
+        kind: "opencode-json",
+        relativePath: "opencode.jsonc",
+      },
+    },
+    documentationUrl: "https://opencode.ai/docs/mcp-servers/",
+  },
+  cursor: {
+    id: "cursor",
+    displayName: "Cursor",
+    producerActor: "cursor",
+    user: {
+      skillDirectory: ".cursor/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
+    },
+    project: {
+      skillDirectory: ".cursor/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
+    },
+    documentationUrl: "https://cursor.com/docs/mcp",
+  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**

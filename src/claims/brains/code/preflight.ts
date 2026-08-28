@@ -4,29 +4,21 @@ import type { GroundingIssue, PageClaims } from "./types.js";
 import { ClaimsStore } from "./store.js";
 
 /**
- * Complete deterministic preflight result used to create a run session.
+ * Complete deterministic Claims preflight used by repository planning.
  */
 export interface ClaimsPreflightResult {
   /**
-   * Page-local evidence issues surfaced only when relevant pages are read.
+   * Complete deterministic grounding issues found during preflight.
    */
   issues: GroundingIssue[];
 
   /**
-   * Valid persisted sidecars keyed by virtual page path.
+   * Persisted Claims sidecars keyed by canonical page path.
    */
   persisted: Map<string, PageClaims>;
 
   /**
-   * Current pages that have no material Claims yet.
-   *
-   * This inventory remains in memory so updates can surface guidance lazily
-   * without creating empty sidecars or mandatory global work.
-   */
-  ungroundedPages: string[];
-
-  /**
-   * Sidecars whose generated Markdown no longer exists.
+   * Canonical Claims sidecars whose generated pages no longer exist.
    */
   orphanPages: string[];
 }
@@ -50,9 +42,6 @@ export async function runClaimsPreflight(
   const pageSet = new Set(pages);
   const orphanPages = (await store.discoverSidecarPages()).filter(
     (page) => !pageSet.has(page),
-  );
-  const ungroundedPages = pages.filter(
-    (page) => (persisted.get(page)?.claims.length ?? 0) === 0,
   );
   const issues: GroundingIssue[] = [];
   const cachedResolver = cacheEvidenceResolver(resolver);
@@ -99,12 +88,10 @@ export async function runClaimsPreflight(
 
   issues.sort(compareGroundingIssues);
   orphanPages.sort((left, right) => left.localeCompare(right));
-  ungroundedPages.sort((left, right) => left.localeCompare(right));
   return {
     issues,
     persisted,
     orphanPages,
-    ungroundedPages,
   };
 }
 
