@@ -1,0 +1,22 @@
+AGENTS.md
+  s_f485c61dd078af::t_f94816d8553cb0 5
+openwiki/code-map
+  s_f485c61dd078af::t_28c30d29eac1a5 3-164
+  s_f485c61dd078af::t_abc816e54466e7 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "d8ee9510717711fc95154a68f8649329c59ff8de",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
