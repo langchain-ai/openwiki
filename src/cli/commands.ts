@@ -1140,7 +1140,8 @@ export const helpContent: HelpContent = {
     },
     {
       label: "openwiki cron list",
-      description: "List saved connector schedules and local launchd status.",
+      description:
+        "List saved connector schedules and native scheduler status.",
     },
     {
       label: "openwiki cron pause all",
