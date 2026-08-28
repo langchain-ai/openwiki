@@ -12,8 +12,14 @@ sources:
     resource: repo://test/agent/gemini-enterprise-claude.e2e.test.ts
   - id: openwiki-source-8826337e8c8799af4371a0e5
     resource: repo://test/agent/index-middleware.test.ts
+  - id: openwiki-source-d5f8bf1d374d40091b048814
+    resource: repo://test/agent/repository-prompts.test.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
     resource: repo://test/agent/repository-runner.test.ts
+  - id: openwiki-source-b6fe810a0cf7dea1a9e0eb8b
+    resource: repo://test/agent/repository-source-fingerprint.test.ts
+  - id: openwiki-source-f1b33b05f136bc4ed936d51d
+    resource: repo://test/agent/update-noop.test.ts
   - id: openwiki-source-10e644b1d94ea2cd8435efb2
     resource: repo://test/agent/wiki-finalizer.test.ts
   - id: openwiki-source-60f74aa845439889d9b5e391
@@ -34,10 +40,22 @@ sources:
     resource: repo://test/connectors/sources/slack.test.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
+  - id: openwiki-source-328aca3cf4070aa49cc954a5
+    resource: repo://test/generation/page-manifest.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
+  - id: openwiki-source-1adcdcd6832678e0e848f408
+    resource: repo://test/generation/run-state.test.ts
+  - id: openwiki-source-224b03172757408e1b558fa7
+    resource: repo://test/ingestion/code-mode.test.ts
+  - id: openwiki-source-d1d0d34cd042b7cd70476a68
+    resource: repo://test/integrations/session-manager.test.ts
   - id: openwiki-source-5c504746431185b33e3c7f39
     resource: repo://test/mermaid/dom-shim.test.ts
+  - id: openwiki-source-e944f18bb8361b7afa410349
+    resource: repo://test/okf/claim-sources.test.ts
+  - id: openwiki-source-5921cbc5549dfc1ee5c046a5
+    resource: repo://test/okf/claims-verification.test.ts
   - id: openwiki-source-43240ab040106a6f63192176
     resource: repo://test/okf/frontmatter.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
@@ -48,10 +66,10 @@ sources:
     resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
 ---
 
 # Testing Guide
@@ -146,24 +164,26 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the repository runner, OKF middleware, frontmatter validation, and the wiki finalizer |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the repository runner, OKF middleware, frontmatter validation, the wiki finalizer, repository worker prompts, the source fingerprint, and the update no-op preflight |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
-| `test/generation/`                                                                                                                                        | `src/generation/` — repository planning, page jobs, and run-state persistence                                 |
-| `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
-| `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, and packaged skill/protocol contracts |
+| `test/generation/`                                                                                                                                        | `src/generation/` — repository planning, page jobs (including claim-issue reconciliation jobs), the page manifest (per-page source checkpoint and completion durability), run-state persistence, and the end-to-end repository-run lifecycle with durability, resumability, skip/restore, and failure-rollback paths |
+| `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync, plus claims verification and claim-source projection |
+| `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, the host session manager lifecycle, and packaged skill/protocol contracts |
+| `test/ingestion/`                                                                                                                                         | `src/ingestion/` — code-mode repo setup (agent files and CI workflow generation) and connector runs |
 | `test/cli/`                                                                                                                                               | `src/cli/` — CLI wiring and Ink components                                                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
-| `test/config/`, `test/mermaid/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
+| `test/config/`, `test/mermaid/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
 
 Related architecture and subsystem pages: the
 [source map](../architecture/source-map.md),
 [grounded claims](../concepts/grounded-claims.md),
-[coding-agent integrations](../integrations/coding-agents.md), and the
-[repository generation workflow](../workflows/repository-generation.md).
+[coding-agent integrations](../integrations/coding-agents.md), the
+[repository generation workflow](../workflows/repository-generation.md), and
+[CI scheduling](../operations/ci-scheduling.md).
 
-### Agent: middleware, frontmatter, and finalizer
+### Agent: middleware, frontmatter, finalizer, prompts, fingerprint, and no-op
 
 The agent subsystem directory holds a broad set of tests, including several that
 guard the OKF authoring pipeline added in the v0.4.0 cycle:
@@ -186,13 +206,38 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
 - `test/agent/repository-runner.test.ts` drives `runNativeRepositoryGeneration`
   through a `deepagents`/`repository-run.js` mock harness. It asserts the
   shell-free tool surface and one fresh worker per page, and includes the
-  worker-exit/skip regression `restores and leaves a page pending when its
-  worker does not submit`: when a page worker exits without calling
-  `submit_page`, the runner invokes `captureRepositoryPageSnapshot`/
-  `skipRepositoryPage` to restore the captured snapshot, marks that page
-  `skipped`, finishes the run, and emits a `text` event telling the user the
-  page will be "reconsidered on the next update" — leaving the skipped page to
-  be re-queued as `pending` on resume.
+  worker-exit/skip regression `restores and leaves a page pending when its worker
+  does not submit`: when a page worker exits without calling `submit_page`, the
+  runner invokes `captureRepositoryPageSnapshot`/`skipRepositoryPage` to restore
+  the captured snapshot, marks that page `skipped`, finishes the run, and emits
+  a `text` event telling the user the page will be "reconsidered on the next
+  update" — leaving the skipped page to be re-queued as `pending` on resume.
+- `test/agent/repository-prompts.test.ts` exercises the planner and page-worker
+  prompt builders (`createRepositoryPlannerPrompt`/`createRepositoryPagePrompt`)
+  in isolation, asserting that planning context, changed paths, update windows,
+  claim issues, and the wiki goal reach the prompt text, that unknown baselines
+  render as full-review windows, that page-specific instructions and existing
+  Claims propagate into the page-worker prompt (including the "You own exactly
+  …" ownership line), and that the complete planned page map is shown only to the
+  quickstart page.
+- `test/agent/repository-source-fingerprint.test.ts` exercises
+  `createRepositorySourceFingerprint`/`createRepositorySourceSnapshot` and
+  `getRepositoryChangedPaths` against a real isolated Git repository created with
+  `mkdtemp`. It asserts the fingerprint is stable for identical input, changes
+  with HEAD, tracked content, staged-vs-unstaged state, deletions, untracked
+  files, executable-bit changes, and `.openwikiignore` rules; that symlinks are
+  hashed by target string without following the target; that a TOCTOU race where
+  an inspected file becomes a symlink before opening fails closed; and that
+  generated pages, Claims sidecars, and run metadata are ignored. A
+  `vi.hoisted`/`vi.mock` of `node:fs/promises.open` injects the race.
+- `test/agent/update-noop.test.ts` exercises `getUpdateNoopStatus` and
+  `shouldCheckUpdateNoop` against real `mkdtemp` Git repositories. It covers the
+  no-op conditions (unchanged HEAD, dirty-only committed run metadata, a
+  migration that only adds the page manifest, OpenWiki-only commits, ignored
+  worktree paths, a missing `status` field that still counts as complete) and the
+  non-no-op conditions (changed source files, an interrupted previous run, a
+  different language request), plus the no-op metadata refresh that preserves the
+  persisted language across the fast-skip path.
 
 ### Claims: nested layout
 
@@ -218,17 +263,98 @@ dump it writes to disk — no real network call or OAuth token is involved. To a
 a new connector, use the `write-connector` skill and add a matching test under
 `test/connectors/sources/`.
 
-### OKF: frontmatter and index
+### Generation: planning, page manifest, run state, and the end-to-end run
+
+`test/generation/` mirrors `src/generation/`. It splits the generation subsystem
+into pure planning, per-page manifest persistence, run-state persistence, and the
+end-to-end repository-run lifecycle:
+
+- `test/generation/page-jobs.test.ts` exercises `createRepositoryPlan` and
+  `replacePageClaims`. It covers init/update plan validation (quickstart required
+  for init, no init deletions, no quickstart deletion, no duplicate or
+  overlapping generate/delete pages, no structural or reserved working pages),
+  input normalization (trimming, deduplication, quickstart-last ordering,
+  stable UUID assignment), and the claim-issue reconciliation jobs the planner
+  inserts for stale/unresolved claims — including the evidence-seed normalization
+  and the language-rewrite jobs that avoid duplicating planned or deleted pages.
+  The `replacePageClaims` tests drive the code-claim session's add/confirm/
+  update/retract/omit reconciliation model, including no-ID exact matches,
+  evidence-set normalization, duplicate-proposal rejection, NUL-delimiter
+  fingerprint safety, unknown/wrong-page identifier rejection, and atomic
+  rollback when evidence resolution fails.
+- `test/generation/page-manifest.test.ts` exercises the page manifest's
+  persistence and completion-durability primitives
+  (`readRepositoryPageManifest`/`writeRepositoryPageManifest`/
+  `recordRepositoryPageCompletion`/`seedRepositoryPageManifest`/
+  `replaceRepositoryPageManifest`/`isRepositoryPageCompletionCurrent`) against
+  real `mkdtemp` directories and a `ClaimsStore`. It asserts stable page order
+  with no `.tmp` files left behind, fails-closed on malformed JSON and schema
+  extensions (invalid hashes, non-canonical paths, structural pages), preserves
+  the original manifest and cleans up when the atomic rename fails, refuses to
+  advance an unverified or mismatched Claims page, records the exact source
+  checkpoint (git head + source fingerprint + page version) for verified bytes,
+  seeds missing verified pages while preserving newer coverage, leaves
+  unverifiable legacy pages uncovered during migration, and retains only the
+  surviving verified page inventory after a replacement.
+- `test/generation/run-state.test.ts` exercises `writeRepositoryRunState`/
+  `readRepositoryRunState`/`removeRepositoryRunState` against real `mkdtemp`
+  directories. It asserts the complete checkpoint is atomically written and read
+  back with no `.tmp` files, that validation failure does not replace durable
+  state, that a rename target blocked by an existing directory is preserved with
+  its temp file cleaned up, that malformed and schema-extended checkpoints are
+  rejected as `invalid_state` (resumable), and that an absent checkpoint returns
+  null and removal is idempotent.
+- `test/generation/repository-run.test.ts` is the end-to-end integration test
+  for the repository generation workflow (detailed below).
+
+### OKF: frontmatter, index, claims verification, and claim sources
 
 `test/okf/` mirrors `src/okf/`. `test/okf/frontmatter.test.ts` is the broadest
 OKF frontmatter suite: it covers `normalizeConceptContent` (regenerating
 frontmatter for bare pages, repairing optional fields while preserving
 producer-defined extensions, stamping a localized concept type), and the
 `parseFrontmatterFields`/`renderFrontmatter`/`validateOkfFrontmatter`/
-`repairOkfFrontmatter`/`validatePersistedFile` helpers. Sibling files
-(`test/okf/index-labels.test.ts`, `test/okf/index-sync-errors.test.ts`,
-`test/okf/claims-verification.test.ts`, `test/okf/claim-sources.test.ts`) cover
-index labels, index-sync error paths, and claims verification/source projection.
+`repairOkfFrontmatter`/`validatePersistedFile` helpers. Sibling files cover
+index labels (`test/okf/index-labels.test.ts`), index-sync error paths
+(`test/okf/index-sync-errors.test.ts`), claims verification
+(`test/okf/claims-verification.test.ts`, which exercises
+`synchronizeClaimsVerification`/`rollbackClaimsVerification` against a memory
+page store — replacing only OpenWiki events while preserving other verifiers,
+removing unjustified OpenWiki events, and normalizing bare human events), and
+claim-source projection (`test/okf/claim-sources.test.ts`, which exercises
+`synchronizeClaimSources` against a guarded `OpenWikiLocalShellBackend`).
+
+### Ingestion: code-mode setup and connectors
+
+`test/ingestion/code-mode.test.ts` exercises `ensureCodeModeRepoSetup` and
+`runCodeModeConnectors` against real `mkdtemp` repositories. The agent-file
+tests assert that `AGENTS.md` and `CLAUDE.md` are created with the managed
+OpenWiki block, that `CLAUDE.md` is a short reference to `AGENTS.md` rather than a
+full copy, that the block is refreshed in place while preserving surrounding
+content, that the block is appended after existing content, that the setup is
+idempotent, and that orphaned/reversed/duplicate markers are rejected without
+changing either file. The workflow tests assert the generated CI workflow pins
+the OpenWiki install to a specific version, includes the agent files and workflow
+in `add-paths`, wires the LangSmith connector read key into the workflow env,
+preserves a customized workflow across re-runs, and emits the correct
+provider-specific credential/variable blocks (Copilot, OpenAI-compatible,
+Bedrock, OpenAI-ChatGPT). The `runCodeModeConnectors` tests exercise the loop and
+fail-open skip path without reaching a real API.
+
+### Integrations: host session manager
+
+`test/integrations/session-manager.test.ts` exercises `HostSessionManager` against
+real `mkdtemp` Git repositories. It asserts the ordered five-call lifecycle
+(`openwiki_begin` → `openwiki_submit_plan` → `openwiki_next_page` →
+`openwiki_submit_page` → `openwiki_finish`), host and producer-identity
+validation, nested-path resolution to the canonical Git root, the exact active run
+ID requirement, begin-conflict mapping that retains the prior active run,
+overlapping-lifecycle rejection that releases the guard, repository lifecycle
+failure mapping to bounded host errors, retention of active state after a failed
+finish, clearing of active state only after a successful durable finish, a proven
+update no-op that clears an older process-local run, and durable queue resumption
+across different hosts (one producer begins, a second producer resumes the same
+run with the correct completed-page count).
 
 ### Visualize: page, graph, and client interaction
 
@@ -263,7 +389,12 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   real implementation. `test/generation/repository-run.test.ts`, for example,
   intercepts `writeLastUpdateMetadata`, `writeRepositoryRunState`, and
   `removeRepositoryRunState` this way to inject metadata-write and run-state
-  write/removal failures and prove the runner's recovery behavior. These tests
+  write/removal failures and prove the runner's recovery behavior. It also
+  intercepts `recordRepositoryPageCompletion` and `replaceRepositoryPageManifest`
+  to inject page-manifest write/replacement failures and to mutate the source
+  tree mid-replacement so the no-op manifest replacement falls through to
+  planning. `test/generation/page-manifest.test.ts` uses the same pattern on
+  `node:fs/promises.rename` to inject an atomic-rename failure. These tests
   import the source modules directly (e.g. `../../src/okf/frontmatter.ts`,
   `../../src/generation/repository-run.ts`) so the run lifecycle is exercised
   through Vitest's transform without first building `dist/`.
@@ -288,13 +419,14 @@ the repository generation workflow. It imports `parseFrontmatterFields` and
 (`captureRepositoryPageSnapshot`, `skipRepositoryPage`) from
 `src/generation/repository-run.ts`, and drives the full begin → submit_plan →
 next_page → submit_page → finish lifecycle against a temporary Git repository.
-A `failureHarness` created with `vi.hoisted` wraps the real `src/agent/utils.js`
-and `src/generation/run-state.js` modules to inject failures on selected
-calls while otherwise delegating to the real implementation. Each test creates a
-committed Git repository (via the `git`/`createRepository` helpers), optionally
-arms the failure counters in `beforeEach`, and removes the temporary directories
-in `afterEach`, so the run's recovery and rollback paths are exercised against a
-real repository without leaving state behind.
+A `failureHarness` created with `vi.hoisted` wraps the real `src/agent/utils.js`,
+`src/generation/run-state.js`, and `src/generation/page-manifest.js` modules to
+inject failures on selected calls while otherwise delegating to the real
+implementation. Each test creates a committed Git repository (via the
+`git`/`createRepository` helpers), optionally arms the failure counters in
+`beforeEach`, and removes the temporary directories in `afterEach`, so the run's
+recovery and rollback paths are exercised against a real repository without
+leaving state behind.
 
 The suite also covers the **skip path** for a page whose worker does not submit:
 `captureRepositoryPageSnapshot` snapshots the on-disk Markdown and Claims before
@@ -306,6 +438,28 @@ state, and stamps an `interrupted` last-update status. A separate
 `resets an interrupted skipped job to pending on resume` test proves that
 resuming a run whose first page was skipped re-queues that page as `pending`
 rather than carrying the skipped status forward.
+
+The suite covers **durability and resumability** across producer handoffs:
+`submitRepositoryPage` does not mark a page complete until both the Claims
+sidecar and the run-state checkpoint are durable (the `does not complete a page
+until Claims and checkpoint state are durable` test), a page whose manifest write
+fails stays pending with the baseline manifest intact, a page whose completion
+checkpointing fails stays pending but keeps its durable Claims and current
+manifest coverage — and on resume the completed page is attributed to its
+original producer. The `preserves per-page provenance across producer handoffs`
+test finishes a two-page run split across two producers and asserts each page's
+generated provenance and manifest entry carry the producer that completed it. The
+`resumes across producers while rejecting mode and language conflicts` test proves
+a second producer can resume the same run while a conflicting mode or language
+request is rejected, and the `attributes legacy completed work to its original run
+producer` test backfills `completedBy` for legacy state missing the field.
+
+The suite also covers the **no-op and update-window** logic: a strict no-op is
+returned only for clean updates without claim issues, a Git-clean update with
+stale claims is forced into planning, a docs-only commit fast-forwards every
+page, a clean page without manifest coverage is routed to full review, and a
+no-op manifest replacement that sees the source change mid-replacement falls
+through to planning rather than skipping.
 
 ## Choosing the narrowest validation per subsystem
 
@@ -320,7 +474,16 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
+- **Generation durability/resumability:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "does not complete a page until Claims and checkpoint state are durable"` (Claims + checkpoint durability) or `-t "resumes across producers while rejecting mode and language conflicts"` (cross-producer resume).
+- **Page manifest persistence/replacement:** `pnpm exec vitest run test/generation/page-manifest.test.ts` (atomic writes, rename-failure cleanup, completion durability, replacement inventory).
+- **Run-state persistence:** `pnpm exec vitest run test/generation/run-state.test.ts` (atomic checkpoint, validation failure, malformed rejection, idempotent removal).
+- **Claims reconciliation jobs:** `pnpm exec vitest run test/generation/page-jobs.test.ts -t "adds required Claim-issue jobs"` (stale/unresolved claim jobs) or `-t "replacePageClaims"` (add/confirm/update/retract/omit reconciliation).
+- **Source fingerprint:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts` (stability, HEAD/content/exec-bit/ignore changes, symlink race, generated-page exclusion).
+- **Update no-op preflight:** `pnpm exec vitest run test/agent/update-noop.test.ts` (no-op conditions, non-no-op conditions, metadata refresh).
+- **Repository worker prompts:** `pnpm exec vitest run test/agent/repository-prompts.test.ts` (planner and page-worker prompt content).
 - **Agent worker-exit/skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
+- **Code-mode setup/workflow:** `pnpm exec vitest run test/ingestion/code-mode.test.ts` (agent files, CI workflow generation, provider blocks, connector loop).
+- **Host session manager lifecycle:** `pnpm exec vitest run test/integrations/session-manager.test.ts` (five-call lifecycle, resume across hosts, conflict/guard mapping).
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 
 Because tests import `src/` directly, a focused Vitest run does not require a

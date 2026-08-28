@@ -12,6 +12,9 @@ tags:
     source-fingerprint,
     claims,
   ]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
 sources:
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
@@ -33,10 +36,7 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 ---
 
 # Repository Generation Lifecycle
@@ -263,17 +263,12 @@ fresh path fails before commit, an init rollback removes any written state and
 restores the previous wiki, while a failed update never deletes a successfully
 written checkpoint.
 
-Resume validates that the caller owns the durable run: a mode mismatch, a
-language change, or a different producer actor all raise `conflict`, forcing the
-existing run to be resumed on its own terms before anything else changes. Resume
-also carries forward the caller's current `metadataModel` and planning context.
-
 ## Resume on the same checkout and source-fingerprint invalidation
 
-`createRepositorySourceFingerprint` hashes every model-visible repository source
+`createRepositorySourceSnapshot` hashes every model-visible repository source
 input for the active plan — Git HEAD, tracked and untracked source files, and
 porcelain status — while excluding generated OpenWiki state and ignored paths.
-Git, stat, symlink, and read failures reject, because the fingerprint is a
+Git, stat, symlink, and file-read failures reject, because the fingerprint is a
 correctness gate rather than a hint.
 
 The fingerprint makes resume safe only on the same checkout. When `begin` resumes
@@ -283,6 +278,13 @@ invalidated: the phase is reset to `planning`, the new fingerprint is stored, an
 durable signal that new planning context may replace the prior context. Skipped
 jobs are reset to pending before this drift check, but a source change always
 wins: when source has drifted the plan is deleted regardless of skipped status.
+
+Resume validates that the caller owns the durable run's mode and language: a mode
+mismatch or a requested language change each raises `conflict`, forcing the
+existing run to be resumed on its own terms before anything else changes. A
+different producer actor does not cause a conflict — resume replaces the stored
+actor with the caller's actor, carrying forward the caller's `metadataModel` and
+planning context so a different producer can continue an interrupted run.
 
 `finishRepositoryRun` guards the same drift at both ends of its deterministic
 window: it re-checks the fingerprint before doing any finalization and again
@@ -347,6 +349,6 @@ returned to workers as failed tool results so their loop stays active, while
 `invalid_state` and `conflict` protect the durable invariants: submit in phase
 order, submit only the current pending job, never finish with pending jobs or
 without covering skipped-job snapshots, and never resume a run owned by a
-different mode, language, or producer. Source drift detected at finish time is
+different mode or language. Source drift detected at finish time is
 not a failure: the wiki is finalized, `interrupted` metadata is persisted, and
 `sourceChanged: true` tells the caller a later update is due.

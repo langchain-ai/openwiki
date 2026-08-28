@@ -3,9 +3,6 @@ type: workflow
 title: Onboarding and Setup
 description: How OpenWiki's first-run setup selects a provider and model, captures credentials, chooses a run mode, and bootstraps code-mode repositories, plus the layout and permissions of the ~/.openwiki state directory.
 tags: [onboarding, setup, credentials, code-mode, openwiki-home, configuration]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-a34c01da72fb3c9bee4f3cb9
     resource: repo://src/agent/openwiki-ignore.ts
@@ -31,7 +28,10 @@ sources:
     resource: repo://src/setup/credentials/use-init-setup.ts
   - id: openwiki-source-14d4f389b56575bb7afd1310
     resource: repo://src/setup/onboarding.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
 ---
 
 # Onboarding and Setup
@@ -212,12 +212,21 @@ repository runs (`beginRepositoryRun`). It:
 
 The generated workflow runs `openwiki code --update --print` on a cron schedule
 (default `0 8 * * *`), checks out full history so the update can diff against the
-last documented commit, installs the pinned OpenWiki version, and opens a pull
-request scoped to `openwiki`, `AGENTS.md`, `CLAUDE.md`, and the workflow file.
-Its provider `env:` block is derived from the provider the operator configured
-during setup (`createWorkflowProviderEnv`): secrets are wired through
-`secrets.`, non-sensitive settings (base URL, project, region) through `vars.`,
-and OAuth providers emit a comment noting that browser login has no unattended
+last documented commit, sets up Node.js 22, and installs the pinned OpenWiki
+version alongside optional `mermaid` and `jsdom` (high-fidelity Mermaid diagram
+validation — the install comment notes they can be removed for wikis with no
+diagrams). The update step runs with `continue-on-error: true`, the provider
+`env:` block, the LangSmith API key, and `LANGCHAIN` tracing wired in; a
+follow-up step removes the transient `openwiki/.run.json` run state, and
+`peter-evans/create-pull-request` v7 opens a pull request scoped to `openwiki`,
+`AGENTS.md`, `CLAUDE.md`, and `.github/workflows/openwiki-update.yml`. A final
+step propagates a failure exit code when the update step failed, so the PR
+preserves only the pages completed before the failure and makes that progress
+the baseline for the next scheduled run. The provider `env:` block is derived
+from the provider the operator configured during setup
+(`createWorkflowProviderEnv`): secrets are wired through `secrets.`,
+non-sensitive settings (base URL, project, region) through `vars.`, and OAuth
+providers emit a comment noting that browser login has no unattended
 equivalent instead of pinning a short-lived, rotated token.
 
 Repository content the doc agent must not read or edit is governed by a

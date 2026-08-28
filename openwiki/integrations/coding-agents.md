@@ -3,9 +3,6 @@ type: integration guide
 title: Coding-Agent Integrations (Codex/Claude/OpenCode)
 description: How OpenWiki runs inside a host coding agent through the five-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
@@ -44,6 +41,9 @@ sources:
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode)

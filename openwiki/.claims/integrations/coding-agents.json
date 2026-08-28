@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2cd9ca3742eda1fe125a71f944a6629df47fdb55605e373c19ebab83401fca0f",
+  "pageVersion": "sha256:12c82e8b65da338b65c9d40fc43f29ca5c4abc7ce8b9d07ad195f50ab2e25ac4",
   "claims": [
     {
       "id": "claim_244d2a0a18984ed9bfac7bdabf596487",
@@ -137,8 +137,8 @@
       "statement": "Connector context is not supported in the host integration path: the repository-generation core accepts an optional planningContext, but HostSessionManager.begin forwards only root, mode, language, force, and actor identities.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L86-L94",
-          "version": "repo-lines-v1:sha256:8765e7dcff647883ddf1382e01d2d0c2743605b055ff10ed047fe03b0eed0a62:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyYTJmOTk2ZjA4ZTY4MGJkMjkyMTM1YTZmYTQ5NzhiZGEyNmU2MDJkODRmMzNjYjFkNTk0Nzc1ZDQzMDRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4MDNkNmEwMWQ5OTEyYjIxNDJkYWRkMTIxZmE5NmMyYmM0NGJkNDQ1NzQ4YTA5NGM4ZDgyNjFiMjE3OTNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFlZmVkYjEwNWNlMGM2OTI3MjU4ZTI5ZWM0YWVhN2MxMGJkY2Y3YTc3NTY0YzY3MGI4MzgwZTE2YjE3YTIzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA5YjRkOWIwMWU0MjdmOWQwY2M2NmY2OGIyNDZlYTAxYTVkZGIyNDkxY2JhZWIzYTJhYzQxMjk2ZjlkMWFmMiJ9"
+          "resource": "repo://src/generation/repository-run.ts#L74-L109",
+          "version": "repo-lines-v1:sha256:81e1df968e8b430f03780b70e6cebf41729d6f7d05224950e262794994ffb573:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOWUxNDBkMmEyNGMyY2RmNWM3MzdiMjU0YTgxZGE0OWNmNjNmYzNkZTVkYmEwOGE4Y2VmZTg3OWJkYmRkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2ZTExNjNjNTY2NGQ4MzgyYjI4ZjllOGIzZDc4NmIzYzQ1YTFmOTczM2IzZjFhNjgzOGQ3M2RiOWU1NzdiNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxY2UwYjQxZjE5ZTg3M2JiZDJiZmZiNTU2YTc3MGU4NWVkZDE3OTk0ODUzYzRkZDMxM2JmZjEzZDc0ODZlNzIifQ"
         },
         {
           "resource": "repo://src/integrations/core/session-manager.ts#L124-L146",
@@ -299,6 +299,6 @@
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-27T11:21:51.032Z"
+    "at": "2026-08-27T23:20:02.895Z"
   }
 }

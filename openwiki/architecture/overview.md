@@ -16,7 +16,7 @@ tags:
   ]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-27T23:20:02.895Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -40,7 +40,7 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 ---
 
 # Architecture Overview
@@ -156,6 +156,13 @@ passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
 after finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
 
+A page advances only after its submission is durable. `submitRepositoryPage`
+repairs the page frontmatter, replaces the page's Claims, persists and proves
+the reconciled Claims (`claimsRuntime.finalize` then `assertPageClaimsDurable`),
+records page completion in the manifest, and only then marks the plan job
+`complete` and writes the run state — so a crash between submission and
+completion leaves the queue recoverable rather than half-advanced.
+
 If finalization detects that repository source drifted underneath the plan,
 the run does not abort or auto-replan. `finishRepositoryRun` re-checks the
 source fingerprint at both ends of its deterministic window, finalizes the
@@ -193,7 +200,8 @@ so unchanged Claims keep their IDs and refresh evidence versions, revised
 Claims update in place, new Claims get IDs, and omitted Claims are retracted.
 Claim state is persisted alongside the Markdown under `openwiki/.claims/`, and
 page completion is a durability boundary that persists reconciled Claims before
-marking the job done. Grounded Claims apply to repository evidence only.
+marking the job done. Grounded Claims apply to repository evidence only;
+connector-derived facts are not claimed.
 
 ## OKF output and finalization
 

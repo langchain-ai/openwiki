@@ -3,9 +3,6 @@ type: orientation-guide
 title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -21,11 +18,16 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 ---
 
 # OpenWiki Quickstart
@@ -150,8 +152,10 @@ Find your task on the left, then read the page on the right.
 ## Where OpenWiki keeps its state
 
 - **Repository (code) wiki:** written to `openwiki/` in the repo, alongside the
-  structured Claims sidecar under `openwiki/.claims/` and in-progress run state
-  in `openwiki/.run.json`.
+  structured Claims sidecar under `openwiki/.claims/`, the per-page source
+  checkpoint manifest in `openwiki/.page-manifest.json`, the last-update metadata
+  in `openwiki/.last-update.json`, and in-progress run state in
+  `openwiki/.run.json`.
 - **Local state:** credentials, the personal wiki, connector data, conversation
   history, and skills live under `~/.openwiki` by default; set
   `OPENWIKI_CONFIG_DIR` to relocate to a different writable directory.

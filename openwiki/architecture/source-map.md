@@ -8,6 +8,8 @@ sources:
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-69abc6f0f641147820a274bc
+    resource: repo://src/agent/utils.ts
   - id: openwiki-source-239b2968fb2bcd073e89cedc
     resource: repo://src/claims/brains/code/runtime.ts
   - id: openwiki-source-2b28ddc861d155a44b3cc432
@@ -22,6 +24,8 @@ sources:
     resource: repo://src/connectors/registry.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
+  - id: openwiki-source-674d6e5badef7368ab04f064
+    resource: repo://src/generation/page-manifest.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
@@ -50,10 +54,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-27T23:20:02.895Z
 ---
 
 # Source Map
@@ -82,21 +86,24 @@ before anything else.
   agent events into `OpenWikiRunEvent`s (`parseStreamEvent`,
   `parseAgentStreamChunk`).
 - **`src/config/constants.ts`** is the single large registry of stable strings:
-  the `openwiki` directory name and update-metadata path, and the provider
-  environment-variable key names and defaults (`OPENAI_API_KEY_ENV_KEY`,
-  `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex keys, and provider lookup helpers).
-  Nearly every subsystem imports its identifiers from here.
+  the `openwiki` directory name, the page-manifest path
+  (`PAGE_MANIFEST_PATH`, `openwiki/.page-manifest.json`), and the update-metadata
+  path (`UPDATE_METADATA_PATH`), plus the provider environment-variable key
+  names and defaults (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`,
+  Bedrock/Vertex keys, and the `getProvider*` lookup helpers). Nearly every
+  subsystem imports its identifiers from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
-  `finishRepositoryRun`, wiring together the run state, claims runtime, wiki
-  finalizer, and OKF frontmatter validation — including deterministic
-  frontmatter repair (`repairPersistedFile`) before a page job is accepted. It
-  also owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot`
-  records the pending page and its claims sidecar before a worker runs,
-  `skipRepositoryPage` rolls a failed worker back (restoring the page markdown
-  and sidecar, marking the job `skipped`), and `restoreRepositoryPageMarkdown`
-  re-applies the snapshot during `finishRepositoryRun` for every skipped job.
+  `finishRepositoryRun`, wiring together the run state, the page-correctness
+  manifest, the claims runtime, the wiki finalizer, and OKF frontmatter
+  validation — including deterministic frontmatter repair
+  (`repairPersistedFile`) before a page job is accepted. It also owns the
+  skip-failed-page-workers path: `captureRepositoryPageSnapshot` records the
+  pending page and its claims sidecar before a worker runs, `skipRepositoryPage`
+  rolls a failed worker back (restoring the page markdown and sidecar, marking
+  the job `skipped`), and `restoreRepositoryPageMarkdown` re-applies the
+  snapshot during `finishRepositoryRun` for every skipped job.
 
 ## Subsystems
 
@@ -127,7 +134,16 @@ Orchestrates a full repository wiki build. Principal entry:
 `src/generation/repository-run.ts`. `src/generation/run-state.ts` owns the
 durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
 `generating` phases and `pending`/`skipped`/`complete` page-job statuses) so
-runs resume after interruption. `src/generation/page-jobs.ts` builds the plan
+runs resume after interruption. `src/generation/page-manifest.ts` owns the
+durable page-correctness ledger (`.page-manifest.json`, schema-versioned):
+`RepositoryPageManifest` maps each canonical factual page to the exact
+repository source checkpoint (`gitHead`, `sourceFingerprint`) and Markdown
+`pageVersion` it was verified against, with `recordRepositoryPageCompletion`,
+`getCurrentRepositoryPageCompletion`, `seedRepositoryPageManifest`, and
+`replaceRepositoryPageManifest` driving write/read/migration/replace; the
+lifecycle records completion only after the page Markdown and Claims sidecar
+agree, and rechecks committed coverage before letting a stale entry promote a
+pending job. `src/generation/page-jobs.ts` builds the plan
 (`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
 `src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle's
 snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,

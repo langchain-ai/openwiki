@@ -15,8 +15,8 @@ tags:
     pmset,
   ]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
 sources:
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
@@ -32,11 +32,13 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
+  - id: openwiki-source-85064d6a188fa56bcc282f11
+    resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 ---
 
 # CI Scheduling and Self-Update
@@ -187,24 +189,43 @@ Every example follows the same shape:
    Bitbucket). `openwiki code --update` diffs `HEAD` against the commit it last
    documented; a shallow clone hides that commit and the update runs against an
    empty change summary.
-2. **Install and run OpenWiki.** The examples install `openwiki` globally (plus
-   optional `mermaid` and `jsdom` for high-fidelity Mermaid validation) and run
+2. **Install and run OpenWiki.** The examples install `openwiki` globally —
+   optionally with `mermaid` and `jsdom` for high-fidelity Mermaid diagram
+   validation (remove them if your wiki has none) — and run
    `openwiki code --update --print`. Provider and model are supplied through
    environment variables/secrets (for example `OPENWIKI_PROVIDER`,
    `OPENROUTER_API_KEY`, `OPENWIKI_MODEL_ID`), with LangSmith tracing variables
    set for observability.
 3. **Open a docs PR only on change.** The GitHub example uses
-   `peter-evans/create-pull-request`, which no-ops when nothing changed. The
-   GitLab and Bitbucket examples make the change check explicit: they run
-   `git diff --quiet` over the documentation paths (`openwiki`, `AGENTS.md`,
-   `CLAUDE.md`, and the workflow file) and exit early with "OpenWiki is already up
-   to date." when there is no diff; otherwise they create a branch, commit,
-   push, and open a merge/pull request through the provider's REST API.
+   `peter-evans/create-pull-request` (pinned at v7), which no-ops when nothing
+   changed. The GitLab and Bitbucket examples make the change check explicit:
+   they run `git diff --quiet` over the documentation paths (`openwiki`,
+   `AGENTS.md`, `CLAUDE.md`, and the workflow file) and exit early with "OpenWiki
+   is already up to date." when there is no diff; otherwise they create a branch,
+   commit, push, and open a merge/pull request through the provider's REST API.
 
 The PR is scoped to the documentation paths (`openwiki`, `AGENTS.md`, `CLAUDE.md`,
 and the workflow file), branched under `openwiki/update` (GitHub) or
 `openwiki/update-<pipeline id>` (GitLab/Bitbucket), with the commit and title
-`docs: update OpenWiki`.
+`docs: update OpenWiki`. The GitHub example also includes a failure-propagation
+step that exits non-zero when the OpenWiki run failed, so a broken scheduled run
+is visible in the CI status rather than silently opening a partial PR.
+
+### Generated workflow template
+
+When `openwiki code --init` first sets up a repository, `ensureCodeModeWorkflow`
+writes the scheduled-update workflow file only when it does not already exist —
+an existing file is preserved verbatim so repo-specific customizations (fork
+guards, pinned actions, custom steps) are never silently overwritten. The
+template is produced by `createCodeModeWorkflow` in `src/ingestion/code-mode.ts`
+and mirrors the shipped GitHub example: it triggers on `workflow_dispatch` plus a
+daily `schedule` cron, checks out full history, installs `openwiki` (optionally
+with `mermaid` and `jsdom`), runs `openwiki code --update --print`, removes
+transient `openwiki/.run.json` run state, opens a PR via
+`peter-evans/create-pull-request` scoped to the same documentation paths, and
+propagates a non-zero exit when the run failed. The provider environment block is
+derived from the provider the operator configured during setup, routing secrets
+through `secrets.` and non-sensitive settings through `vars.`.
 
 ### Scheduling and gating
 
@@ -220,11 +241,14 @@ and the workflow file), branched under `openwiki/update` (GitHub) or
 - **Bitbucket Pipelines** likewise relies on a repository Pipeline schedule that
   invokes the `openwiki-update` custom pipeline.
 
-The live GitHub workflow also builds OpenWiki from the checked-out source and
-runs `node dist/cli/cli.js code --update` rather than the published package, so
-the daily run dogfoods unreleased changes; it additionally restores the protected
-workflow file after the run because `code --update` regenerates that file from an
-internal template and would otherwise drop the fork guard.
+The live GitHub workflow also builds OpenWiki from the checked-out source
+(`pnpm build`) and runs `node dist/cli/cli.js code --update --print` rather than
+the published package, so the daily run dogfoods unreleased changes; it uses
+OpenRouter with `z-ai/glm-5.2`. It additionally restores the protected workflow
+file after the run (`git checkout -- .github/workflows/openwiki-update.yml`)
+because `code --update` regenerates that file from the internal template and
+would otherwise silently drop the fork guard; it uses
+`peter-evans/create-pull-request` pinned at v8.1.1.
 
 ### Ephemeral-runner resume caveat
 
@@ -232,10 +256,12 @@ Repository generation and update are resumable: OpenWiki records in-progress wor
 in `openwiki/.run.json` and can resume the durable page queue when the same
 checkout persists across a rerun. **CI runners are ephemeral** — their workspace
 is discarded after the job ends — so a scheduled CI run that fails does not retain
-uncommitted run state and the next run starts fresh rather than resuming. Resume
-only helps on a persistent checkout (for example a developer's machine). This is
-why the CI examples treat each run as a full pass and rely on the committed wiki,
-plus full git history, as the only durable state carried between runs.
+uncommitted run state and the next run starts fresh rather than resuming. The CI
+workflows explicitly remove `openwiki/.run.json` in a post-step so a partial run
+does not leave stale state that a later checkout might pick up. Resume only helps
+on a persistent checkout (for example a developer's machine). This is why the CI
+examples treat each run as a full pass and rely on the committed wiki, plus full
+git history, as the only durable state carried between runs.
 
 ## Related pages
 

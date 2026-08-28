@@ -26,16 +26,18 @@ sources:
     resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-cd8d06edadee75de8637208c
     resource: repo://src/claims/evidence/repository/resource.ts
+  - id: openwiki-source-1197594de038075f3570340c
+    resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-9bac7069736f3ea19ed36748
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+    at: 2026-08-27T23:20:02.895Z
 ---
 
 # Grounded Claims
@@ -191,8 +193,39 @@ before its sidecar is written:
    accepted, the page is not persisted.
 
 The runtime exposes this through `ClaimsRuntime.finalize(at, excludedPages)`,
-which builds the OpenWiki producer verification event and forwards the skipped
-set. When a repository run finishes, `finishRepositoryRun` first validates that
+which builds the OpenWiki producer verification event, forwards the skipped set,
+projects verification into OKF front matter, and rejects if any per-page warning
+accumulated.
+
+### Per-page completion ordering
+
+When a single page job is submitted, `submitRepositoryPage` proves that page is
+durable before advancing the queue; the strict whole-run proof waits until
+every job is complete. The page-completion boundary is an ordered sequence:
+
+1. **Frontmatter repair** — `repairPersistedFile` deterministically repairs the
+   page's OKF front matter, refusing to proceed if repair leaves invalid front
+   matter. This happens *before* any Claim state is touched, so Claims replace a
+   page whose bytes are already canonical.
+2. **Claims replacement** — `replacePageClaims` diffs the proposed Claim set
+   against the page's existing Claims and emits `add`/`confirm`/`update`/`retract`
+   operations; unchanged Claims keep their ids, omitted Claims are retracted, and
+   duplicates are rejected.
+3. **Finalize** — `claimsRuntime.finalize` persists the page's dirty Claim state,
+   rechecks evidence, writes the sidecar, and projects the verification stamp.
+4. **Per-page durability assertion** — `assertPageClaimsDurable` reloads the
+   sidecar and verifies the Claim set, `pageVersion` hash, and projected
+   `verified` event all match the authoritative session state, throwing a
+   retryable `RepositoryRunError` on any mismatch.
+5. **Completion record** — only after the assertion passes does
+   `recordRepositoryPageCompletion` append the page to the run manifest.
+
+If any step throws, the error is normalized to a `RepositoryRunError` so the run
+stays resumable rather than aborting on an opaque failure.
+
+### Run completion and skipped pages
+
+When a repository run finishes, `finishRepositoryRun` first validates that
 every skipped page job carries its original `captureRepositoryPageSnapshot`
 capture, refusing to finish if any skipped job is missing its snapshot or its
 path no longer matches the job. It then derives `skippedPages` from the skipped

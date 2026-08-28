@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:38f046ab807a29746f784f2fbeb25ad70fa8a25d0055eddfb578759271004f95",
+  "pageVersion": "sha256:803db179bc4efc4e15176f036b6bc5e63dc48116f5dbab4b1480d6b6f4fe1d08",
   "claims": [
     {
       "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
@@ -164,7 +164,7 @@
     },
     {
       "id": "claim_f97b20344a7f46d9aeb539253f97f8a6",
-      "statement": "The scheduled CI job installs openwiki globally, runs `openwiki code --update --print` with provider/model supplied via environment variables and secrets, and opens a docs pull/merge request scoped to the paths openwiki, AGENTS.md, CLAUDE.md, and the workflow file with the commit and title \"docs: update OpenWiki\".",
+      "statement": "The scheduled CI job installs openwiki globally — optionally with mermaid and jsdom for high-fidelity Mermaid diagram validation — and runs `openwiki code --update --print` with provider/model supplied via environment variables and secrets, then opens a docs pull/merge request scoped to the paths openwiki, AGENTS.md, CLAUDE.md, and the workflow file with the commit and title \"docs: update OpenWiki\".",
       "evidence": [
         {
           "resource": "repo://examples/openwiki-update.bitbucket-pipelines.yml#L15-L37",
@@ -175,8 +175,8 @@
           "version": "repo-lines-v1:sha256:6c143f4c2bda61b7abbf1abf05cc3d52cfb9e69ce11ae7a66c64591d8915114d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZGFmM2QwMThlMWFlZjAzNTVlM2JhNzZjNmJlYmM2NTllNTRjY2I5YzZlY2UzNTkwZmVkNzA0OTVkZjk0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjA1OTI4NjlmN2U4ZmJhYTMxYjlkNmMzNTc1YmE3MjA1M2EzYTVjOGJhMjU1OTE2NjczOTk5MTA0Njk3OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNmMwYTZjMmMyZTI4OThkMGY3ODQwODI2ZjE4NDRlMjc2ZWUxZTJhYzc2N2E3ZTg3NTZmYjg1ZTQ0ODExN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYzc5NTMyMGVhY2Y5YjYzM2E3OTYxZWNhYzA1OWE0NjZmZTc4NWJlOTAzNmM0ODAzNjdiMzVmNzk3OGUwNjUifQ"
         },
         {
-          "resource": "repo://examples/openwiki-update.yml#L31-L64",
-          "version": "repo-lines-v1:sha256:f21d36220693e7e6deaf9f01ed486006b9a6634a3acc6e7771cbce4a9b11c718:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://examples/openwiki-update.yml#L31-L79",
+          "version": "repo-lines-v1:sha256:c7b1e74e21c177e87cddf94d565eeed6e090d56a2082623f4ea5abc77e890c08:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -196,15 +196,19 @@
     },
     {
       "id": "claim_d272e2e86e664caabb33f3ad6f117c68",
-      "statement": "The GitHub Actions example triggers on a UTC daily cron (0 8 * * *) and workflow_dispatch, and uses peter-evans/create-pull-request which no-ops when nothing changed.",
+      "statement": "The GitHub Actions example triggers on a UTC daily cron (0 8 * * *) and workflow_dispatch, installs mermaid and jsdom optionally, uses peter-evans/create-pull-request pinned at v7 (which no-ops when nothing changed), includes .github/workflows/openwiki-update.yml in add-paths, and has a failure-propagation step that exits non-zero when the OpenWiki run failed.",
       "evidence": [
         {
           "resource": "repo://examples/openwiki-update.yml#L3-L7",
           "version": "repo-lines-v1:sha256:f85bdfd7954ff5617292b34d02c83de4510d7f1dc18cbdc099a6cba72aa18082:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2ZGM0ODE0OWY1YTgzZDFlZDZkYmIzOWJiYzdlMmI5MDJhYTNkMzRkNmJkNWFlNGIyOTFiNjhkZjBjYTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTNhZWQ1MDJhNWFkZWU3YmIwY2FkZDQ2Y2Q3NDYzYjUzMjBjNmNjZWU0NDgwZDY2ODU0ODg0MzEwNjM3NjExOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzViMWYyNGU2MTgwNWVlMWE5YmM3ODA0N2UxZTRiM2Q4NjE1N2Q2ZTM3ZDhhYzBiY2JlYmQ1ZTY1ZTVlZjFhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk0NjJkNWYyYzIwN2U2YjRmODI4NDNkOTE1NGZmMGJiYWQwMzQzOTI0YjJjM2M0YmFiZDk5Yjg3Y2NkNGI4MiJ9"
         },
         {
-          "resource": "repo://examples/openwiki-update.yml#L50-L64",
-          "version": "repo-lines-v1:sha256:2507faafa9faf9e43981bd485c049cc5f2131c782c9588d50641b6b05c8b5686:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Nzc5NmQzMTczMmZiY2U4OTk4YTJmN2U3YjFiYjk3NTVjMjNlNTg1MDMyMGI5MDkzN2Q4MmMzZmQwZTYyYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://examples/openwiki-update.yml#L31-L33",
+          "version": "repo-lines-v1:sha256:f7c401dca2f8a8d300c402aa2e07132d88e510775d6294ad189474ce54aaf8d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZjZTBiMGQzYjM4MTIyYmMyNzUxNWE4ZDk2OTYxNWQ5ZTEwZTI4MDY0NGY3NjEyMjFkMDQ0NzlhZDI1MzkzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThmZjQyYjlhMzAzZWZmNzM5MGE1MjI1OTliMzIyMzlmMzk4N2I0MjI0ODBjMTVjZDJmNjZiODAyODc0OGI2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNmM2I4ODAyYjMxMGZmMmFkZDAwMjZiODJlZTJlOWU1NzE1OTEyZWFmMDgxYWY4NmNlMTEwZGQ2NDJmYzFhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTM3NjlkMjkyYWFhMDBjMmQzZDAyNzBkZmM5MjIzODZhMGRlNGRhMzhjOTA3MDA1NThlYjIzMmI4ZGIyYjdiNyJ9"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.yml#L56-L79",
+          "version": "repo-lines-v1:sha256:7b47305b3023ce1a9030662126eee33e8c022f1571370bf80e550363712828ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmZTVjYTdmYmJkMTk5YTZhZDgyZGU1MmY0ZWE2NDMxODVmNjM1MGE4MGJhNTJkNWFkN2VlYTMyNTY3NzUwYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -220,11 +224,11 @@
     },
     {
       "id": "claim_91bbfcd16ebf4a67a2f65e5fda3c2911",
-      "statement": "The live GitHub workflow builds OpenWiki from the checked-out source and runs `node dist/cli/cli.js code --update` (rather than the published package) to dogfood unreleased changes, and restores the protected workflow file after the run because `code --update` regenerates it from an internal template and would otherwise drop the fork guard.",
+      "statement": "The live GitHub workflow builds OpenWiki from the checked-out source (pnpm build) and runs `node dist/cli/cli.js code --update --print` (rather than the published package) using OpenRouter with z-ai/glm-5.2 to dogfood unreleased changes, restores the protected workflow file after the run via `git checkout -- .github/workflows/openwiki-update.yml` because `code --update` regenerates it from an internal template and would otherwise drop the fork guard, and uses peter-evans/create-pull-request pinned at v8.1.1.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/openwiki-update.yml#L46-L74",
-          "version": "repo-lines-v1:sha256:01dea59d34bdc40170dc0e649a42a15e9bb248fc1547304e6d7183b0a8a33bee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjOTQ2NDJmZjIyNWM4OGE1MjRlMzZjYzY1YTYzOWIxMzFjM2JlOTlkZGFiOTVjNzVmMTMwMDE1Mzk0ODRmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NjAwZTdiNjQ2MWE3ZDFkOGJjZWJlN2FmZWRiZjRhNzc3YTRhY2JlNWVlYWNkMmExNjcwMjk2NzUzNjhkMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDQzZGZkMTliZGM2YWUxYzI2ZWY1NDRjMDYzMzQ4ZjZhOWVmOTI2NDg3YTg2MTUwYzc4M2VjYjVhNDE1NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMGZkODJlZjUyZjI5MTNjOWJkMjU2MDBhOGZmYzlhMzA2NzgxNWFlNDk1NGMxODczMzM5MDJlZWI1ZmNmNmYifQ"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L46-L105",
+          "version": "repo-lines-v1:sha256:72192f8597733c35daea878f40189a42faa60f455f901ff8457c7fe60e321dba:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjOTQ2NDJmZjIyNWM4OGE1MjRlMzZjYzY1YTYzOWIxMzFjM2JlOTlkZGFiOTVjNzVmMTMwMDE1Mzk0ODRmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjNDQzZGZkMTliZGM2YWUxYzI2ZWY1NDRjMDYzMzQ4ZjZhOWVmOTI2NDg3YTg2MTUwYzc4M2VjYjVhNDE1NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -233,18 +237,36 @@
       "statement": "Repository generation/update is resumable via durable run state recorded in openwiki/.run.json only when the same checkout persists across a rerun; ephemeral CI runners discard their workspace after a job, so a failed scheduled CI run does not retain uncommitted run state and the next run starts fresh rather than resuming.",
       "evidence": [
         {
-          "resource": "repo://README.md#L35-L35",
-          "version": "repo-lines-v1:sha256:44c7c8051e83998d969e749a3c21a3c7d7d8ced5a7cd597a3a9fb42b80e6e487:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjN2M4MDUxZTgzOTk4ZDk2OWU3NDlhM2MyMWEzYzdkN2Q4Y2VkNWE3Y2Q1OTdhM2E5ZmI0MmI4MGU2ZTQ4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJjMGM5OGU5YjJiZDI3YzBkZmQ1NjkxMDA0MzczMmI4YThhMGRlYjU5MDMzODc5MDJiODY3NTY2ZjMzZmI4MCJ9"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L78-L80",
+          "version": "repo-lines-v1:sha256:9a839067f47beb1ca08c710b71e598b0402cc1fd184fbaffb0641be925ef8a7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc5Yzg4MGY2MmQ0MjI1MzhiY2E4NGNiNTVlY2U4ZmUxMGU5NjU4YjA2MTExNWMzZmFiY2RjN2IzYmVjZjQ0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg2ZTgzZTdmOTYxYjVhN2NhZDhlZWZmZDZhM2Y0MWY4NTczZjBiZWRhODQxZGQyM2YyOTZjNTc5NGVhNGJjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NkOTNkZDYxY2RiYWRhMDY1NDFjZGMzNzIwZWUxOTU5ZWJlZTgyNGFhNzYwYzliNjljNWFkZDY4Yjk1NDk5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDFhZjRmNTQ5YzA3YTA1M2FlNzkzYjk4ZWIxMTMwYjU5NzFkMWFkYmFlYWMxOGIxMzkyNTYyNjU5OGE1MDlkZiJ9"
         },
         {
           "resource": "repo://README.md#L55-L55",
           "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc5ZGRkZTViNzViMGIzODQ4ZGZjMzgyYTZmYTIwMjdhMjNiNTkxNzVlYjcwMWU1YTczMmRmMGEwMjczYjZhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_8380860523484708855cbf80d3a289f1",
+      "statement": "ensureCodeModeWorkflow writes the scheduled-update workflow file only when it does not already exist; an existing file is preserved verbatim so repo-specific customizations (fork guards, pinned actions, custom steps) are never silently overwritten. The template produced by createCodeModeWorkflow mirrors the shipped GitHub example: it triggers on workflow_dispatch plus a daily schedule cron, checks out full history, installs openwiki optionally with mermaid and jsdom, runs `openwiki code --update --print`, removes transient openwiki/.run.json, opens a PR via peter-evans/create-pull-request pinned at v7 scoped to openwiki/AGENTS.md/CLAUDE.md/.github/workflows/openwiki-update.yml, and propagates a non-zero exit when the run failed. The provider env block is derived from the operator-configured provider, routing secrets through `secrets.` and non-sensitive settings through `vars.`.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L259-L321",
+          "version": "repo-lines-v1:sha256:ea7fe720bce828018048eb40efb760ed6202881e02348740fc76aa8752e99822:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjYTUxZmI5NTE0NzhiMjM3MzA2MmVhZDFmOTE2ZDA5NDYwYWI2YzQ3ODRkMjdkOGE3MWJlNzJkM2I2OTFlN2QifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L323-L403",
+          "version": "repo-lines-v1:sha256:5d8717628040be4903211e3da7418ae5557b5b43deae62163392f951746555fa:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWUwMDZmMmE4YTJlZDc5MmRiMWFkNzkyM2ZiNzA4ZjgxMDRiMzVlNDczNzFiZDQ5MDUwN2Q0ZjQ0NDdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODQ1ZjZlNGEyYjkzODdmMDRmZmJkOWY5ZTI2MWZjOTMwMTU1Y2IyNjc3OGNkMDhiZTY5MGE3MTExNzc5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MWI5OWFlNjY0YzAwNjdiODUwN2ZkM2FhODAxOTJhZTQ2ODYyNmIwODA4MWE5MGY5NGQ1NWMyN2JmMDcyMDQifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L64-L96",
+          "version": "repo-lines-v1:sha256:54d0c7ee941e0deca79f19c7078d2e9a0562cea8e77bdfa0d5d1e482f2498094:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4MGZiNGQ2MDA0NTJiNTc1MjY4ODMyMjQ0NTVhYWViOGJmOGQ0NWJkNjFjNWFlMmMwOGNjNWVhNWI5N2MwNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MGQwYTA0Mzg4YmJjZDgxZjYyODFjMDMwNTQ1ODc0MDEwZmFmYzZmMzM2ODkwNzU4NmEzYjM3MzhiYjlhZWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T23:20:02.895Z"
   }
 }

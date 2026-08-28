@@ -13,6 +13,9 @@ tags:
     provenance,
     repository,
   ]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-27T23:20:02.895Z
 sources:
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
@@ -34,10 +37,7 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-27T11:21:51.032Z" }
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-27T11:21:51.032Z
+generated: { by: "openwiki/0.4.3", at: "2026-08-27T23:20:02.895Z" }
 ---
 
 # Claims Reconciliation on Update
@@ -117,14 +117,23 @@ source outside `openwiki/` and outside the `openWikiIgnore` boundary. Changes
 that only touch generated wiki state or ignored paths do not count as
 meaningful.
 
-The repository run wires these two signals together, and **Claims validation
+The repository run wires these signals together, and **Claims validation
 precedes update no-op detection**: a run is skipped only when the Git-based
 preflight says `shouldSkip` **and** the Claims runtime reports
-`issueCount === 0`. A clean Git status therefore cannot hide stale or unresolved
-grounding state — if preflight found any stale or unresolved Claim, the run
-proceeds even on an otherwise unchanged tree. When both conditions hold, the run
-finalizes Claims (refreshing sidecars) and rewrites the last-update metadata
-before returning a `noop` result.
+`issueCount === 0` **and** every initial page already has baseline coverage in
+the page manifest (`hasCompleteBaselineCoverage`). The manifest coverage gate
+ensures that any page lacking a prior completion record is fully reviewed rather
+than silently skipped. A clean Git status therefore cannot hide stale or
+unresolved grounding state — if preflight found any stale or unresolved Claim, or
+if any page lacks baseline coverage, the run proceeds even on an otherwise
+unchanged tree.
+
+When all three conditions hold, the no-op path re-checks source stability around
+the finalization: it snapshots the source fingerprint, finalizes Claims
+(refreshing sidecars), snapshots the source again, and only if the fingerprint is
+unchanged does it replace the page manifest and write the last-update metadata
+as `complete` before returning a `noop` result. A source change between
+finalization and the metadata write prevents the skip.
 
 ```mermaid
 flowchart TD
@@ -132,10 +141,16 @@ flowchart TD
   B -->|"no"| P["proceed with planning and page work"]
   B -->|"yes"| C{"claimsRuntime issueCount == 0?"}
   C -->|"no, stale or unresolved"| P
-  C -->|"yes"| D["finalize Claims and write metadata, return noop"]
+  C -->|"yes"| Q{"hasCompleteBaselineCoverage?"}
+  Q -->|"no, page lacks coverage"| P
+  Q -->|"yes"| R["snapshot source, finalize Claims, verify source stable"]
+  R --> S{"source fingerprint stable?"}
+  S -->|"no"| P
+  S -->|"yes"| T["replace manifest, write complete metadata, return noop"]
 ```
 
-Stale or unresolved Claims override an otherwise skippable update.
+Stale or unresolved Claims, or missing baseline coverage, override an otherwise
+skippable update.
 
 ## Turning issues into required page jobs
 
@@ -151,9 +166,9 @@ automatically.
 
 ## Per-page reconciliation: the complete intended Claim set
 
-When a page worker submits its finished page, the repository run validates the
-page's front matter and then calls `replacePageClaims` with the worker's
-**complete intended Claim set** for that page. The worker does not emit
+When a page worker submits its finished page, the repository run repairs and
+validates the page's front matter and then calls `replacePageClaims` with the
+worker's **complete intended Claim set** for that page. The worker does not emit
 individual operations; it declares the full set of propositions the finished page
 asserts, and reconciliation derives the operations by diffing that set against
 the page's persisted Claims.
@@ -234,10 +249,11 @@ Lifecycle of a page Claim across one reconciliation pass.
 
 Durability is enforced at two points. When a page worker submits its finished
 page, the run calls `finalize` with the run's `startedAt` timestamp and then
-`assertPageClaimsDurable` for that page before recording the job complete and
-advancing the queue. When the whole queue is finished, `finishRepositoryRun`
-calls `finalize` and `assertRepositoryClaimsDurable` once more for the
-whole-run proof.
+`assertPageClaimsDurable` for that page before recording the job complete via
+`recordRepositoryPageCompletion` and advancing the queue; any failure in that
+sequence is wrapped in a `RepositoryRunError` with `invalid_input`. When the
+whole queue is finished, `finishRepositoryRun` calls `finalize` and
+`assertRepositoryClaimsDurable` once more for the whole-run proof.
 
 `finishRepositoryRun` guards the finish path with a **skipped-snapshot
 validation**: before any work, it requires exactly one page snapshot for every
@@ -269,7 +285,7 @@ missing page and fail the run.
 
 `finalize` accepts an `excludedPages` set (empty by default) and skips every
 page it names across all of its work, so callers can exclude pages whose
-Markdown was not regenerated. The per-page submit path omits it. The finish
+markdown was not regenerated. The per-page submit path omits it. The finish
 path passes the set of skipped page paths as `excludedPages`, and passes the
 same set to `assertRepositoryClaimsDurable`, so skipped pages are excluded from
 both final Claims persistence and the whole-run durability proof.
@@ -291,5 +307,5 @@ resumes rather than no-ops.
   resolution, and the store/session/runtime split.
 - [Repository Generation](./repository-generation.md) — the init/update
   lifecycle that hosts planning, page workers, and finalization.
-- [Source Map](../architecture/source-map.md) — where these modules live in the
-  codebase.
+- [Wiki Finalization and Link Integrity](./wiki-finalization.md) — the
+  deterministic finish path, OKF projection, and link validation.

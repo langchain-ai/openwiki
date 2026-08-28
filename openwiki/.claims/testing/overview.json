@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9e1a30e1c95aa3c4747be42902ba5500fd76cf51537ee5fbd43593ef08a70adc",
+  "pageVersion": "sha256:ebe3953b43f49a9297af767ec295c56d150a41c916c0101e16830f133f564f16",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -192,11 +192,11 @@
     },
     {
       "id": "claim_3a4dd876dbaf4ff9a91a47e18e48d2ff",
-      "statement": "Failure-path tests inject faults with vi.mock plus a vi.hoisted counter that wraps the real module and throws on selected calls while otherwise delegating to the real implementation, as when the repository run test intercepts writeLastUpdateMetadata, writeRepositoryRunState, and removeRepositoryRunState to inject metadata-write and run-state write/removal failures.",
+      "statement": "Failure-path tests inject faults with vi.mock plus a vi.hoisted counter that wraps the real module and throws on selected calls while otherwise delegating to the real implementation, as when the repository run test intercepts writeLastUpdateMetadata, writeRepositoryRunState, removeRepositoryRunState, recordRepositoryPageCompletion, and replaceRepositoryPageManifest to inject metadata-write, run-state write/removal, and page-manifest write/replacement failures (and mid-replacement source mutations).",
       "evidence": [
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L8-L55",
-          "version": "repo-lines-v1:sha256:8d926519c07e398304bdf006e491bea7e68b2b1fb2583739665bf7217b5bc8a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YjZkMzkwMWJhMzA1YjUxYWQ5OGYzYzU3N2NlNDBjYTU4ZmFkZTA4ZTFjYTJiYzJkYzIzMWRkNjlkYjJiZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhMTM5MWEzZjhlNzQwNTcxNmE1YWFmMGJiNDBiZjFiYzdjODY3NmU4NWVkZDI3NWQzYmY3OTdiNjA5MmQ3NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlOGRiYjBiYmQ2ZGZlNmNmZmQxMmI0ZDA2YTlkMWU0ZmRlYWFmYTk3YzBkZTU4ZGU4ZWY3YTczNjdmYmE4YmQifQ"
+          "resource": "repo://test/generation/repository-run.test.ts#L8-L96",
+          "version": "repo-lines-v1:sha256:11bb5a503d710d5e83db4a02d1b96b0171dd80fbe995070535e89f67f58cf635:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkNDYzYzIxNWMzNDkwNjBhMWY2NDU1YTllZDUwNWVjZWZmMTM0YTYxMTI1OTE4OTY4Mzg0ZDgwZDhjNTNkYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlOGRiYjBiYmQ2ZGZlNmNmZmQxMmI0ZDA2YTlkMWU0ZmRlYWFmYTk3YzBkZTU4ZGU4ZWY3YTczNjdmYmE4YmQifQ"
         }
       ]
     },
@@ -289,26 +289,26 @@
       "statement": "In the repository-run test, finishRepositoryRun accepts a skippedPageSnapshots list so finishing after a skip leaves the original page Markdown and Claims in place, removes the run-state file, and stamps an interrupted last-update status; the 'resets an interrupted skipped job to pending on resume' test then proves resuming such a run re-queues the skipped page as pending rather than carrying the skipped status forward.",
       "evidence": [
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L282-L306",
-          "version": "repo-lines-v1:sha256:3168d176550edd22dacc2f05bcc271086108adb85ec05fc8912e592eafdfdcd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZmEyZWI1NmE0YzZhNmI3ZTYyNTBmM2NmYWFmYWE4ZTJmM2M2Yjg3ZTQwYjBlMzhjZTVmYjEzMjk2MGEzYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhMTViODdjOTM1ZmY2ZmM1NDAyNmI2Y2EyY2RlM2E1NGIwYjA3NDdlMjhjMjEwZjAxMTIzOGQ3NDQyODJlNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwN2NiYWY0ZTNkYmMyMTk2ZWQ2YmUzMmE0ZmZkNDNjODVlMzM3ZWRkNWFmMWNjN2JiN2RhOWNmMTE0YmRmYTgifQ"
+          "resource": "repo://test/generation/repository-run.test.ts#L282-L367",
+          "version": "repo-lines-v1:sha256:d3d11029ac5fa66ddb5461896286db45c33cd6cfe25fb29746af98555dfcc13a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MGM4MjExZWM5MmE5OTk4MzRhMzU2ZTk1MmI4MWVkZjliZWUzNWE2OTg5OGUzODVjNmMzZmVkZWI1NjgzMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwMzE3OTIyYTcwY2U4Y2RmMmE3NDUwZjVhNDBmNWY3NzdlOWU1YmI3YTE4NDQ3NTU5NzQ2MGUxMGJkODE1NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkY2QwNzAwMmMyMzI2MWJlODM5MmU1NmE0ZTY3NWYwYzhiNzQ2MTA2MDFlYzNhYWFjOTkwMWYwZTcyMWU2NTUifQ"
         },
         {
-          "resource": "repo://test/generation/repository-run.test.ts#L470-L502",
+          "resource": "repo://test/generation/repository-run.test.ts#L977-L1009",
           "version": "repo-lines-v1:sha256:11cd1545f9746be3ccb026ae7e3f3786bff8a2067c7767e48f8d0346e22e0f22:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjYjE3NjNhNzUxNGNjZjQ2ZjZmMjJkODVmOTc3OGFhYjMyY2RiNmE2M2JkZDQyNjlhMDRmMWMyOTY3YjBjOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljNTQ1MjFiNGIwYTNhZDlmODk0YzhhMDU3MTk2NWE1YmM0ZDliM2EyYTE1MTJhNjNjZGFlNTM1ODZiZWIwMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxOTJmMjNjMTQ3OWZmMmE0Y2NjYTFjNGM0MjM1ZjVkOTNiMjEyYTJlOGMxYzgyZTAyNTkyZWZiNzFmOGNiNjAifQ"
         }
       ]
     },
     {
       "id": "claim_1796f2115735475892eeef39944ac9bc",
-      "statement": "test/agent/repository-runner.test.ts drives runNativeRepositoryGeneration through a deepagents/repository-run.js mock harness; the 'restores and leaves a page pending when its worker does not submit' test sets workerExitsWithoutSubmit so a page worker exits without calling submit_page, the runner invokes captureRepositoryPageSnapshot/skipRepositoryPage (counted by restoreCalls) to restore the snapshot, marks that page skipped, finishes the run, and emits a text event telling the user the page will be reconsidered on the next update.",
+      "statement": "test/agent/repository-runner.test.ts drives runNativeRepositoryGeneration through a deepagents/repository-run.js mock harness that mocks the completion tools and simulates worker exit-without-submit and post-submit failures; the 'restores and leaves a page pending when its worker does not submit' test sets workerExitsWithoutSubmit so a page worker exits without calling submit_page, the runner invokes captureRepositoryPageSnapshot/skipRepositoryPage (counted by restoreCalls) to restore the snapshot, marks that page skipped, finishes the run, and emits a text event telling the user the page will be reconsidered on the next update.",
       "evidence": [
         {
-          "resource": "repo://test/agent/repository-runner.test.ts#L215-L245",
-          "version": "repo-lines-v1:sha256:93527aa2cfa6ec5ab252addc7db628529faa260347d17349dbe2271c4d0bf91f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OTk4NWVhODYzNTZmYTYyMTg5ODkwNTAxOGY2OGJiZTJhM2MzZGEzM2QzNDUzYjlmMzdhMzZmMDU0MDZjMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1NmI1MTU5MzRlYWM3NDQwNjkxNmEwYjg5MzkwZTYwYzRlMTJjNDJmYmVjZDZhNDQ2ZTE1OGMzN2Q1M2Q3OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMWRhZmU4MmUzYmQyZmEzMmNhNWNlOTIxZDQ1ZDViYjdhZTM2NTc4NTQ0MzJjN2VjNGU1ZDRlODViZmQyM2EifQ"
+          "resource": "repo://test/agent/repository-runner.test.ts#L199-L236",
+          "version": "repo-lines-v1:sha256:a84744c22e519ab3f46ac9f897facbbcc32d5347ac195a91da0ed916a9b9fd08:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NWFhNDIxMjMxMjVhZDVlZGU2M2NhOWViZDJiYTkwMTJhYTg0MmU3MzJmZTc1MmFiYTkzMWJmY2RiNmMzYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMWUxZWQ4MGQyYTI1NDZkMDg5YTY2YjI2NDE1ZDBhMmM1ZTljYmI5MDg2NmZlZWZhMzJkNWNmZTljNjU3OTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxMzJlZmUyYzdiNGEzMjg2M2ZhYWM5YzVhYzc1YjAyZjE2NWJhN2Q5NDRhZGFhNzliNTdlYTQ3MDgxMDNjNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4MGZkN2IyNDU1NDNmYjY0MzM2NTg0OWQxNTZjZTYyMjg3N2ViM2NiNTUyYTcwNTU0YWQwMWU0YTNjNzY2YTkifQ"
         },
         {
-          "resource": "repo://test/agent/repository-runner.test.ts#L613-L631",
-          "version": "repo-lines-v1:sha256:8d4e359f105a484cf57149dca583a92495d984a0e36d5340ff9615356ab33067:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYTMxODA1YjQ0YTQ2YWUyZWE3YmUzODJlM2I4NGJiMWQxYjA1NDI3NDVhMWFlMDdmNjA0YjVhZWFiZDk0YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMGE4ZjMwYzkxNjQ0MDQxYWViNmI1ZmRmZjMxZTRlMTc0Mzg2NGFmN2RkOTljY2I5YTczMmM3OWM4ZjYxM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjN2UwZTY0NDliZDJkNjljMTcwM2EyMTk3NjkzYTJjYzU2NThiMDI4OGYwMGU2YzI0OTkyM2Y3NzlkMzIxMDQifQ"
+          "resource": "repo://test/agent/repository-runner.test.ts#L646-L664",
+          "version": "repo-lines-v1:sha256:8d4e359f105a484cf57149dca583a92495d984a0e36d5340ff9615356ab33067:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYTMxODA1YjQ0YTQ2YWUyZWE3YmUzODJlM2I4NGJiMWQxYjA1NDI3NDVhMWFlMDdmNjA0YjVhZWFiZDk0YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMGEwY2NiN2QyNWI1NmVlNzdjYTQzZjAxOTBkMDVhZjhhOTUyYzNjNWVjNDQ2Y2ZlZThjMzY5NDc1YzliMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjN2UwZTY0NDliZDJkNjljMTcwM2EyMTk3NjkzYTJjYzU2NThiMDI4OGYwMGU2YzI0OTkyM2Y3NzlkMzIxMDQifQ"
         }
       ]
     },
@@ -343,10 +343,162 @@
           "version": "repo-lines-v1:sha256:0fec58585915c3e635ac17e271f18c6f452d4478d7a43279569748994681e7f7:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YzZhYWVkNDM3MDA4NDk2NWFjODE0ZDYxNzY5OWJjMzc1YzM0MDliMDQ2ZDIxODFiNzY4MmVkZDZiZGQ3NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZmZkZjJhOWE1YzEzMzI4ZTY5ZTBjZDI4OWI4MmJjODQ3YmI3YTgyYzIxYjA2MTJiMWM5NDZhZmJjZWRmZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3YWI5MzEzMTVjOTFmYjIyZTA3ZmQ3YjU4ZjkwZGVjZjMwYmMxNDBiNTEzYWRlYzg2NzRiMzA5MTYyY2ZhYjQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7b1f579a2ad74f249fa4e9d99640d8b0",
+      "statement": "test/generation/page-jobs.test.ts exercises createRepositoryPlan and replacePageClaims: it covers plan validation (quickstart required for init, no init deletions, no quickstart deletion, no duplicate or overlapping generate/delete pages, no structural or reserved working pages), input normalization (trimming, dedup, quickstart-last ordering, stable UUIDs), the claim-issue reconciliation jobs the planner inserts for stale/unresolved claims with normalized evidence seeds, and the language-rewrite jobs that avoid duplicating planned or deleted pages.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/page-jobs.test.ts#L79-L239",
+          "version": "repo-lines-v1:sha256:d0694f7723408ef6f408e3820eb7d81bd9e00557ea1ec06dd64ef6ec7f19309c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNmJjYTljYTVjYWY1ZjBmNGU1YzViNGExYTFiMzVkYjhiOGJiMzM0OGU3OTNkYzE0ZDdmOTNlYWVkZWZlZmRkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MjA0MGUwOTVhOTRlMmFkYTc0ZTQyMWYzNzE4NzUxYTkxYTgxMGJmZDY2ZjQ4ZjRlOTM5YzdiNzQ4MGViNjcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NWNjNDNiY2E5NDNiODkxYjBhOWE4ZWFlNzdiZTI2MzE3MTgzYzBhNmQ5OWFiOTdjZjkzZTJmMWE1MDBiOTA3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_8693875e229347cbb25a5be3adae4908",
+      "statement": "test/generation/page-jobs.test.ts replacePageClaims tests drive the code-claim session's add/confirm/update/retract/omit reconciliation model, including no-ID exact matches, evidence-set normalization, duplicate-proposal rejection, NUL-delimiter fingerprint safety, unknown/wrong-page identifier rejection, and atomic rollback when evidence resolution fails.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/page-jobs.test.ts#L241-L406",
+          "version": "repo-lines-v1:sha256:7cf5c6b69414c516be3e8592136a41c25ba23574fc059181ea410570219f5d5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOGJjODZmYjQ0MWZjNDFiNGVmZDAzODBmYzExOTAyNGNlMzgxZmE5NWEyMTg1NDlkZWFjYmEzODRjZDczY2MyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNzc5ZDExOGQ2ZTNjYmY0NTA1Mzk3NDhkZWU3YTQzMDdhY2JlNjQ0NmNiYTI5N2YyNzYwZmE1ZDBiYmExYmMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_55975820307642619aa1bcb61ae76d82",
+      "statement": "test/generation/page-manifest.test.ts exercises the page manifest's persistence and completion-durability primitives (readRepositoryPageManifest/writeRepositoryPageManifest/recordRepositoryPageCompletion/seedRepositoryPageManifest/replaceRepositoryPageManifest/isRepositoryPageCompletionCurrent) against real mkdtemp directories and a ClaimsStore: it asserts stable page order with no .tmp files left behind, fails-closed on malformed JSON and schema extensions, preserves the original manifest and cleans up when the atomic rename fails (via a vi.mock of node:fs/promises.rename), refuses to advance an unverified or mismatched Claims page, records the exact source checkpoint for verified bytes, seeds missing verified pages while preserving newer coverage, leaves unverifiable legacy pages uncovered during migration, and retains only the surviving verified page inventory after a replacement.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/page-manifest.test.ts#L107-L222",
+          "version": "repo-lines-v1:sha256:1234c4019309af28fe5d861c8358299fe2c813784c4256d1f66015d4fd13baa3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzZDA2YzcyZjI3ODA2YzkzNDBjZjA0ZTBmN2ExNGE5MDU2MmNhZGRmNGYxOTAzNDhhYzczYjZmOTkwZTFhNDI1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4Mzk3OTQ2NTA2MDA4MjlkYzhmYjBkNmMzM2JjMjEzZTg4MzI1NjJhM2M3ZmFjM2M4ZjAzMDRlMmRkNGU3MGFiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmZjkxZWFmMzhjYTMyNjA5NjI3MmYxNjYxMDNiMzQwNWVlOTY4YmI1N2FjN2Y3OGZkY2RkYTMyNDZlMWY1NDI0In0"
+        },
+        {
+          "resource": "repo://test/generation/page-manifest.test.ts#L224-L388",
+          "version": "repo-lines-v1:sha256:f3aa21f686d24708f407f4bef53f0385b2a8404bc48b981c18dc19b597728dfa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MmJjYzg1OWM3ZGU3ZTA3MzkzZTFmYTg4ODkzMTg5MzhlZDQ5ZmVlMDk4NjE1OWEyNGQxNjQ1NWU4YmQ4YjkzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNzc5ZDExOGQ2ZTNjYmY0NTA1Mzk3NDhkZWU3YTQzMDdhY2JlNjQ0NmNiYTI5N2YyNzYwZmE1ZDBiYmExYmMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d94306c699d4ee49544b2aab913029d",
+      "statement": "test/generation/run-state.test.ts exercises writeRepositoryRunState/readRepositoryRunState/removeRepositoryRunState against real mkdtemp directories: it asserts the complete checkpoint is atomically written and read back with no .tmp files, that validation failure does not replace durable state, that a rename target blocked by an existing directory is preserved with its temp file cleaned up, that malformed and schema-extended checkpoints are rejected as invalid_state (resumable), and that an absent checkpoint returns null and removal is idempotent.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/run-state.test.ts#L93-L170",
+          "version": "repo-lines-v1:sha256:2d9e16f4913ad5c875336f8857a5ba2f4294d74b6d3a42e9f010d34e2b5f1b46:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNTRmMTJhMWRjMjExYjRhNjhjZGM2MjYwZTdjZGI4NTFlNzdmOWI4NGIxMTRmOGFhNmRkZTQ3N2E3YjUzMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZjlkNzMxN2NhODg3NTU0MzYyNjdhMjdkY2I4Zjk1Yzc3MThlZjM3MzU5ZmE0MTE2MDA3NDQxZWJiNTM0ZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c534b3ee4ca94b75950cae3d7b3d8696",
+      "statement": "test/generation/repository-run.test.ts covers durability and resumability across producer handoffs: submitRepositoryPage does not mark a page complete until both the Claims sidecar and the run-state checkpoint are durable, a page whose manifest write or completion checkpointing fails stays pending with the baseline manifest intact and durable Claims preserved, and on resume the completed page is attributed to its original producer; the 'preserves per-page provenance across producer handoffs' test finishes a two-page run split across two producers and asserts each page's generated provenance and manifest entry carry the producer that completed it.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L1069-L1226",
+          "version": "repo-lines-v1:sha256:22d23a56bf8e45bb328bfe72808baaa90c74bb3073a3d6719ec12b6c60909e86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4Mzc0YmVkODBjMzUwMjNhODU3MzRkMDdkNjE5ZGRmYWNhZWQwYzYzNGY3YmI3MzRiNTgyYmExYzE4NzgyNjY4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3NTcyZmJkOGY3MTAyMzU1MjIwZjExYzVkNzZjZWM0ZGJlMjlmNTI2OWVkNjgyMjIzNDg4YzI2NjdmZDQ2ODQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MWQ5MGY0Zjk2ZDZjMGY2YmRjMTM1MjQyOGRkOWExNjk4OTM4NDEzMGQwMmU2ZThmNzRjNGU4YTFhNGE3YWZkIn0"
+        },
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L1358-L1411",
+          "version": "repo-lines-v1:sha256:cefb892bf89ae37c7ca8a38e688ab5d767a659aff0c8375bad9b24c55a78b148:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MGY2YjlkMWExMDY0MzcyYTU5NzAxOWM5MWMxMDIzYmI3ZTVjMmFhYjU1MzM1MDRkMjFhYWJlZDczOWU5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNDJiNTQ4NzYzNTdhOTMyZmZlMGY4YTRhZGNiNWIwNDg2OTRlYTY4MTMxMmVjMmY2NmRlMGUzYjM5NjhkZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4352b98983334b36bd6b04274a94f6a0",
+      "statement": "test/generation/repository-run.test.ts covers the no-op and update-window logic: a strict no-op is returned only for clean updates without claim issues, a Git-clean update with stale claims is forced into planning, a docs-only commit fast-forwards every page, a clean page without manifest coverage is routed to full review, and a no-op manifest replacement that sees the source change mid-replacement (via the failureHarness sourceMutationsAfterManifestReplacement counter) falls through to planning rather than skipping.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L509-L587",
+          "version": "repo-lines-v1:sha256:0901ef76c57a313ddf9e98d81f6a05f020ae749ff16b4ba43823308906440371:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMzg5NmJjODU5YzIxNzM3MTc0MWNlYTc4ZDk0ZTRjMjI0ODNlNDdlMzE3OTVkZTI0NTI1MzA1NTZmOWJjMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMTQ5ZWE3M2MzZWIzNTNiMDk4MmU3OTQ2ZTM1OWYyOGY5OTQ4ZjQ5NDQ5OWQwYmVlYjMwMTljNWExYmRjZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMGQ5ZjBhYmE0MjhhMmVmNzJkMjdlMmQzYmUxOThmN2Y2NWJhNDhjMzJjZTMwZWIzNjdjZjg4Mzk1ZWRiZTcifQ"
+        },
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L790-L860",
+          "version": "repo-lines-v1:sha256:ce5652501eb81152cbaf13e61f3993dc3583e64d6cbaab3fedc9393756a29e08:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYTg5YjI4MjhjOWYzM2U2ODEwMDUzMTY5YzE1MjI3YzQ2Yzc1MDUwNDFmNjRmODU4NzgzMGRlNGU2M2Y0ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNjQ4YmMyYWEyODlkNmM2YzcwZmQ2ZjIxMmY1OGQwMDU5YmYzMjUzMWU0YTQ1M2RlNzc2NjMyOTZmZDE1MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NDI0YWM5MGE2Yjk3ZTgwMGM4MjQyZjE1Zjk1NTdiOTQwYzA4OTQxZTk4YmViYWQ1NDY5YTMwY2FmYjE3ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab2fe24b7e9b4bd9b820d23a269e0f94",
+      "statement": "test/agent/repository-prompts.test.ts exercises the planner and page-worker prompt builders (createRepositoryPlannerPrompt/createRepositoryPagePrompt) in isolation, asserting that planning context, changed paths, update windows, claim issues, and the wiki goal reach the prompt text, that unknown baselines render as full-review windows, that page-specific instructions and existing Claims propagate into the page-worker prompt (including the 'You own exactly …' ownership line), and that the complete planned page map is shown only to the quickstart page.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/repository-prompts.test.ts#L82-L168",
+          "version": "repo-lines-v1:sha256:f4531b96ad66a11a98b8bf850a8e1bb2dc0b52c998749cf9be64fca428a4f5ad:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYjZjNGNmN2I5ZDFmNmE3YmJiNzA1M2NjOTRlNTZlYWRjZjJlZmM4MmJhYTQ5NDQyMzBjZjU2YmE0MWI3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd12d641c708489cb189aa958ffb6551",
+      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a real isolated Git repository created with mkdtemp: it asserts the fingerprint is stable for identical input and changes with HEAD, tracked content, staged-vs-unstaged state, deletions, untracked files, executable-bit changes, and .openwikiignore rules; that symlinks are hashed by target string without following the target; that a TOCTOU race where an inspected file becomes a symlink before opening fails closed (via a vi.hoisted/vi.mock of node:fs/promises.open); and that generated pages, Claims sidecars, and run metadata are ignored.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L125-L334",
+          "version": "repo-lines-v1:sha256:5abdeb5a9c59f347e242e131fd0bc3eb1ecd8b522f42316f93c66dcf7b59fb7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4YTk0NDg1MmQ4MmE0OGZmYjA2ZTRiOTc0Y2I0NDM4MjcwMmEyNWUyZjgwMmFiZjcxMTZlYWQxYWEyZTI5ZjNjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMzhiMjAwYmNmNzg0OWE5YTUyMzM4YzRmMGRhMjQ3NWUxYmE0ZjdiZTk3YjVmNDAyOTRiZWZkNWZjMmY3ZTc3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNmE1ZGEzMWRhZDUzOTBmZWFhM2YwNmM0MDQ1OTM5YmEyYjNhNWE2MDM2Y2I1YWE5Mzg1OWI3ZmMwNjYyZTA5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca0855ae4fb64b4aa02f9535ac3aa55c",
+      "statement": "test/agent/update-noop.test.ts exercises getUpdateNoopStatus and shouldCheckUpdateNoop against real mkdtemp Git repositories, covering the no-op conditions (unchanged HEAD, dirty-only committed run metadata, a migration that only adds the page manifest, OpenWiki-only commits, ignored worktree paths, a missing status field that still counts as complete) and the non-no-op conditions (changed source files, an interrupted previous run, a different language request), plus the no-op metadata refresh that preserves the persisted language across the fast-skip path.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/update-noop.test.ts#L56-L300",
+          "version": "repo-lines-v1:sha256:c559aef8303361258f7a44b29e4977e73b2d36e10fda99a0e0e05f9af6f0b9c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmNTdkNTU0ZmFiZGRhMzQyNWE0M2I0YzE5YjZlZDljMjk1MTA5MzM3NmIxMTk0ZjJkZTBlNzUzODIwZDllZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwOTRmYzBjMTczZDFlYzNmYzUwMWQ3ZGZhOTI4NTUwMWM1MjdjZmI0NzEyNTgzZGEzY2MzNjE4MDU2NmI0YmUzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bdbfceb0e2bb4d9bb52286cd2e7966cd",
+      "statement": "test/ingestion/code-mode.test.ts exercises ensureCodeModeRepoSetup and runCodeModeConnectors against real mkdtemp repositories: the agent-file tests assert AGENTS.md and CLAUDE.md are created with the managed OpenWiki block, that CLAUDE.md is a short reference to AGENTS.md rather than a full copy, that the block is refreshed in place while preserving surrounding content, that the block is appended after existing content, that the setup is idempotent, and that orphaned/reversed/duplicate markers are rejected without changing either file.",
+      "evidence": [
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L121-L266",
+          "version": "repo-lines-v1:sha256:99e4742ac6aadb46b1b19e8181ac70a99a7c196a3e1b574132c2559753891c92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYjAxOTA0ZjVlNTkwMGM5MGMwOGNmYWUzMTY2MTYwMmYzMmIwMTRlOWEwNzcxOWY5ZDgzZjBhODUwZTFiODUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzMDdkNTljOWY5YWQyODMwMTQ0NjYxNTlkYTM3ZGM1MThhZGQ2YzI4NzIzZTdlMDg4OWU1Njk0YTVjOWMyNGJiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fc4a1a45b2c4599804ae1feee626b58",
+      "statement": "test/ingestion/code-mode.test.ts workflow tests assert the generated CI workflow pins the OpenWiki install to a specific version, includes the agent files and workflow in add-paths, wires the LangSmith connector read key into the workflow env, preserves a customized workflow across re-runs, and emits the correct provider-specific credential/variable blocks (Copilot, OpenAI-compatible, Bedrock, OpenAI-ChatGPT); the runCodeModeConnectors tests exercise the loop and fail-open skip path without reaching a real API.",
+      "evidence": [
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L268-L519",
+          "version": "repo-lines-v1:sha256:e10603a78444ce4bbda3cb137617fbf93690b043ebac62e2c7d4ebf7dcfac4ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ODZlN2JkZDU0N2ZhNGMwNGI1OGQ5MjQzNjk2NmQwYjlhYWYwMDY3ZTFjMWYwZTc5NDNkOGNlZDQ0NDJhZWFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjYmI4YjA1OWQ1YmMzZmYwZDg0M2RjNjkyZmZmOGI4ZDM4NzdiZTZiZWMzMDg2NGRmMzRmZWI3MzMyYWFiZTYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYjFlYTE1YTBmN2IxZDc3NDFjMDkyZGU4MDJkMzlmZGE0NDM0ZWNmMDVmOTQzNThjNmYzNjljYTkxMTZlMjJmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMWZlOGE0OGU5ZmQyYjI1YzE5Yjg0MjE1NWUxNDA2NTk5MmJhZDVmYjFiOGZjNDZmOTNlNzZlODYyYzQwMzI1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_673a16a85775426c92d7b5304cb107ee",
+      "statement": "test/integrations/session-manager.test.ts exercises HostSessionManager against real mkdtemp Git repositories, asserting the ordered five-call lifecycle (openwiki_begin → openwiki_submit_plan → openwiki_next_page → openwiki_submit_page → openwiki_finish), host and producer-identity validation, nested-path resolution to the canonical Git root, the exact active run ID requirement, begin-conflict mapping that retains the prior active run, overlapping-lifecycle rejection that releases the guard, repository lifecycle failure mapping to bounded host errors, retention of active state after a failed finish, clearing of active state only after a successful durable finish, a proven update no-op that clears an older process-local run, and durable queue resumption across different hosts.",
+      "evidence": [
+        {
+          "resource": "repo://test/integrations/session-manager.test.ts#L151-L401",
+          "version": "repo-lines-v1:sha256:ca28d57841bfe4f52ef88fc9022849c7e7e601580c14e0666503f890c7d4bce3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZTQ3MGQzODg1NjFkMDAyMmU5NTQ1YjI2OWMxNzAwN2FiZDY0MmMxMjM5MDkwZjQyZGYyNGQ4OGZlM2Y2OTMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_03a94e98c2e344ffbfa3f11c068bafc1",
+      "statement": "test/okf/claims-verification.test.ts exercises synchronizeClaimsVerification/rollbackClaimsVerification against a memory page store, asserting that only OpenWiki events are replaced while other verifiers are preserved, unjustified OpenWiki events are removed, and bare human events are normalized.",
+      "evidence": [
+        {
+          "resource": "repo://test/okf/claims-verification.test.ts#L1-L60",
+          "version": "repo-lines-v1:sha256:f9d0cf56ac5f71499b2cccb4a54acee3aabfce37f71fc859826119ac5612c30e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYWE1NjY3MWY4Y2M0NDIzZThmN2U0NDJiMDk2YmVlNmQwOThlYjc5YTdhOWI1OTAwMmM5M2JlMWQ2ODA0NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNmQ3ZjE5MDJmZTU2OTk0ZDVlNWQzYTU2NTBlOGM2ZWMxYTBiMzQ0MTkyZmU3YmY0OWM4ZGE4OWVmZTc1ZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMDQwNGM5NmM5NTljMzgyZGFhZTE0Zjc3ODZhMWM0MzAyYmQwMGM4NzZjNTIxN2RiMTBhNjM0YTA3ZWQ0ZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d92d3af318cf4e4f86d75edfdc8392ed",
+      "statement": "test/okf/claim-sources.test.ts exercises synchronizeClaimSources against a guarded OpenWikiLocalShellBackend rooted in an mkdtemp directory, projecting sorted unique evidence and preserving independent sources.",
+      "evidence": [
+        {
+          "resource": "repo://test/okf/claim-sources.test.ts#L1-L31",
+          "version": "repo-lines-v1:sha256:49afb28f08453fa35cc41291fe5fd9449d16cb0bad1b5114af62e4582306fb15:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNTNhZTcwOWRiNTcyOTA5ZWQ4YjRjNjdhNzViYjE2ODkwMWFkNzk2ZDllYjQ2MzVmYTEyZjU5ZWIxNzI1MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNzNjYjk1ODgzZjRkNmE3MjljNGZhYzgxYWM5ZTQ1OGU4ZDcxMDBhYmUzNWI4YTNkMjdkN2Q5ZWRhMjllMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNDc2NmY5NGM3NjJkNThiNjFjZDA1YzE0OTRhNjcwMDVmMzkxYjQwN2EzNjU1ZjZiMzFmM2YwOGM1OTdhZmUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-27T23:20:02.895Z"
   }
 }
