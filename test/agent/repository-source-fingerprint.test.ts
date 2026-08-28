@@ -553,8 +553,28 @@ describe("createRepositorySourceSnapshot subproject scope", () => {
     expect(await scopedFingerprint(fooDir)).not.toBe(before);
   });
 
-  test("returns gitHead equal to the subtree's last-touching commit", async () => {
-    const { fooDir } = await createMonorepo();
+  test("returns gitHead equal to the subtree's last-touching commit, not the global HEAD", async () => {
+    const { repo, fooDir } = await createMonorepo();
+    const fooHeadAtInit = await gitAt(fooDir, [
+      "log",
+      "-1",
+      "--format=%H",
+      "--",
+      ".",
+    ]);
+
+    // Advance the global HEAD with a sibling-only commit so it diverges from
+    // foo's last-touching commit. Without the fix, gitHead would be the global
+    // HEAD; the fix must pin it to the subtree commit.
+    await writeFile(
+      path.join(repo, "packages", "bar", "src", "code.ts"),
+      "export const bar = 2;\n",
+      "utf8",
+    );
+    await gitAt(repo, ["add", "--all"]);
+    await gitAt(repo, ["commit", "--quiet", "-m", "sibling commit"]);
+    const globalHead = await gitAt(repo, ["rev-parse", "HEAD"]);
+    expect(globalHead).not.toBe(fooHeadAtInit); // sanity: HEAD advanced
 
     const snapshot = await createRepositorySourceSnapshot(
       fooDir,
@@ -562,9 +582,8 @@ describe("createRepositorySourceSnapshot subproject scope", () => {
       { mode: "subproject" },
     );
 
-    expect(snapshot.gitHead).toBe(
-      await gitAt(fooDir, ["log", "-1", "--format=%H", "--", "."]),
-    );
+    expect(snapshot.gitHead).toBe(fooHeadAtInit);
+    expect(snapshot.gitHead).not.toBe(globalHead);
   });
 
   test("the returned gitHead is a valid subtree-scoped diff base", async () => {
@@ -610,6 +629,52 @@ describe("createRepositorySourceSnapshot subproject scope", () => {
     ).resolves.toContain("src/code.ts");
   });
 
+  test("a global (non-subtree) commit stays a valid subtree-scoped diff base across sibling commits (migration)", async () => {
+    const { repo, fooDir } = await createMonorepo();
+    const ignore = await OpenWikiIgnore.load(fooDir);
+    // The initial commit is the shared baseline a pre-fix run (or `.last-update`
+    // seeding) stamps as a GLOBAL head — the mixed state on the first update
+    // after upgrading, where entry.gitHead is global, not foo's subtree head.
+    const globalBaseline = await gitAt(repo, ["rev-parse", "HEAD"]);
+
+    // Several sibling-only commits advance the global HEAD far past the subtree.
+    for (const value of [2, 3, 4]) {
+      await writeFile(
+        path.join(repo, "packages", "bar", "src", "code.ts"),
+        `export const bar = ${value};\n`,
+        "utf8",
+      );
+      await gitAt(repo, ["add", "--all"]);
+      await gitAt(repo, ["commit", "--quiet", "-m", `sibling ${value}`]);
+    }
+
+    // foo is unchanged, so the scoped diff from the OLD GLOBAL baseline is empty
+    // — fast-forward migrates the entry to the subtree head without regenerating.
+    await expect(
+      getRepositoryChangedPaths(fooDir, ignore, globalBaseline, {
+        mode: "subproject",
+      }),
+    ).resolves.toEqual([]);
+
+    // Once foo itself changes, the same global-baseline scoped diff surfaces only
+    // foo's path and never a sibling's.
+    await writeFile(
+      path.join(fooDir, "src", "code.ts"),
+      "export const foo = 2;\n",
+      "utf8",
+    );
+    await gitAt(repo, ["add", "--all"]);
+    await gitAt(repo, ["commit", "--quiet", "-m", "own change"]);
+    const changed = await getRepositoryChangedPaths(
+      fooDir,
+      ignore,
+      globalBaseline,
+      { mode: "subproject" },
+    );
+    expect(changed).toContain("src/code.ts");
+    expect(changed.some((candidate) => candidate.includes("bar"))).toBe(false);
+  });
+
   test("omits gitHead when no commit has touched the subtree yet", async () => {
     const { repo } = await createMonorepo();
     const bazDir = path.join(repo, "packages", "baz");
@@ -623,6 +688,35 @@ describe("createRepositorySourceSnapshot subproject scope", () => {
     const snapshot = await createRepositorySourceSnapshot(
       bazDir,
       await OpenWikiIgnore.load(bazDir),
+      { mode: "subproject" },
+    );
+
+    expect(snapshot.gitHead).toBeUndefined();
+    expect(snapshot.fingerprint).toMatch(/^sha256:/u);
+  });
+
+  test("omits gitHead on an unborn branch (subproject scope) without throwing", async () => {
+    const repo = await mkdtemp(
+      path.join(tmpdir(), "openwiki-fingerprint-scope-"),
+    );
+    subprojectRepos.push(repo);
+    await gitAt(repo, ["init", "--quiet"]);
+    await gitAt(repo, ["config", "user.email", "openwiki-tests@example.com"]);
+    await gitAt(repo, ["config", "user.name", "OpenWiki Tests"]);
+    const pkgDir = path.join(repo, "packages", "foo");
+    await mkdir(path.join(pkgDir, "src"), { recursive: true });
+    await writeFile(
+      path.join(pkgDir, "src", "code.ts"),
+      "export const foo = 1;\n",
+      "utf8",
+    );
+
+    // No commit exists at all — the branch is unborn, so `git log -1 -- .`
+    // throws. The hardened resolver confirms HEAD does not resolve before
+    // returning the sentinel, so this must omit gitHead rather than throw.
+    const snapshot = await createRepositorySourceSnapshot(
+      pkgDir,
+      await OpenWikiIgnore.load(pkgDir),
       { mode: "subproject" },
     );
 

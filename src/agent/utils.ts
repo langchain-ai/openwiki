@@ -547,11 +547,16 @@ async function readFingerprintHead(
 /**
  * Resolves the last commit that touched the subtree at `cwd`.
  *
- * Empty output means the branch is born but no commit has touched this subtree
- * yet (e.g. an untracked-only new subproject); a git failure means the branch
- * itself is unborn. Both cases return an `unborn:`-prefixed sentinel so the
- * caller omits `gitHead` exactly as it does for a whole-repo unborn branch,
- * while still contributing a stable value to the hash.
+ * Empty output (exit 0) means the branch is born but no commit has touched this
+ * subtree yet (e.g. an untracked-only new subproject) → `unborn:subtree`. A
+ * `git log` failure only legitimately means the branch itself is unborn; we
+ * confirm that with `rev-parse --verify HEAD` (which resolves a ref to a SHA
+ * without loading commit objects, unlike `git log`) before returning an
+ * `unborn:<ref>` sentinel — otherwise a `git log` failure on a *born* branch
+ * (e.g. a corrupt object DB with an intact HEAD symref) would be masked as
+ * unborn instead of propagating as the correctness error it is. Both sentinels
+ * make the caller omit `gitHead` exactly as it does for a whole-repo unborn
+ * branch, while still contributing a stable value to the hash.
  */
 async function readSubtreeFingerprintHead(cwd: string): Promise<string> {
   try {
@@ -561,13 +566,26 @@ async function readSubtreeFingerprintHead(cwd: string): Promise<string> {
     if (head) return head;
     return "unborn:subtree";
   } catch (headError) {
+    // Only a HEAD that does not resolve to a commit is genuinely unborn; on a
+    // born branch a git-log failure is real and must propagate.
+    let headResolves = false;
     try {
-      const symbolicHead = (
-        await runFingerprintGit(cwd, ["symbolic-ref", "-q", "HEAD"])
-      ).trimEnd();
-      if (symbolicHead) return `unborn:${symbolicHead}`;
+      headResolves =
+        (
+          await runFingerprintGit(cwd, ["rev-parse", "--verify", "HEAD"])
+        ).trimEnd().length > 0;
     } catch {
-      // The original git-log failure is the actionable correctness error.
+      // HEAD does not resolve — the branch is genuinely unborn.
+    }
+    if (!headResolves) {
+      try {
+        const symbolicHead = (
+          await runFingerprintGit(cwd, ["symbolic-ref", "-q", "HEAD"])
+        ).trimEnd();
+        if (symbolicHead) return `unborn:${symbolicHead}`;
+      } catch {
+        // Fall through to the generic correctness error below.
+      }
     }
     throw new Error("Unable to resolve repository HEAD for fingerprinting.", {
       cause: headError,
