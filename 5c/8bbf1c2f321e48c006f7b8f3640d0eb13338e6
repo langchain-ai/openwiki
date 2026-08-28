@@ -1,0 +1,14 @@
+src/config/constants.ts
+  h_f78d33d4280f3f 39-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "5c8bbf1c2f321e48c006f7b8f3640d0eb13338e6",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
