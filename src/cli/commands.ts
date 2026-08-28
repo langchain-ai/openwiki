@@ -149,7 +149,6 @@ export type CliCommand =
       command: OpenWikiCommand;
       dryRun: boolean;
       language: string | null;
-      languageWarning: string | null;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
@@ -988,9 +987,18 @@ function parseRunCommand(
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
-  // Canonicalize the requested locale here so an unrecognized value is dropped
-  // (and surfaced as a warning) before it reaches the run or persisted state.
+  // Reject an unrecognized locale here, before it can reach the run or any
+  // persisted state. Generating an English wiki from a typo is never what the
+  // caller asked for, and run state records the language it started with.
   const resolvedLanguage = resolveLanguage(language);
+
+  if (resolvedLanguage.kind === "unrecognized") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: resolvedLanguage.message,
+    };
+  }
 
   if (command !== "chat" && modeSource === "default") {
     mode = "code";
@@ -1020,8 +1028,8 @@ function parseRunCommand(
     exitCode: 0,
     command,
     dryRun,
-    language: resolvedLanguage.language ?? null,
-    languageWarning: resolvedLanguage.warning ?? null,
+    language:
+      resolvedLanguage.kind === "resolved" ? resolvedLanguage.language : null,
     mode,
     modeSource,
     modelId,
@@ -1237,7 +1245,7 @@ export const helpContent: HelpContent = {
     {
       label: "-l, --language <locale>",
       description:
-        "Generate wiki documentation in the requested language or locale.",
+        "Generate wiki documentation in the given BCP-47 locale, for example ko, zh-CN, or pt-BR.",
     },
     {
       label: "-p, --print",

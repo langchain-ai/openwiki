@@ -215,21 +215,26 @@ describe("parseCommand — init/update", () => {
     });
   });
 
-  test("--language canonicalizes the locale and sets no warning", () => {
+  test("--language canonicalizes the locale", () => {
     expect(parseCommand(["--init", "--language", "PT-br"])).toMatchObject({
       kind: "run",
       language: "pt-BR",
-      languageWarning: null,
     });
   });
 
-  test("an unrecognized --language is dropped and warned", () => {
-    const result = parseCommand(["--init", "--language", "fake-language"]);
+  test("an unrecognized --language fails instead of generating English", () => {
+    expect(
+      parseCommand(["--init", "--language", "fake-language"]),
+    ).toMatchObject({ kind: "error", exitCode: 1 });
+  });
 
-    expect(result).toMatchObject({ kind: "run", language: null });
-    if (result.kind === "run") {
-      expect(result.languageWarning).toContain("fake-language");
-    }
+  test("a written-out language name is rejected with a usable message", () => {
+    const result = parseCommand(["--init", "--language", "Korean"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind !== "error") throw new Error("expected a parse error");
+    expect(result.message).toContain("Korean");
+    expect(result.message).toContain("BCP-47");
   });
 
   test("personal --init selects the init command and starts", () => {

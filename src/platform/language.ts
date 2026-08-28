@@ -1,35 +1,26 @@
 /**
- * Result of resolving a user-supplied output-language string.
+ * Outcome of classifying a user-supplied output-language string.
+ *
+ * The unrecognized case stays distinct from the absent one so no caller can
+ * quietly treat a typo as "no language requested". Collapsing the two resolves
+ * a misspelled flag to English and records English in run state, which a later
+ * run is then refused permission to change.
  */
-export interface ResolvedLanguage {
-  /**
-   * The canonical BCP-47 tag when the input is a recognized language, and
-   * undefined when the input was empty or not recognized (fall back to English).
-   *
-   * @default undefined
-   */
-  language?: string;
-
-  /**
-   * A user-facing warning, set only when a non-empty input was provided but
-   * could not be recognized as a real language.
-   *
-   * @default undefined
-   */
-  warning?: string;
-}
+export type ResolvedLanguage =
+  | { kind: "absent" }
+  | { kind: "resolved"; language: string }
+  | { kind: "unrecognized"; input: string; message: string };
 
 /**
- * Validates and canonicalizes an output-language flag using only the built-in
- * Intl APIs, so no dependency is added.
+ * Classifies an output-language flag using only the built-in Intl APIs, so no
+ * dependency is added.
  *
- * getCanonicalLocales rejects malformed tags (wrong length, digits, underscores)
- * by throwing, and DisplayNames distinguishes recognized codes from
- * structurally valid but unknown ones (for example "xx" or "english") by
- * echoing the input back instead of returning a real language name.
- *
- * An unrecognized value resolves to no language plus a warning, so callers fall
- * back to English rather than persisting or prompting with garbage.
+ * getCanonicalLocales rejects malformed tags (wrong length, digits,
+ * underscores, non-ASCII) by throwing, and DisplayNames distinguishes
+ * recognized codes from structurally valid but unknown ones (for example "xx"
+ * or "korean", which BCP-47 permits as a 5-8 letter subtag but has never
+ * registered) by echoing the input back instead of returning a real language
+ * name.
  */
 export function resolveLanguage(
   input: string | null | undefined,
@@ -37,7 +28,7 @@ export function resolveLanguage(
   const trimmed = input?.trim();
 
   if (!trimmed) {
-    return {};
+    return { kind: "absent" };
   }
 
   try {
@@ -48,15 +39,39 @@ export function resolveLanguage(
     }).of(primary);
 
     if (displayName && displayName.toLowerCase() !== primary.toLowerCase()) {
-      return { language: canonical };
+      return { kind: "resolved", language: canonical };
     }
   } catch {
-    // Malformed tag: fall through to the unrecognized-language warning.
+    // Malformed tag: fall through to the unrecognized-language result.
   }
 
   return {
-    warning: `Unrecognized language "${trimmed}"; generating in English. Use a BCP-47 code such as zh-CN, hi, or pt-BR.`,
+    kind: "unrecognized",
+    input: trimmed,
+    message: `Unrecognized language "${trimmed}". Use a BCP-47 code such as ko, zh-CN, or pt-BR rather than a language name.`,
   };
+}
+
+/**
+ * Requires the canonical tag for a request an entry point already validated.
+ *
+ * Every entry point that accepts a language rejects an unrecognized one before
+ * any work starts, so an unrecognized value here means a boundary check was
+ * skipped. That is a programming error rather than user input, and it throws
+ * instead of resolving to English.
+ */
+export function requireResolvedLanguage(
+  input: string | null | undefined,
+): string | undefined {
+  const resolved = resolveLanguage(input);
+
+  if (resolved.kind === "unrecognized") {
+    throw new Error(
+      `${resolved.message} This value should have been rejected at the entry point.`,
+    );
+  }
+
+  return resolved.kind === "resolved" ? resolved.language : undefined;
 }
 
 /**

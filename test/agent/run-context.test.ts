@@ -37,13 +37,16 @@ describe("createRunContext output language", () => {
     }
   });
 
-  test("ignores an unrecognized language and falls back to English", async () => {
+  test("refuses to resolve an unrecognized language to English", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-run-context-"));
 
+    // Entry points reject an unrecognized language before a run starts, so
+    // reaching here means a boundary check was skipped. Falling back to English
+    // would persist the wrong language and wedge the run at it.
     try {
-      expect(
-        await createRunContext(cwd, "local-wiki", "fake-language"),
-      ).toMatchObject({ language: "en" });
+      await expect(
+        createRunContext(cwd, "local-wiki", "fake-language"),
+      ).rejects.toThrow("fake-language");
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
@@ -93,7 +96,7 @@ describe("createRunContext language inheritance", () => {
     }
   });
 
-  test("an unrecognized flag falls back to the persisted language", async () => {
+  test("refuses an unrecognized flag rather than inheriting silently", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-run-context-"));
 
     try {
@@ -106,9 +109,9 @@ describe("createRunContext language inheritance", () => {
         "zh-CN",
       );
 
-      expect(
-        await createRunContext(cwd, "local-wiki", "not-a-language"),
-      ).toMatchObject({ language: "zh-CN" });
+      await expect(
+        createRunContext(cwd, "local-wiki", "not-a-language"),
+      ).rejects.toThrow("not-a-language");
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

@@ -6,6 +6,7 @@ import {
   providerRequiresApiKey,
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
+  providerUsesStreaming,
 } from "../../src/config/constants.ts";
 
 describe("GitHub Copilot provider config", () => {
@@ -23,5 +24,12 @@ describe("GitHub Copilot provider config", () => {
   test("uses the Responses API only for Copilot GPT-5 models", () => {
     expect(providerUsesResponsesApi("copilot", "gpt-5.5")).toBe(true);
     expect(providerUsesResponsesApi("copilot", "claude-sonnet-5")).toBe(false);
+  });
+
+  test("always forces streaming transport for all Copilot models", () => {
+    // The Copilot API rejects non-streaming requests for Claude and Gemini
+    // models, causing repository workers to exit without calling submit_plan
+    // or submit_page. All Copilot models must use the streaming transport.
+    expect(providerUsesStreaming("copilot")).toBe(true);
   });
 });

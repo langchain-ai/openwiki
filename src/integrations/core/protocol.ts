@@ -33,7 +33,11 @@ export interface BeginRequest {
   mode: HostRunMode;
 
   /**
-   * Optional requested documentation language.
+   * Optional requested documentation language, as a BCP-47 code (for example
+   * `ko`, `zh-CN`, `pt-BR`) rather than an English language name. An
+   * unrecognized value fails the call with `invalid_input` and starts no run,
+   * so a rejected request leaves nothing to clean up and can simply be retried
+   * with a real code. Omit it to keep the wiki's existing language.
    */
   language?: string;
 
@@ -60,7 +64,9 @@ export const BeginInput: z.ZodType<BeginRequest> = z
   .object({
     root: CanonicalString,
     mode: z.enum(["init", "update"]),
-    language: CanonicalString.optional(),
+    language: CanonicalString.describe(
+      'BCP-47 code, e.g. "ko" (not "Korean").',
+    ).optional(),
     force: z.boolean().optional(),
   })
   .strict();

@@ -630,6 +630,73 @@ describe("beginRepositoryRun", () => {
     expect(resumed.state.planningContext).toBe("Replacement context");
   });
 
+  test("rejects an unrecognized language without starting a run", async () => {
+    const root = await createRepository();
+
+    await expect(
+      beginRepositoryRun({
+        root,
+        mode: "update",
+        force: true,
+        language: "Korean",
+        actor: ACTOR,
+        now: () => new Date(STARTED_AT),
+      }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+
+    await expect(
+      beginRepositoryRun({
+        root,
+        mode: "update",
+        force: true,
+        language: "Korean",
+        actor: ACTOR,
+        now: () => new Date(STARTED_AT),
+      }),
+    ).rejects.toThrow("Korean");
+
+    // Nothing durable may survive a rejected request. A run persisted at the
+    // wrong language could not be corrected afterwards, because resume refuses
+    // to change a started run's language.
+    await expect(
+      readFile(path.join(root, "openwiki", ".run.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+
+    // The same call with a real code then succeeds, so the rejection costs the
+    // caller nothing but a retry.
+    const retried = await beginRepositoryRun({
+      root,
+      mode: "update",
+      force: true,
+      language: "ko",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+    expect(retried.view).toMatchObject({ status: "active", language: "ko" });
+  });
+
+  test("rejects an unrecognized language on resume too", async () => {
+    const root = await createRepository();
+    const initial = await beginForcedUpdate(root);
+
+    await expect(
+      beginRepositoryRun({
+        root,
+        mode: "update",
+        language: "한국어",
+        actor: ACTOR,
+      }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+
+    // The interrupted run is untouched and still resumable.
+    const resumed = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+    });
+    expect(requireActiveRun(resumed).state.runId).toBe(initial.state.runId);
+  });
+
   test("attributes legacy completed work to its original run producer", async () => {
     const root = await createRepository();
     const initial = await beginForcedUpdate(root);

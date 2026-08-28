@@ -27,7 +27,7 @@ import {
 } from "../platform/fs-errors.js";
 import {
   getPrimaryLanguageSubtag,
-  resolveLanguage,
+  requireResolvedLanguage,
 } from "../platform/language.js";
 import {
   readOpenWikiOnboardingConfig,
@@ -130,8 +130,9 @@ export async function createRunContext(
   const lastUpdate = await readLastUpdate(cwd, outputMode);
   // A validated flag wins; otherwise inherit the wiki's persisted language so an
   // update without --language keeps the existing wiki consistent instead of
-  // producing a mix of the old and new language.
-  const requestedLanguage = resolveLanguage(language).language;
+  // producing a mix of the old and new language. An unrecognized value never
+  // reaches here: every entry point rejects one before any run work starts.
+  const requestedLanguage = requireResolvedLanguage(language);
   // English is materialized as "en" rather than encoded by an absent key, so the
   // wiki's language is always explicit in metadata and every run inherits a
   // concrete value.
@@ -189,7 +190,7 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "previous update was interrupted" };
   }
 
-  const resolvedRequestedLanguage = resolveLanguage(requestedLanguage).language;
+  const resolvedRequestedLanguage = requireResolvedLanguage(requestedLanguage);
   if (
     resolvedRequestedLanguage !== undefined &&
     getPrimaryLanguageSubtag(resolvedRequestedLanguage) !==

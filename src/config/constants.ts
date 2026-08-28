@@ -36,6 +36,9 @@ export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY =
   "OPENWIKI_OPENROUTER_MAX_TOKENS";
+export const OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY =
+  "OPENWIKI_BEDROCK_MAX_TOKENS";
+export const BEDROCK_DEFAULT_MAX_TOKENS = 16000;
 export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
@@ -480,6 +483,17 @@ export function providerUsesResponsesApi(
 export function providerUsesStreaming(provider: OpenWikiProvider): boolean {
   if (provider === "openai-compatible") {
     return resolveOpenAiCompatibleStreaming();
+  }
+
+  // The Copilot API serves non-GPT-5 models (Claude, Gemini) over the chat
+  // completions transport. Like the Codex backend for openai-chatgpt, it
+  // rejects or returns empty responses for non-streaming requests, which
+  // causes repository workers to exit without calling submit_plan/submit_page.
+  // Force the streaming transport for all Copilot models. For GPT-5 models
+  // that use the Responses API (useResponsesApi: true), streaming: true is
+  // redundant but harmless, matching the openai-chatgpt provider pattern.
+  if (provider === "copilot") {
+    return true;
   }
 
   return false;
@@ -1104,7 +1118,17 @@ export function resolveConfiguredMaxOutputTokens(
     return resolveOpenRouterMaxTokens(env);
   }
 
-  return resolveMaxOutputTokens(env);
+  const maxOutputTokens = resolveMaxOutputTokens(env);
+
+  if (maxOutputTokens !== undefined) {
+    return maxOutputTokens;
+  }
+
+  if (provider === "bedrock") {
+    return resolveBedrockMaxTokens(env);
+  }
+
+  return undefined;
 }
 
 /**
@@ -1135,6 +1159,39 @@ function resolvePositiveIntegerSetting(
 
   if (!Number.isSafeInteger(parsedMaxTokens)) {
     throw new Error(`Invalid ${envKey}. Expected a positive integer.`);
+  }
+
+  return parsedMaxTokens;
+}
+
+// Sets the per-request output-token ceiling for the Bedrock Converse API.
+// Without an explicit maxTokens, Bedrock caps output at 4096 tokens by
+// default, which truncates long wiki pages mid-write. The default of 16000
+// matches @langchain/anthropic's built-in ceiling for Claude models.
+// Override via OPENWIKI_BEDROCK_MAX_TOKENS for models with a lower ceiling.
+export function resolveBedrockMaxTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const rawMaxTokens = env[OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY];
+
+  if (rawMaxTokens === undefined) {
+    return BEDROCK_DEFAULT_MAX_TOKENS;
+  }
+
+  const maxTokens = rawMaxTokens.trim();
+
+  if (!/^[1-9]\d*$/u.test(maxTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedMaxTokens = Number(maxTokens);
+
+  if (!Number.isSafeInteger(parsedMaxTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
   }
 
   return parsedMaxTokens;

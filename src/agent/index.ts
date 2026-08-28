@@ -28,7 +28,7 @@ import {
   openWikiHomeDisplayPath,
   openWikiLocalWikiDir,
 } from "../config/openwiki-home.js";
-import { resolveLanguage } from "../platform/language.js";
+import { requireResolvedLanguage } from "../platform/language.js";
 import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
@@ -471,7 +471,7 @@ function createOpenWikiAgentGraph(
   // pending. It is undefined for init and chat, which never translate.
   const translation = resolveTranslationPlan(
     options.command,
-    resolveLanguage(options.language).language,
+    requireResolvedLanguage(options.language),
     options.context.lastUpdate?.language,
   );
   // Localized headings for the deterministic directory indexes, plus the

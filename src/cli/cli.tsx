@@ -77,11 +77,6 @@ async function runStandardCommand(
     showFirstRunNotice = await firstRunNoticePending();
   }
 
-  if (command.kind === "run" && command.languageWarning) {
-    // stderr keeps piped stdout clean while still warning about an ignored locale.
-    process.stderr.write(`${command.languageWarning}\n`);
-  }
-
   if (command.kind === "auth") {
     await runAuthCommand(command);
   } else if (command.kind === "ngrok") {

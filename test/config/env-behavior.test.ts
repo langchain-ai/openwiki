@@ -15,6 +15,7 @@ import {
   BASETEN_BASE_URL_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
+  OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
@@ -64,6 +65,7 @@ const KEYS_UNDER_TEST = [
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
@@ -519,6 +521,20 @@ describe("getCredentialDiagnostics", () => {
     const diagnostics = await env.getCredentialDiagnostics();
     const entry = diagnostics.find(
       (item) => item.key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toContain("invalid output token limit");
+  });
+
+  test("surfaces and validates the Bedrock output token limit as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
     );
 
     expect(entry?.preview).toBe('"0"');
