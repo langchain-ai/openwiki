@@ -12,6 +12,11 @@ import {
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "../config/constants.js";
+import {
+  DEFAULT_CODE_MODE_AGENT_FILES_POLICY,
+  resolveCodeModeAgentFilesPolicy,
+  type CodeModeAgentFilesPolicy,
+} from "../config/code-mode.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
 
@@ -40,25 +45,37 @@ export interface CodeModeRepoSetupOptions {
    * resolved for this run.
    */
   env?: NodeJS.ProcessEnv;
+  /** One-run override for the committed code-mode agent-file policy. */
+  agentFilesPolicy?: CodeModeAgentFilesPolicy | null;
 }
 
 /**
- * Ensure the repo is set up for code mode: refresh the managed agent-instruction
- * snippets, and, when `options.createWorkflow` is set, create the scheduled-update
- * workflow if it does not already exist.
+ * Ensure the repo is set up for code mode: optionally refresh the managed
+ * agent-instruction snippets and, when `options.createWorkflow` is set, create
+ * the scheduled-update workflow if it does not already exist.
  */
 export async function ensureCodeModeRepoSetup(
   cwd: string,
   options: CodeModeRepoSetupOptions = {},
 ): Promise<void> {
+  const agentFiles = await resolveCodeModeAgentFilesPolicy(
+    cwd,
+    options.agentFilesPolicy,
+  );
+  const scheduledAgentFilesPolicy =
+    agentFiles.configuredPolicy ?? DEFAULT_CODE_MODE_AGENT_FILES_POLICY;
+
   if (options.createWorkflow) {
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
       options.env ?? process.env,
+      scheduledAgentFilesPolicy,
     );
   }
-  await writeCodeModeAgentSnippets(cwd);
+  if (agentFiles.policy === "manage") {
+    await writeCodeModeAgentSnippets(cwd);
+  }
 }
 
 /**
@@ -70,6 +87,7 @@ async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
   env: NodeJS.ProcessEnv,
+  agentFilesPolicy: CodeModeAgentFilesPolicy,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -90,7 +108,7 @@ async function ensureCodeModeWorkflow(
   await mkdir(path.dirname(workflowPath), { recursive: true });
   await writeFile(
     workflowPath,
-    createCodeModeWorkflow(cronExpression, env),
+    createCodeModeWorkflow(cronExpression, env, agentFilesPolicy),
     "utf8",
   );
 }
@@ -323,7 +341,13 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
 function createCodeModeWorkflow(
   cronExpression: string,
   env: NodeJS.ProcessEnv,
+  agentFilesPolicy: CodeModeAgentFilesPolicy,
 ): string {
+  const agentFilePaths =
+    agentFilesPolicy === "manage"
+      ? "            AGENTS.md\n            CLAUDE.md\n"
+      : "";
+
   return `name: OpenWiki Update
 
 on:
@@ -381,9 +405,7 @@ jobs:
         with:
           add-paths: |
             openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
+${agentFilePaths}            .github/workflows/openwiki-update.yml
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"

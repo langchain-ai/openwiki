@@ -557,6 +557,7 @@ describe("runPrintCommand", () => {
 
     await runPrintCommand(
       makeCommand("run", {
+        agentFilesPolicy: null,
         command: "update",
         dryRun: false,
         language: null,
@@ -581,6 +582,7 @@ describe("runPrintCommand", () => {
 
     await runPrintCommand(
       makeCommand("run", {
+        agentFilesPolicy: "preserve",
         command: "init",
         dryRun: false,
         language: null,
@@ -596,11 +598,13 @@ describe("runPrintCommand", () => {
     );
 
     expect(ensureCodeModeRepoSetup).toHaveBeenCalledWith(expect.any(String), {
+      agentFilesPolicy: "preserve",
       createWorkflow: true,
     });
     expect(runCodeModeConnectors).toHaveBeenCalled();
     // The augmented message from the connector pull reaches the agent run.
     const agentArgs = vi.mocked(runOpenWikiAgent).mock.calls[0];
+    expect(agentArgs[2].agentFilesPolicy).toBe("preserve");
     expect(agentArgs[2].userMessage).toBe("augmented");
     expect(process.exitCode).toBe(0);
   });
@@ -615,6 +619,7 @@ describe("runPrintCommand", () => {
 
     await runPrintCommand(
       makeCommand("run", {
+        agentFilesPolicy: null,
         command: "update",
         dryRun: false,
         language: null,

@@ -480,6 +480,28 @@ afterEach(async () => {
 });
 
 describe("beginRepositoryRun", () => {
+  test("keeps a one-run preserve policy during durable setup", async () => {
+    const root = await createRepository();
+    const agentsPath = path.join(root, "AGENTS.md");
+    const claudePath = path.join(root, "CLAUDE.md");
+    const existingAgents = "# Repository-owned agent instructions\n";
+    await writeFile(agentsPath, existingAgents, "utf8");
+    await rm(claudePath, { force: true });
+
+    await beginRepositoryRun({
+      agentFilesPolicy: "preserve",
+      root,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+
+    await expect(readFile(agentsPath, "utf8")).resolves.toBe(existingAgents);
+    await expect(readFile(claudePath, "utf8")).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+  });
+
   test("rolls back fresh init and removes new run state after metadata failure", async () => {
     const root = await createRepository(["old.md"]);
     const oldContent = await readFile(

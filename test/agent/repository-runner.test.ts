@@ -63,6 +63,7 @@ type HarnessPlanInput = {
 
 const harness = vi.hoisted(() => ({
   agentOptions: [] as CapturedAgentOptions[],
+  beginInputs: [] as unknown[],
   beginCalls: 0,
   changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
@@ -257,7 +258,8 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     job.status = "skipped";
     return Promise.resolve();
   },
-  beginRepositoryRun() {
+  beginRepositoryRun(input: unknown) {
+    harness.beginInputs.push(input);
     harness.beginCalls += 1;
     if (harness.noop) {
       return Promise.resolve({
@@ -397,9 +399,12 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
  *
  * @returns Complete ordered event stream emitted by the runner.
  */
-async function runHarness(): Promise<OpenWikiRunEvent[]> {
+async function runHarness(
+  agentFilesPolicy: "manage" | "preserve" | null = null,
+): Promise<OpenWikiRunEvent[]> {
   const events: OpenWikiRunEvent[] = [];
   await runNativeRepositoryGeneration({
+    agentFilesPolicy,
     root: "/repo",
     mode: "update",
     modelId: "test-model",
@@ -412,6 +417,7 @@ async function runHarness(): Promise<OpenWikiRunEvent[]> {
 
 beforeEach(() => {
   harness.agentOptions = [];
+  harness.beginInputs = [];
   harness.beginCalls = 0;
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
@@ -434,6 +440,14 @@ beforeEach(() => {
 });
 
 describe("runNativeRepositoryGeneration", () => {
+  test("forwards the agent-file policy into the durable run", async () => {
+    await runHarness("preserve");
+
+    expect(harness.beginInputs[0]).toEqual(
+      expect.objectContaining({ agentFilesPolicy: "preserve" }),
+    );
+  });
+
   test("uses exact shell-free tool surfaces and a fresh worker per page", async () => {
     const events = await runHarness();
 
