@@ -1,0 +1,41 @@
+src/integrations/core/context.ts
+  s_f485c61dd078af::t_1d0506db4f19e4 313-316,409-411
+  s_f485c61dd078af::t_41a539a65d2d50 3-12,52-81,111,122-174,178-217,270,282-288,305-312,317-337,392-408,412-431
+  s_f485c61dd078af::t_d24387665e4528 432
+src/integrations/core/session-manager.ts
+  s_f485c61dd078af::t_85b41625dc2887 10-15,20-21,24,30-31,37,234-266,281-304
+AGENTS.md
+  s_f485c61dd078af::t_82c8082f5fcc9b 3,5,7-10
+test/integrations/protocol.test.ts
+  s_f485c61dd078af::t_1d0506db4f19e4 79
+  s_f485c61dd078af::t_e05e102385b936 5-6,11,67-78,80-105
+test/integrations/session-manager.test.ts
+  s_f485c61dd078af::t_9ed7f42cb28250 222-224
+test/integrations/mcp-server.test.ts
+  s_f485c61dd078af::t_2de955044a10b9 353
+  s_f485c61dd078af::t_54d71e74d415c2 108-125,164-166,175-177
+  s_f485c61dd078af::t_a37f28d07c882a 301,303-309,377-390,394-422
+  s_f485c61dd078af::t_1d0506db4f19e4 302,391-393
+  s_f485c61dd078af::t_8210e3f898cffb 300
+src/integrations/core/protocol.ts
+  s_f485c61dd078af::t_4bf77dcdea103d 16-18,103-135,208-221
+  s_f485c61dd078af::t_e2c09245a42a96 222
+src/integrations/mcp/server.ts
+  s_f485c61dd078af::t_66ef0f1ed67cbf 14-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3cbc9bb7efc0f1eeb5e2424c1659ccd3c248cffb",
+  "prompts": {},
+  "sessions": {
+    "s_f485c61dd078af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0497a-1397-77d1-a767-36bd9fb0506f",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
