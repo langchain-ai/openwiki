@@ -2075,3 +2075,188 @@ describe("update hardening", () => {
     });
   });
 });
+
+describe("subproject-scoped resume", () => {
+  /**
+   * Builds a two-subproject monorepo where `packages/foo` is a self-contained
+   * OpenWiki subproject (its own `openwiki/` pages, Claims sidecars, and
+   * complete `.last-update.json` baselined at the subtree's last commit).
+   */
+  async function createSubprojectMonorepo(): Promise<{
+    repo: string;
+    fooDir: string;
+  }> {
+    const repo = await mkdtemp(
+      path.join(tmpdir(), "openwiki-repository-run-mono-"),
+    );
+    temporaryDirectories.push(repo);
+    await git(repo, ["init", "--quiet"]);
+    await git(repo, ["config", "user.email", "test@example.com"]);
+    await git(repo, ["config", "user.name", "OpenWiki Test"]);
+    for (const pkg of ["foo", "bar"]) {
+      const pkgDir = path.join(repo, "packages", pkg);
+      await mkdir(path.join(pkgDir, "src"), { recursive: true });
+      await writeFile(
+        path.join(pkgDir, "src", "code.ts"),
+        `export const ${pkg} = 1;\n`,
+        "utf8",
+      );
+      await writeFile(path.join(pkgDir, "README.md"), `# ${pkg}\n`, "utf8");
+      await writeWikiPage(pkgDir, "quickstart.md", validPage("Quickstart"));
+      // Subprojects deliberately skip code-mode repo setup; the orchestrator
+      // owns it once at the root. Seed Claims sidecars so validation is clean.
+      const store = new ClaimsStore(pkgDir);
+      for (const page of await store.discoverPages()) {
+        await store.writePage(page, {
+          schemaVersion: 1,
+          pageVersion: await store.hashPage(page),
+          claims: [],
+          verification: { by: "openwiki/test", at: "2026-08-23T12:00:00.000Z" },
+        });
+      }
+    }
+    await git(repo, ["add", "."]);
+    await git(repo, ["commit", "--quiet", "-m", "initial"]);
+
+    const fooDir = path.join(repo, "packages", "foo");
+    const fooHead = await git(fooDir, ["log", "-1", "--format=%H", "--", "."]);
+    await writeFile(
+      path.join(fooDir, "openwiki", ".last-update.json"),
+      `${JSON.stringify(
+        {
+          updatedAt: "2026-08-23T12:00:00.000Z",
+          command: "update",
+          gitHead: fooHead,
+          model: "previous-model",
+          status: "complete",
+          language: "en",
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    return { repo, fooDir };
+  }
+
+  /**
+   * Begins a forced subproject update and persists a one-page plan so the next
+   * begin resumes it.
+   */
+  async function beginPlannedSubprojectUpdate(
+    fooDir: string,
+    recursionRole?: "subproject",
+  ): Promise<ActiveRepositoryRun> {
+    const run = requireActiveRun(
+      await beginRepositoryRun({
+        root: fooDir,
+        mode: "update",
+        force: true,
+        ...(recursionRole ? { recursionRole, skipRepoSetup: true } : {}),
+        actor: ACTOR,
+        now: () => new Date(STARTED_AT),
+      }),
+    );
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh the entry point.",
+        },
+      ],
+    });
+    return run;
+  }
+
+  test("ignores a sibling-only commit on resume (no replan)", async () => {
+    const { repo, fooDir } = await createSubprojectMonorepo();
+    const run = await beginPlannedSubprojectUpdate(fooDir, "subproject");
+    const plannedFingerprint = run.state.sourceFingerprint;
+    expect(run.state.plan?.pages).toHaveLength(1);
+
+    // A sibling commit advances the shared HEAD without touching foo. Stage only
+    // bar so the run's in-flight foo metadata is not swept into the commit (which
+    // would legitimately advance foo's subtree HEAD).
+    await writeFile(
+      path.join(repo, "packages", "bar", "src", "code.ts"),
+      "export const bar = 2;\n",
+      "utf8",
+    );
+    await git(repo, ["add", "packages/bar/src/code.ts"]);
+    await git(repo, ["commit", "--quiet", "-m", "change bar only"]);
+
+    const resumedResult = await beginRepositoryRun({
+      root: fooDir,
+      mode: "update",
+      recursionRole: "subproject",
+      skipRepoSetup: true,
+      actor: ACTOR,
+    });
+    expect(resumedResult.view).toMatchObject({ resumed: true });
+    const resumed = requireActiveRun(resumedResult);
+
+    expect(resumed.state.sourceFingerprint).toBe(plannedFingerprint);
+    expect(resumed.state.phase).toBe("generating");
+    expect(resumed.state.plan?.pages).toHaveLength(1);
+  });
+
+  test("without the subproject scope, a sibling commit discards the plan (the cascade the scope prevents)", async () => {
+    const { repo, fooDir } = await createSubprojectMonorepo();
+    // No recursionRole: the fingerprint is repo-wide, so a sibling commit flips
+    // it. This is the baseline behavior the scoped resume above eliminates.
+    const run = await beginPlannedSubprojectUpdate(fooDir);
+    expect(run.state.plan?.pages).toHaveLength(1);
+
+    await writeFile(
+      path.join(repo, "packages", "bar", "src", "code.ts"),
+      "export const bar = 2;\n",
+      "utf8",
+    );
+    await git(repo, ["add", "packages/bar/src/code.ts"]);
+    await git(repo, ["commit", "--quiet", "-m", "change bar only"]);
+
+    const resumed = requireActiveRun(
+      await beginRepositoryRun({
+        root: fooDir,
+        mode: "update",
+        actor: ACTOR,
+      }),
+    );
+
+    expect(resumed.state.phase).toBe("planning");
+    expect(resumed.state.plan).toBeUndefined();
+  });
+
+  test("replans on resume when the subproject's own source changed", async () => {
+    const { repo, fooDir } = await createSubprojectMonorepo();
+    const run = await beginPlannedSubprojectUpdate(fooDir, "subproject");
+    expect(run.state.plan?.pages).toHaveLength(1);
+
+    await writeFile(
+      path.join(fooDir, "src", "code.ts"),
+      "export const foo = 2;\n",
+      "utf8",
+    );
+    await git(repo, ["add", "packages/foo/src/code.ts"]);
+    await git(repo, ["commit", "--quiet", "-m", "change foo source"]);
+
+    const resumed = requireActiveRun(
+      await beginRepositoryRun({
+        root: fooDir,
+        mode: "update",
+        recursionRole: "subproject",
+        skipRepoSetup: true,
+        actor: ACTOR,
+      }),
+    );
+
+    expect(resumed.state.phase).toBe("planning");
+    expect(resumed.state.plan).toBeUndefined();
+    expect(resumed.state.sourceFingerprint).not.toBe(run.state.sourceFingerprint);
+    // The reset baseline is the subtree's own last commit, not the global HEAD.
+    expect(resumed.state.targetGitHead).toBe(
+      await git(fooDir, ["log", "-1", "--format=%H", "--", "."]),
+    );
+  });
+});

@@ -144,6 +144,38 @@ describe("createRepositorySourceFingerprint", () => {
     expect(await fingerprint()).not.toBe(before);
   });
 
+  test("is byte-identical whether scope is omitted, undefined, or a non-subproject scope", async () => {
+    // Dirty the tree so status entries (the surface the scope re-bases) also
+    // participate in the comparison, not just tracked bytes and HEAD.
+    await writeFile(
+      path.join(repositoryRoot, "src", "tracked.ts"),
+      "export const value = 2;\n",
+      "utf8",
+    );
+    const ignore = await OpenWikiIgnore.load(repositoryRoot);
+
+    const omitted = await createRepositorySourceSnapshot(repositoryRoot, ignore);
+    const explicitUndefined = await createRepositorySourceSnapshot(
+      repositoryRoot,
+      ignore,
+      undefined,
+    );
+    // The root scope is deliberately treated as unscoped for the fingerprint
+    // (root stays repo-wide), so it must not perturb the output either.
+    const rootScope = await createRepositorySourceSnapshot(
+      repositoryRoot,
+      ignore,
+      { mode: "root-excluding-nested" },
+    );
+
+    // The `--show-prefix` prefix is empty at the repository root, so path
+    // re-basing is inert and the global HEAD is retained. This guards the new
+    // scope parameter against silently changing non-subproject output.
+    expect(explicitUndefined).toEqual(omitted);
+    expect(rootScope).toEqual(omitted);
+    expect(omitted.gitHead).toBe(await git(["rev-parse", "HEAD"]));
+  });
+
   test("distinguishes tracked content and staged from unstaged state", async () => {
     const trackedPath = path.join(repositoryRoot, "src", "tracked.ts");
     const baseline = await fingerprint();
@@ -383,5 +415,218 @@ describe("getRepositoryChangedPaths", () => {
       "src/tracked.ts",
       "visible.txt",
     ]);
+  });
+});
+
+describe("createRepositorySourceSnapshot subproject scope", () => {
+  const subprojectRepos: string[] = [];
+
+  async function gitAt(cwd: string, args: readonly string[]): Promise<string> {
+    const { stdout } = await execFileAsync("git", args, {
+      cwd,
+      encoding: "utf8",
+    });
+    return stdout.trim();
+  }
+
+  /**
+   * Builds a two-subproject monorepo (`packages/foo`, `packages/bar`), each with
+   * its own `src/` and committed `openwiki/` output, on one committed baseline.
+   */
+  async function createMonorepo(): Promise<{ repo: string; fooDir: string }> {
+    const repo = await mkdtemp(
+      path.join(tmpdir(), "openwiki-fingerprint-scope-"),
+    );
+    subprojectRepos.push(repo);
+    await gitAt(repo, ["init", "--quiet"]);
+    await gitAt(repo, ["config", "user.email", "openwiki-tests@example.com"]);
+    await gitAt(repo, ["config", "user.name", "OpenWiki Tests"]);
+    for (const pkg of ["foo", "bar"]) {
+      await mkdir(path.join(repo, "packages", pkg, "src"), { recursive: true });
+      await mkdir(path.join(repo, "packages", pkg, "openwiki"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(repo, "packages", pkg, "src", "code.ts"),
+        `export const ${pkg} = 1;\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(repo, "packages", pkg, "openwiki", "quickstart.md"),
+        `# ${pkg}\n`,
+        "utf8",
+      );
+    }
+    await gitAt(repo, ["add", "--all"]);
+    await gitAt(repo, ["commit", "--quiet", "-m", "initial"]);
+    return { repo, fooDir: path.join(repo, "packages", "foo") };
+  }
+
+  async function scopedFingerprint(dir: string): Promise<string> {
+    return createRepositorySourceFingerprint(dir, await OpenWikiIgnore.load(dir), {
+      mode: "subproject",
+    });
+  }
+
+  afterEach(async () => {
+    await Promise.all(
+      subprojectRepos
+        .splice(0)
+        .map((repo) => rm(repo, { recursive: true, force: true })),
+    );
+  });
+
+  test("stays stable when a sibling subproject commits", async () => {
+    const { repo, fooDir } = await createMonorepo();
+    const before = await scopedFingerprint(fooDir);
+
+    await writeFile(
+      path.join(repo, "packages", "bar", "src", "code.ts"),
+      "export const bar = 2;\n",
+      "utf8",
+    );
+    await gitAt(repo, ["add", "--all"]);
+    await gitAt(repo, ["commit", "--quiet", "-m", "sibling commit"]);
+
+    expect(await scopedFingerprint(fooDir)).toBe(before);
+  });
+
+  test("stays stable when a sibling subproject is dirty in the worktree", async () => {
+    const { repo, fooDir } = await createMonorepo();
+    const before = await scopedFingerprint(fooDir);
+
+    await writeFile(
+      path.join(repo, "packages", "bar", "src", "code.ts"),
+      "export const bar = 3;\n",
+      "utf8",
+    );
+
+    expect(await scopedFingerprint(fooDir)).toBe(before);
+  });
+
+  test("excludes the subproject's own dirty openwiki output (namespace normalization fixes self-churn)", async () => {
+    const { fooDir } = await createMonorepo();
+    const ignore = await OpenWikiIgnore.load(fooDir);
+    const scopedBefore = await createRepositorySourceFingerprint(fooDir, ignore, {
+      mode: "subproject",
+    });
+    const unscopedBefore = await createRepositorySourceFingerprint(
+      fooDir,
+      ignore,
+    );
+
+    // Simulate the update rewriting its own generated wiki without committing —
+    // exactly the mid-run state hasRepositorySourceChanged inspects.
+    await writeFile(
+      path.join(fooDir, "openwiki", "quickstart.md"),
+      "# foo regenerated\n",
+      "utf8",
+    );
+
+    // Scoped: `git status` reports `packages/foo/openwiki/quickstart.md`, which
+    // is re-based to `openwiki/quickstart.md` and excluded, so the fingerprint
+    // is stable (no false self-churn forcing the interrupted branch).
+    expect(
+      await createRepositorySourceFingerprint(fooDir, ignore, {
+        mode: "subproject",
+      }),
+    ).toBe(scopedBefore);
+
+    // Contrast — the pre-fix repo-wide namespace: the unscoped status path
+    // `packages/foo/openwiki/quickstart.md` is NOT matched by isOpenWikiPath, so
+    // the unscoped fingerprint DOES flip. This is the defect the fix removes.
+    expect(await createRepositorySourceFingerprint(fooDir, ignore)).not.toBe(
+      unscopedBefore,
+    );
+  });
+
+  test("changes when the subproject's own source changes", async () => {
+    const { fooDir } = await createMonorepo();
+    const before = await scopedFingerprint(fooDir);
+
+    await writeFile(
+      path.join(fooDir, "src", "code.ts"),
+      "export const foo = 2;\n",
+      "utf8",
+    );
+
+    expect(await scopedFingerprint(fooDir)).not.toBe(before);
+  });
+
+  test("returns gitHead equal to the subtree's last-touching commit", async () => {
+    const { fooDir } = await createMonorepo();
+
+    const snapshot = await createRepositorySourceSnapshot(
+      fooDir,
+      await OpenWikiIgnore.load(fooDir),
+      { mode: "subproject" },
+    );
+
+    expect(snapshot.gitHead).toBe(
+      await gitAt(fooDir, ["log", "-1", "--format=%H", "--", "."]),
+    );
+  });
+
+  test("the returned gitHead is a valid subtree-scoped diff base", async () => {
+    const { repo, fooDir } = await createMonorepo();
+    const ignore = await OpenWikiIgnore.load(fooDir);
+    const snapshot = await createRepositorySourceSnapshot(fooDir, ignore, {
+      mode: "subproject",
+    });
+    if (!snapshot.gitHead) {
+      throw new Error("Expected a subtree gitHead baseline.");
+    }
+    const baseline = snapshot.gitHead;
+
+    // A sibling commit advances the shared HEAD but not this subtree baseline, so
+    // a subtree-scoped diff from it is empty — the page fast-forward's precise
+    // "nothing changed under me" predicate.
+    await writeFile(
+      path.join(repo, "packages", "bar", "src", "code.ts"),
+      "export const bar = 2;\n",
+      "utf8",
+    );
+    await gitAt(repo, ["add", "--all"]);
+    await gitAt(repo, ["commit", "--quiet", "-m", "sibling commit"]);
+    await expect(
+      getRepositoryChangedPaths(fooDir, ignore, baseline, {
+        mode: "subproject",
+      }),
+    ).resolves.toEqual([]);
+
+    // The subproject's own commit does surface in that same diff, so it is not
+    // fast-forwarded.
+    await writeFile(
+      path.join(fooDir, "src", "code.ts"),
+      "export const foo = 2;\n",
+      "utf8",
+    );
+    await gitAt(repo, ["add", "--all"]);
+    await gitAt(repo, ["commit", "--quiet", "-m", "own commit"]);
+    await expect(
+      getRepositoryChangedPaths(fooDir, ignore, baseline, {
+        mode: "subproject",
+      }),
+    ).resolves.toContain("src/code.ts");
+  });
+
+  test("omits gitHead when no commit has touched the subtree yet", async () => {
+    const { repo } = await createMonorepo();
+    const bazDir = path.join(repo, "packages", "baz");
+    await mkdir(path.join(bazDir, "src"), { recursive: true });
+    await writeFile(
+      path.join(bazDir, "src", "code.ts"),
+      "export const baz = 1;\n",
+      "utf8",
+    );
+
+    const snapshot = await createRepositorySourceSnapshot(
+      bazDir,
+      await OpenWikiIgnore.load(bazDir),
+      { mode: "subproject" },
+    );
+
+    expect(snapshot.gitHead).toBeUndefined();
+    expect(snapshot.fingerprint).toMatch(/^sha256:/u);
   });
 });

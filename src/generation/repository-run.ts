@@ -404,7 +404,11 @@ export async function beginRepositoryRun(
 
     const claimsStore = new ClaimsStore(input.root);
     const initialPages = await claimsStore.discoverPages();
-    const source = await createRepositorySourceSnapshot(input.root, ignore);
+    const source = await createRepositorySourceSnapshot(
+      input.root,
+      ignore,
+      noopScope,
+    );
     if (
       input.mode === "update" &&
       context.lastUpdate?.gitHead &&
@@ -450,11 +454,16 @@ export async function beginRepositoryRun(
         claimsRuntime.issueCount === 0 &&
         hasCompleteBaselineCoverage
       ) {
-        const source = await createRepositorySourceSnapshot(input.root, ignore);
+        const source = await createRepositorySourceSnapshot(
+          input.root,
+          ignore,
+          noopScope,
+        );
         await claimsRuntime.finalize(now().toISOString());
         const stableSource = await createRepositorySourceSnapshot(
           input.root,
           ignore,
+          noopScope,
         );
         if (stableSource.fingerprint === source.fingerprint) {
           await replaceRepositoryPageManifest(input.root, initialPages, {
@@ -464,6 +473,7 @@ export async function beginRepositoryRun(
           const publishedSource = await createRepositorySourceSnapshot(
             input.root,
             ignore,
+            noopScope,
           );
           if (publishedSource.fingerprint === source.fingerprint) {
             await writeLastUpdateMetadata(
@@ -606,6 +616,7 @@ async function resumeRepositoryRun(
   const currentSource = await createRepositorySourceSnapshot(
     input.root,
     ignore,
+    fingerprintScope(input.recursionRole),
   );
   const sourceChanged = currentSource.fingerprint !== state.sourceFingerprint;
   const resetSkippedPages =
@@ -791,6 +802,18 @@ function plannerEvidenceScope(role?: RecursionRole): GitScope | undefined {
   if (role === "subproject") return { mode: "subproject" };
   if (role === "root") return { mode: "root-excluding-nested" };
   return undefined;
+}
+
+/**
+ * Git scope for the source fingerprint. Unlike planner evidence, this scopes
+ * ONLY subproject runs: the root run's fingerprint stays repo-wide so the
+ * aggregator still re-plans when a sub-wiki changes (scoping root correctly is
+ * a separate follow-up). Single-repo and root runs therefore stay byte-
+ * identical to the non-recursive fingerprint. Mirrors `noopScope` in
+ * `beginRepositoryRun`.
+ */
+function fingerprintScope(role?: RecursionRole): GitScope | undefined {
+  return role === "subproject" ? { mode: "subproject" } : undefined;
 }
 
 /**
@@ -1622,7 +1645,11 @@ export async function finishRepositoryRun(
 async function hasRepositorySourceChanged(
   run: ActiveRepositoryRun,
 ): Promise<boolean> {
-  const current = await createRepositorySourceSnapshot(run.root, run.ignore);
+  const current = await createRepositorySourceSnapshot(
+    run.root,
+    run.ignore,
+    fingerprintScope(run.recursionRole),
+  );
   return current.fingerprint !== run.state.sourceFingerprint;
 }
 
