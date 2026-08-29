@@ -54,10 +54,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Source Map
@@ -90,19 +90,28 @@ before anything else.
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
   Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, and the
-  connector OAuth keys) and the `OpenWikiProvider` union. Nearly every subsystem
-  imports its identifiers from here.
+  connector OAuth keys) and the `OpenWikiProvider` union. It also owns the
+  output-token ceilings: `resolveConfiguredMaxOutputTokens` picks the right
+  provider-specific setting (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS`
+  first, then `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls
+  back to `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default
+  does not truncate long pages. Nearly every subsystem imports its identifiers
+  from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
   `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
   `finishRepositoryRun`, wiring together the run state, claims runtime, wiki
   finalizer, and OKF frontmatter validation — including deterministic
-  frontmatter repair (`repairPersistedFile`) before a page job is accepted. It
-  also owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot`
-  records the pending page and its claims sidecar before a worker runs,
-  `skipRepositoryPage` rolls a failed worker back (restoring the page markdown
-  and sidecar, marking the job `skipped`), and `restoreRepositoryPageMarkdown`
-  re-applies the snapshot during `finishRepositoryRun` for every skipped job.
+  frontmatter repair (`repairPersistedFile`) before a page job is accepted.
+  `beginRepositoryRun` resolves the requested language up front
+  (`resolveLanguage`) and rejects an unrecognized language with
+  `invalid_input` rather than falling back to English, since run state cannot
+  change its language after a start. It also owns the skip-failed-page-workers
+  path: `captureRepositoryPageSnapshot` records the pending page and its
+  claims sidecar before a worker runs, `skipRepositoryPage` rolls a failed
+  worker back (restoring the page markdown and sidecar, marking the job
+  `skipped`), and `restoreRepositoryPageMarkdown` re-applies the snapshot
+  during `finishRepositoryRun` for every skipped job.
 
 ## Subsystems
 
@@ -132,19 +141,22 @@ page and mark it `skipped`, collects those snapshots, and passes them to
 ### generation — repository run lifecycle and page jobs
 
 Orchestrates a full repository wiki build. Principal entry:
-`src/generation/repository-run.ts`. `src/generation/run-state.ts` owns the
-durable on-disk checkpoint (`.run.json`, schema-versioned, with `planning`/
-`generating` phases and `pending`/`skipped`/`complete` page-job statuses) so
-runs resume after interruption. `src/generation/page-jobs.ts` builds the plan
-(`createRepositoryPlan`) and replaces per-page claims (`replacePageClaims`).
-`src/generation/page-manifest.ts` owns the committed page-correctness ledger
-(`openwiki/.page-manifest.json`, schema-versioned), recording each completed
-page's source fingerprint, page version, and producer provenance.
-`src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle's
-snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
-`skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
-be rolled back to its pre-work state and marked `skipped` rather than failing
-the whole run; `finishRepositoryRun` requires a snapshot for every skipped job
+`src/generation/repository-run.ts`, which imports `resolveLanguage`/
+`requireResolvedLanguage` from `platform/language.ts` so `beginRepositoryRun`
+can reject an unrecognized language before any run state is written.
+`src/generation/run-state.ts` owns the durable on-disk checkpoint (`.run.json`,
+schema-versioned, with `planning`/`generating` phases and `pending`/`skipped`/
+`complete` page-job statuses) so runs resume after interruption.
+`src/generation/page-jobs.ts` builds the plan (`createRepositoryPlan`) and
+replaces per-page claims (`replacePageClaims`). `src/generation/page-manifest.ts`
+owns the committed page-correctness ledger (`openwiki/.page-manifest.json`,
+schema-versioned), recording each completed page's source fingerprint, page
+version, and producer provenance. `src/generation/errors.ts` defines
+`RepositoryRunError`. The lifecycle's snapshot/skip/restore operations
+(`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
+`restoreRepositoryPageMarkdown`) let a failed page worker be rolled back to its
+pre-work state and marked `skipped` rather than failing the whole run;
+`finishRepositoryRun` requires a snapshot for every skipped job
 and re-applies those snapshots before finalizing.
 
 ### claims — grounded-claim persistence and evidence resolution
@@ -212,8 +224,11 @@ Owns credential acquisition and storage. Principal entries: `src/auth/oauth.ts`
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
 registry (path constants, provider env keys, the `OpenWikiProvider` union, and
-defaults); `env.ts` loads and saves the OpenWiki `.env`; `openwiki-home.ts`
-resolves the home/wiki directories; `reasoning.ts` resolves reasoning settings.
+defaults), and also owns the output-token resolution helpers
+(`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
+`BEDROCK_DEFAULT_MAX_TOKENS`); `env.ts` loads and saves the OpenWiki `.env`;
+`openwiki-home.ts` resolves the home/wiki directories; `reasoning.ts` resolves
+reasoning settings.
 
 ### integrations — host-tool integration and MCP server surface
 
@@ -225,7 +240,12 @@ the transport-neutral lifecycle core, serializing one lifecycle operation at a t
 `submitPage`, and `finish` methods delegate to the `generation/repository-run.ts`
 lifecycle, and `tools()` returns exactly the five OpenWiki lifecycle tools
 (`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, `openwiki_finish`) for an MCP transport to expose.
+`openwiki_submit_page`, `openwiki_finish`) for an MCP transport to expose. The
+tool descriptions are the host-facing contract: `openwiki_begin` advertises that
+an unrecognized `language` returns `invalid_input` instead of starting a run,
+`openwiki_submit_page` states the Claim-reconciliation rules (reuse ids for
+revisions, omit to retract, omit id for new), and `openwiki_finish` requires
+every job complete before deterministic deletion/validation/indexing.
 `src/integrations/core/protocol.ts` defines the tool input schemas and host-id
 validation; `repository-root.ts` resolves the repository root.
 `src/integrations/mcp/server.ts` exposes OpenWiki over MCP (stdio in

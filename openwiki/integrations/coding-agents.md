@@ -40,10 +40,12 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+  - id: openwiki-source-349c953869b025f9d4935470
+    resource: repo://src/platform/language.ts
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
@@ -86,10 +88,14 @@ tools, in order: `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
 a strict Zod schema before delegating to the repository-generation core.
 
 - **`openwiki_begin`** — Starts or resumes a run for an absolute Git root in
-  mode `init` or `update`, with optional `language` and `force`. It resolves the
-  root, calls `beginRepositoryRun`, and either records the active run or returns
-  a proven update **no-op** (`status=noop`) without an active run. A clean update
-  returns no-op so the host reports "no update required" and stops.
+  mode `init` or `update`, with optional `language` and `force`. It validates the
+  optional `language` via `resolveLanguage` and rejects an unrecognized BCP-47
+  value with `invalid_input` before any run state is created, so a rejected
+  request leaves nothing to clean up and can simply be retried with a real code.
+  It then resolves the root, calls `beginRepositoryRun`, and either records the
+  active run or returns a proven update **no-op** (`status=noop`) without an
+  active run. A clean update returns no-op so the host reports "no update
+  required" and stops.
 - **`openwiki_submit_plan`** — Persists the run's final canonical page plan.
   `pages` may be empty (a valid update with no page work or only deletions), and
   `deletePages` is optional.

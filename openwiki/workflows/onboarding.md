@@ -18,6 +18,8 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-85064d6a188fa56bcc282f11
     resource: repo://src/ingestion/code-mode.ts
+  - id: openwiki-source-349c953869b025f9d4935470
+    resource: repo://src/platform/language.ts
   - id: openwiki-source-28a5ae6f5a5bb7466bd04868
     resource: repo://src/setup/credentials/constants.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
@@ -28,10 +30,10 @@ sources:
     resource: repo://src/setup/credentials/use-init-setup.ts
   - id: openwiki-source-14d4f389b56575bb7afd1310
     resource: repo://src/setup/onboarding.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Onboarding and Setup
@@ -209,6 +211,13 @@ repository runs (`beginRepositoryRun`). It:
   an existing workflow alone, and even under `init` the workflow is written only
   when it does not already exist, so operator customizations (fork guards, pinned
   actions, custom steps) are never silently overwritten.
+
+Before `beginRepositoryRun` touches the repository it also validates the
+requested `--language` value: an unrecognized tag is rejected up front (via
+`resolveLanguage`) rather than silently defaulted to English. This matters for
+setup because a wrong language would be persisted in durable run state, and a
+later resume refuses to change a started run's language — so the typo could not
+be corrected without deleting OpenWiki's own state files.
 
 The generated workflow (`createCodeModeWorkflow`) emits a `workflow_dispatch`-
 plus-scheduled GitHub Actions job whose `name:` is `OpenWiki Update`, gated by

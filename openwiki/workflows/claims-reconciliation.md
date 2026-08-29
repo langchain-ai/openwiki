@@ -32,12 +32,14 @@ sources:
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-349c953869b025f9d4935470
+    resource: repo://src/platform/language.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Claims Reconciliation on Update
@@ -111,11 +113,20 @@ Preflight classifies each persisted Claim as current, stale, or unresolved.
 Independently of Claims, `getUpdateNoopStatus` decides whether an update can skip
 its model invocation. It refuses to skip when there is no previous update git
 head, when the previous run was recorded as `interrupted`, when the requested
-output language differs from the persisted wiki language, when the working tree
-has meaningful changes, or when committed changes since the last update touch
-source outside `openwiki/` and outside the `openWikiIgnore` boundary. Changes
-that only touch generated wiki state or ignored paths do not count as
-meaningful.
+output language's primary subtag differs from the persisted wiki language's
+primary subtag, when the working tree has meaningful changes, or when committed
+changes since the last update touch source outside `openwiki/` and outside the
+`openWikiIgnore` boundary. Changes that only touch generated wiki state or
+ignored paths do not count as meaningful.
+
+Because the CLI and `begin` reject unrecognized languages at the entry point,
+`getUpdateNoopStatus` only ever receives a resolved-or-absent language. It still
+runs the request through `requireResolvedLanguage` as a defensive boundary
+check — which throws if an unrecognized value somehow slipped past an entry
+point — before comparing primary subtags via `getPrimaryLanguageSubtag`. The
+comparison is deliberately on the primary subtag (`zh` vs `zh-CN`), so a script
+or region variant that keeps the same primary language is not treated as a
+meaningful change, while a change of primary language is.
 
 The repository run wires these signals together, and **Claims validation
 precedes update no-op detection**. Before the no-op is even considered, the run

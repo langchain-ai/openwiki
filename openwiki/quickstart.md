@@ -5,7 +5,7 @@ description: Entry-point orientation for a coding agent working on the OpenWiki 
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-29T08:08:01.897Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -27,7 +27,9 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+  - id: openwiki-source-349c953869b025f9d4935470
+    resource: repo://src/platform/language.ts
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 ---
 
 # OpenWiki Quickstart
@@ -86,12 +88,22 @@ into a command, and dispatches:
 
 - `integrations` and `mcp` commands go to the host-integration surface
   (`runIntegrationsCommand` / `runMcpCommand`).
-- All other commands run through the native pipeline, which loads environment,
-  resolves the startup command, and then either prints a startup error, runs
-  non-interactively in print mode, or renders the interactive Ink `App`.
+- All other commands run through `runStandardCommand`, the native pipeline, which
+  loads environment, resolves the startup command, decides once whether this is
+  the first run (mints the install id), and then either prints a startup error,
+  runs non-interactively in print mode, or renders the interactive Ink `App`.
 
 The `dev` script points at this same `.tsx` file, so behavior is identical
 between `pnpm run dev` and the built binary.
+
+> **Behavioral change operators hit first:** an unrecognized `--language` value
+> (for example a misspelled locale or a bare language name) is now rejected at
+> parse time as a parse error rather than silently generating an English wiki.
+> `parseCommand` classifies the flag via `resolveLanguage` and, on an
+> `unrecognized` result, returns an `error` command with the user-facing
+> message before any run work or persisted state is touched. The full command
+> and flag reference lives in
+> [CLI Reference](/openwiki/operations/cli-reference.md).
 
 ## Task-routing map
 
