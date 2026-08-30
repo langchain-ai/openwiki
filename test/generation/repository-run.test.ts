@@ -461,6 +461,38 @@ test.each([
   },
 );
 
+test("tolerates a human-readable not-found error from the backend when skipping a never-written page", async () => {
+  // Regression for #765: DeepAgents filesystem backends return
+  // `"Error: File '...' not found"` (human-readable) rather than the
+  // `"file_not_found"` error code when deleting a file that never existed.
+  // Rolling back a new page worker must not abort the whole run.
+  const root = await createRepository();
+  const page = "/openwiki/never-written.md";
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, {
+    pages: [
+      {
+        path: page,
+        title: "Never Written",
+        purpose: "Document a page whose worker fails before writing anything.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+
+  const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+  expect(snapshot).toMatchObject({ path: page, markdown: null, claims: null });
+
+  const deleteSpy = vi
+    .spyOn(run.backend, "delete")
+    .mockResolvedValue({ error: `Error: File '${page}' not found` });
+
+  await expect(skipRepositoryPage(run, snapshot)).resolves.toBeUndefined();
+  expect(deleteSpy).toHaveBeenCalledWith(page);
+  expect(run.state.plan?.pages[0]?.status).toBe("skipped");
+});
+
 beforeEach(() => {
   failureHarness.manifestReplacements = 0;
   failureHarness.manifestWrites = 0;
