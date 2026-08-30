@@ -29,14 +29,16 @@ sources:
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-349c953869b025f9d4935470
+    resource: repo://src/platform/language.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Repository Generation Lifecycle
@@ -244,7 +246,18 @@ runner re-runs a fresh worker for it.
 
 ## begin: fresh run, resume, and clean-update no-op
 
-`beginRepositoryRun` first ensures code-mode repository setup, then reads
+`beginRepositoryRun` resolves the requested language via `resolveLanguage`
+_before anything else_, and an unrecognized language (a malformed tag or a
+recognized-but-unregistered one such as `Korean`) is rejected with an
+`invalid_input` `RepositoryRunError` before the repository is touched or any run
+state is created. This happens first because falling back to English would
+persist the wrong language in run state, and resume refuses to change a started
+run's language — so a typo could never be corrected without deleting OpenWiki's
+own state files. Both the native runner and the host adapter reach `begin` with
+an unvalidated language string, so this gate is the single point that protects
+both entry points.
+
+After the language gate, `begin` ensures code-mode repository setup, then reads
 `openwiki/.run.json`. If a checkpoint exists, it resumes; otherwise it starts
 fresh.
 
@@ -264,10 +277,15 @@ fresh path fails before commit, an init rollback removes any written state and
 restores the previous wiki, while a failed update never deletes a successfully
 written checkpoint.
 
-Resume validates that the caller owns the durable run: a mode mismatch, a
-language change, or a different producer actor all raise `conflict`, forcing the
-existing run to be resumed on its own terms before anything else changes. Resume
-also carries forward the caller's current `metadataModel` and planning context.
+Resume validates that the caller owns the durable run: a mode mismatch raises
+`conflict`, and a requested language change is refused with `conflict` by
+`requireResolvedLanguage`, which compares the resolved language against the
+checkpoint's `state.language`. A different producer actor is _not_ a conflict —
+resume carries the new actor forward along with the caller's current
+`metadataModel` and planning context, so work can continue across producers
+(everything except the original producer identity is updated). Because the
+language gate ran first, an unrecognized resume language is already rejected at
+the top of `begin`, so the interrupted run is never mutated by a typo.
 
 ## Resume on the same checkout and source-fingerprint invalidation
 
@@ -348,7 +366,7 @@ retries. Correctable input rejections (bad plan or bad Claim payload) are
 returned to workers as failed tool results so their loop stays active, while
 `invalid_state` and `conflict` protect the durable invariants: submit in phase
 order, submit only the current pending job, never finish with pending jobs or
-without covering skipped-job snapshots, and never resume a run owned by a
-different mode, language, or producer. Source drift detected at finish time is
+without covering skipped-job snapshots, and never resume a run with a
+mismatched mode or a requested language change. Source drift detected at finish time is
 not a failure: the wiki is finalized, `interrupted` metadata is persisted, and
 `sourceChanged: true` tells the caller a later update is due.

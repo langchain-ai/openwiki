@@ -14,9 +14,6 @@ tags:
     connectors,
     visualizer,
   ]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -40,7 +37,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Architecture Overview
@@ -140,11 +140,13 @@ page-job runner. More detail lives in
 `runNativeRepositoryGeneration` drives the same durable lifecycle the host
 integrations use, but with OpenWiki's own model. It begins or resumes a run,
 runs a bounded planner when the run is in the planning phase, runs one fresh
-per-page worker for each pending page job, and finalizes. Each worker is a
-non-delegating DeepAgent: the planner gets read-only filesystem tools plus
-`submit_plan`; page workers additionally get `write_file`/`edit_file` plus
-`submit_page`, and the general-purpose `task` delegation tool is stripped so
-workers cannot spawn subagents.
+per-page worker for each pending page job, and finalizes. `beginRepositoryRun`
+rejects an unrecognized language with `invalid_input` before touching the
+repository, so a typo never persists the wrong language in run state. Each
+worker is a non-delegating DeepAgent: the planner gets read-only filesystem
+tools plus `submit_plan`; page workers additionally get `write_file`/`edit_file`
+plus `submit_page`, and the general-purpose `task` delegation tool is stripped
+so workers cannot spawn subagents.
 
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
@@ -177,11 +179,13 @@ of launching an OpenWiki model. The MCP server exposes exactly five
 transport-neutral tools — `openwiki_begin`, `openwiki_submit_plan`,
 `openwiki_next_page`, `openwiki_submit_page`, and `openwiki_finish` — backed by
 a session manager that holds at most one active process-local run and rejects
-any operation whose `runId` does not match. The coding agent owns repository
-research, planning, and factual authoring; OpenWiki owns the durable queue,
-Claims validation and persistence, source-drift handling, and deterministic
-finalization. Host-driven runs use only repository source and tests; connector
-context is not yet available to them.
+any operation whose `runId` does not match. `openwiki_begin` rejects an
+unrecognized `language` with `invalid_input` instead of starting a run, so the
+caller can correct the code and retry with nothing to clean up. The coding agent
+owns repository research, planning, and factual authoring; OpenWiki owns the
+durable queue, Claims validation and persistence, source-drift handling, and
+deterministic finalization. Host-driven runs use only repository source and
+tests; connector context is not yet available to them.
 
 ## Claims
 

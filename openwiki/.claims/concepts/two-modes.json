@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1f20b2d0755187863b358f1e9e0b404e29376f56fbad9876d9d66024546b7b61",
+  "pageVersion": "sha256:ac50027a6278acc67b1c5125ad7327a9885484697131c979b26e9a2298c77c50",
   "claims": [
     {
       "id": "claim_b7c92dfb63db42c6ab9db3a60115cec9",
@@ -18,11 +18,11 @@
       "evidence": [
         {
           "resource": "repo://src/cli/commands.ts#L146-L167",
-          "version": "repo-lines-v1:sha256:8deaa57433ad06c3b3a36d4305f6cf3cddc5b5065071da7eb211a271c20bd648:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZjA3ZjQ4OTI5NDMxMjkwNWM5Y2MxOTI0Y2RiNmJkZDE3NWNjMTIwMDM2MjhlZGRiYTk5YzNkZWIxYjY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNTMxMGFlZDliYzJhODVjYjU1NzE5OWYxZTkwYTI4MTIyYjQ3MDUyYmM1NzU1MzUwMDZhOTNlNDJmZGEwYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MDU5MDI0ZDQ1NjRhZTBmZWJhNWQ3MzhlM2I0OTUxNTczMGY1Mjg5OTdhOTM1ZWQ3ZGNmMDBkODQxNWRkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTc5YTNhMWU5YjRhMTYwOGY4NGJhNmQ1ZTBkOTIwNzYwNzVkZTNjOTliZDgyZThjZDkyODNjMzY5NzQ2YmQifQ"
+          "version": "repo-lines-v1:sha256:0c504c01f26f871aa7962462f472ad52cbb9d8e887e7e82c536465fb135e401f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZjA3ZjQ4OTI5NDMxMjkwNWM5Y2MxOTI0Y2RiNmJkZDE3NWNjMTIwMDM2MjhlZGRiYTk5YzNkZWIxYjY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MDU5MDI0ZDQ1NjRhZTBmZWJhNWQ3MzhlM2I0OTUxNTczMGY1Mjg5OTdhOTM1ZWQ3ZGNmMDBkODQxNWRkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxZjE0MzM3ZmUzMzk0ZTQxMmQ4ZDc1NDI1OTA4ZjMxNGEzMmU3MWQ4NWQ0MGExOGNlNjczOTljNzcxYmUwMmUifQ"
         },
         {
-          "resource": "repo://src/cli/commands.ts#L984-L998",
-          "version": "repo-lines-v1:sha256:f404ce6bc018aba019d88a04cdda2eacd72f4f293f2c5ce7d1974652108c450d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NWZhMGYxMTE3YjVlYTQwNDM0MTQwZGRlMWEzNDBjNzIwZGRiZjMyNjIxMmUxOTE4MzhkNGIxNTZkMzE2YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZmIyYjJjNjY0YzNhY2Y2ZDBjNjI4NzhhMGM2Yjg3NGE4ZjVmOTUwNDQxYWViYzI2OGZkNTE5NjBjZGM4YWEifQ"
+          "resource": "repo://src/cli/commands.ts#L992-L1006",
+          "version": "repo-lines-v1:sha256:50df06ed8514999562ffdb8ae9cfaf6cbb7dec760cbe4b80bea3bc21bc92060d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NWZhMGYxMTE3YjVlYTQwNDM0MTQwZGRlMWEzNDBjNzIwZGRiZjMyNjIxMmUxOTE4MzhkNGIxNTZkMzE2YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZmIyYjJjNjY0YzNhY2Y2ZDBjNjI4NzhhMGM2Yjg3NGE4ZjVmOTUwNDQxYWViYzI2OGZkNTE5NjBjZGM4YWEifQ"
         }
       ]
     },
@@ -45,8 +45,8 @@
       "statement": "Mode selection happens at argument-parse time: a mode word as the first argument selects the mode as a positional, otherwise parsing defaults to code mode with modeSource \"default\".",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L525-L531",
-          "version": "repo-lines-v1:sha256:625ed7d691b6f368d2005560a5d40f112b720e523b244c5ed5d3caa1a5de7eb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDA4ZjIyYWQ5OGVlZjRmYThkMjA0Mzc1ZjJjMzcwNzNkZjliNzA0ZGM2MjM4ZjYxZDk1MjZiMjJjYzlkNGNjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc0MGM1YmMwYTQ1MGRmN2E3YTM2Yzg2NTk5MTljMGZiOGFjYzZkYWYzODhiMDdjZjVmNDEzMzM2MThlYzJiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+          "resource": "repo://src/cli/commands.ts#L526-L531",
+          "version": "repo-lines-v1:sha256:767f9bb2c5260daf8d0e0f5c0b70010134e3e2d8d98690375b35325577de06f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA4OTJhMzU0MWQ0Mzc4YzBiYjI1NjBhMTY2MzY5MDExZGQyM2IxOWUzMGI3YWY0ODM4YjE2YzhkMjMzZDRjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2NlYmQ3Yzg1OGFkNGI1Y2QxYjQ3NzVkYTBhNjUwMTI4MGNjZjI4ZDlhNDEyMGEzNzlkMDc5MTNhYzNkNDlkYSJ9"
         }
       ]
     },
@@ -55,8 +55,8 @@
       "statement": "When an init or update command is requested while the mode is still at its default source, the parser explicitly pins the mode to code, so bare openwiki, openwiki --init, and openwiki --update run in code mode.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L972-L974",
-          "version": "repo-lines-v1:sha256:8419512428149639cc9fd589d04f36b939166fbe0587d04804d2165a659eb992:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRiNjg5MzRkMDcxN2FjZTM5ZDA0ODJhNDkyYzhiZTRkYzg4YTFkNGNhOGU5Yzg0MDM4MmJiOWI5YTA1NWM3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzgwNWQ2Njk4OTFlZWVmZGQ1ODU5MzczMjJjYTJkOThjNTFhMjNjY2U5OGE1YjQ0NTIyMGMwMGVjOGUwMjA2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEzMGIyYTk0ZTRmMTc1ZTNmOTA2NWMzMWJiNDllZDY5NzM1Y2RkMzZjNmMwYTY2YjIzMjQyMGIyZmVmMGQzOSJ9"
+          "resource": "repo://src/cli/commands.ts#L980-L982",
+          "version": "repo-lines-v1:sha256:8419512428149639cc9fd589d04f36b939166fbe0587d04804d2165a659eb992:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRiNjg5MzRkMDcxN2FjZTM5ZDA0ODJhNDkyYzhiZTRkYzg4YTFkNGNhOGU5Yzg0MDM4MmJiOWI5YTA1NWM3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVlZWZkZDUxMTNkOTkwNTZmMWUxOWRlMWI3ZDViZWRlNmUwYTMwMWY5ZThmN2JlNGVhZDNmOGY4ZGE4NjZjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEzMGIyYTk0ZTRmMTc1ZTNmOTA2NWMzMWJiNDllZDY5NzM1Y2RkMzZjNmMwYTY2YjIzMjQyMGIyZmVmMGQzOSJ9"
         }
       ]
     },
@@ -65,18 +65,8 @@
       "statement": "A mode word in the first positional slot selects the mode even when flags precede it (e.g. openwiki --print code --update); otherwise the word would be treated as the user message and target the default wiki.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L947-L959",
+          "resource": "repo://src/cli/commands.ts#L946-L958",
           "version": "repo-lines-v1:sha256:5e4ec6caea62daa6961e61c2578f9b0aae53406aabf31b32ae050db1ddc517e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YjE2YTg1YTJiOTA0YmUzZDhlOTNlNDc5Y2RjMzhhNTUyYTFkNDJjODcxNGViOTVkODZlYTAzNGQ3OGQzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmM2E1MDYzMzBiMGU1NDBiZjM1ZDYwZGM2ZjZlNTNmZDBkNmE0ZjllNGM3NGIyOTI0NGQ0YzMyZmNjMTkxZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjZThkY2U5YTYwOGY4OWI2YWE2YzAwOTkxM2JjNzA3OGExMzQ1YjM4ZjY0YWFmZWNmNjllMzRjZTI2YTgwNjkifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_fd69d3b469e4413d916ee4c098f69974",
-      "statement": "The --mode <personal|code> flag (and its --mode= form) validates the value and sets the mode with source \"option\", rejecting an unrecognized value with an \"Invalid mode\" error.",
-      "evidence": [
-        {
-          "resource": "repo://src/cli/commands.ts#L815-L864",
-          "version": "repo-lines-v1:sha256:c0d1be879c84ffd86237d746dc9f24ccd6db8237b879bf30466c9e655078bd67:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MjhlYjdjMTIzNzA4ZTBmNzhiNWVhN2MyMDdiYzJjOGU1NmRmOTEzZDRlNjZmYTk5MTYzMDYzM2NmYzliNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NWIwODkyYjVjMTk0NWU5NTliNDEzYmQ2NTkwZjU2ZmM1MzBjMzQ2NDhkMDA4Njg0ZTRlZmRhYTA0YTkwNWYifQ"
         }
       ]
     },
@@ -85,7 +75,7 @@
       "statement": "resolveExplicitMode rejects a second explicit mode that conflicts with an already-explicit one with a \"Conflicting modes\" error, while accepting a repeat of the current mode or an override of a still-default mode.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L1001-L1017",
+          "resource": "repo://src/cli/commands.ts#L1009-L1025",
           "version": "repo-lines-v1:sha256:7ca5b465d44d95c0ab4ca887cfc4055538aec19d1fc317585bbc9134c080106f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NWM5NmMyMmU0Njc4MjdiMTMyNGU0NzIwMmU5YzQ5OTNjNTY3ZDNmMmFkZjM0N2QwYzZkYmRmZmZlNjhkZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZDVjNGY4OTM0ZmI5YjM2ODk3MzE2MGM0ODkzNWVhNzFkMTljYmQwYzdiZWZjNDczYzk5ZTg3NzMyZTQzZGEifQ"
         }
       ]
@@ -143,8 +133,8 @@
       "statement": "Host-driven coding-agent runs (Codex, Claude Code, OpenCode) currently support repository code wikis only, not personal brains, and use only repository source and tests as context.",
       "evidence": [
         {
-          "resource": "repo://README.md#L100-L102",
-          "version": "repo-lines-v1:sha256:3650625f1a3ea296759963ed5192dab33599d9869368f946fffa4e6c2ec58021:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI4NGFmMjYzYjg0ZTlkOGRjNzcyYjEzNjU4ODYyNjZlNzBiZGQyYzUwMTBlNDI1NGQyZWEzZjQ1ZDEzZGFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjM2U3MTA4Y2U2MTgwZjQwMjgwMGY0OGEzYWI1YzJjOGEzYWM0OGZiMWFmYTNmMTNjY2ZjNGJiOGM0ODhiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIxNmM2ZTk4Zjk1NzRkMjUxMGRmNThhNDI5MDgzNTMxMjZlZDUzNDMyNjM4ZmVlZjY0ODVkMTdjNzU5YzUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQzYzJhMDQ0NjNmNGFhMzFmNjZjMTM5MTljYmNkNzkzODkwYjA1OTliOWFmNDU4OGI2N2U0OTVlMjVmYjhjNiJ9"
+          "resource": "repo://README.md#L109-L111",
+          "version": "repo-lines-v1:sha256:3650625f1a3ea296759963ed5192dab33599d9869368f946fffa4e6c2ec58021:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI4NGFmMjYzYjg0ZTlkOGRjNzcyYjEzNjU4ODYyNjZlNzBiZGQyYzUwMTBlNDI1NGQyZWEzZjQ1ZDEzZGFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjM2U3MTA4Y2U2MTgwZjQwMjgwMGY0OGEzYWI1YzJjOGEzYWM0OGZiMWFmYTNmMTNjY2ZjNGJiOGM0ODhiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIxNmM2ZTk4Zjk1NzRkMjUxMGRmNThhNDI5MDgzNTMxMjZlZDUzNDMyNjM4ZmVlZjY0ODVkMTdjNzU5YzUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWVkYWJiYWM1YTA2YjMzZDFlYTg3NmI0MDZkMjczZDA4NzYwOTQyNDEzNjg3NDlmNzM3NGFiNjYyOTQxMTE0ZSJ9"
         }
       ]
     },
@@ -207,14 +197,24 @@
       "statement": "The OPENWIKI_CONFIG_DIR override merely selects a separate state directory; OpenWiki does not move or delete an existing ~/.openwiki directory.",
       "evidence": [
         {
-          "resource": "repo://README.md#L134-L140",
+          "resource": "repo://README.md#L147-L153",
           "version": "repo-lines-v1:sha256:ecf3c524d5f2cadc27fe91dd80d487241533bd003dcf6b5aa6a6b6b7c16c8521:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYxMTZmYTEzMzQxMDY3NTVjNmFiYjU4OGEwZWJiNjZmN2NhNmNkOTRkMmVjMGM4NmRkZmE5NjVmMzY4Njk4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJjNjQ4MDkxMDk0MmFjZWUwMzgxYjQ5MzRhODZlOGIyZWU5MzhmMzAyODExMjk3MTRjNDlkZGE0OTE0MjVkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ3OGI3NmNjNzE3ZmM1MzhjYTMxMGU4YmIxNmIyOTQyOGU3MTExY2ZiMjMzMWZiMzhlYjRhMzc5MmM4ZDQ1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGViOGExZmUyMjc1MjRkZGMxNTM4NDQ4NDU2MmZkZWJhMTJjNTkxOTM4ZTkzN2YxYTE3MjQ5NzljODU4ZWVhNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f66e27a98b441fbbd049c62fa005fdb",
+      "statement": "The --mode <personal|code> flag (and its --mode= form) validates the value and sets the mode with source \"option\", rejecting an unrecognized value with an \"Invalid mode\" error.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L814-L863",
+          "version": "repo-lines-v1:sha256:c0d1be879c84ffd86237d746dc9f24ccd6db8237b879bf30466c9e655078bd67:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MjhlYjdjMTIzNzA4ZTBmNzhiNWVhN2MyMDdiYzJjOGU1NmRmOTEzZDRlNjZmYTk5MTYzMDYzM2NmYzliNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NWIwODkyYjVjMTk0NWU5NTliNDEzYmQ2NTkwZjU2ZmM1MzBjMzQ2NDhkMDA4Njg0ZTRlZmRhYTA0YTkwNWYifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-29T08:08:01.897Z"
   }
 }

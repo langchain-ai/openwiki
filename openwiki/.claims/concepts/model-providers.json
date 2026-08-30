@@ -1,36 +1,36 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7184f4f9896e5ddd001bafc00558e5bfac684857918eadf98910366e7dad98cb",
+  "pageVersion": "sha256:ed6d0b8a894cc3ea6bb669111aa239ffed65db4882a16d0943b85e3e29b2b26e",
   "claims": [
     {
       "id": "claim_881dbd60dd434311a4774d72dabe29af",
       "statement": "PROVIDER_CONFIGS in src/config/constants.ts is the declarative registry that is the single source of truth for each model provider's label, model options, environment keys, base URL, and authentication method, accessed through helpers such as getProviderConfig, getProviderApiKeyEnvKey, getProviderAuthMethod, and resolveProviderBaseUrl.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L168-L231",
+          "resource": "repo://src/config/constants.ts#L172-L235",
           "version": "repo-lines-v1:sha256:94dfa82866a3782f2bd51e8d1674ec7c3e95d8a41505571eba5c2273f6c181a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZjU4ZGJiODVkZGNlNTcxMTVhMjg4ODgxMWY1ZjRhMDBkODg4OTNmYzJkMjdhZmJkYTJmOGFjZjRkNDFjYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0ZGVlM2JmMThhY2VkYzM2Mzk5MGIzMDIxNzNjZTY5NzZhMDQ3YjVkZjMyZDdlMjhiZTA4ZTgxZjdlZmEzNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjM2RmNTJkZDkyYzZhYThiZTI2NjQ4NWZjYzhhMDdlMjQ0NGZjMDNlMDJjMTZiMWMxZmFmNTM0OTllNWZmZmQifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L249-L406",
+          "resource": "repo://src/config/constants.ts#L253-L410",
           "version": "repo-lines-v1:sha256:d45be38d477e5840338be358374a37a7dbd6ea91568b671a8f1a06a962eab9ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzYmZhZjljZDhmZjJhZjAzOTdmMTBiODM5ZGJkODc1YWQ0NDgzMDJkNTQxOGMzOGE1ZjVlN2EyOWQ4YmM4NGMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYTFkMWE2MzM5MDIyOWM3OTgzNDdlODNhMDQwNTQ0MWM5NDAwMDM1Mjg0YWQxNjhjMWJmNmNkZjFkNzBhMzcwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjNjBjYTRiNDcyNjUyZTMyMDNmZjcyMzY4NGQyZTAyNzY0ZTJkZTgyYWQ0YmZiNGU4YjZlYTI2ZjgyMDYwMjZjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWMwMGQwNzFlZDEzODRhOTIyNjg0M2Y2NGZkNjNkMTgwZWJmMTU2MDIzMzdkY2ZiNGIxOTcwNDA4NWM3ZTUzIn0"
         },
         {
-          "resource": "repo://src/config/constants.ts#L415-L497",
-          "version": "repo-lines-v1:sha256:096b88ca6d4bf1c61d2a9efca15dfeb771d767bcccdb6654bc3c8b3e1e502a22:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YzU3ZTQyMDRhYWY0YTMzYzY0ZGE5OWU1MTBiOGJlYzQ1YjViYjYyMDQxM2I5ZTg4OTA4NGJiOGY5NjM0NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1MjBmODY4YjNiYjAwYzE3ZDJjYTc3M2VlYjJiNzY4NmIwMzZhZGY1YTFhODMyNjRhNDQ3ZTdlMGIzY2I1MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNTIwMzUzZWRlMGZlMTkwM2Y2Zjk2ZDA3MWQ3Yjc1ODhhZjQ1ODU4MjAxM2EyNGJjYjYwYzQxNjk3NTkxNWYifQ"
+          "resource": "repo://src/config/constants.ts#L419-L500",
+          "version": "repo-lines-v1:sha256:662bbd7e011c00b7d2298dc4b6c315a56410d58cfa7eea6cf6765e44de569bc1:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YzU3ZTQyMDRhYWY0YTMzYzY0ZGE5OWU1MTBiOGJlYzQ1YjViYjYyMDQxM2I5ZTg4OTA4NGJiOGY5NjM0NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1MjBmODY4YjNiYjAwYzE3ZDJjYTc3M2VlYjJiNzY4NmIwMzZhZGY1YTFhODMyNjRhNDQ3ZTdlMGIzY2I1MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
         }
       ]
     },
     {
       "id": "claim_e156af3a42264d3289fc7adc2fbe1d60",
-      "statement": "The active provider is resolved by resolveConfiguredProvider, which prefers the OPENWIKI_PROVIDER value (normalized case-insensitively) and otherwise infers a provider from whichever recognized API-key env variable is present, falling back to DEFAULT_PROVIDER (\"openai\").",
+      "statement": "The active provider is resolved by resolveConfiguredProvider, which prefers the OPENWIKI_PROVIDER value (normalized case-insensitively) and otherwise infers a provider from whichever recognized API-key env variable is present, falling back to DEFAULT_PROVIDER (openai).",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L803-L851",
-          "version": "repo-lines-v1:sha256:af495d906269679892996703f66c525f29aaf7d30f52efa2e8f8939d95e0c5da:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3YmMwZmNkMmRlM2NmMzA1ZTkzMTFlYjk3OGJkMWVhMDFmYWU4NWIzYTVhOWI0NDdjYzA0ZGRlYTI0ZjhkY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OGIzYTUzMmM2YjVhNDZlMzEwOThkNmQ0MWIzNGJjYzg3OTE5MjNkMzBjMDA4YmVmNzczMjU5Y2MyOTI3MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhODcxNjg3YTI4YTlkYTdkNzUxYzdiYjE4ZWRkZjExNGY1MGM5Y2E4ZmMxZDM3YWIzYjc3ZGQwYTk5MDdkYWUifQ"
+          "resource": "repo://src/config/constants.ts#L103-L103",
+          "version": "repo-lines-v1:sha256:6e24dd433647f55f39004d4399349b92c931bc08c09d355bc02b73d7bb92aa47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ViNGQ4ZTg3OTU1YWE4MzM0MWFhZmZiZTYyNjQ3OTRkY2M5NTI0MzNhODNmNzE2N2ZhNWQ5ZTJmMzUxNzZjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc3M2M0N2Q1N2RkZjNiMDNlOTZjNDVkODdkYmIzZmEzOTI4ZGFkNTgwMzg1MWQ3MWJiMTRlZTFkZjFiNmM0YiJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L99-L99",
-          "version": "repo-lines-v1:sha256:6e24dd433647f55f39004d4399349b92c931bc08c09d355bc02b73d7bb92aa47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmUyNGRkNDMzNjQ3ZjU1ZjM5MDA0ZDQzOTkzNDliOTJjOTMxYmMwOGMwOWQzNTViYzAyYjczZDdiYjkyYWE0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ViNGQ4ZTg3OTU1YWE4MzM0MWFhZmZiZTYyNjQ3OTRkY2M5NTI0MzNhODNmNzE2N2ZhNWQ5ZTJmMzUxNzZjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc3M2M0N2Q1N2RkZjNiMDNlOTZjNDVkODdkYmIzZmEzOTI4ZGFkNTgwMzg1MWQ3MWJiMTRlZTFkZjFiNmM0YiJ9"
+          "resource": "repo://src/config/constants.ts#L834-L866",
+          "version": "repo-lines-v1:sha256:ca82aaa4beb3360ddd9733313caf40608f675311ba0e811d6db7cac2cc9b51df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YTAxMWI2NWI1YTk2MzBmZTU5YmU0MDU0MjM0ZmFiZmM5MTA4NTBmMWNmNWRmOWJlNTJlNGE4NzViN2JkZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MTJjMzg1NDEwYWMyMDA0Mzc4MDZhNDY5YjMzZGI5MTUzZDEyNDc2NGZkN2ZjYzU0YWMwZjQ0YWRkZTQ0NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhODcxNjg3YTI4YTlkYTdkNzUxYzdiYjE4ZWRkZjExNGY1MGM5Y2E4ZmMxZDM3YWIzYjc3ZGQwYTk5MDdkYWUifQ"
         }
       ]
     },
@@ -39,11 +39,11 @@
       "statement": "Each provider declares one of four ProviderAuthMethod values (api-key, oauth, aws-sdk, external-cli); a config that omits authMethod is implicitly api-key, and the method determines required env keys and how the client is built.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L117-L124",
+          "resource": "repo://src/config/constants.ts#L121-L128",
           "version": "repo-lines-v1:sha256:e16c14fd3c212ed6b0eb2f3d50faf7bf4b2bb5445dbe81f4347d353434a3c850:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA0OGNhMzRmZTI3NmVjODZlZjkyNTI1NTIwMWMyNzQ2MmIzOTc1YTZkZmMzZWQ0ZTAyZWE1ODMxZWZkNWUyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTBjMTM0ZGRjNjIxMmQ4ZmJjOGM4NDhmMjM1M2Y4Mzc1NTBlMGQ3Y2UyYjNhOGJlMDA2ZmE2Njk5YzUzYmE3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjYxNDgwMzNiYjEwZmFkNTVlNDY0NzhhMGI2MzIyNDU4MjRlZTUyYzM3ODA4MDJiMDQxNzU5YWMyM2I1NWJkZiJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L429-L462",
+          "resource": "repo://src/config/constants.ts#L433-L466",
           "version": "repo-lines-v1:sha256:46efbd54fd523b40fbf8af9eb1f20a054f13c03b42ab79cdc30818b540494308:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0MGQwYzVkYzBhNGI4NWM4NTdiZThhYzFmOGE5OGVlYTc5OWIxNWIwMjIwZWQzNDc4MGExODMyZDk1ZjBiNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYjhjYzNjOTYxZGIzNWM1YWE0ZGI4ZjQxNjEzZGQ1MjI1ZWM3OTMyNjk2ZTk5ZTVhMzM1Mjk2OTBjNWNmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMmE3OGNhOTkzYzZmZjZmODlhODg5NDRhZjFmZWU1MDJiYmQ1NjNjMTVhYmEzYTM5NDEyOTZhYzUxMzRkNjcifQ"
         }
       ]
@@ -53,15 +53,15 @@
       "statement": "Each provider's built-in base URL can be overridden by its baseUrlEnvKey via resolveProviderBaseUrl, and the openai-compatible provider has no default endpoint (requiresBaseUrl) so it requires OPENAI_COMPATIBLE_BASE_URL, whose validation rejects a URL ending in /chat/completions.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L352-L358",
+          "resource": "repo://src/config/constants.ts#L356-L362",
           "version": "repo-lines-v1:sha256:5f8e9e0232a719c9a8ab087f86f1486d55d861bbdae0ee3d5657747092130b31:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U1ZjI3ZGM1NTZkYzMzMTAxMDQ1YzJhMjU0N2JmNTNhOWM3MmRiOTdmZDA4ZmQ2NjY3NGRkMzdiM2M3OTYyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhNTAyOTdkZjUyNzY4NmYwZjNmMjc2MTc5ZmQ1M2ZhODY2YTJjMTQxZGI4OWY0NzNjNmRkOGMyMjkyNmZjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI2MGFlMTY5MzY1ZmI2MGEyZGIyMDU4NGI5MGU0OGU4MjhjMzExMDA5MDk5MjY5NjhmMTQyZmYwMDllMmUzZCJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L621-L644",
-          "version": "repo-lines-v1:sha256:69608d15f5ff62ab831a7057e4dfd0a1b44ee92719a34ab45607593e13d57393:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDg2ZGNlNjIzMTc2NzVmY2NiOWJiMzZjY2Y2OWQwYTU5N2IzYjMyOWI1MWEzM2ZmOTA5OGQ5NGJiZGFjZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYTUzYTZiOTgyOWU3YjFiMjI3NjVmZDMxZmQ2NjEyNGY0ZWNmNmM3ODE3ZmQwODFhNGFlYzBhOTA4ZjcxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2YjAwNGE3NThjNDc0ZjcxNGI2NGU1ODA5MjUyY2VlMDJhODllODliY2NmZGM2N2Y2N2I3MmE4YTdkM2Q0MzEifQ"
+          "resource": "repo://src/config/constants.ts#L636-L648",
+          "version": "repo-lines-v1:sha256:aa610f8b56748522f8de17a3a69aa6238083d6daaf3f9a4a864d9069b7f647f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDg2ZGNlNjIzMTc2NzVmY2NiOWJiMzZjY2Y2OWQwYTU5N2IzYjMyOWI1MWEzM2ZmOTA5OGQ5NGJiZGFjZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMzI4MjJhNTE5ODZlZDMwNzQwMmJjNzNkNGY3NWE3ODU1MzIyZjAxYWJjY2I4ZGJkOGVlNzczZDc1YTkzZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYTUzYTZiOTgyOWU3YjFiMjI3NjVmZDMxZmQ2NjEyNGY0ZWNmNmM3ODE3ZmQwODFhNGFlYzBhOTA4ZjcxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NGM2Y2NkYzczNDUzYjQzNzUxZjRkNGJlY2Y0ZjMzYjI4OGU0YzJjOWRkYmRiOThiMTUyYjcxZTJmNTNmMTgifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L712-L743",
+          "resource": "repo://src/config/constants.ts#L727-L758",
           "version": "repo-lines-v1:sha256:4e212a8b83dd194aeec75adf4abb62b15ffa11d558e5da4f0ad092f650635d66:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMGQyMmI2YjNjNzEzNGE4ZTQ1ZTUzODY5NTI5Y2FkOWNkZGJjMzNlNzUxNzk0NzIyZWI2NjNlOTAyZTBmNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MjdmOTdjNjU1NmZiZDE2MmM2YmQxOGE1OTA3NTlmODVkNDI2ODRhOGY4MjQzOTNkYzFlNWYyODA5YTNmMTIifQ"
         }
       ]
@@ -117,7 +117,7 @@
           "version": "repo-lines-v1:sha256:befe0a1133605d753b67c22e51ebc9e675b45c5c05bf25452b9d230300b20c51:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZDVkMzUxMWE5MTE4YWM5MjhlNmE4MzY2MTEwZjczOWFmNTU5ZDU2Njc4MDMwN2EwOTIyNDg5M2I4NGI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwYzc2MTA1OTg5NDg4OTEzNWM3MmFiNDZkZGFmM2E1Zjc1YWRmNjE0M2M5ODk5NWQyYjlkNjliMGMzOTg2OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmOThjZmE2ODJhYWRlMWNjZDEzNDEwYzMxM2MyN2U2NGJlODljNzc5ZWFiZDkwNjAyODVkZTZiZWUzY2ZhNDcifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L23-L30",
+          "resource": "repo://src/config/constants.ts#L24-L31",
           "version": "repo-lines-v1:sha256:5a8716c6d90314b355f18374959697e2f5658a6bfc91f898a0642b9ff5f589bc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQyNjk3OWU3YjY0YjNmMzg2MjYzZmY3MmZmMjMxMDYzZTc2MDI5ODQxNjRmZjI5OTg4ZjA1ZDA4YmUwYmIwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI4NDRiZmYwM2FhZGZjMDRmMDJiNzE3YTAwNzFlZTg1NmUyY2I4ZjQ2NTNiMGE3NjFmMzVjYWUyYWQ0MzU1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWZhNGM1NjAzZWE2MzQ0NTM5MTMyY2QwN2EyYzIwYTkyNzc4ZDRiNDhhZTFjOThmZmY0N2U2M2IxNDlhMzNiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzFiMGEyNTU5NjgzZDc1MzBiZWVmYTE0OGYzNDY4ZTU1NzAxMTI5YzEwMzRhY2VhYjM1MWVkMjhjNzc3NzFlOSJ9"
         }
       ]
@@ -127,8 +127,8 @@
       "statement": "OpenWiki has no background ChatGPT token refresh loop; ensureFreshChatGptTokens runs once at run startup before the model is built, refreshing and persisting rotated tokens when the persisted token is expired or within the 60-second near-expiry threshold, and failing with a re-login message when no usable token set exists.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1250-L1274",
-          "version": "repo-lines-v1:sha256:b5411929e5fb9f4918bcd70da576618de797baf38e0b454bb128cc60cd412955:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlYmZhMzEzNGM2N2IyZGY4MWZjMmZhOGVhOWQ1M2I4ZTUyNTA1ZjU0YzYyMDEwYmJlNjI3ZDZiNTkwYWNhNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzhhZWUxOWFlM2E0Y2UxNjdkYmU5NWFiMmE1M2NmMGIxN2JmNjk1MWU1ZWY5ZTRmYTE3NWQ1NjEyY2RhYzEifQ"
+          "resource": "repo://src/agent/index.ts#L1253-L1274",
+          "version": "repo-lines-v1:sha256:b46d04454af811e7fc5c1d4390f3f1449584b1bebaf325a3c0852d7828a8733f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5MzFhMjhmMTI2M2FjY2ZkZDI5ZTg2ZWUyMDlhZjU4NGRjZGY2MDhkNjhmZDVlNWRlMDk5MTdkMDY5OThkNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzhhZWUxOWFlM2E0Y2UxNjdkYmU5NWFiMmE1M2NmMGIxN2JmNjk1MWU1ZWY5ZTRmYTE3NWQ1NjEyY2RhYzEifQ"
         },
         {
           "resource": "repo://src/agent/index.ts#L321-L325",
@@ -160,18 +160,18 @@
     },
     {
       "id": "claim_7d1756b0508240ed951711bc48067c97",
-      "statement": "The gemini-enterprise provider is keyless: it authenticates through Google Application Default Credentials against GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION (defaulting to \"global\"), so getMissingProviderEnvKey treats a missing project as the blocking requirement and getProviderCredentialHint points to gcloud application-default login or GOOGLE_APPLICATION_CREDENTIALS.",
+      "statement": "The gemini-enterprise provider is keyless: it authenticates through Google Application Default Credentials against GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION (defaulting to global), so getMissingProviderEnvKey treats a missing project as the blocking requirement and getProviderCredentialHint points to gcloud application-default login or GOOGLE_APPLICATION_CREDENTIALS.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L374-L391",
+          "resource": "repo://src/config/constants.ts#L378-L395",
           "version": "repo-lines-v1:sha256:e7d915cbcee1e6b4bde1409392135a4c53a503bda6228a4280a4e7897bf003b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyOTkxODZkMDYyMmZhYmVjMDZjOTZmMTkyMDI5ZTBkNDM1NTU5NGQ5N2I2ZjIzY2VkZjQ1ZmE1ZTdlOTZhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMjFkZDRiMTUwOWQ4ZmQ1MjAyZTQzMDQ2MTU5MTg1OGFlMTM1ZjJiOTg0NGE0NzYxZDI2YTA4MTcxZGU0NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZTQ0ZWFkMzIzODBhYzZjMDc3ZDJlMDVlYTE5NDc0MzhkN2U3NzdhZjA2MjgxYjhiNTM0N2MxMzMzZDg0ZmQifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L548-L557",
-          "version": "repo-lines-v1:sha256:e90d9bd907e16c06bedaea033fa50afbc6eb0bb874e6640d5fe0b6c76b05ecb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYjJjNDg0YmVlNmYxN2E0Y2MzM2U0MTgyNDc1ZjI1Y2M4NzA1Y2ViZjdkOTgyNTY4NTM3ZDIzNjA3YThhZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMDIxNGZlZjM5YmM0ZTM5NmM3OTk3ZjJkOTgxMjA1YTY5NTFjYzI3ZGFhZWYyZWM0NTI0OTJkMTI3MWZmZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOTM4M2ExOTU3Y2I1MDIwZmRmNDAxMTVmYjM1NTc1YzQwMDVmYzRkZTYyZGM2MmIzZGIzZWY2N2UyNzhhNmUifQ"
+          "resource": "repo://src/config/constants.ts#L521-L572",
+          "version": "repo-lines-v1:sha256:a801c23fd47dd03cffad24a54201c6e866760fa9842fa813d604255759fa3d89:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZWVmY2U3ZmM2NGQ3YmJiMDNjYjNlYjkwNGVhMTc2YzllODQyNDVkNTUwMTZhYTA0MjQ2MjZmMmQ0MDA2ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhNmFlMGI3NGRmNzUzN2FmNzA3OTBmNzRiN2ZiOGExNmFlZDEzYWU5ODgyMTUzYWZjOGUyNmIxMjMwNzZmMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOTM4M2ExOTU3Y2I1MDIwZmRmNDAxMTVmYjM1NTc1YzQwMDVmYzRkZTYyZGM2MmIzZGIzZWY2N2UyNzhhNmUifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L585-L594",
+          "resource": "repo://src/config/constants.ts#L600-L609",
           "version": "repo-lines-v1:sha256:ef23bce93668e4c21ac2bf0470a5fdd49106887023c0205120d85540a54ec8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYTFiMWQ2ZTI5OGIyYWQ2N2FiZDk1ZGRmZDVhMDVlZDc1MDUwOGFkZjQ1NTMyM2IwNzliYTNlMzk3MjNhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYWRkMTUyYzY3NDMwOGMyNzk2ODRiNDU5ODk5ZDYxNGY4NDY3ZjdhMmM2ZWViNjA0YmM4N2Y1Zjk3MjFiZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZTQ3YzQwZGUyMTk4YWM1ZGM4YjdiZGE4NGY3NmE4ZDIwNzQ4ZmEwYTNiM2YzZDU5ZGYwNjIyYTU0ODcwZTgifQ"
         }
       ]
@@ -210,19 +210,19 @@
     },
     {
       "id": "claim_93bbc7939e9b4a979809d34b4bd84055",
-      "statement": "The bedrock provider delegates authentication to the AWS SDK credential provider chain (aws-sdk method): getMissingProviderEnvKey gives AWS_BEARER_TOKEN_BEDROCK precedence, validates the legacy and standard AWS key pairs (rejecting a partial pair but allowing an absent one), and Bedrock requires a region resolved from BEDROCK_AWS_REGION with fallbacks to AWS_REGION and AWS_DEFAULT_REGION.",
+      "statement": "The bedrock provider delegates authentication to the AWS SDK credential provider chain (aws-sdk method): getMissingProviderEnvKey gives AWS_BEARER_TOKEN_BEDROCK precedence, validates the legacy and standard AWS key pairs (rejecting a partial pair but allowing an absent one, and a complete legacy pair short-circuits to null), and Bedrock requires a region resolved from BEDROCK_AWS_REGION with fallbacks to AWS_REGION and AWS_DEFAULT_REGION.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L260-L273",
+          "resource": "repo://src/config/constants.ts#L264-L277",
           "version": "repo-lines-v1:sha256:13837d155bddf886c1281a488f705d17909cea7570ac2ea91f1006e18fa04958:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMGIyMjJlZDFiMTQ0Zjk2Y2U3ZTllYjM2OWJkNDMyNzE1ZTQ0MTliMGJjOWJmYjJmOGQ4YzkwZDkwMDI5MDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NmYyNzEwZTg3YzcyNmYwZjBhZmUxZmZlODkwOTYzODQ2ZjM5YzUzZjA5NWE1NTY2ZGFlNzIxYzVmNjdhYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NzdiY2ZmYWFjM2FkZWQ3ZDQ0ZDE3M2YwYWQ1N2EyYjUzNWFlZjQzZTViZjg2ZDIzZDMxYWJiOWIxNzBhMTcifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L506-L557",
+          "resource": "repo://src/config/constants.ts#L521-L572",
           "version": "repo-lines-v1:sha256:a801c23fd47dd03cffad24a54201c6e866760fa9842fa813d604255759fa3d89:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZWVmY2U3ZmM2NGQ3YmJiMDNjYjNlYjkwNGVhMTc2YzllODQyNDVkNTUwMTZhYTA0MjQ2MjZmMmQ0MDA2ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhNmFlMGI3NGRmNzUzN2FmNzA3OTBmNzRiN2ZiOGExNmFlZDEzYWU5ODgyMTUzYWZjOGUyNmIxMjMwNzZmMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOTM4M2ExOTU3Y2I1MDIwZmRmNDAxMTVmYjM1NTc1YzQwMDVmYzRkZTYyZGM2MmIzZGIzZWY2N2UyNzhhNmUifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L681-L694",
-          "version": "repo-lines-v1:sha256:13ee0738686e1db554aebdb1babba669b43cefb54ca98625a1336fe21f12e02d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwOTBmMTJkMGIwMWQ2ZTI2ZmIxYThiMzUwM2RkZTg5OTA4ZWMyZDJhYmQyOWU3NTg2OTdmYjU4MzhmNWY0OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYzRjOTk0ZWYwMzg1NzQ0OTVmODM1MTJmNzQyOGY1MDgyOTU5MDhmYzVmNmIxOWM2NzExZjZlYTEwZWVmYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyN2I4Y2UyMzBhNjM1ZWE1MWViN2FlYWQ0Mzk3ZGMyNmRhODdkZmYyZGQ3ZmQ5ODg0YTg5MWU0YzE3YmIzODUifQ"
+          "resource": "repo://src/config/constants.ts#L692-L709",
+          "version": "repo-lines-v1:sha256:d046a4f2141c277a4c804142da4e529731636daa33027f04826ae590664a8e2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzZjVmNjE2MTBjOWNmNTlkNjVkYmY2YjJkZjNmMjg3YzRmOGQ4MGYxY2U2MjZkNTUwODI0ZDY0NDNmODdjOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyN2I4Y2UyMzBhNjM1ZWE1MWViN2FlYWQ0Mzk3ZGMyNmRhODdkZmYyZGQ3ZmQ5ODg0YTg5MWU0YzE3YmIzODUifQ"
         }
       ]
     },
@@ -239,7 +239,7 @@
           "version": "repo-lines-v1:sha256:3fd52017566b4f1ec3a140a73ae5343e303e7e6237617108c8c97be0be98577e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZjk3YjZiMTBiYTgzMTQzZDZkMGNhMjJkMWZkMDMyZjI5ZTNiZWVhNjE0ZGU4Mzc3N2E2YzZhMzEwNTQyZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhZDNiNzFkZTM2NjQ2MzdlZjcyOTUzMDg1ZTMzOWIwM2U5NmJjNTg5NGE1NGZiYWVjOWRmODBmYzViZjdhNjIifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L274-L296",
+          "resource": "repo://src/config/constants.ts#L278-L300",
           "version": "repo-lines-v1:sha256:d344ff3328005f958432e04516d25f10d371ba4fc49ea82d2eadba12b0fb6e99:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNTU3ZDc1MzdlY2RkZTYyZGRkMmUyYmNmYTM3NTA2NDRmMThhNTdhMWMxYjRjNWU1N2QyYWIwYzE2YWZhNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzMzgyMTJiY2JkYjgwM2RiNzRlNWE1OTcwNDE1YWJkZWMxYmE2M2JjODQzZjdiN2JmNDY0ZjAyYjI0MjAzMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1YWIyMzFlYWQ4MGZhMjRiYmJiMDIxOThlN2ExZDI3NmVlNjk4MmEzYjcxMjBlYTFiZDM3MTNjM2Q1Y2FjYjIifQ"
         }
       ]
@@ -249,12 +249,12 @@
       "statement": "All managed settings and credentials are persisted to ~/.openwiki/.env, and MANAGED_ENV_KEYS in src/config/env.ts is the single ordered source of truth from which the credential diagnostics list and the agent debug key dump are derived so they cannot drift.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L172-L194",
-          "version": "repo-lines-v1:sha256:98cda4e6692570f6652ef52fa1391df0080bc484cb23a4551007e88034bf7971:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NGI5OWYxYzI3MTk3ZmIyNTRkYTBlMTc5ODZiNTc2Mjc4YzZhODkyNjIwOTg3NjdjMmQ0NzI2ZjU4OTdlNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
+          "resource": "repo://src/config/env.ts#L101-L166",
+          "version": "repo-lines-v1:sha256:82ff7ba4002932db77abb6532c23cef5c3e3558c0f03ae0b4c969f549543a316:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxYmM1OGJiMzRjZjAzODZhYjc4NDY2Mzg2ZjQ0NTc0Y2M5MDM0YjJjNzgwNTNhNjlkZGQ0MDI5Yjk0YTRmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkOTM3NjAyOTY1OGU1Y2QyYmRiNTI5YzIwOGNlNzU1OTkxMGU5MzMxM2IzOTNlNmY4NGFmMDgzNzU5OGUwYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYzUyMWQ4YTk2NTVkNDg5NTg1ZDE1YTlhOGQ0Yjg5NzMzOGU4NDgzNTM0OWI5YjI3ZGFkNDA4YjAzYTYwYzUifQ"
         },
         {
-          "resource": "repo://src/config/env.ts#L78-L163",
-          "version": "repo-lines-v1:sha256:dca3114c68bd65edc0452dee4a021a3d25b181e9355e0ac8a8e3b2267a06ba14:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ZGMxNzc2NThmNzgyMDU4NGU3YzI3M2ViNGZmNjAzM2U5ZGE0OWJhMGQyNmFkMDAwNjJjODFkZGEwZWFkNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NjJlZGM5ZDI3NDA1NGZmNzUxMTViOThiOGI5ZDhkMjgyNjNlNmI0NWU2NzViMjJmZWVkNmUwM2UyMjFjNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYzUyMWQ4YTk2NTVkNDg5NTg1ZDE1YTlhOGQ0Yjg5NzMzOGU4NDgzNTM0OWI5YjI3ZGFkNDA4YjAzYTYwYzUifQ"
+          "resource": "repo://src/config/env.ts#L175-L197",
+          "version": "repo-lines-v1:sha256:98cda4e6692570f6652ef52fa1391df0080bc484cb23a4551007e88034bf7971:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NGI5OWYxYzI3MTk3ZmIyNTRkYTBlMTc5ODZiNTc2Mjc4YzZhODkyNjIwOTg3NjdjMmQ0NzI2ZjU4OTdlNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
         }
       ]
     },
@@ -263,8 +263,8 @@
       "statement": "loadOpenWikiEnv populates process.env only for keys not already set so a shell export wins over the saved value, and it snapshots saved values at first load so the setup wizard can pre-fill from the saved config rather than a shadowing shell variable.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L245-L282",
-          "version": "repo-lines-v1:sha256:72be8177e1a87f7e7ca5a9d82b31464b99fcfc8f344132a0ec6f21588cfc7e49:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiY2UyMDUwZTdkNmVkMjA5YjI2YjFlYWVhZTU5NThiNmM3MGNmZWZmOGIzNjQ0M2RmZDRmMWExYmI0MGY1NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYjg0NDliYjgwZmQxOTEyODJjNGQzM2NhMDljMjFlYTM1YzgyZDIxYjU2NDczM2RiNzhhYWU4ZTAzODlhZjgifQ"
+          "resource": "repo://src/config/env.ts#L265-L285",
+          "version": "repo-lines-v1:sha256:4ce3eee4b2e02fb6ee325498a6d091d09aad3b4d891c4c532d98ef7573c23bac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZmEyMzE4YTllZjlmNjgwNjM2MzI4NTZmYjU2MzE3YWMzOTZjYTZjNDVhOWZmNjE5ZDkzNDE1OWY0NmRiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxODBlM2I3ODBkNjM0ZjI5ZjIwZTYxMmJmYmMwOTRhOGU3YWFmMWExNDhlNTgwNGM0ZDFlODU0ZmYxMTFjM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYjg0NDliYjgwZmQxOTEyODJjNGQzM2NhMDljMjFlYTM1YzgyZDIxYjU2NDczM2RiNzhhYWU4ZTAzODlhZjgifQ"
         }
       ]
     },
@@ -273,8 +273,8 @@
       "statement": "saveOpenWikiEnv serializes writes through a queue, drops empty values (empty string means not set), creates the home directory as 0700, and writes atomically by writing a 0600 temp file and renaming it into place so a crash mid-write cannot truncate the credential file, updating process.env only for keys not already exported in the shell.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L298-L360",
-          "version": "repo-lines-v1:sha256:660d98bae2f80391d69687bc15b6335e2ed7f6fef2fc7e1de9e5f74a92e7d5f8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzUxZDljMDg0ZGVkYzJkMGFiNDNmM2QzNWMxMmIwYzY1YjNlN2I3OGJmMzI4YzFmOGYxM2JlMDcxNmY1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YmFhNWJkNzU4OGFiNjVmNDEwMjk4YmQ3OWFiMDMyMDMwMGFiMzcxYWFlNWRmYzUxMzI4Y2YyOWFhZmQwNTgifQ"
+          "resource": "repo://src/config/env.ts#L301-L373",
+          "version": "repo-lines-v1:sha256:10b9670f535c94020e6189c58958bf4ccd1ae424d601af48558aee85e52455ea:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzUxZDljMDg0ZGVkYzJkMGFiNDNmM2QzNWMxMmIwYzY1YjNlN2I3OGJmMzI4YzFmOGYxM2JlMDcxNmY1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5YzIwMzdkOGExZWQ5OThiMzJkNGJkM2UyNGFjMjk0MDMwMWY0ZjdkNDY0MTkxN2ZjOWQ0MmMwMzE2Y2Y0ODcifQ"
         }
       ]
     },
@@ -283,14 +283,50 @@
       "statement": "The setup wizard computes credential env updates purely via buildCredentialEnvUpdates, mapping collected values to the selected provider's env keys, writing the provider key only when it changes, and expanding collected ChatGPT CodexTokens through codexTokensToEnv, before the caller persists them via saveOpenWikiEnv.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/persistence.ts#L15-L120",
-          "version": "repo-lines-v1:sha256:81cd93aedb80cf77aca56236629a3e4fbc49c1da2620f222acaea922fa1e7618:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NjIzN2YyOGNkYmE2ZGM5MTM2MmUxYThkMTU5ZDY0NWIwNTI4NDVjYmQ5MTIyNTI5YTcwY2IyNWNiZjVlNWNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MDE3MjhmODJjNzIxMmFmMWIzNmZmMDZmODY3ZGE0MGUxNTllNjVhODAwMDA5OGM1YmExMWJkMzgwZDFlMDcxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMmVkYTQ2YzFlOWRkY2RkNzEyMGI3NGE1ODM2ZmMxNjFhZGQ5NDc0MDE3MWE3MGQ0OGM2Yjk1Y2JiMWEwZjMzIn0"
+          "resource": "repo://src/setup/credentials/persistence.ts#L15-L130",
+          "version": "repo-lines-v1:sha256:a395291f2ebeecf96463c06408d6ed586b2397ab97a0dc162fb576aae9e0a716:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MDE3MjhmODJjNzIxMmFmMWIzNmZmMDZmODY3ZGE0MGUxNTllNjVhODAwMDA5OGM1YmExMWJkMzgwZDFlMDcxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_09032df725974701962eedc53d60a210",
+      "statement": "Bedrock defaults its maxTokens to BEDROCK_DEFAULT_MAX_TOKENS (16000) via resolveBedrockMaxTokens (overridable by OPENWIKI_BEDROCK_MAX_TOKENS, validated as a positive integer) to avoid the 4096-token Converse API default cap, and resolveConfiguredMaxOutputTokens falls back to this Bedrock default when the provider-neutral OPENWIKI_MAX_OUTPUT_TOKENS is unset (after the OpenRouter legacy OPENWIKI_OPENROUTER_MAX_TOKENS and explicit OPENWIKI_MAX_OUTPUT_TOKENS take precedence); createModel passes it through as maxTokens.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1085-L1094",
+          "version": "repo-lines-v1:sha256:b365f02ea0b48cc6ba5b3536bbe7fc6dadee80e9bf4df70a42ac008dad2b1f58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMzY2NGVkZDQwMTkyYzQ0N2U5OGIyZDMzZDI0NWRhOWVjNDU1M2IzOTEzNmMyODJlYzE1OThhZTllOGQzMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NWE2ZDk2ZjBlNmQ1NWFiNmI0MGFmOWYxMjIzMzgxZGQwYThlNjc3YmE4OGQ4NDJkNTUyYzljMmI0NTQ0MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MTRiMTI4OTAzMDk4MmUwM2ZmY2RlZmY3YWY0MzI1ZTRhODRjOTEyMDgxZGE1ZDA5OWFmMTU0ZTJiZTQyNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMzQ1NTgyZDdiNGRiYzg5ZmY3NzJkMGE4MjY3ZmI4OTZmYjQzN2Q4NjMzNDNlNGRlOWIwM2QzYTM4NzMzNzMifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1110-L1132",
+          "version": "repo-lines-v1:sha256:9d9501c2cb2541c19d42680f86001e5933c17cdd35752e2fddf092d1e2b3bfb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNWI2MzNiNjc2NmEyZmJjNDRmMmU2NDJjZWViOGNjMGUwY2M3YjVkOWVhNDRmZDNkOGI4Yzc3MmRmMDdjN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNzVjNzA0OTdhZTI1YmIxODYzN2Q2YzYwNGJmZGIzZTg0YzM0N2FiZmZlMTU0YWNkNDNmMGMyZGQ5MzViNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNzA2OWRkN2IyNmMxOWU1MmNjZjM2ZDg3OTFkZWFhZGIxMTFjNmZkZTgyMWVkNmNhYmYyMTljYjQxZWIzYTgifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1167-L1198",
+          "version": "repo-lines-v1:sha256:09c26aa550be540a89881dba2576e54e8f07e07071e3458d948eef1ee500b527:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OGY0MmNmMjMzODEzZWQwY2NiYjkyNWNhNzBhY2M3NDA0OWM1Mzk4YTRjNzk4ZmJkMDIxMTQxMzhiM2QyNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYTg2YjZhMWRlMWQzMmIxNzNkOWVmMzdlZjRhOGM2ZjZmY2VhZjVkNjY4NjM3MDgxZmUxYzg5NWFhN2FkNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjOTg4MGYyYTVmZjQyYjA2MTA5NWIyNmRmYTI1MGRlMDEwYWRkMzY3Y2FjMzFmNjlkZGExYzUwNmY5MGMxM2IifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L41-L41",
+          "version": "repo-lines-v1:sha256:13e92a0601d59918eb7fef5466d1f5d74a206e8f9adca79a12108cacde076942:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNlOTJhMDYwMWQ1OTkxOGViN2ZlZjU0NjZkMWY1ZDc0YTIwNmU4ZjlhZGNhNzlhMTIxMDhjYWNkZTA3Njk0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNlOTJhMDYwMWQ1OTkxOGViN2ZlZjU0NjZkMWY1ZDc0YTIwNmU4ZjlhZGNhNzlhMTIxMDhjYWNkZTA3Njk0MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM4OTEzNTA5NmMyNjBjYmEzZDQyMmYwYmY0OWY3NTcwN2MxNGQ2YzBjM2ZhNmU1MTM5OGU2M2NkOWUyYWVlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE4N2Y0NzFhNGNlODY4NTIzYzU1YzMxZGYxMjE1MjZkY2I1YjFkZDM0OWFiYTEwNTVkNmFjZWI2YzIyNWYwYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4fbe3d38d4d04c0d9acddf291b73e537",
+      "statement": "providerUsesStreaming forces the streaming HTTP transport for all Copilot models (returning true for copilot), because the Copilot API rejects or empties non-streaming requests for non-GPT-5 models (Claude, Gemini) served over chat completions, mirroring the openai-chatgpt forced-streaming rationale; createModel applies it as a conditional spread rather than assigning streaming:false, since LangChain turns an explicit false into disableStreaming.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1241-L1247",
+          "version": "repo-lines-v1:sha256:316f894e744b688bc2a92f40ff298fb53d11556f71d1952e9966327e6986f2f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdjNWNhNDc3NjYyOTVhNDcyY2Q1NjM4MGFjYWVmZjgwMzYxZGM1MGExZjIwMzhjOGNjYWU0YTViZThlZmNkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjYyZTRmYTVkZGI2MTczYTVlN2U1ZmI2YmZlZDBmYTZkYjk1Mjg4ZGRkMDdiNWY2NTUzMmFjMTFkZDU4NWI3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWI3ZjlkN2VlYWQwY2E2ZjNmZjk1Y2NkMGE0OWFmYmM0YzUyMDAzYjAwMjkyODY5MWFjMjExMjhiMGFmYzdmMiJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L483-L500",
+          "version": "repo-lines-v1:sha256:b9c730b8d38e76044fc6e2d21124fa629efc4cdbe0129b22bdf39aedd23787b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZWRjNWI0ZWIwNjk5MmRmZDgzMjY0NzE3ODU2MThmNzhiNmVjMmRjMWEyODcwODIxNzU3YmZiOGE3MzI2NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-29T08:08:01.897Z"
   }
 }

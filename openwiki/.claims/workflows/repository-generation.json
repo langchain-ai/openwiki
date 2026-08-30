@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1c349a9ee3ccc623949d8b357b763e8bb8ccb12c0c54d56565db1bdeb678f65a",
+  "pageVersion": "sha256:7bc68508fbe8bd9914e5ac6ffc1c20cb0232e78a04c4100d9a8f6c49aba5d8de",
   "claims": [
     {
       "id": "claim_6a07849de8a7454ab87fae516e7e2d8e",
@@ -286,15 +286,15 @@
     },
     {
       "id": "claim_89878127a7554ac380ff6171a376d056",
-      "statement": "Resuming a run validates caller ownership: a mode mismatch or a requested language change each raise a conflict RepositoryRunError; a different producer actor is allowed and carried forward along with the caller's metadataModel and planning context.",
+      "statement": "Resuming a run validates caller ownership: a mode mismatch raises a conflict RepositoryRunError, and a requested language change is refused with conflict via requireResolvedLanguage comparing the resolved language against the checkpoint's state.language. A different producer actor is allowed and carried forward (not a conflict), along with the caller's metadataModel and planning context, so work can continue across producers.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L546-L560",
-          "version": "repo-lines-v1:sha256:41c85f591f5ca21e615d11d812dff97b39414968ee161693269139e669a87712:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOTlhZmRkNjIwZGY1ZDY3Y2ZmOTU4MzRhZTQ2NDMzNDc1NmU1MTViZDYwMGM0YmJkMDk1MTQ1M2U1NDA5ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzOTgzN2M2ZjI3NGZhMDJmMDFiNDIzNmYzMzc5OTNjYTI4NjdiM2I5MzU4YzBiMDlkZjQ1Nzg2YWU0NTM5Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyN2JkN2ZmZGQwNGJiYzczMGE4MDc2NDdmZDY3OGM4ZjJiOTg4MzFhODQ2ZGUyMmRkN2Q3MjM2MDhmYTM1NGMifQ"
+          "resource": "repo://src/generation/repository-run.ts#L553-L571",
+          "version": "repo-lines-v1:sha256:b03ecf1a6d6722cad86b23a8d4b97b4b85358602015c2eb6fbea84c582760859:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MWMxNTM2NjYxYTQ3NWI1ZTdkYzA5ODRhNjc0YWI1MjdhN2Q3ODE2M2M4MGViODczMmE1YWNiMGMyNjgyYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiZjVkYTE3OWM3MDBkMWQwODBhZTQ2NGVlMDQzNGQ0YWU2MTg2NzMzZjliYTZiNzliYThlM2U5ZjBmYWRlMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyN2JkN2ZmZGQwNGJiYzczMGE4MDc2NDdmZDY3OGM4ZjJiOTg4MzFhODQ2ZGUyMmRkN2Q3MjM2MDhmYTM1NGMifQ"
         },
         {
           "resource": "repo://test/generation/repository-run.test.ts#L588-L631",
-          "version": "repo-lines-v1:sha256:477a0fdadf86f5f00c4ac56337ef34d2ac93a8242f6ea1b26ffcec5f789d0335:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MTg5NDlkN2EzNDk4Nzg2YzQ0MTZjNzIxODY2OGFkYjc3MDI1MzdhZWU4MmNkMzRjZTY5NzRkODU2M2QyNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZGJmMmE1NDcxNDIzNWI1N2ViNjg2YjI4NDhjYTk0MjU0YjhmZmE1ZjhkZDIzMjUwZTcyYzIxOTc0ZjE3ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZTVmODQzZTUyMTg3ZTZiYjhlOTRmZmM4YWNlOWU4Nzc4MzQ2MTMwNjJhOTc3MzFjNWVlYTBlOGU5YmIzNzMifQ"
+          "version": "repo-lines-v1:sha256:477a0fdadf86f5f00c4ac56337ef34d2ac93a8242f6ea1b26ffcec5f789d0335:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MTg5NDlkN2EzNDk4Nzg2YzQ0MTZjNzIxODY2OGFkYjc3MDI1MzdhZWU4MmNkMzRjZTY5NzRkODU2M2QyNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZGJmMmE1NDcxNDIzNWI1N2ViNjg2YjI4NDhjYTk0MjU0YjhmZmE1ZjhkZDIzMjUwZTcyYzIxOTc0ZjE3ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1NTJkMzlkNWVlZjkwNTNjNTVjNDVmMmNiMDNjMzUzOTVjODUyZGQ0NWZiNDg2ZmY3MjRjNzBjMGU4YjVmNjgifQ"
         }
       ]
     },
@@ -525,10 +525,32 @@
           "version": "repo-lines-v1:sha256:13627380b39e4db6da4cc54af4dbda6b44cae3659d3a1aaae7af0f32f8ec2db6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZjhlODlkNGIyNjdjZmU5ZTBmMTU1ZDRjMzhjZmFmMmU2YTYwYjM4N2UxNDI0M2ZkYzQ0OWFmYmE2YjgwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkY2QwNzAwMmMyMzI2MWJlODM5MmU1NmE0ZTY3NWYwYzhiNzQ2MTA2MDFlYzNhYWFjOTkwMWYwZTcyMWU2NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_910b32f17374411d88fc31eac4c8a426",
+      "statement": "beginRepositoryRun rejects an unrecognized requested language with an invalid_input RepositoryRunError via resolveLanguage before touching the repository or creating any run state, because falling back to English would persist the wrong language in run state and resume refuses to change a started run's language. This gate protects both native and host-driven begin, since both reach begin with an unvalidated language string.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L322-L336",
+          "version": "repo-lines-v1:sha256:8eef6873c567abfb0a9ab1694615ec3468b962468bd7595d53369aff84092410:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNzI5NzlkYzQ1NGJhZGQxZjQyNDY3MTQwMzBjNjAzNzFhZjc5MWMxZTY1MDg1OTUwOTQ3MTNmNWUwZjIyMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YTc4YjM5ZGM0ODFlMDI1NWU1ZDEwZGI3NjMyNjBlNWNkMzkzZWQ1MzkzZjYyYWUyM2M1YTA4NWZkZmQ3MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzM2RkYTRiMDI0YWE3YTExYzA2NDI2Y2VkMTExMjkwY2FiNTU2MDg5MDAyMDkwMTFkZmZjYmI1MTBhYWM1NjEifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L127-L137",
+          "version": "repo-lines-v1:sha256:086d6e18f37a07f101d2f874cafdd30e6574132a5e393a462d387a3714c652d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYWRiYzUyMzU2NDAwZjJhOTVkZWNhZmNmZWU0NWNkYTJiNWY3NDVlZTRjZThkYjM1MGJkZjQ5MTQyOGUzZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkNmRlN2E1ODE1OGVhYzk2MTNjNzU0NThjMmNlMjkxN2QxNWY2ZjcyMmZhMTlkZmYzNDZhMTEzYmJiNTliM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3Yjk3YmY4NDM2Mzg3Yjc0MWQ4ZjM4ZWEzN2M2NjI5M2Y4MTg4YjhjOWNiZjMyYWI2ZDMwMzY2ODA1NzJhZTcifQ"
+        },
+        {
+          "resource": "repo://src/platform/language.ts#L25-L53",
+          "version": "repo-lines-v1:sha256:633d65cbdb437a58d2d3ba806f22b8b8a3c3123d30adef91159f6e8886d909d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlODcwMTQzOGYwNDEzYTI0ZTY5YmMwYWI3N2U2NzU2ZGVhNDQ4M2IwN2JlZjU0ZGVjOTVkNTUyZjM4ODU3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2ExYjkwYTQ0OWYzMGQ4MGRlMmY3NjJkZDJlOTEyNWUzNDRhMzQwOGFiMmQ5OWQzYjBkNTk0MGZhNjVkMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NzgwZGU1NTA2MDU3MjA1ZGU0M2YxOTc0ZTE5NmFiNWRkZDNiOGJiZjFlZGFkMjg0NWFhYWE2NmM4YzEwZjUifQ"
+        },
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L633-L676",
+          "version": "repo-lines-v1:sha256:ce5f2fbe7648aa3e8de8c2a90b90b428d1a6faef2945cad518d4bba5aaf5433c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNjI3MjRhNTIzMzZhZGQzYTYwMzZkMTFhNTRjNjEwNTllM2M5MTkzMGIwODIzNDI2OWRhY2YyMzBmYWM2M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNDJjYTNjYmU5ZWEzZGM2MjVkY2RmNWZlYmNhNjFmMzA0ZDg0YTg5NDI0M2I3OTI5NmQ5YjMwOWVmMzg3YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhMzRkMjhmYmQzZDY5ZDhiYTMzZGM0MTIyODJlNDNlZWQwNzVhZmFkNTA3Njg0NGQ2MDdlYTRmNDc2OWRjYWUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-28T03:39:43.412Z"
+    "at": "2026-08-29T08:08:01.897Z"
   }
 }

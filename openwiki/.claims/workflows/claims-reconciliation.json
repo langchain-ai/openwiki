@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ce6278a5885c2a2d1bb6cbe9f5f46c9c994edf29e6db4a56914f17dbef7772d0",
+  "pageVersion": "sha256:e953e42095598fb92140d60dcaeca620e516074aa9148f6a82a2418a8123056b",
   "claims": [
     {
       "id": "claim_b4fc5fda11a9482d91f562eef48a86f6",
@@ -56,11 +56,15 @@
     },
     {
       "id": "claim_8b89298a1a144e9380d2fd9d5251b969",
-      "statement": "getUpdateNoopStatus refuses to skip an update when there is no previous update git head, when the previous run was interrupted, when the requested output language differs from the persisted wiki language, when the working tree has meaningful changes, or when committed changes since the last update touch source outside openwiki/ and outside the openWikiIgnore boundary.",
+      "statement": "getUpdateNoopStatus refuses to skip an update when there is no previous update git head, when the previous run was interrupted, when the requested language's primary subtag differs from the persisted wiki language's primary subtag, when the working tree has meaningful changes, or when committed changes since the last update touch source outside openwiki/ and outside the openWikiIgnore boundary; it resolves the requested language via requireResolvedLanguage (a defensive boundary check that throws if an unrecognized value slipped past an entry point) before comparing primary subtags, and treats a primary-language-subtag change as meaningful rather than a skip.",
       "evidence": [
         {
-          "resource": "repo://src/agent/utils.ts#L121-L190",
-          "version": "repo-lines-v1:sha256:040505be27a5d479b923909f3c2a6ee61f7f5d397e51cd93fdb47ad5f0672af5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmZlZjQwNjBkNTVjMDI4YWY0ODk1MTU1MmZhNDAwZjYwYWQyMDA5ODBkNjhjYTIxNzliYjBkZmE5YmZmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3OGNjYjA0ZjQwZjQ3NmUzMzRkOTk5NzIyMmY4NjI5NmMzMTJlMDAxZDY2YWZmOTcxOWQzNmVjYzkwZTM4NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMmY2ZGI0ZjIxNmFkMzFjMWYwYzI0ZWYwZWJmODU0MTY4NGY3ODY4ZTkwZjlmNzUxN2YyNjZjNzQ1NDI1ZDcifQ"
+          "resource": "repo://src/agent/utils.ts#L126-L195",
+          "version": "repo-lines-v1:sha256:14afb3570ac29656ae9c8cb9a209c97f25a7a63057c73a5bb84f6d25b069d7b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNmZlZjQwNjBkNTVjMDI4YWY0ODk1MTU1MmZhNDAwZjYwYWQyMDA5ODBkNjhjYTIxNzliYjBkZmE5YmZmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3OGNjYjA0ZjQwZjQ3NmUzMzRkOTk5NzIyMmY4NjI5NmMzMTJlMDAxZDY2YWZmOTcxOWQzNmVjYzkwZTM4NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMmY2ZGI0ZjIxNmFkMzFjMWYwYzI0ZWYwZWJmODU0MTY4NGY3ODY4ZTkwZjlmNzUxN2YyNjZjNzQ1NDI1ZDcifQ"
+        },
+        {
+          "resource": "repo://src/platform/language.ts#L63-L92",
+          "version": "repo-lines-v1:sha256:08af016f2168baa6ebb697910b899232d17fc4139ac1e838c5b8a459de196b6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxZDBkNDU0ZTU3NDRiZGZmMTdmNTM3MDZmZDJmYWJjNzM4YTgxMTExNTBkNWUxZWJkNGU5NTQ3MTIyNDQ2ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NjRmNzQyZTJiYjY4YzM1OTRmYjRiODYzZDliMWY5YmQxZWZjMjZhMTYyYzliYTYwN2RhZjYyMGE4NjlhMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -289,6 +293,6 @@
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-28T03:39:43.412Z"
+    "at": "2026-08-29T08:08:01.897Z"
   }
 }

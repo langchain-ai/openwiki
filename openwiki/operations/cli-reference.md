@@ -3,9 +3,6 @@ type: cli-reference
 title: CLI Commands and Flags
 description: Reference for the OpenWiki CLI surface, covering command and flag parsing, run mode selection, print versus interactive dispatch, host integrations, visualize, cron scheduling, and how parsed commands are wired to their runners.
 tags: [cli, commands, flags, run-mode, integrations, visualize, cron, ink, mcp]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-5f52dc71fb07ef4892914c46
     resource: repo://src/cli/app/app.tsx
@@ -23,7 +20,12 @@ sources:
     resource: repo://src/cli/schedule-format.ts
   - id: openwiki-source-d80f123259efa4712b198b63
     resource: repo://src/cli/startup.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+  - id: openwiki-source-349c953869b025f9d4935470
+    resource: repo://src/platform/language.ts
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # CLI Commands and Flags
@@ -90,14 +92,21 @@ Any invocation that is not a recognized subcommand is parsed by
 respective run command; specifying both is a parse error. `-p`/`--print`
 requests non-interactive output; because print needs something to do, it errors
 unless a message, `--init`, or `--update` is present. `--language`/`-l` takes a
-locale that is canonicalized via `resolveLanguage`, dropping and warning about
-unrecognized values before they reach the run. `--modelId`/`--model-id` (with
+locale that is canonicalized via `resolveLanguage` when valid; an unrecognized
+BCP-47 value is rejected with a parse error (`{ kind: "error", exitCode: 1 }`)
+whose message names the offending value and suggests a BCP-47 code such as
+`ko`, `zh-CN`, or `pt-BR`, so a typo can never quietly produce an English wiki. `--modelId`/`--model-id` (with
 `=value` and space-separated forms) is normalized and validated against
 `isValidModelId`. `--telemetry-file` records a run-event sink path. `--debug`
 sets `OPENWIKI_DEBUG` at parse time, and the developer-only `--dry-run` is
 rejected as an unknown option outside development mode
 (`NODE_ENV=development` or `OPENWIKI_DEV=1`). Remaining positional words are
 joined into the user message.
+
+The `resolveLanguage`/`requireResolvedLanguage` internals — how
+`getCanonicalLocales` and `DisplayNames` distinguish a recognized BCP-47 code
+from a structurally valid but unregistered one — are documented in
+[Configuration and Environment](./configuration.md).
 
 ### Run mode selection
 

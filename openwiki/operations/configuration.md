@@ -12,9 +12,6 @@ tags:
     reasoning,
     operations,
   ]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
@@ -28,7 +25,10 @@ sources:
     resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Configuration and Environment
@@ -163,15 +163,30 @@ variables and optional base-URL override in `PROVIDER_CONFIGS`; see
 
 ### Token limits
 
-`OPENWIKI_MAX_OUTPUT_TOKENS` is the provider-neutral per-request output cap,
-parsed by `resolveMaxOutputTokens`, which accepts only a positive safe integer
-(no fractions, exponents, or hex). `OPENWIKI_OPENROUTER_MAX_TOKENS` is a legacy
-OpenRouter-specific cap retained for existing low-balance installations.
-`resolveConfiguredMaxOutputTokens` picks between them: on OpenRouter runs the
-legacy setting takes precedence when set, otherwise the provider-neutral setting
-applies. The OpenRouter cap exists because, without it, OpenRouter's credit
-pre-check budgets the model's full advertised output ceiling and rejects requests
-with HTTP 402.
+OpenWiki caps per-request output tokens through three settings, resolved by
+`resolveConfiguredMaxOutputTokens` in a fixed precedence:
+
+1. `OPENWIKI_MAX_OUTPUT_TOKENS` — the provider-neutral cap, parsed by
+   `resolveMaxOutputTokens`, which accepts only a positive safe integer (no
+   fractions, exponents, or hex). When set, it applies to every provider.
+2. Provider-specific caps, used only when the neutral setting is unset:
+   - On **OpenRouter**, `OPENWIKI_OPENROUTER_MAX_TOKENS` is a legacy cap retained
+     for existing low-balance installations. It takes precedence over the
+     Bedrock default whenever set, because without a cap OpenRouter's credit
+     pre-check budgets the model's full advertised output ceiling and rejects
+     requests with HTTP 402.
+   - On **Bedrock**, `OPENWIKI_BEDROCK_MAX_TOKENS` caps output for the Bedrock
+     Converse API. `resolveBedrockMaxTokens` **defaults to
+     `BEDROCK_DEFAULT_MAX_TOKENS` (16000)** when unset, matching
+     `@langchain/anthropic`'s built-in ceiling for Claude models — without an
+     explicit `maxTokens`, Bedrock caps output at 4096 tokens and truncates long
+     wiki pages mid-write. Override it for models with a lower ceiling.
+3. When all of the above are unset, the resolved cap is `undefined` and the
+   provider SDK's own default applies (Bedrock excepted, which always gets the
+   16000 default).
+
+In short: `OPENWIKI_MAX_OUTPUT_TOKENS` > provider-specific (OpenRouter legacy /
+Bedrock default) > unset.
 
 ### Streaming and Responses API toggles
 
@@ -213,14 +228,25 @@ capability supports. Reasoning capability is declared per provider and model in
 `getCredentialDiagnostics` produces one `CredentialDiagnostic` per key in
 `CREDENTIAL_DIAGNOSTIC_ENV_KEYS`, comparing the file value against the
 `process.env` value. Each entry reports its source — `process.env`, the env file
-path, "process.env over &lt;file&gt;" when both are set, or `unset` — and a
+path, "process.env over <file>" when both are set, or `unset` — and a
 masked preview. Non-secret settings (provider, model, token limits, base URLs,
 region, Google project/location, and the boolean toggles) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
-values). Diagnostics also surface per-key warnings, for example invalid provider,
-invalid model ID, invalid token limits, invalid boolean, invalid reasoning
-effort, credential whitespace/newline/quote issues, and a warning that the
+values).
+
+Diagnostics surface per-key warnings through a dedicated validator per key:
+invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
+OpenRouter each have their own validator), invalid boolean, invalid reasoning
+effort, invalid retry attempts, invalid stream idle timeout, base-URL provider
+mismatches, credential whitespace/newline/quote issues, and a warning that the
 Bedrock stream watchdog is disabled when the idle timeout is `0`.
+
+`OPENWIKI_BEDROCK_MAX_TOKENS` is treated as a **non-secret diagnostic key**: its
+value is shown verbatim in the panel and validated by its own
+`getBedrockMaxTokensWarnings` validator (which calls `resolveBedrockMaxTokens`
+and reports "invalid output token limit" on failure), distinct from the neutral
+`getMaxOutputTokensWarnings` and the OpenRouter `getOpenRouterMaxTokensWarnings`
+validators.
 
 ## Secret sanitization
 

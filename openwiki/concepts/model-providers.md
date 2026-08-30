@@ -3,9 +3,6 @@ type: reference
 title: Model Providers and Credentials
 description: Reference for OpenWiki's supported model providers, their environment keys, base URLs, and authentication methods (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, and external CLI), and where credentials and OAuth tokens are persisted.
 tags: [model-providers, credentials, oauth, authentication, configuration, env]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
@@ -21,7 +18,10 @@ sources:
     resource: repo://src/config/env.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Model Providers and Credentials
@@ -41,7 +41,11 @@ how that provider is configured and authenticated. Helper accessors
 (`getProviderConfig`, `getProviderApiKeyEnvKey`, `getProviderAuthMethod`,
 `getProviderBaseUrlEnvKey`, `resolveProviderBaseUrl`, `resolveProviderRegion`,
 `resolveProviderLocation`, and friends) read from this registry rather than
-hardcoding provider knowledge elsewhere.
+hardcoding provider knowledge elsewhere. Two transport-selecting accessors
+take a model ID in addition to the provider: `providerUsesResponsesApi`
+(`true` for `openai`, the `gpt-5` pattern for `copilot`, and a configurable
+flag for `openai-compatible`) and `providerUsesStreaming` (forced on for
+`copilot` and configurable for `openai-compatible`).
 
 The active provider is resolved by `resolveConfiguredProvider`: it prefers the
 explicit `OPENWIKI_PROVIDER` value (normalized case-insensitively by
@@ -179,6 +183,20 @@ surface; `createGeminiEnterpriseModel` selects the transport per model ID via
 - `anthropic` — Claude over Anthropic's wire protocol, bridged through `ChatAnthropic`'s `createClient` hook and the `AnthropicVertex` SDK, which authenticates via ADC.
 - `openai-maas` — partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …) over Vertex's OpenAI-compatible endpoint, whose base URL is built by `vertexOpenAIBaseUrl`.
 
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 2: ... Model["modelId"] -> Resolve["resolveV Expecting 'SEMI', 'NEWLINE', 'EOF', 'AMP', 'START_LINK', 'LINK', 'LINK_ID', got 'MINUS' -->
+```text
+flowchart TD
+    Model["modelId"] -> Resolve["resolveVertexSurface"]
+    Resolve -->|anthropic / claude| Claude["ChatAnthropic createClient + AnthropicVertex (ADC)"]
+    Resolve -->|openai-maas / llama, mistral, ...| MaaS["ChatOpenAI at vertexOpenAIBaseUrl (createVertexAuthFetch ADC bearer)"]
+    Resolve -->|gemini / default| Gemini["ChatGoogle generateContent (ADC)"]
+    Claude -> Project["GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION"]
+    MaaS -> Project
+    Gemini -> Project
+```
+
+Diagram: How `createGeminiEnterpriseModel` routes one ADC credential to three Vertex surfaces by model family.
+
 For the MaaS surface the OpenAI SDK authenticates via an `Authorization` header,
 so `createVertexAuthFetch` wraps `fetch` to inject a fresh ADC bearer token on
 every request (Google's auth client caches and auto-refreshes it), keeping
@@ -198,10 +216,25 @@ bearer token (`AWS_BEARER_TOKEN_BEDROCK`) precedence, then validates the legacy
 `BEDROCK_AWS_ACCESS_KEY_ID` / `BEDROCK_AWS_SECRET_ACCESS_KEY` pair and the
 standard `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` pair — rejecting a partial
 or blank pair but allowing an entirely absent one so OIDC/web identity, IAM
-roles, or `AWS_PROFILE`/SSO can still resolve. Bedrock requires a region
-(`requiresRegion`), resolved from `BEDROCK_AWS_REGION` with fallbacks to
-`AWS_REGION` and `AWS_DEFAULT_REGION`. Its model list is empty because available
-model IDs are account- and region-specific and must be pasted directly.
+roles, or `AWS_PROFILE`/SSO can still resolve. A complete legacy pair short-
+circuits to `null` so unrelated standard AWS variables cannot affect the run.
+Bedrock requires a region (`requiresRegion`), resolved from `BEDROCK_AWS_REGION`
+with fallbacks to `AWS_REGION` and `AWS_DEFAULT_REGION`. Its model list is empty
+because available model IDs are account- and region-specific and must be pasted
+directly.
+
+Without an explicit `maxTokens`, the Bedrock Converse API caps output at 4096
+tokens by default, which truncates long wiki pages mid-write. OpenWiki avoids
+this by defaulting Bedrock to a 16000-token ceiling:
+`resolveBedrockMaxTokens` returns `BEDROCK_DEFAULT_MAX_TOKENS` (16000) unless
+`OPENWIKI_BEDROCK_MAX_TOKENS` overrides it (validated as a positive integer),
+matching @langchain/anthropic's built-in ceiling for Claude models. The provider-
+neutral `resolveConfiguredMaxOutputTokens` — used by `createModel` to set
+`maxTokens` — applies this Bedrock default as its last fallback: when the provider-
+neutral `OPENWIKI_MAX_OUTPUT_TOKENS` is unset, a Bedrock run still gets the 16000
+default instead of the Converse API's 4096 cap (the OpenRouter legacy
+`OPENWIKI_OPENROUTER_MAX_TOKENS` setting takes precedence on OpenRouter runs, and
+an explicit `OPENWIKI_MAX_OUTPUT_TOKENS` always wins for any provider).
 
 ### External CLI auth (GitHub Copilot)
 
@@ -215,6 +248,16 @@ flag is derived from the configured `COPILOT_BASE_URL` so a GHE.com data-residen
 host authenticates against the correct tenant. `runExternalCliLogin` can launch
 `gh auth login` interactively when no session exists; for CI, `COPILOT_API_KEY`
 may still be set directly.
+
+The Copilot API serves non-GPT-5 models (Claude, Gemini) over the chat
+completions transport and rejects or returns empty responses for non-streaming
+requests, which would cause repository workers to exit without calling
+`submit_plan`/`submit_page`. `providerUsesStreaming` therefore forces the
+streaming HTTP transport (`streaming: true`) for every Copilot model — the same
+rationale that forces streaming on the openai-chatgpt Codex backend. For GPT-5
+models that use the Responses API (`responsesApi: /^gpt-5/u`), `streaming: true`
+is redundant but harmless, matching the openai-chatgpt provider pattern.
+`createModel` applies this with a conditional spread (`...(providerUsesStreaming(provider) ? { streaming: true } : {})`) rather than assigning `streaming: false`, because LangChain turns an explicit `false` into `disableStreaming`, which is not equivalent to omitting the key.
 
 ## Credential persistence and env file
 
