@@ -1107,6 +1107,15 @@ export function createModel(
     reasoningConfig?.transport === "chat-completions-reasoning-effort"
       ? { modelKwargs: { reasoning_effort: reasoningConfig.effort } }
       : {};
+  // OpenRouter normalizes reasoning across upstream vendors behind a single
+  // `reasoning` body field, so it takes neither the Responses shape nor the
+  // Chat Completions `reasoning_effort` scalar. ChatOpenRouter has no typed
+  // field for it; `modelKwargs` is its documented passthrough to the request
+  // body. See https://openrouter.ai/docs/use-cases/reasoning-tokens.
+  const openRouterReasoningOptions =
+    reasoningConfig?.transport === "openrouter-reasoning"
+      ? { modelKwargs: { reasoning: { effort: reasoningConfig.effort } } }
+      : {};
 
   if (provider === "gemini") {
     return new ChatGoogle({
@@ -1210,6 +1219,7 @@ export function createModel(
         : {}),
       provider: providerOnly ? { only: providerOnly } : undefined,
       siteName: "OpenWiki",
+      ...openRouterReasoningOptions,
       ...retryOptions,
     });
   }

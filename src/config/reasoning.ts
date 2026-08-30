@@ -15,7 +15,9 @@ export const REASONING_EFFORT_VALUES = [
 export type ReasoningEffort = (typeof REASONING_EFFORT_VALUES)[number];
 
 export type ReasoningTransport =
-  "responses-reasoning" | "chat-completions-reasoning-effort";
+  | "responses-reasoning"
+  | "chat-completions-reasoning-effort"
+  | "openrouter-reasoning";
 
 export type ReasoningCapability = {
   transport: ReasoningTransport;
@@ -53,11 +55,44 @@ const REASONING_CAPABILITIES: Partial<
   },
 };
 
+/**
+ * Capabilities that hold for every model a provider serves, consulted only
+ * when the per-model table above has no entry.
+ *
+ * OpenRouter is a gateway, not a model vendor: it publishes one normalized
+ * `reasoning.effort` parameter and maps it onto whatever the upstream model
+ * expects, so the effort scale is a property of the gateway rather than of
+ * any single model ID. Its documented values are `max`, `xhigh`, `high`,
+ * `medium`, `low`, `minimal`, and `none` -- a superset of
+ * REASONING_EFFORT_VALUES. Enumerating its catalogue here is not an option:
+ * it routes hundreds of models and adds more continuously, so a per-model
+ * table would reject valid combinations the day a model lands.
+ *
+ * The trade-off is that a non-reasoning model reached through OpenRouter no
+ * longer fails before the request. That matches the trust boundary the
+ * provider already carries for `provider.only` routing preferences: OpenWiki
+ * forwards what the user configured and lets the gateway reject what it
+ * cannot serve.
+ *
+ * See https://openrouter.ai/docs/use-cases/reasoning-tokens.
+ */
+const PROVIDER_WIDE_REASONING_CAPABILITIES: Partial<
+  Record<OpenWikiProvider, ReasoningCapability>
+> = {
+  openrouter: {
+    transport: "openrouter-reasoning",
+    values: REASONING_EFFORT_VALUES,
+  },
+};
+
 export function getReasoningCapability(
   provider: OpenWikiProvider,
   modelId: string,
 ): ReasoningCapability | undefined {
-  return REASONING_CAPABILITIES[provider]?.[modelId];
+  return (
+    REASONING_CAPABILITIES[provider]?.[modelId] ??
+    PROVIDER_WIDE_REASONING_CAPABILITIES[provider]
+  );
 }
 
 export function isReasoningEffort(value: string): value is ReasoningEffort {
