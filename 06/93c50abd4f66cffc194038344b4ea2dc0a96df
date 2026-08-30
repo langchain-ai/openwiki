@@ -1,0 +1,14 @@
+.changeset/quiet-claim-reconciliation.md
+  h_f78d33d4280f3f 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0693c50abd4f66cffc194038344b4ea2dc0a96df",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
