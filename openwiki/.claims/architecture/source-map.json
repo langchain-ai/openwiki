@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b80fa3949378bb9fa986472172da341e8ffe6bb5d52b26656221fee25a09d14c",
+  "pageVersion": "sha256:e018a58366e35027e0d23de91a579dc5c0e2e2da134a48b4e56947a3b506d6ec",
   "claims": [
     {
       "id": "claim_b3bcf02b8ac0428c909611ba967f994a",
@@ -76,11 +76,11 @@
         },
         {
           "resource": "repo://src/generation/repository-run.ts#L1000-L1111",
-          "version": "repo-lines-v1:sha256:c43680c2580e9949b365d5aa21bc9afd069157750abba01e649d165495dc54e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZTk2ZGUzODQ0ZmIzYWU1MzZkMGRhZmZkODNlYTdmYjc0MmQzZTNmNThmMGYzYmRmM2RlNGQ4YzI1NmE1YTkyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NGQzNjFkOGQ3MDZjMWZjOGM2MTMxMDY1Y2IyOWMxODU2ZmQwZDEzMzIzYTMyYjYzNzY4ODVlMWQ1NThiMjc2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkOTg0MzYyM2U2ODA2ZTI5ZWM1NmNiMjUzNTQxYjg4YTQwZTUyYzJiMTUzMWMxMWZjMDY3ODA2MmQxZjNlYjk5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MjZhZGY2ZGIyMTQyNzhmYjAyNmE0OTBjMjcwMWFiMjAxN2I3YWEwNjc4YjM4NTRlMGU3MTlmMTgyNmJjMzg4In0"
+          "version": "repo-lines-v1:sha256:c7f1f5188dbd3d444faf5979a7bf8218d02bd6a1d658dca4343190d81eca8c3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMjdjZWNkNjYwMGNkY2EzNWNhOTVmODJkMzgyNWMyMTQ4OWI4YjhmYzQ4NWYxMGJiNzU2MjVkMzBmOGE5OTk5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMDEzYWVmYjY1MjRjNTBlNDAyOTJjNDBlNTBiZTkyOTBkMTIxZWMzODI0ZjM1NDBhMDBiOWNhYzEzZGNlMzg1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNzYzMmI0YjQ5ZWI1OGJlZTVjNmRkODIwNjZmNTk3MzYyMjJkZDI5NzQwYTY3YTFkZmY2MmE5OTAwZGRlNmZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzYjQ0OWY0OTBhMGE0YjQ0ZDFkMzg2NDA0NDViNTM0MTI1ZTY5OGViMDhiMThiYWMxOWUxM2YwN2Y4NGU1ODRlIn0"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1128-L1142",
-          "version": "repo-lines-v1:sha256:474f943cb9635bf74a729a90bdd689b3c08eecff3a4f5edeb45c328a4e994943:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZmFmYmE2NTZiNWMyNmIwYzIzODA0N2UyMDFjNGQ0ZjI1ZWZiNWMzMmQxNjM4YTIzM2ZjYzI0ZGYxNGEwNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyODllMTYyZWFhY2E5Yjk3YzVhODBlODZmZGI2ZmQ2YTNkOGRmNDJhNDFiYmQ4MGIyZjlkMjczM2VhNmFjY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyZmQ0ZDI3YjdjOWQ1OTY3NDY3MDc0ZjI0MjJmMGE1ZDJjNTU3MWJmMjhkMTJhODU0ZWQyODVmNzEwZTI1NzEifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1122-L1139",
+          "version": "repo-lines-v1:sha256:0f64966ec9c99c13cfcc82170b23624448176b1adf5dda633eb8654d23664514:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZDM2MWQ4ZDcwNmMxZmM4YzYxMzEwNjVjYjI5YzE4NTZmZDBkMTMzMjNhMzJiNjM3Njg4NWUxZDU1OGIyNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNGEyNDBlMGJkMzg4NWExZGFhMDAxMzZmODljMzA1M2UzNDlhNjZjZTM2MzdiZTZkMjU0NjI2OGY5OGY4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZmZmZTc2MzJjNmNjZDdkZmNhNThmNDBjZDUzODhkNjliMmU3Y2U2YTk5YTRkZGE1YjQ4Y2U5ZTYwYjlmNGMifQ"
         },
         {
           "resource": "repo://src/generation/repository-run.ts#L318-L332",
@@ -88,7 +88,7 @@
         },
         {
           "resource": "repo://src/generation/repository-run.ts#L861-L989",
-          "version": "repo-lines-v1:sha256:6fb7e0864733e0690495a4cba75e8e8a51413619355478817922f7b2b7fbddf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4NGU0MjA4Y2Q2ZmZiOGM0YTM1NDdiMmY1NGFkYTE5OTc4YzNmMzY1ZTc4Zjk1MDJlZjUxNDVjZGQyYWE4NTQzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMjdjZWNkNjYwMGNkY2EzNWNhOTVmODJkMzgyNWMyMTQ4OWI4YjhmYzQ4NWYxMGJiNzU2MjVkMzBmOGE5OTk5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiMDg4Y2MwMmMzNzkyOTNjNjA2YTVkZmNmM2NhNGQ1ZTlmNzYyZjRiMjE5Yzk0NTAzNTE3ODI3ZmI5OGY3NzExIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5M2ZkMzg0NmZlYzg4YmJkYmM4NWYxOGJhOGI0ZGEyZmJmNDdmNGYyM2ZlMTFmNjY4YjZlMjgwMjg1NWY3NzIzIn0"
+          "version": "repo-lines-v1:sha256:9cac7e69748ba972e49237189071a8c24ee8970cad43f555d1adf7f694df586e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1NGVjOTNjZGYzMWE5OGFiMGU2OTVlOGU2MTU5NTViMGUxNmUwYWMwOGJjNTcyYjNmODE4ZjFkMWZhNjA2NDlmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjZWM0YjBkMTRkYjdkZDlkYjQ2MmYzZWNhYTZhNDk3MDdhOTk2NDYzODEyNjc4MDFhNDMwYzQxOTA5YzQzZjdmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNDBjMDFhNzZhNjEwZWIwN2I3OThhYmMwZWZiNjNlMjRkOTVkNWIzOTA4NTljODBhMGZlMjg0YTQ1N2RlZjI4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2ODJiMTE5NmNhMjExNzg0ZGIxZDcyMDUzNTI2Yjc5ZmU5ZmFjY2YxYzJjYjhhNzA4ZTUyZDhhZTFhNDk4YzQ0In0"
         }
       ]
     },
@@ -250,7 +250,7 @@
     },
     {
       "id": "claim_87bbf385e4f348dda06ce47bf03484be",
-      "statement": "src/integrations/ owns embedding OpenWiki into external hosts: HostSessionManager (session-manager.ts) is a thin single-run MCP adapter over the transport-neutral lifecycle core whose begin, submitPlan, nextPage, submitPage, and finish methods delegate to generation/repository-run.ts and whose tools() method returns exactly the five OpenWiki lifecycle tools (openwiki_begin, openwiki_submit_plan, openwiki_next_page, openwiki_submit_page, openwiki_finish). The tool descriptions are the host-facing contract: openwiki_begin advertises that an unrecognized language returns invalid_input instead of starting a run, openwiki_submit_page states the Claim-reconciliation rules, and openwiki_finish requires every job complete before deterministic deletion/validation/indexing; src/integrations/mcp/server.ts exposes OpenWiki over MCP.",
+      "statement": "src/integrations/ owned embedding OpenWiki into external hosts: HostSessionManager (session-manager.ts) is a thin single-run MCP adapter over the transport-neutral lifecycle core whose begin, submitPlan, nextPage, submitPage, and finish methods delegate to generation/repository-run.ts and whose tools() method returns exactly the five OpenWiki lifecycle tools (openwiki_begin, openwiki_submit_plan, openwiki_next_page, openwiki_submit_page, openwiki_finish). The tool descriptions are the host-facing contract: openwiki_begin advertises that an unrecognized language returns invalid_input instead of starting a run, openwiki_submit_page states the Claim-reconciliation rules, and openwiki_finish requires every job complete before deterministic deletion/validation/indexing; src/integrations/mcp/server.ts exposes OpenWiki over MCP.",
       "evidence": [
         {
           "resource": "repo://src/integrations/core/session-manager.ts#L124-L192",
@@ -272,7 +272,7 @@
     },
     {
       "id": "claim_7af246f9f81049e78d3a7732edd7e9d1",
-      "statement": "src/visualize/ owns the local interactive wiki/graph viewer, with server.ts (createRequestHandler) serving the app and graph.ts building the graph model.",
+      "statement": "src/visualize/ owned the local interactive wiki/graph viewer, with server.ts (createRequestHandler) serving the app and graph.ts building the graph model.",
       "evidence": [
         {
           "resource": "repo://src/visualize/graph.ts",
@@ -286,7 +286,7 @@
     },
     {
       "id": "claim_4904198a730d44ad940d2628f00168ee",
-      "statement": "src/mermaid/ owns Mermaid diagram handling in generated wikis: validate.ts parses and validates fences (degrading invalid diagrams), with fences.ts extracting them and dom-shim.ts providing a headless render environment.",
+      "statement": "src/mermaid/ owned Mermaid diagram handling in generated wikis: validate.ts parses and validates fences (degrading invalid diagrams), with fences.ts extracting them and dom-shim.ts providing a headless render environment.",
       "evidence": [
         {
           "resource": "repo://src/mermaid/dom-shim.ts",
@@ -304,7 +304,7 @@
     },
     {
       "id": "claim_ef8b2f85bc1e4b56840d79656b3c624c",
-      "statement": "src/platform/ owns cross-platform OS and filesystem primitives shared by other subsystems, including isFileNotFoundError, secret-redacting diagnostics, and language resolution (resolveLanguage/requireResolvedLanguage) imported by the agent and the generation lifecycle.",
+      "statement": "src/platform/ owned cross-platform OS and filesystem primitives shared by other subsystems, including isFileNotFoundError, secret-redacting diagnostics, and language resolution (resolveLanguage/requireResolvedLanguage) imported by the agent and the generation lifecycle.",
       "evidence": [
         {
           "resource": "repo://src/agent/index.ts#L22-L31",
@@ -395,10 +395,32 @@
           "version": "repo-lines-v1:sha256:4da6c9b494b302d3ceee11dde6d8190eb61f47c6f29bc17011b7c4e441ec76b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjQ2MWRlZTY0NjQyNmVhZjFlNzNmMjdmYzQ2MTk2NTRiNmMyZTAxMWU5Yzg2OWUwN2QzODBiODZiYzgyODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMjQxNjVkOGU1ZDlmM2Y0ZTg5ZjZlNjlhNmE1ZTgyM2U1MWY4MzJlNmIwMjQ5OTZhODEzMjNkMzNhOTI2ODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhYjUzYWFiODZkOTZhMWYyZTdkNTA2NjFlMGJmOTU0M2Q0NWNhMGMwZGIyMDM1YTc1MjFjZWFiNjg1MmM3NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMTU1YTY2YjM5MWRhMGYwODc3ODU3YWNhMDJmOGVkOGYxNjA1YzM4MDBkMGFlOGM5MWI2ZGY4NjkzMzI2ODMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1e21a3786cd648e38a742ce26563c719",
+      "statement": "The repository lifecycle's filesystem-delete and snapshot operations tolerate a missing file through the isNotFoundBackendError helper in src/generation/repository-run.ts, which matches both the standard file_not_found error code and the human-readable \"Error: File '...' not found\" string returned by DeepAgents' filesystem backends. It guards snapshot capture (captureRepositoryPageSnapshot), markdown restore/skip rollback (restoreRepositoryPageMarkdown), abandoned-page deletion (applyAbandonedGeneratedPageDeletions), and planned deletion (applyPlannedDeletions) so a not-found result is treated as absent rather than an error. This was added as a fix for #765, where DeepAgents backends return the human-readable string instead of the file_not_found error code.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1026-L1044",
+          "version": "repo-lines-v1:sha256:25bba9a3234787b14775009cd502b7e055a2829998a127d8fa790db357f8f46b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0Y2Q4OWE2YzUxMmQ4NTYwN2U3OTBmMDI4Njg0NGM2MjE4NjQ5YzU4NjUyZWU0ZTJiYTQyYzBiZDY3MWNiZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1MTc5N2QwODQyMjYyZjM2OTM1ZjI2NGY1MzkzMWM2Yzg0MTIyOTY2ZTA4NTRkZTc2ZDNlOTk4ZDg3M2YyMjQifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1122-L1139",
+          "version": "repo-lines-v1:sha256:0f64966ec9c99c13cfcc82170b23624448176b1adf5dda633eb8654d23664514:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZDM2MWQ4ZDcwNmMxZmM4YzYxMzEwNjVjYjI5YzE4NTZmZDBkMTMzMjNhMzJiNjM3Njg4NWUxZDU1OGIyNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNGEyNDBlMGJkMzg4NWExZGFhMDAxMzZmODljMzA1M2UzNDlhNjZjZTM2MzdiZTZkMjU0NjI2OGY5OGY4N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZmZmZTc2MzJjNmNjZDdkZmNhNThmNDBjZDUzODhkNjliMmU3Y2U2YTk5YTRkZGE1YjQ4Y2U5ZTYwYjlmNGMifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L1585-L1625",
+          "version": "repo-lines-v1:sha256:b2cd0b36e1c0b46e016382090c5571269a2df90c8363b4ea27d57736bd71949b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjN2RiOGYxZGEwNzUzMDEwMzI5NDU2MDE4YWQwZDQ1MTc2YzY5MjA0OTYyMjJkN2U5YmFjMzdiNWZiNWU2MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwOWMyMzMyOTFiNzgwZmJkNGZiM2I4NzczNjc1NWZiMzA5ZmNhZGYzYzQ2ODg5NGI2N2UzMTgzNjE5MjFlZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0Mzk3MDFkZWIxZDY4NmQ0ZDEwOGFhNjk1MDZlNWY5ODA4MTljMDY5MzljYTAyOTM3NWNmNjM2MWQ3ZTcyZTQifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L546-L555",
+          "version": "repo-lines-v1:sha256:17fb3f064b4a1ff03ec3da73e2dcbd8e33efc71b02413e0a78d16ba72863ddde:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMWEwNDM0OTUwZWZkNTg1MmI4NTFhZDI5MDExMzk2OGZlMjNhNjNmMTVmYjA3NWQ2NjZhN2ZhYjMwYjkzMWUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-29T08:08:01.897Z"
+    "at": "2026-08-30T08:08:17.680Z"
   }
 }

@@ -54,10 +54,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T08:08:17.680Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+    at: 2026-08-30T08:08:17.680Z
 ---
 
 # Source Map
@@ -111,7 +111,15 @@ before anything else.
   claims sidecar before a worker runs, `skipRepositoryPage` rolls a failed
   worker back (restoring the page markdown and sidecar, marking the job
   `skipped`), and `restoreRepositoryPageMarkdown` re-applies the snapshot
-  during `finishRepositoryRun` for every skipped job.
+  during `finishRepositoryRun` for every skipped job. These snapshot/skip/
+  restore operations — plus abandoned-page deletion
+  (`applyAbandonedGeneratedPageDeletions`) and planned deletion
+  (`applyPlannedDeletions`) — all tolerate a missing file through the
+  `isNotFoundBackendError` helper, which matches both the standard
+  `file_not_found` error code and the human-readable `"Error: File '...'
+  not found"` string returned by DeepAgents' filesystem backends (added as
+  a fix for #765, where those backends return the human-readable form
+  instead of the error code).
 
 ## Subsystems
 

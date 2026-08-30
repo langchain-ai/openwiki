@@ -37,10 +37,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T08:08:17.680Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+    at: 2026-08-30T08:08:17.680Z
 ---
 
 # Architecture Overview
@@ -157,6 +157,13 @@ later update. `runPendingPageAgents` collects every skipped-page snapshot and
 passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
 after finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
+
+This rollback path tolerates not-found errors from DeepAgents filesystem backends
+via the `isNotFoundBackendError` helper, which matches both the standard
+`file_not_found` error code and the human-readable `"Error: File '...' not found"`
+strings some backends return (regression for #765). A page that was never written
+snapshots to `markdown: null`, and restoring it issues a delete whose not-found
+result is ignored rather than aborting the whole run.
 
 If finalization detects that repository source drifted underneath the plan,
 the run does not abort or auto-replan. `finishRepositoryRun` re-checks the

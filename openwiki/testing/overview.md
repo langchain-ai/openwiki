@@ -58,10 +58,10 @@ sources:
     resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T08:08:17.680Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-30T08:08:17.680Z
 ---
 
 # Testing Guide
@@ -392,7 +392,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **A single connector source:** `pnpm exec vitest run test/connectors/sources/slack.test.ts`.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
-- **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
+- **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`), `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing), or `-t "tolerates a human-readable not-found error from the backend when skipping a never-written page"` (#765: `skipRepositoryPage` tolerates a `Error: File ... not found` delete result).
 - **Agent worker-exit/skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.
 - **Source fingerprinting / changed paths:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts`.
@@ -418,6 +418,12 @@ stack frames when reporting a failure.
 Most of the suite is offline unit and integration tests. A small number of files
 are named `*.e2e.test.ts` (for example
 `test/agent/gemini-enterprise-claude.e2e.test.ts`) and exercise a real vendor SDK
+path rather than a mock — that test drives the real Anthropic Vertex SDK plus the
+real Mermaid DOM shim to guard the browser-guard workaround, using a throwaway
+offline credentials file so no real token or network request is involved. These
+still run in the default suite; they are named to signal that they cross an
+integration boundary rather than testing a unit in isolation.
+ real vendor SDK
 path rather than a mock — that test drives the real Anthropic Vertex SDK plus the
 real Mermaid DOM shim to guard the browser-guard workaround, using a throwaway
 offline credentials file so no real token or network request is involved. These

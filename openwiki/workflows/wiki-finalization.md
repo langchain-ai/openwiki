@@ -22,10 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T08:08:17.680Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+    at: 2026-08-30T08:08:17.680Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -228,7 +228,12 @@ At finish, the sequence is:
 6. **Restore skipped page Markdown.** After finalization, each skipped job's
    snapshot is replayed through `restoreRepositoryPageMarkdown`, writing the
    original bytes back (or deleting the file when the snapshot Markdown is
-   `null`; a missing file on delete is tolerated). This runs _after_
+   `null`; a missing file on delete is tolerated). The tolerance is enforced by
+   `isNotFoundBackendError`, which matches both the standard `"file_not_found"`
+   error code used by some backends and the human-readable
+   `"Error: File '...' not found"` string returned by DeepAgents filesystem
+   backends (fix for #765), so rolling back a never-written page worker never
+   aborts the run on a delete that finds nothing to remove. This runs _after_
    `finalizeWikiArtifacts` so index synchronization and provenance stamping see
    the final wiki structure; the skipped pages are then returned to their
    pre-worker state, which is the structure the snapshot contract guaranteed.

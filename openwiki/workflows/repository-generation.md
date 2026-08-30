@@ -35,10 +35,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T08:08:17.680Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+    at: 2026-08-30T08:08:17.680Z
 ---
 
 # Repository Generation Lifecycle
@@ -213,6 +213,18 @@ Claims runtime is rebuilt from durable state, `interrupted` last-update metadata
 is written, and a new checkpoint marks the job `skipped` without advancing the
 queue. `nextRepositoryPage` then sees the next `pending` job, so the run
 continues with the remaining pages.
+
+The rollback path tolerates not-found errors from DeepAgents filesystem backends
+via `isNotFoundBackendError`. This helper matches both the standard `file_not_found`
+error code and the human-readable `Error: File '...' not found` strings returned
+by DeepAgents backends, so rolling back a page that was never written (snapshot
+Markdown is `null`, the delete returns a not-found error) does not abort the run.
+This was a regression fix for #765. The same tolerance guards every delete site
+that runs against potentially-absent pages: `captureRepositoryPageSnapshot`
+(reading a page that does not yet exist), `restoreRepositoryPageMarkdown`
+(deleting during rollback), `applyAbandonedGeneratedPageDeletions`, and
+`applyPlannedDeletions`. A genuinely missing page is the expected outcome there;
+any other backend error still rejects with `invalid_state`.
 
 ### finish with skipped pages
 

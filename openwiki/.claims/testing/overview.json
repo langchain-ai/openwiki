@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:79d7d5a2e17c8c81b423b96a8e34c5aa30a04055d5520ebf6c22426b56075b6d",
+  "pageVersion": "sha256:588f4a28e2fc3868cd7587894605456ad35c589a0406e0159cea37a07452782b",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -443,10 +443,20 @@
           "version": "repo-lines-v1:sha256:b6f4e3098098d9ee2dc7d1dd6c9730780687303d6ad24ab89206b24c5a52e8a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMDE5MDRmNWU1OTAwYzkwYzA4Y2ZhZTMxNjYxNjAyZjMyYjAxNGU5YTA3NzE5ZjlkODNmMGE4NTBlMWI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMzg3ODU5ZTQ4MzkwMTdiZGRhOTg3MjM0Yzk1ZGQzYzg4ZDEzMjA3ZTVlMzA3YmFmN2I0ZWYwYmM3ZDk1ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxM2Y0OWI4ZDYzOGNkYzgwMjA1NDIyODI0NWI1Yjc5MWUxZDhjZmUzMWFlYjNlYWYzYzdjZmVmN2UyNTk5ZGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_819114740a004716b94d6e4d356e84de",
+      "statement": "test/generation/repository-run.test.ts includes the regression test 'tolerates a human-readable not-found error from the backend when skipping a never-written page' for issue #765: it arms a vi.spyOn(run.backend, 'delete') mock returning the human-readable string `Error: File '<path>' not found` (the shape DeepAgents filesystem backends return instead of a file_not_found error code when deleting a file that never existed) and asserts skipRepositoryPage still resolves and marks the page skipped rather than aborting the run.",
+      "evidence": [
+        {
+          "resource": "repo://test/generation/repository-run.test.ts#L464-L494",
+          "version": "repo-lines-v1:sha256:385dc3b05208ed47433140274c1c43e0fdd6eaff470dd807cc3ed0b07ec8440a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5OTM2NDZiMDBiOTMzN2UzNGQzZDg1ZDIyYWYwNDk5MTRlYmE5MjliOWEzODZiY2M1YTIzNjA4ZGMxZWNhMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwYWE2MTVkMDkwNGZlOTQ2NTlkNjk1MTMzNWY3MTFkNTBlODQ1MmNiMDRlOGExZjI5ZDZiYWQ4MWY1ZTllZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYzViYWUwZTY2MzViNDIzMTQ4Y2QxNzQyNjMwNTA3YTBiZWY4YTI3M2UxOTI2NzQ3YTFmN2Q0NjdiOTAwMTQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-28T03:39:43.412Z"
+    "at": "2026-08-30T08:08:17.680Z"
   }
 }
