@@ -1,0 +1,41 @@
+evals/sweqapro/openwiki_agent.py
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-47
+evals/sweqapro/README.md
+  s_6e01c4ef21bcdd::t_524a159bcb0729 130-132
+  s_6e01c4ef21bcdd::t_54422631ca0317 50,56-59,63-64,67-69,71-72
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-49,51-55,60-62,65-66,70,73-129,133-137
+evals/sweqapro/summary.py
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-79
+evals/sweqapro/tests/test_summary.py
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-66
+evals/sweqapro/context.mjs
+  s_6e01c4ef21bcdd::t_45058d8cd252ef 17-19
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-16,20-25
+evals/sweqapro/run.py
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-116,147-158,165,182-214,216-379,392-397,404-443
+  s_6e01c4ef21bcdd::t_54422631ca0317 117-146,159-164,166-181,215,380-391,398-403
+evals/sweqapro/tests/test_adapter.py
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-65
+package.json
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 47
+evals/sweqapro/tests/test_run.py
+  s_6e01c4ef21bcdd::t_524a159bcb0729 1-67
+evals/sweqapro/adapter.py
+  s_6e01c4ef21bcdd::t_7dc20822ae8a0a 1-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ecc44282559213c66c82306041fbb957a63c5054",
+  "prompts": {},
+  "sessions": {
+    "s_6e01c4ef21bcdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0513b-5493-7093-9872-4eac8f557577",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
