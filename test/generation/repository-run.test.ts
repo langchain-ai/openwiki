@@ -107,6 +107,7 @@ import {
   beginRepositoryRun,
   captureRepositoryPageSnapshot,
   finishRepositoryRun,
+  inspectRepositoryPageClaims,
   nextRepositoryPage,
   skipRepositoryPage,
   submitRepositoryPage,
@@ -615,6 +616,24 @@ describe("beginRepositoryRun", () => {
         status: "pending",
       }),
     ]);
+    const next = await nextRepositoryPage(run);
+    if (next.status !== "pending") throw new Error("Expected pending page.");
+    expect(next.job).toMatchObject({
+      existingClaimCount: 1,
+      claimsRequiringAttention: [
+        {
+          id: "claim_stale",
+          issue: { kind: "stale" },
+        },
+      ],
+    });
+    expect(inspectRepositoryPageClaims(run, next.job.id)).toMatchObject({
+      page: "/openwiki/quickstart.md",
+      claims: [{ id: "claim_stale" }],
+    });
+    expect(() => inspectRepositoryPageClaims(run, randomUUID())).toThrow(
+      "Only the current pending OpenWiki page job's Claims may be inspected",
+    );
   });
 
   test("resumes across producers while rejecting mode and language conflicts", async () => {

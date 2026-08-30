@@ -233,6 +233,19 @@ export class ClaimSession {
   }
 
   /**
+   * Reports whether any current page owns a Claim identifier.
+   *
+   * This supports idempotent page-level retractions without weakening the
+   * cross-page ownership boundary.
+   *
+   * @param id - Stable Claim identifier.
+   * @returns Whether the identifier is currently owned in this session.
+   */
+  hasClaim(id: string): boolean {
+    return this.claimOwners.has(id);
+  }
+
+  /**
    * Returns the complete current evidence-resource projection for every page
    * represented in this Claims session.
    *

@@ -68,11 +68,16 @@ function pageJob(
     status: "pending",
     mode: "update",
     existing: true,
-    existingClaims: [
+    existingClaimCount: 7,
+    claimsRequiringAttention: [
       {
         id: "claim_auth",
         statement: "Authentication uses rotating tokens.",
         evidence: ["repo://src/auth.ts"],
+        issue: {
+          kind: "stale",
+          resources: ["repo://src/auth.ts"],
+        },
       },
     ],
     ...overrides,
@@ -121,7 +126,7 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("Changed paths: (none)");
   });
 
-  test("propagates page-specific instructions and complete existing Claims", () => {
+  test("propagates only Claims requiring explicit reconciliation", () => {
     const prompt = createRepositoryPagePrompt(
       pageJob(),
       [pageJob(), pageJob({ path: "/openwiki/operations.md" })],
@@ -132,14 +137,16 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("Emphasize token rotation.");
     expect(prompt).toContain("claim_auth");
     expect(prompt).toContain("repo://src/auth.ts");
+    expect(prompt).toContain("currently owns 7 Claim(s)");
     expect(prompt).toContain("Write only /openwiki/auth.md");
-    expect(prompt).toContain("COMPLETE intended material Claim set");
-    expect(prompt).toContain("same Claim id and statement verbatim");
+    expect(prompt).toContain("only the sparse Claim decisions");
+    expect(prompt).toContain("inspect_claims");
+    expect(prompt).toContain("retained automatically");
     expect(prompt).toContain(
       "stale or unresolved marker as a requirement to recheck",
     );
     expect(prompt).toContain(
-      "final page body and complete submitted Claim set must agree",
+      "final page body and reconciled Claim set must agree",
     );
     expect(prompt).toContain("repo://src/agent/index.ts");
     expect(prompt).toMatch(

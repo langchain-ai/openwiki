@@ -10,6 +10,7 @@ import {
   beginRepositoryRun,
   captureRepositoryPageSnapshot,
   finishRepositoryRun,
+  inspectRepositoryPageClaims,
   nextRepositoryPage,
   skipRepositoryPage,
   submitRepositoryPage,
@@ -62,6 +63,14 @@ const ClaimSchema = z
   })
   .strict();
 
+const ClaimReconciliationSchema = z
+  .object({
+    confirmedClaimIds: z.array(z.string().trim().min(1)).optional(),
+    claims: z.array(ClaimSchema).optional(),
+    retractedClaimIds: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
 const PLANNER_FILESYSTEM_TOOLS = ["read_file", "ls", "glob", "grep"] as const;
 const PAGE_FILESYSTEM_TOOLS = [
   ...PLANNER_FILESYSTEM_TOOLS,
@@ -71,6 +80,7 @@ const PAGE_FILESYSTEM_TOOLS = [
 const WORKER_TOOL_NAMES = new Set<string>([
   ...PAGE_FILESYSTEM_TOOLS,
   "submit_plan",
+  "inspect_claims",
   "submit_page",
 ]);
 
@@ -420,19 +430,27 @@ async function runPageAgent(
 
   let submitted = false;
   let fatalSubmissionFailure = false;
+  const inspectClaimsTool = new DynamicStructuredTool({
+    name: "inspect_claims",
+    description:
+      "Return this page's complete current Claim set without opaque evidence versions. Use only before intentionally revising or removing otherwise-current content; stale or unresolved Claims already appear in the assignment.",
+    schema: z.object({}).strict(),
+    func: () =>
+      Promise.resolve(JSON.stringify(inspectRepositoryPageClaims(run, job.id))),
+  });
   const submitPageTool = new DynamicStructuredTool({
     name: "submit_page",
     description:
-      "Complete the assigned page after writing it by submitting its complete intended material Claim set. Every evidence resource must use repo://<repository-relative-path>, optionally with #Lx-Ly.",
-    schema: z.object({ claims: z.array(ClaimSchema).min(1) }).strict(),
-    func: async ({ claims }, _runManager, config) => {
+      "Complete the assigned page after writing it. Submit only sparse Claim decisions: confirmedClaimIds for rechecked issue Claims kept unchanged, claims for revisions/additions, and retractedClaimIds for removals. Other current Claims are retained automatically. Evidence must use repo://<repository-relative-path>, optionally with #Lx-Ly.",
+    schema: ClaimReconciliationSchema,
+    func: async (reconciliation, _runManager, config) => {
       if (submitted) {
         throw new Error("submit_page was already called for this page worker.");
       }
       try {
         const result = await submitRepositoryPage(run, {
           jobId: job.id,
-          claims,
+          ...reconciliation,
         });
         submitted = true;
         return JSON.stringify(result);
@@ -444,7 +462,7 @@ async function runPageAgent(
           return createSubmissionRejection(
             "submit_page",
             error,
-            "Correct the assigned page or complete Claim payload and call submit_page again.",
+            "Correct the assigned page or sparse Claim decisions and call submit_page again.",
             (config as { toolCall?: { id?: string } } | undefined)?.toolCall
               ?.id,
           );
@@ -458,7 +476,7 @@ async function runPageAgent(
   const backend = createAgentBackend(wikiBackend);
   const agent = createDeepAgent({
     model,
-    tools: [submitPageTool],
+    tools: [inspectClaimsTool, submitPageTool],
     backend,
     middleware: [
       createFilesystemMiddleware({

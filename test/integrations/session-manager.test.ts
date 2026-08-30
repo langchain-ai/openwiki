@@ -212,7 +212,7 @@ describe("HostSessionManager", () => {
     });
   });
 
-  test("exposes exactly the ordered five-call lifecycle", () => {
+  test("exposes the ordered six-tool lifecycle with on-demand Claim inspection", () => {
     expect(
       createManager()
         .tools()
@@ -221,6 +221,7 @@ describe("HostSessionManager", () => {
       "openwiki_begin",
       "openwiki_submit_plan",
       "openwiki_next_page",
+      "openwiki_inspect_page_claims",
       "openwiki_submit_page",
       "openwiki_finish",
     ]);

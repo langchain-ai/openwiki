@@ -76,7 +76,7 @@ describe("OpenWiki host protocol", () => {
     ).toThrow();
   });
 
-  test("requires a non-empty complete Claim set for page submission", () => {
+  test("validates sparse Claim reconciliation fields", () => {
     expect(
       ProposedPageClaimInput.parse({
         id: " claim_existing ",
@@ -88,9 +88,19 @@ describe("OpenWiki host protocol", () => {
       statement: "The runtime starts from the CLI.",
       evidence: [{ resource: "repo://src/cli.ts#L1-L20" }],
     });
-    expect(() =>
-      SubmitPageInput.parse({ runId: RUN_ID, jobId: JOB_ID, claims: [] }),
-    ).toThrow();
+    expect(
+      SubmitPageInput.parse({
+        runId: RUN_ID,
+        jobId: JOB_ID,
+        confirmedClaimIds: [" claim_existing "],
+        retractedClaimIds: [" claim_removed "],
+      }),
+    ).toEqual({
+      runId: RUN_ID,
+      jobId: JOB_ID,
+      confirmedClaimIds: ["claim_existing"],
+      retractedClaimIds: ["claim_removed"],
+    });
     expect(() =>
       SubmitPageInput.parse({
         runId: RUN_ID,

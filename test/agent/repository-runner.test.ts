@@ -98,7 +98,12 @@ vi.mock("deepagents", async (importOriginal) => {
     },
     createDeepAgent(options: CapturedAgentOptions) {
       harness.agentOptions.push(options);
-      const completionTool = options.tools[0];
+      const completionTool = options.tools.find(({ name }) =>
+        ["submit_plan", "submit_page"].includes(name),
+      );
+      if (!completionTool) {
+        throw new Error("Expected one repository completion tool.");
+      }
       const toolName = completionTool.name;
       if (toolName !== "submit_plan" && toolName !== "submit_page") {
         throw new Error(`Unexpected completion tool: ${toolName}`);
@@ -351,7 +356,8 @@ vi.mock("../../src/generation/repository-run.js", () => ({
               ...job,
               mode: run.state.mode,
               existing: false,
-              existingClaims: [],
+              existingClaimCount: 0,
+              claimsRequiringAttention: [],
             },
           }
         : { status: "complete" },
@@ -459,6 +465,10 @@ describe("runNativeRepositoryGeneration", () => {
     expect(String(harness.agentOptions[2]?.systemPrompt)).toContain(
       "You own exactly /openwiki/architecture.md",
     );
+    expect(harness.agentOptions[1]?.tools.map(({ name }) => name)).toEqual([
+      "inspect_claims",
+      "submit_page",
+    ]);
     expect(events).toContainEqual(
       expect.objectContaining({
         type: "repository_progress",
@@ -507,7 +517,7 @@ describe("runNativeRepositoryGeneration", () => {
       '"message":"Unsupported evidence resource: src/agent/index.ts"',
     );
     expect(rejection.text).toContain(
-      '"retry":"Correct the assigned page or complete Claim payload and call submit_page again."',
+      '"retry":"Correct the assigned page or sparse Claim decisions and call submit_page again."',
     );
     expect(harness.finishCalls).toBe(1);
   });

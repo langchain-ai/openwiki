@@ -110,7 +110,7 @@ Host-driven runs currently support repository code wikis, not personal brains. T
 
 External coding-agent integrations currently use repository source and tests only. Connector-sourced context, including LangSmith, is not yet supported.
 
-The integration exposes the same five operations as native generation: `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, `openwiki_submit_page`, and `openwiki_finish`. Codex, Claude, OpenCode, or Cursor submits the complete intended Claim set with each page; OpenWiki internally preserves, updates, creates, or retracts Claims and refuses to finish until the final state is durable.
+The integration exposes the native generation lifecycle through `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. Codex, Claude, OpenCode, or Cursor submits only sparse Claim decisions for each page; OpenWiki automatically retains current unaffected Claims, applies explicit confirmations, revisions, additions, or retractions, and refuses to finish until the final state is durable.
 
 Use `openwiki integrations list` to inspect user-level installation status or `openwiki integrations uninstall <host>` to remove an integration safely. Add `--project [path]` to `list`, `install`, or `uninstall` for repository-scoped state.
 
@@ -125,7 +125,7 @@ OpenWiki makes code wikis self-correcting by tracking the material propositions 
   <img alt="OpenWiki Claims reconcile code evidence into OKF page-level trust metadata." src="./static/openwiki-okf-claims.png" width="880">
 </div>
 
-Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives the complete existing Claim set and submits the complete intended replacement set: unchanged Claims keep their IDs and refresh their evidence versions, revised Claims update in place, genuinely new Claims receive new IDs, and omitted Claims are retracted. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
+Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
 
 Page completion is a durability boundary. OpenWiki persists the reconciled Claims, projects verification, synchronizes the sidecar's page version, and proves the complete result before marking that page's job complete. Finalization repeats the whole-run proof before deleting `openwiki/.run.json`.
 

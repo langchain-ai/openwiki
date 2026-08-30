@@ -16,10 +16,12 @@ repository tools and call openwiki_submit_plan with final canonical page paths
 and page-relevant global instructions.
 Then repeatedly call openwiki_next_page. For each pending job, research exactly
 that page's topic, write exactly that generated Markdown page with native host
-tools, and call openwiki_submit_page with the page's complete material,
-repository-grounded Claim set. Preserve existing Claim ids when retaining or
-revising known Claims. Do not edit OpenWiki-owned Claims sidecars, indexes, logs,
-provenance, run metadata, setup blocks, or scheduled workflows.
+tools, and call openwiki_submit_page with only its sparse Claim decisions.
+Current issue-free Claims are retained automatically. Call
+openwiki_inspect_page_claims only before intentionally revising or removing
+otherwise-current page content whose Claim ids are not in the pending job. Do
+not edit OpenWiki-owned Claims sidecars, indexes, logs, provenance, run metadata,
+setup blocks, or scheduled workflows.
 ${CLAIMS_RECONCILIATION_GUIDANCE}
 When openwiki_next_page returns complete, call openwiki_finish. Never report
 success before finish returns complete. If a lifecycle call reports that source

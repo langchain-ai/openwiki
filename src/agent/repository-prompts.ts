@@ -96,16 +96,17 @@ export type RepositoryPageWorkerJob = PageJob & {
    */
   existing: boolean;
 
-  /**
-   * Complete persisted Claim set currently owned by the assigned page.
-   */
-  existingClaims: InspectedClaim[];
+  /** Number of persisted Claims currently owned by the assigned page. */
+  existingClaimCount: number;
+
+  /** Stale or unresolved Claims that require an explicit worker decision. */
+  claimsRequiringAttention: InspectedClaim[];
 };
 
 /**
  * Builds the prompt for one fresh worker owning exactly one page job.
  *
- * @param job - Assigned page and its complete existing Claim context.
+ * @param job - Assigned page and its compact required Claim context.
  * @param allPages - Complete ordered page queue for quickstart navigation.
  * @param language - Resolved output language for generated prose.
  * @returns Complete page-worker system prompt.
@@ -146,10 +147,13 @@ callees, state owners, integration boundaries, and representative tests when
 required. Do not turn the page into a source-file inventory.
 
 Write only ${job.path}. Do not create, edit, or delete another wiki page. After
-writing it, call submit_page with the COMPLETE intended material Claim set for
-this page. Reuse an existing Claim id when retaining or revising a known
-proposition. Omit the id for a genuinely new Claim. Omitting an old Claim
-retracts it. Every evidence resource MUST be a canonical repository URI such as
+writing it, call submit_page with only the sparse Claim decisions required by
+your edits: confirmedClaimIds for rechecked issue Claims that remain unchanged,
+claims for revised or new propositions, and retractedClaimIds for removed
+propositions. OpenWiki automatically retains the other current Claims. Call
+inspect_claims before intentionally revising or removing otherwise-current page
+content when you need its Claim ids; ordinary focused updates should not call it.
+Every evidence resource MUST be a canonical repository URI such as
 repo://src/agent/index.ts or repo://src/agent/index.ts#L40-L82; a bare path such
 as src/agent/index.ts is invalid. If submission validation fails, read the tool
 error, correct the page or Claim payload, and retry; the worker completes after
@@ -159,7 +163,8 @@ ${CLAIMS_SUBSTANCE_GUIDANCE}
 
 ${CLAIMS_RECONCILIATION_GUIDANCE}
 
-Existing Claims:\n${JSON.stringify(job.existingClaims, null, 2)}
+This page currently owns ${job.existingClaimCount} Claim(s). Claims requiring an
+explicit decision in this job:\n${JSON.stringify(job.claimsRequiringAttention, null, 2)}
 
 ${
   job.path === "/openwiki/quickstart.md"

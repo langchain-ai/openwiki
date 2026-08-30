@@ -94,7 +94,7 @@ afterEach(async () => {
 });
 
 describe("OpenWiki MCP adapter", () => {
-  test("advertises exactly the five lifecycle calls and workflow guidance", async () => {
+  test("advertises the six lifecycle tools and sparse workflow guidance", async () => {
     const schema = z.object({ runId: z.string().optional() }).strict();
     const handle = () => Promise.resolve({ status: "ok" });
     const fixture = await connect(
@@ -114,6 +114,12 @@ describe("OpenWiki MCP adapter", () => {
         {
           name: "openwiki_next_page",
           description: "Next page.",
+          schema,
+          handle,
+        },
+        {
+          name: "openwiki_inspect_page_claims",
+          description: "Inspect page Claims.",
           schema,
           handle,
         },
@@ -139,6 +145,7 @@ describe("OpenWiki MCP adapter", () => {
         "openwiki_begin",
         "openwiki_submit_plan",
         "openwiki_next_page",
+        "openwiki_inspect_page_claims",
         "openwiki_submit_page",
         "openwiki_finish",
       ]);
@@ -146,14 +153,15 @@ describe("OpenWiki MCP adapter", () => {
       expect(instructions).toContain("host's native\nrepository tools");
       expect(instructions).toContain("openwiki_submit_plan");
       expect(instructions).toContain("openwiki_next_page");
+      expect(instructions).toContain("openwiki_inspect_page_claims");
       expect(instructions).toContain("openwiki_submit_page");
-      expect(instructions).toContain("same Claim id and statement verbatim");
+      expect(instructions).toContain("retained automatically");
+      expect(instructions).toContain("only its sparse Claim decisions");
       expect(instructions).toContain(
         "stale or unresolved marker as a requirement to recheck",
       );
       expect(instructions).toContain("Never report\nsuccess before finish");
       expect(instructions).toContain("source\ndrift invalidated the plan");
-      expect(instructions).not.toContain("openwiki_inspect_claims");
       expect(instructions).not.toContain("openwiki_resolve_claims");
     } finally {
       await close(fixture);
@@ -285,6 +293,17 @@ describe("OpenWiki MCP lifecycle smoke test", () => {
       const { job } = z
         .object({ job: z.object({ id: z.string().uuid() }) })
         .parse(next.structuredContent);
+      await expect(
+        fixture.client.callTool({
+          name: "openwiki_inspect_page_claims",
+          arguments: { runId, jobId: job.id },
+        }),
+      ).resolves.toMatchObject({
+        structuredContent: {
+          page: "/openwiki/quickstart.md",
+          claims: [],
+        },
+      });
       await writeFile(
         path.join(root, "openwiki/quickstart.md"),
         [
