@@ -1,0 +1,81 @@
+test/agent/repository-prompts.test.ts
+  s_6f907f7449d9dd::t_9a2a7425949e83 71-72,77-80,129,140,142-144,149
+src/claims/guidance.ts
+  s_6f907f7449d9dd::t_5faaeee3bdceb1 16,20-24
+src/integrations/core/protocol.ts
+  s_6f907f7449d9dd::t_ba7320a2e69d0d 161
+  s_6f907f7449d9dd::t_ae8867f216b012 12,18,116-125,144-146,160
+  s_6f907f7449d9dd::t_bfacc61b984564 162
+src/generation/repository-run.ts
+  s_6f907f7449d9dd::t_ba7320a2e69d0d 1026-1028,1251
+  s_6f907f7449d9dd::t_c31f6db7141450 58-59,964-965,998,1005-1006,1011-1025,1029-1040,1185
+test/integrations/protocol.test.ts
+  s_6f907f7449d9dd::t_9a2a7425949e83 79,91-103
+src/integrations/mcp/server.ts
+  s_6f907f7449d9dd::t_91e1999ccb3e53 19-24
+src/agent/repository-prompts.ts
+  s_6f907f7449d9dd::t_5faaeee3bdceb1 99-103,109,150-156,166-167
+.changeset/quiet-claim-reconciliation.md
+  s_6f907f7449d9dd::t_6ab0a1d060a7f1 1-5
+src/claims/brains/code/session.ts
+  s_6f907f7449d9dd::t_7708aa8d33cb14 236-247
+  s_6f907f7449d9dd::t_bbb786c7cab6c9 235
+test/generation/page-jobs.test.ts
+  s_6f907f7449d9dd::t_ccec1221dcf8c7 3-6,11,51,63,245,264,267-280,301,304,306-312,339-358,366,409-420,441-449,467-480
+  s_6f907f7449d9dd::t_c358fb4ac27df1 315-318,322-338,375-388
+  s_6f907f7449d9dd::t_ba7320a2e69d0d 319-321
+  s_6f907f7449d9dd::t_7708aa8d33cb14 389,391-403
+  s_6f907f7449d9dd::t_a4ee13625eeb02 361-362
+  s_6f907f7449d9dd::t_a6eedc1afc81d1 452-457
+  s_6f907f7449d9dd::t_8611adf5baf5c2 390
+test/integrations/mcp-server.test.ts
+  s_6f907f7449d9dd::t_8267f3b55bdf99 296-306
+  s_6f907f7449d9dd::t_3a42f1e15c9cb6 97,120-125,148,156,158-159
+src/agent/repository-runner.ts
+  s_6f907f7449d9dd::t_fe4ac9aa919a02 439
+  s_6f907f7449d9dd::t_d44dc1a3d9f97a 438
+  s_6f907f7449d9dd::t_cd9b471b95da68 13,66-73,83,433-437,440,444-446,453,479
+  s_6f907f7449d9dd::t_6ab0a1d060a7f1 465
+test/integrations/session-manager.test.ts
+  s_6f907f7449d9dd::t_3a42f1e15c9cb6 215,224
+test/integrations/skill.test.ts
+  s_6f907f7449d9dd::t_1f488b870a4569 54,61,106-109,114
+  s_6f907f7449d9dd::t_ba7320a2e69d0d 116
+README.md
+  s_6f907f7449d9dd::t_fce792ededeb7d 113,128
+test/agent/repository-runner.test.ts
+  s_6f907f7449d9dd::t_01fc1947b6469b 101-106
+  s_6f907f7449d9dd::t_9a2a7425949e83 359-360
+  s_6f907f7449d9dd::t_ba7320a2e69d0d 468-471
+  s_6f907f7449d9dd::t_6ab0a1d060a7f1 520
+test/generation/repository-run.test.ts
+  s_6f907f7449d9dd::t_d7c16c14133d47 110,619-636
+integrations/openwiki/SKILL.md
+  s_6f907f7449d9dd::t_53370697ddccea 54-61,118-120,126-133,135-137,139-141
+src/generation/page-jobs.ts
+  s_6f907f7449d9dd::t_98ddd8a1705da4 488
+  s_6f907f7449d9dd::t_48a2b09b2c4b01 81-97,392,394-396,399-400,402,405,410,414-438,450,470-471,496-497,499-504,506,509-515,517-518
+  s_6f907f7449d9dd::t_7708aa8d33cb14 485-487,489-495
+  s_6f907f7449d9dd::t_7c64c39a8ebf97 474-475
+  s_6f907f7449d9dd::t_432064a720c63e 80
+src/integrations/core/session-manager.ts
+  s_6f907f7449d9dd::t_c78bca2b4aec4c 5,14,21,181-182,184,186-188,190,218,241,245-252,256
+  s_6f907f7449d9dd::t_0849759d16157f 183,185,198
+  s_6f907f7449d9dd::t_188bf3faeea6f4 192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3d581d3c733445b1e88d70eca336e897938d12df",
+  "prompts": {},
+  "sessions": {
+    "s_6f907f7449d9dd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05207-acb3-7eb2-b3de-921c933c2cb8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
