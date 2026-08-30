@@ -1,0 +1,51 @@
+src/retrieval/repository-context.ts
+  s_6e01c4ef21bcdd::t_c3b6834e127306 82,431-433,435,468-473
+  s_6e01c4ef21bcdd::t_4c0c481a39cb0f 96,128-145,148-150,334-339,341-344,350,386,401,403,405-406,416-430,434,436-443
+  s_6e01c4ef21bcdd::t_54eb7b9f77a97e 15,241,252
+  s_6e01c4ef21bcdd::t_fec2eab1c1079e 64
+  s_6e01c4ef21bcdd::t_02a9022bfa785b 364
+  s_6e01c4ef21bcdd::t_47128549115a8c 12,17-21,26-31,33-48,80-81,110,112,179-186,195,207-240,242-251,253-270,317-329,346-349,351-363,365-379
+  s_6e01c4ef21bcdd::t_5c9260b9aca1ee 16
+  s_6e01c4ef21bcdd::t_a64857638439f4 83
+  s_6e01c4ef21bcdd::t_1a30de0b7a345c 178
+  s_6e01c4ef21bcdd::t_57472403efc836 345
+  s_6e01c4ef21bcdd::t_eb2cbd00e16ceb 385
+  s_6e01c4ef21bcdd::t_18580c8c9f2446 398-400
+  s_6e01c4ef21bcdd::t_9b633f7afa43e8 402
+  s_6e01c4ef21bcdd::t_9bad6cf8f5ac78 465-467
+integrations/openwiki/SKILL.md
+  s_6e01c4ef21bcdd::t_c6da9f4bd3c0fe 8-9,13-15,22-24,26-28,32-34
+README.md
+  s_6e01c4ef21bcdd::t_fec2eab1c1079e 105
+test/retrieval/repository-context.test.ts
+  s_6e01c4ef21bcdd::t_4e8df5974f8f92 111,152-159,253
+  s_6e01c4ef21bcdd::t_80414be0cdf23a 118-120,163-208,211-252
+  s_6e01c4ef21bcdd::t_02a9022bfa785b 209-210
+  s_6e01c4ef21bcdd::t_fec2eab1c1079e 97
+  s_6e01c4ef21bcdd::t_cf9955c6b21ae2 254
+test/integrations/skill.test.ts
+  s_6e01c4ef21bcdd::t_98b2f9d0015911 1,55,57,62-66,82,88-89,93-94,98-99,103-104,114-119,122,125,128,132-133,136,139-141,145-146,151,153
+  s_6e01c4ef21bcdd::t_02a9022bfa785b 9,129-131,154-156
+integrations/openwiki/references/wiki-generation.md
+  s_6e01c4ef21bcdd::t_5fca67962ea67e 1-147
+src/integrations/core/session-manager.ts
+  s_6e01c4ef21bcdd::t_fec2eab1c1079e 235
+.changeset/repository-context.md
+  s_6e01c4ef21bcdd::t_fec2eab1c1079e 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "4c02c08b52062868a4d24004080b2b5a8befdeee",
+  "prompts": {},
+  "sessions": {
+    "s_6e01c4ef21bcdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0513b-5493-7093-9872-4eac8f557577",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
