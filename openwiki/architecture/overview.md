@@ -29,6 +29,8 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
+  - id: openwiki-source-1197594de038075f3570340c
+    resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
@@ -37,10 +39,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # Architecture Overview
@@ -88,7 +90,8 @@ flowchart TD
   Snapshot --> PageWorker["page worker"]
   PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot and marks skipped"]
   Skip --> Lifecycle
-  PageWorker -->|"submit_page"| Lifecycle
+  PageWorker -->|"inspect_claims on demand"| Lifecycle
+  PageWorker -->|"submit_page sparse Claim decisions"| Lifecycle
   Lifecycle -->|"source drift at finish"| Report["runner reports drift and returns sourceChanged=true"]
   Report --> LaterUpdate["next --update resumes and invalidates the plan"]
   Lifecycle --> Finalize["finishRepositoryRun restores skipped pages and finalizes"]
@@ -145,8 +148,13 @@ rejects an unrecognized language with `invalid_input` before touching the
 repository, so a typo never persists the wrong language in run state. Each
 worker is a non-delegating DeepAgent: the planner gets read-only filesystem
 tools plus `submit_plan`; page workers additionally get `write_file`/`edit_file`
-plus `submit_page`, and the general-purpose `task` delegation tool is stripped
-so workers cannot spawn subagents.
+plus `inspect_claims` and `submit_page`, and the general-purpose `task`
+delegation tool is stripped so workers cannot spawn subagents. A page worker
+submits only sparse Claim decisions (`confirmedClaimIds`, `claims`,
+`retractedClaimIds`) with current issue-free Claims retained automatically, and
+can call `inspect_claims` on demand before revising otherwise-current content;
+`nextRepositoryPage` returns only `existingClaimCount` and the Claims requiring
+attention.
 
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
@@ -157,6 +165,10 @@ later update. `runPendingPageAgents` collects every skipped-page snapshot and
 passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
 after finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
+Page restore and the planned/abandoned-page deletions at finish tolerate a
+human-readable "not found" backend error instead of aborting the run, so a
+page that never existed or was already removed is treated as already restored
+or deleted.
 
 If finalization detects that repository source drifted underneath the plan,
 the run does not abort or auto-replan. `finishRepositoryRun` re-checks the
@@ -175,13 +187,17 @@ run. The end-to-end flow is documented in
 ## Host-driven (coding-agent) generation
 
 An installed coding-agent integration runs the same lifecycle over MCP instead
-of launching an OpenWiki model. The MCP server exposes exactly five
+of launching an OpenWiki model. The MCP server exposes exactly six
 transport-neutral tools — `openwiki_begin`, `openwiki_submit_plan`,
-`openwiki_next_page`, `openwiki_submit_page`, and `openwiki_finish` — backed by
-a session manager that holds at most one active process-local run and rejects
-any operation whose `runId` does not match. `openwiki_begin` rejects an
-unrecognized `language` with `invalid_input` instead of starting a run, so the
-caller can correct the code and retry with nothing to clean up. The coding agent
+`openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`,
+and `openwiki_finish` — backed by a session manager that holds at most one
+active process-local run and rejects any operation whose `runId` does not
+match. `openwiki_begin` rejects an unrecognized `language` with `invalid_input`
+instead of starting a run, so the caller can correct the code and retry with
+nothing to clean up. `openwiki_inspect_page_claims` returns the current pending
+page's complete Claim set on demand for broad rewrites; `openwiki_next_page`
+returns only `existingClaimCount` and the stale or unresolved Claims requiring
+an explicit decision, so focused updates stay compact. The coding agent
 owns repository research, planning, and factual authoring; OpenWiki owns the
 durable queue, Claims validation and persistence, source-drift handling, and
 deterministic finalization. Host-driven runs use only repository source and
@@ -191,13 +207,24 @@ tests; connector context is not yet available to them.
 
 For repository code wikis, OpenWiki tracks the material propositions behind
 each page, not just when the Markdown was regenerated. A run rebuilds a strict
-process-local Claims runtime from durable state; each page worker receives the
-complete existing Claim set and submits the complete intended replacement set,
-so unchanged Claims keep their IDs and refresh evidence versions, revised
-Claims update in place, new Claims get IDs, and omitted Claims are retracted.
-Claim state is persisted alongside the Markdown under `openwiki/.claims/`, and
-page completion is a durability boundary that persists reconciled Claims before
-marking the job done. Grounded Claims apply to repository evidence only.
+process-local Claims runtime from durable state. Before an update, OpenWiki
+checks every persisted evidence version; a stale or unresolved Claim requires
+work for its owning page even if the planner omits it. Each page worker
+receives only the Claims requiring attention plus an existing-Claim count, and
+submits only sparse Claim decisions — `confirmedClaimIds` for rechecked issue
+Claims kept unchanged, `claims` for revisions or additions, and
+`retractedClaimIds` for removals — while current issue-free Claims are retained
+automatically without being repeated through every model turn. Workers can
+call `inspect_claims` (host: `openwiki_inspect_page_claims`) on demand to read
+the complete Claim set before intentionally revising otherwise-current content.
+Reconciliation keeps unchanged Claims' IDs and refreshes their evidence
+versions, revises named Claims in place, assigns IDs to new Claims, and
+retracts named Claims; an unresolved issue Claim that receives no explicit
+decision is rejected. Claim state is persisted alongside the Markdown under
+`openwiki/.claims/`, and page completion is a durability boundary that
+persists reconciled Claims before marking the job done. Grounded Claims apply to
+repository code wikis and repository evidence only; connector-derived facts
+are not claimed.
 
 ## OKF output and finalization
 

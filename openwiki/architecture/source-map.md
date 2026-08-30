@@ -6,6 +6,8 @@ tags: [source-map, architecture, subsystems, entrypoints, src-layout]
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
+  - id: openwiki-source-8b316b2a9d744597bffd9c56
+    resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
@@ -16,6 +18,8 @@ sources:
     resource: repo://src/claims/brains/code/store.ts
   - id: openwiki-source-75ba41da829774fe72b7a0af
     resource: repo://src/claims/evidence/repository/resolver.ts
+  - id: openwiki-source-638173446de4138fa3a622a8
+    resource: repo://src/claims/guidance.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-278e7e180eac811fc1a24f7a
@@ -32,6 +36,8 @@ sources:
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
+    resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-eab9328975981f427c4218d0
@@ -54,10 +60,10 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # Source Map
@@ -98,20 +104,30 @@ before anything else.
   does not truncate long pages. Nearly every subsystem imports its identifiers
   from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
-  lifecycle. It drives the plan-then-page workflow with `beginRepositoryRun`,
-  `submitRepositoryPlan`, `nextRepositoryPage`, `submitRepositoryPage`, and
+  lifecycle. It drives the plan-then-page workflow across a six-operation
+  surface: `beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
+  `inspectRepositoryPageClaims`, `submitRepositoryPage`, and
   `finishRepositoryRun`, wiring together the run state, claims runtime, wiki
   finalizer, and OKF frontmatter validation — including deterministic
   frontmatter repair (`repairPersistedFile`) before a page job is accepted.
   `beginRepositoryRun` resolves the requested language up front
   (`resolveLanguage`) and rejects an unrecognized language with
   `invalid_input` rather than falling back to English, since run state cannot
-  change its language after a start. It also owns the skip-failed-page-workers
+  change its language after a start. `nextRepositoryPage` returns the first
+  pending job plus its `existingClaimCount` and only the
+  `claimsRequiringAttention` (Claims carrying a stale or unresolved issue), so
+  focused updates need not re-emit issue-free Claims; `inspectRepositoryPageClaims`
+  exposes the page's complete compact Claim set on demand for workers that
+  intend to revise or remove otherwise-current content. `submitRepositoryPage`
+  takes sparse Claim decisions (`confirmedClaimIds`/`claims`/`retractedClaimIds`)
+  which `reconcilePageClaims` turns into confirm/update/add/retract operations,
+  retaining omitted issue-free Claims. It also owns the skip-failed-page-workers
   path: `captureRepositoryPageSnapshot` records the pending page and its
   claims sidecar before a worker runs, `skipRepositoryPage` rolls a failed
   worker back (restoring the page markdown and sidecar, marking the job
   `skipped`), and `restoreRepositoryPageMarkdown` re-applies the snapshot
-  during `finishRepositoryRun` for every skipped job.
+  during `finishRepositoryRun` for every skipped job, tolerating a not-found
+  page when the snapshot recorded no markdown.
 
 ## Subsystems
 
@@ -131,12 +147,14 @@ by the generation lifecycle), `src/agent/docs-only-backend.ts`
 surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
 `runNativeRepositoryGeneration` drives the full loop: it begins the run, runs
 the planning agent, then calls `runPendingPageAgents` to spawn one fresh
-shell-free worker per pending page, collecting skipped-page snapshots and
-passing them to `finishRepositoryRun`. On a worker that exits without
-submitting, `runPageAgent` captures a `RepositoryPageSnapshot` via
-`captureRepositoryPageSnapshot`, calls `skipRepositoryPage` to restore the
-page and mark it `skipped`, collects those snapshots, and passes them to
-`finishRepositoryRun` so skipped pages are reconsidered on the next update.
+shell-free worker per pending page. Each `runPageAgent` worker is given an
+`inspect_claims` tool (backing `inspectRepositoryPageClaims`) and a
+`submit_page` tool (backing the sparse `submitRepositoryPage`); it captures a
+`RepositoryPageSnapshot` via `captureRepositoryPageSnapshot` before any model
+work, and on a worker that exits without submitting it calls
+`skipRepositoryPage` to restore the page and mark it `skipped`, collecting the
+snapshots and passing them to `finishRepositoryRun` so skipped pages keep their
+pre-work content and are reconsidered on the next update.
 
 ### generation — repository run lifecycle and page jobs
 
@@ -148,18 +166,28 @@ can reject an unrecognized language before any run state is written.
 schema-versioned, with `planning`/`generating` phases and `pending`/`skipped`/
 `complete` page-job statuses) so runs resume after interruption.
 `src/generation/page-jobs.ts` builds the plan (`createRepositoryPlan`) and
-replaces per-page claims (`replacePageClaims`). `src/generation/page-manifest.ts`
+reconciles per-page Claims (`reconcilePageClaims`), turning sparse
+`confirmedClaimIds`/`claims`/`retractedClaimIds` decisions into
+confirm/update/add/retract operations while retaining omitted issue-free
+Claims. `src/generation/page-manifest.ts`
 owns the committed page-correctness ledger (`openwiki/.page-manifest.json`,
 schema-versioned), recording each completed page's source fingerprint, page
 version, and producer provenance. `src/generation/errors.ts` defines
-`RepositoryRunError`. The lifecycle's snapshot/skip/restore operations
-(`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
+`RepositoryRunError`. The lifecycle exposes a six-operation surface
+(`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
+`inspectRepositoryPageClaims`, `submitRepositoryPage`, `finishRepositoryRun`).
+`nextRepositoryPage` returns `claimsRequiringAttention` and
+`existingClaimCount` rather than the full Claim set; `inspectRepositoryPageClaims`
+returns the complete compact Claim set on demand. Its snapshot/skip/restore
+operations (`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
 `restoreRepositoryPageMarkdown`) let a failed page worker be rolled back to its
 pre-work state and marked `skipped` rather than failing the whole run;
-`finishRepositoryRun` requires a snapshot for every skipped job
-and re-applies those snapshots before finalizing.
+`restoreRepositoryPageMarkdown` tolerates a not-found page when the snapshot
+held no markdown, so deleting a newly added page counts as a clean restore;
+`finishRepositoryRun` requires a snapshot for every skipped job and re-applies
+those snapshots before finalizing.
 
-### claims — grounded-claim persistence and evidence resolution
+### claims — grounded-claim persistence, reconciliation guidance, and evidence resolution
 
 Owns the grounded-claims model: strict per-page claim sidecars and the evidence
 that backs them. `src/claims/brains/code/runtime.ts` (`prepareClaimsRuntime`)
@@ -170,6 +198,12 @@ sidecars with a schema version; `session.ts` inspects and replaces page claims;
 mutations, error types, and the resolver cache. `src/claims/evidence/repository/`
 resolves and relocates `repo://` evidence resources (`resolver.ts`,
 `resource.ts`), including opaque line-range relocation metadata.
+`src/claims/guidance.ts` is the shared model-facing Claims standard: it exports
+`CLAIMS_SUBSTANCE_GUIDANCE` (the rules for selecting substantive, atomic
+propositions over shallow per-symbol facts) and `CLAIMS_RECONCILIATION_GUIDANCE`
+(the sparse-reconciliation rules), consumed verbatim by the page-worker prompt
+(`repository-prompts.ts`), the `submit_page` tool description, and the MCP
+server `INSTRUCTIONS` so the model sees one standard across every surface.
 
 ### okf — Open Knowledge Format frontmatter, indexing, and verification
 
@@ -237,18 +271,28 @@ is the principal entry: `HostSessionManager` is a thin single-run MCP adapter ov
 the transport-neutral lifecycle core, serializing one lifecycle operation at a time
 (`runOperation`) and mapping `RepositoryRunError` codes into stable
 `HostIntegrationError`s at the boundary. Its `begin`, `submitPlan`, `nextPage`,
-`submitPage`, and `finish` methods delegate to the `generation/repository-run.ts`
-lifecycle, and `tools()` returns exactly the five OpenWiki lifecycle tools
-(`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, `openwiki_finish`) for an MCP transport to expose. The
+`inspectPageClaims`, `submitPage`, and `finish` methods delegate to the
+`generation/repository-run.ts` lifecycle, and `tools()` returns exactly the six
+OpenWiki lifecycle tools (`openwiki_begin`, `openwiki_submit_plan`,
+`openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`,
+`openwiki_finish`) for an MCP transport to expose. The
 tool descriptions are the host-facing contract: `openwiki_begin` advertises that
 an unrecognized `language` returns `invalid_input` instead of starting a run,
-`openwiki_submit_page` states the Claim-reconciliation rules (reuse ids for
-revisions, omit to retract, omit id for new), and `openwiki_finish` requires
-every job complete before deterministic deletion/validation/indexing.
-`src/integrations/core/protocol.ts` defines the tool input schemas and host-id
+`openwiki_next_page` returns only the stale or unresolved Claims requiring an
+explicit decision (plus an `existingClaimCount`),
+`openwiki_inspect_page_claims` returns the complete Claim set on demand,
+`openwiki_submit_page` states the sparse Claim-reconciliation rules (reuse ids
+for revisions, omit to retain, omit id for new, `retractedClaimIds` for removals),
+and `openwiki_finish` requires every job complete before deterministic
+deletion/validation/indexing. `src/integrations/core/protocol.ts` defines the
+`ProtocolToolName` union (the six tool names), the strict Zod input schemas
+including the sparse `SubmitPageInput` (optional `confirmedClaimIds`,
+`claims`, and `retractedClaimIds`) and `InspectPageClaimsInput`, and host-id
 validation; `repository-root.ts` resolves the repository root.
-`src/integrations/mcp/server.ts` exposes OpenWiki over MCP (stdio in
+`src/integrations/mcp/server.ts` exposes OpenWiki over MCP, advertising an
+`INSTRUCTIONS` preamble that incorporates `CLAIMS_RECONCILIATION_GUIDANCE` from
+`claims/guidance.ts` so the host model follows the same sparse-reconciliation
+standard as the native page-worker prompt (stdio in
 `stdio.ts`); `src/integrations/install/` handles host installation.
 
 ### visualize — local graph viewer
@@ -289,21 +333,27 @@ environment.
 
 The CLI entrypoint parses a command and, for repository generation, the agent
 constructs a model and runs the plan/page loop, which calls the generation
-lifecycle; that lifecycle persists claims and validates OKF frontmatter as it
-writes each page.
+lifecycle; that lifecycle reconciles sparse Claim decisions, persists claims,
+and validates OKF frontmatter as it writes each page. Both the native
+page-worker prompt and the MCP host instructions share the same Claims
+reconciliation guidance from `claims/guidance.ts`.
 
 ```mermaid
 flowchart TD
   CLI["cli/cli.tsx parses and dispatches"] --> Agent["agent/index.ts runOpenWikiAgent"]
   Agent --> Runner["agent/repository-runner.ts plan and page loop"]
-  Runner --> Gen["generation/repository-run.ts lifecycle"]
+  Runner --> Gen["generation/repository-run.ts six-operation lifecycle"]
   Gen --> State["generation/run-state.ts durable checkpoint"]
   Gen --> Claims["claims runtime and store"]
   Gen --> OKF["okf/frontmatter.ts validation"]
+  Guidance["claims/guidance.ts substance and reconciliation standard"] -.-> Runner
+  Guidance -.-> MCP["integrations/mcp/server.ts INSTRUCTIONS"]
   Agent --> Connectors["connectors/tools.ts source tools"]
   Config["config/constants.ts identifiers"] -.-> Agent
   Config -.-> Gen
 ```
 
 Caption: Control flow from the CLI through the agent into the repository
-generation lifecycle, with config identifiers shared across subsystems.
+generation lifecycle, with the shared Claims guidance feeding both the native
+page-worker prompt and the MCP host instructions, and config identifiers
+shared across subsystems.

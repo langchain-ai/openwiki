@@ -3,9 +3,6 @@ type: orientation-guide
 title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -19,6 +16,8 @@ sources:
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
+  - id: openwiki-source-638173446de4138fa3a622a8
+    resource: repo://src/claims/guidance.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
@@ -27,9 +26,14 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
+  - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
+    resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # OpenWiki Quickstart
@@ -129,10 +133,10 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                                                              | Read                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Set up OpenWiki for the first time (provider/model, credentials, repo setup)                                            | [First-Run Onboarding](/openwiki/workflows/onboarding.md)             |
-| Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`)                  | [Repository Generation Workflow](/openwiki/workflows/repository-generation.md) |
+| Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`, with on-demand `inspect_page_claims`)                  | [Repository Generation Workflow](/openwiki/workflows/repository-generation.md) |
 | Understand how a failing or early-exiting page worker is skipped and restored without losing completed pages            | [Repository Generation Workflow](/openwiki/workflows/repository-generation.md) |
 | Understand how repository source drift during a run is detected and why the run finalizes without advancing the source checkpoint | [Repository Generation Workflow](/openwiki/workflows/repository-generation.md) |
-| Understand how Claims are reconciled on update and how a page submits its full Claim set                                | [Claims Reconciliation](/openwiki/workflows/claims-reconciliation.md) |
+| Understand how Claims are reconciled on update and how a page submits sparse Claim decisions (`confirmedClaimIds` / `claims` / `retractedClaimIds`) with issue-free Claims retained automatically and full Claims available via on-demand inspect | [Claims Reconciliation](/openwiki/workflows/claims-reconciliation.md) |
 | Understand deterministic finalize-once finalization, index/provenance sync, link validation, and skipped-page restore on finish | [Wiki Finalization Workflow](/openwiki/workflows/wiki-finalization.md) |
 
 ### Operate and configure it
@@ -164,7 +168,10 @@ the canonical wiki pages; each one links into the deeper source map.
   `OPENWIKI_CONFIG_DIR` to relocate to a different writable directory.
 
 Repository (code) generation follows the resumable page-job flow
-`begin → submit_plan → next_page → submit_page → … → finish`. Each page job has
+`begin → submit_plan → next_page → submit_page → … → finish`, with the
+non-mutating `inspect_page_claims` available on demand inside `generating` for a
+worker that needs the complete current Claim set before intentionally revising
+or removing otherwise-current content. Each page job has
 a `PageJobStatus` of `pending`, `skipped`, or `complete`. A worker that fails or
 exits without submitting its page is marked `skipped` and rolled back to its
 pre-worker state so completed pages are not lost; the run can still `finish` once
@@ -191,13 +198,18 @@ drift.
 
 OpenWiki can also run inside a host coding agent (Codex, Claude Code, OpenCode,
 or Cursor) instead of launching its own model. The integration shares one
-canonical skill and the same five MCP tools as native generation:
-`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, and `openwiki_finish`. The host owns repository research,
-planning, and factual authoring; OpenWiki owns the durable queue, Claims
-reconciliation, source-drift handling, and deterministic finalization. Host-driven
-runs currently support repository code wikis (not personal brains), use the host's
-authenticated model session, and use repository source and tests only — connector
-context (including LangSmith) is not yet supported. See
-[Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) for install
-scope, the host registry, and the host-driven lifecycle boundary.
+canonical skill and the same six MCP operations as native generation:
+`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand
+`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. The
+host owns repository research, planning, and factual authoring; OpenWiki owns the
+durable queue, Claims reconciliation, source-drift handling, and deterministic
+finalization. Host-driven runs currently support repository code wikis (not
+personal brains), use the host's authenticated model session, and use repository
+source and tests only — connector context (including LangSmith) is not yet
+supported. The host submits only sparse Claim decisions for each page
+(`confirmedClaimIds` for rechecked issue Claims kept unchanged, `claims` for
+revisions and additions, `retractedClaimIds` for removals); OpenWiki
+automatically retains current issue-free Claims and makes the full Claim set
+available through on-demand `openwiki_inspect_page_claims` for broad rewrites.
+See [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) for
+install scope, the host registry, and the host-driven lifecycle boundary.

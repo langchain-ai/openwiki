@@ -8,8 +8,12 @@ sources:
     resource: repo://CONTRIBUTING.md
   - id: openwiki-source-438fff4d79b8ab99f5c88c73
     resource: repo://integrations/openwiki/SKILL.md
+  - id: openwiki-source-638173446de4138fa3a622a8
+    resource: repo://src/claims/guidance.ts
   - id: openwiki-source-ada18c62d92003b613355e30
     resource: repo://src/cli/integrations.ts
+  - id: openwiki-source-1197594de038075f3570340c
+    resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-5c32d5425e61a6c32d810844
@@ -42,10 +46,10 @@ sources:
     resource: repo://src/integrations/mcp/stdio.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
@@ -54,7 +58,7 @@ OpenWiki can run _inside_ a host coding agent (Codex, Claude Code, OpenCode, or
 Cursor) instead of as a standalone process. The host agent supplies the model, native
 repository tools, and Markdown authoring; OpenWiki supplies a deterministic,
 resumable **page-job lifecycle** over the Model Context Protocol (MCP). The two
-sides communicate through exactly five MCP tools, and installation wires a local
+sides communicate through exactly six MCP tools, and installation wires a local
 stdio MCP server plus a shared skill bundle into each host's own configuration.
 
 This page documents the protocol operations, the divided ownership of research
@@ -78,14 +82,20 @@ page queue, Claims validation and reconciliation, indexes, provenance,
 finalization, and all managed setup files. This split is stated in the shared
 skill (`integrations/openwiki/SKILL.md`) and reinforced in the MCP server
 instructions advertised at initialization
-(`src/integrations/mcp/server.ts`).
+(`src/integrations/mcp/server.ts`), which embed the shared
+`CLAIMS_RECONCILIATION_GUIDANCE` from `src/claims/guidance.ts` so the sparse
+reconciliation rules reach the host model through the transport as well as the
+skill bundle.
 
-## The five MCP operations
+## The six MCP operations
 
-`HostSessionManager.tools()` exposes exactly five transport-neutral lifecycle
+`HostSessionManager.tools()` exposes exactly six transport-neutral lifecycle
 tools, in order: `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, and `openwiki_finish`. Each tool parses its input against
-a strict Zod schema before delegating to the repository-generation core.
+`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`.
+Each tool parses its input against a strict Zod schema before delegating to the
+repository-generation core. The `ProtocolToolName` type and `tools()` return
+value are the single source of truth for this set; both report "the six
+OpenWiki 0.5 lifecycle tools."
 
 - **`openwiki_begin`** — Starts or resumes a run for an absolute Git root in
   mode `init` or `update`, with optional `language` and `force`. It validates the
@@ -99,12 +109,26 @@ a strict Zod schema before delegating to the repository-generation core.
 - **`openwiki_submit_plan`** — Persists the run's final canonical page plan.
   `pages` may be empty (a valid update with no page work or only deletions), and
   `deletePages` is optional.
-- **`openwiki_next_page`** — Returns the first pending page job with its current
-  Claims, or `status=complete` when the queue is drained.
+- **`openwiki_next_page`** — Returns the first pending page job with its Claim
+  count and **only the stale or unresolved Claims requiring an explicit
+  decision**; current issue-free Claims are retained automatically and stay
+  compact. Returns `status=complete` when the queue is drained.
+- **`openwiki_inspect_page_claims`** — On-demand tool that returns the current
+  pending page's complete Claim set **without opaque evidence versions**, scoped
+  to the current pending job only (`jobId` must match the first pending page, or
+  the call fails with `invalid_state`). Focused updates normally need only the
+  issue Claims already returned by `openwiki_next_page`; this tool exists for the
+  case where the worker intentionally revises or removes otherwise-current
+  content whose Claim ids are not in the pending job.
 - **`openwiki_submit_page`** — Completes the active job after its Markdown is
-  written by submitting that page's complete intended Claim set (at least one
-  material, repository-grounded Claim). Structural `index.md` pages are
-  generated deterministically and never become jobs.
+  written. It takes a **sparse** payload — `confirmedClaimIds` for rechecked
+  issue Claims kept unchanged, `claims` for revised/new propositions, and
+  `retractedClaimIds` for removals — and retains every other current Claim
+  automatically. At least one material, repository-grounded Claim must remain
+  after reconciliation; structural `index.md` pages are generated
+  deterministically and never become jobs. If validation rejects the page or
+  payload, the worker corrects it and retries; completion requires one
+  successful submission.
 - **`openwiki_finish`** — Finalizes the run only after every job is complete:
   deletion, validation, indexing, provenance, Claims finalization, and metadata
   persistence, then clears process-local state.
@@ -122,8 +146,13 @@ sequenceDiagram
     loop until complete
         Host->>SM: openwiki_next_page
         SM->>Core: nextRepositoryPage
-        Core-->>Host: pending job OR complete
-        Host->>SM: openwiki_submit_page(jobId, claims)
+        Core-->>Host: pending job (issue Claims only) OR complete
+        opt revise otherwise-current content
+            Host->>SM: openwiki_inspect_page_claims(jobId)
+            SM->>Core: inspectRepositoryPageClaims
+            Core-->>Host: full Claim set (no evidence versions)
+        end
+        Host->>SM: openwiki_submit_page(jobId, sparse decisions)
         SM->>Core: submitRepositoryPage
     end
     Host->>SM: openwiki_finish
@@ -131,7 +160,9 @@ sequenceDiagram
     Core-->>Host: complete
 ```
 
-The MCP page-job lifecycle a host agent drives end to end.
+The MCP page-job lifecycle a host agent drives end to end. The inspect step is
+optional and used only before intentionally revising or removing
+otherwise-current page content.
 
 ## Session lifecycle and invariants
 
