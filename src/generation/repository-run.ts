@@ -544,6 +544,17 @@ export async function beginRepositoryRun(
 }
 
 /**
+ * True when a backend result error indicates a file does not exist.
+ *
+ * Matches both the standard `"file_not_found"` error code used by some backends
+ * and the human-readable `"Error: File '...' not found"` string returned by
+ * DeepAgents' filesystem backends (see #765).
+ */
+function isNotFoundBackendError(error: string): boolean {
+  return error === "file_not_found" || error.includes("not found");
+}
+
+/**
  * Reconstructs a durable run and invalidates its complete plan on source drift.
  *
  * @param input - Current begin request used to validate the durable owner.
@@ -1014,7 +1025,7 @@ export async function captureRepositoryPageSnapshot(
   let markdown: string | null = null;
   try {
     const read = await run.backend.readRaw(current.path);
-    if (read.error && read.error !== "file_not_found") {
+    if (read.error && !isNotFoundBackendError(read.error)) {
       throw new RepositoryRunError(
         "invalid_state",
         `Could not snapshot ${current.path}: ${read.error}`,
@@ -1118,7 +1129,7 @@ async function restoreRepositoryPageMarkdown(
       : await run.backend.write(snapshot.path, snapshot.markdown);
   if (
     result.error &&
-    !(snapshot.markdown === null && result.error === "file_not_found")
+    !(snapshot.markdown === null && isNotFoundBackendError(result.error))
   ) {
     throw new RepositoryRunError(
       "invalid_state",
@@ -1581,7 +1592,7 @@ async function applyAbandonedGeneratedPageDeletions(
   for (const page of await store.discoverPages()) {
     if (initial.has(page) || planned.has(page)) continue;
     const result = await run.backend.delete(page);
-    if (result.error && result.error !== "file_not_found") {
+    if (result.error && !isNotFoundBackendError(result.error)) {
       throw new RepositoryRunError(
         "invalid_state",
         `Could not remove page abandoned by an invalidated plan ${page}: ${result.error}`,
@@ -1603,7 +1614,7 @@ async function applyPlannedDeletions(
 ): Promise<void> {
   for (const page of pages) {
     const result = await run.backend.delete(page);
-    if (result.error && result.error !== "file_not_found") {
+    if (result.error && !isNotFoundBackendError(result.error)) {
       throw new RepositoryRunError(
         "invalid_state",
         `Could not delete planned OpenWiki page ${page}: ${result.error}`,
