@@ -1,9 +1,11 @@
 ---
 type: concept
 title: Grounded Claims
-description: How OpenWiki grounds generated wiki pages in versioned repository evidence through the Claims model, including the store, session, and runtime split, evidence resolution and staleness detection, and the durability boundary reached at page completion.
+description: How OpenWiki grounds generated wiki pages in versioned repository evidence through the Claims model, including the store, session, and runtime split, evidence resolution and staleness detection, sparse page-completion reconciliation, on-demand full-Claim inspection, and the durability boundary reached at page completion.
 tags: [claims, evidence, grounding, provenance, verification, repository, okf]
 sources:
+  - id: openwiki-source-8b316b2a9d744597bffd9c56
+    resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-4abcc99d4dad36b191736bb7
     resource: repo://src/claims/brains/code/paths.ts
   - id: openwiki-source-3a2496f3cddf91f93a83147d
@@ -26,18 +28,24 @@ sources:
     resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-cd8d06edadee75de8637208c
     resource: repo://src/claims/evidence/repository/resource.ts
+  - id: openwiki-source-638173446de4138fa3a622a8
+    resource: repo://src/claims/guidance.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-58835b77ce38a0dd1fed8d09
+    resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-eab9328975981f427c4218d0
+    resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-9bac7069736f3ea19ed36748
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # Grounded Claims
@@ -117,7 +125,9 @@ failure so a partial write can never corrupt a sidecar.
 Evidence is addressed by a canonical `repo://` URI. The resource is a normalized
 repository-relative path, optionally followed by a GitHub-style line-range
 fragment such as `repo://src/agent/index.ts#L40-L82`. A single-line fragment like
-`#L8` is accepted and canonicalized to `#L8-L8`. Parsing rejects paths that
+`#L8` is accepted and canonicalized to `#L8-L8`. Every evidence resource MUST use
+this `repo://<repository-relative-path>` form (optionally with `#Lx-Ly`); a bare
+path such as `src/agent/index.ts` is invalid. Parsing rejects paths that
 escape the repository, absolute or drive-letter paths, control characters, and
 references to `.git` or `openwiki/`.
 
@@ -177,6 +187,53 @@ Inspection is side-effect-free: it returns cloned, model-facing Claims with the
 opaque evidence versions stripped and any preflight issue attached, without
 creating a write obligation.
 
+## Sparse page-completion submission
+
+A page job never resubmits its whole Claim set. The worker hands
+`submit_page` a **sparse** `ProposedPageClaimReconciliation` with three optional
+fields:
+
+- `confirmedClaimIds` — existing Claims explicitly rechecked and retained
+  unchanged (used for issue-bearing Claims the worker verified are still
+  accurate);
+- `claims` — revised existing Claims (carrying their existing id) and genuinely
+  new propositions (without an id);
+- `retractedClaimIds` — existing Claims removed from the completed page.
+
+`reconcilePageClaims` translates these sparse decisions into the complete
+`confirm` / `update` / `add` / `retract` operation batch the session expects.
+Existing issue-free Claims omitted from every field are **confirmed
+deterministically** — the model need not repeat their statements or evidence,
+and they are retained automatically. A Claim carrying a stale or unresolved
+grounding issue is the exception: it must appear in one of the three explicit
+fields, or reconciliation rejects the submission, so required grounding work
+cannot be skipped. Retraction is delete-like and stays safe across retries: an
+unknown id in `retractedClaimIds` is tolerated when it is no longer owned by the
+session, while unknown `update` / `confirm` ids remain strict.
+
+A proposed Claim with an existing id that is unchanged is folded into a
+`confirm`; a changed one becomes a partial `update` carrying only the fields that
+differ. A proposed Claim without an id is matched against an existing Claim with
+identical statement and evidence before falling back to an `add`, which the
+session allocates a globally unique id for. Reconciliation also refuses a result
+that would leave a completed factual page with zero Claims, so a grounded page
+always retains or establishes at least one material proposition.
+
+## On-demand full-Claim inspection
+
+`nextRepositoryPage` returns only what a focused update needs: the pending job,
+its `existingClaimCount`, and `claimsRequiringAttention` — the subset of Claims
+carrying a stale or unresolved issue. Issue-free Claims are summarized as a
+count, not enumerated, so ordinary updates do not have to carry them.
+
+When a worker must intentionally revise or remove otherwise-current content —
+for example rewriting a section whose Claims are not in `claimsRequiringAttention`
+— it needs the actual Claim ids. `inspectRepositoryPageClaims` (the
+`openwiki_inspect_page_claims` tool) returns the pending page's complete compact
+Claim set without opaque evidence versions, and only for the current pending job.
+It is the on-demand way to obtain complete ids before a revision or removal;
+focused updates that touch only issue-bearing Claims need not call it.
+
 ## The durability boundary at page completion
 
 `ClaimSession.finalize` is the boundary where run-scoped Claim state becomes
@@ -201,9 +258,9 @@ set.
 Each page job is grounded individually before its job is marked complete. On
 `submit_page`, after the page's Markdown is written and its front matter
 deterministically repaired, the run executes a fixed sequence:
-`replacePageClaims` translates the model's complete proposed Claim set into
-`confirm` / `update` / `add` / `retract` operations against the page's existing
-Claims, then `claimsRuntime.finalize` persists the dirty page, and finally
+`reconcilePageClaims` translates the model's sparse Claim decisions into the
+complete `confirm` / `update` / `add` / `retract` operation batch the session
+expects, then `claimsRuntime.finalize` persists the dirty page, and finally
 `assertPageClaimsDurable` re-opens the freshly written sidecar and proves the
 page is durable before advancing the queue.
 
@@ -288,6 +345,18 @@ Every processing phase — preflight, one mutation batch, and one finalization
 pass — wraps the resolver with a fresh `cacheEvidenceResolver` so each
 `(resource, previousVersion)` pair resolves at most once within that phase while
 never caching across a freshness boundary.
+
+## Shared model-facing guidance
+
+The substance and reconciliation standards the worker sees are not ad hoc: they
+live in `src/claims/guidance.ts` as two shared constants —
+`CLAIMS_SUBSTANCE_GUIDANCE` (what counts as a material, atomic, evidence-backed
+proposition, including the `repo://` evidence-resource form requirement) and
+`CLAIMS_RECONCILIATION_GUIDANCE` (the sparse-decision rules: retain issue-free
+Claims automatically, give every issue-bearing Claim an explicit decision, never
+resubmit an unchanged Claim). These constants are shared by the page-worker
+prompt for init, update, and migration and by the MCP server instructions, so the
+same rules reach every host integration and tool description.
 
 ## Related pages
 

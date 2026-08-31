@@ -13,16 +13,12 @@ export const CLAIMS_SUBSTANCE_GUIDANCE = `Claims substance standard:
 - Ensure every material, source-dependent proposition the wiki relies on is represented. Completeness takes priority over minimizing Claim count. Do not omit distinct truths merely because the same function or component already supports another Claim. After establishing coverage, remove semantically duplicate Claims and implementation trivia.`;
 
 /**
- * Shared model-facing rules for reconciling a complete existing Claim set.
- *
- * Existing inspected Claims expose evidence as resource strings while page
- * submission accepts `{resource}` objects, so "unchanged" applies to the
- * resource values rather than the surrounding transport shape.
+ * Shared model-facing rules for sparse reconciliation against existing Claims.
  */
 export const CLAIMS_RECONCILIATION_GUIDANCE = `Claims reconciliation rules:
 - Treat a stale or unresolved marker as a requirement to recheck current source, not as an instruction to retract the Claim automatically.
-- For every existing Claim that remains accurate and materially represented by the page, submit the same Claim id and statement verbatim and preserve the same evidence resource values. This confirms the Claim and lets OpenWiki refresh code-owned evidence versions.
-- If the same conceptual proposition changed, reuse its Claim id and change only the statement or evidence that current source requires. If its evidence moved, keep the id and cite the replacement resource.
-- If an existing Claim is no longer true, no longer material, or no longer asserted by the page, correct or remove the corresponding prose and omit the Claim from submission. Omission retracts it. If a different proposition replaces it, submit that proposition as a new Claim without an id.
-- Submit every genuinely new material proposition without an id. Do not paraphrase unchanged Claim statements, replace stable ids, or retain a Claim the final page no longer asserts.
-- The final page body and complete submitted Claim set must agree.`;
+- Existing issue-free Claims are retained automatically when omitted from the submission. Do not repeat their statements or evidence.
+- Every stale or unresolved Claim shown in the job must receive one explicit decision: put its id in confirmedClaimIds after verifying it remains accurate, submit a revised Claim with the same id in claims, or put its id in retractedClaimIds after removing or correcting the corresponding prose.
+- If an otherwise-current existing Claim must change, inspect the page's complete Claims on demand, then submit only that revised Claim with its existing id. If it is no longer true, material, or asserted by the page, remove or correct the prose and put its id in retractedClaimIds.
+- Submit every genuinely new material proposition in claims without an id. Never paraphrase or resubmit an unchanged Claim.
+- The final page body and reconciled Claim set must agree.`;

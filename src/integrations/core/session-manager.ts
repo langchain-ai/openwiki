@@ -2,6 +2,7 @@ import { RepositoryRunError } from "../../generation/errors.js";
 import {
   beginRepositoryRun,
   finishRepositoryRun,
+  inspectRepositoryPageClaims,
   nextRepositoryPage,
   submitRepositoryPage,
   submitRepositoryPlan,
@@ -10,12 +11,14 @@ import {
 import { HostIntegrationError } from "./errors.js";
 import {
   BeginInput,
+  InspectPageClaimsInput,
   NextPageInput,
   RunInput,
   SubmitPageInput,
   SubmitPlanInput,
   isValidHostId,
   type BeginRequest,
+  type InspectPageClaimsRequest,
   type NextPageRequest,
   type ProtocolTool,
   type RunRequest,
@@ -175,19 +178,24 @@ export class HostSessionManager {
     });
   }
 
+  /** Returns the current pending page's complete Claims only when requested. */
+  async inspectPageClaims(input: InspectPageClaimsRequest): Promise<unknown> {
+    return this.runOperation(() => {
+      const run = this.requireSession(input.runId);
+      return Promise.resolve(inspectRepositoryPageClaims(run, input.jobId));
+    });
+  }
+
   /**
-   * Submits the active job's complete material Claim set.
+   * Submits sparse Claim decisions for the active page job.
    *
-   * @param input - Active job identity and complete intended Claims.
+   * @param input - Active job identity and sparse Claim decisions.
    * @returns Completed page and remaining queue size.
    */
   async submitPage(input: SubmitPageRequest): Promise<unknown> {
     return this.runOperation(async () => {
       const run = this.requireSession(input.runId);
-      return submitRepositoryPage(run, {
-        jobId: input.jobId,
-        claims: input.claims,
-      });
+      return submitRepositoryPage(run, input);
     });
   }
 
@@ -207,7 +215,7 @@ export class HostSessionManager {
   }
 
   /**
-   * Returns exactly the five OpenWiki 0.4 lifecycle tools.
+   * Returns exactly the six OpenWiki 0.5 lifecycle tools.
    *
    * @returns Ordered transport-neutral tool definitions.
    */
@@ -230,14 +238,22 @@ export class HostSessionManager {
       {
         name: "openwiki_next_page",
         description:
-          "Return the first pending page job and its current Claims, or status=complete when no jobs remain.",
+          "Return the first pending page job, its Claim count, and only stale or unresolved Claims requiring an explicit decision; current issue-free Claims remain compact unless inspected on demand.",
         schema: NextPageInput,
         handle: async (input) => this.nextPage(NextPageInput.parse(input)),
       },
       {
+        name: "openwiki_inspect_page_claims",
+        description:
+          "Return the current pending page's complete Claim set without opaque evidence versions. Use only before intentionally revising or removing otherwise-current content; focused updates normally need only the issue Claims returned by openwiki_next_page.",
+        schema: InspectPageClaimsInput,
+        handle: async (input) =>
+          this.inspectPageClaims(InspectPageClaimsInput.parse(input)),
+      },
+      {
         name: "openwiki_submit_page",
         description:
-          "Complete the current page job after its Markdown is written by submitting that page's complete intended repository-grounded Claim set. Preserve the id, exact statement, and evidence resource values of each unchanged existing Claim; reuse its id for a necessary revision; omit it to retract it; and omit id for a genuinely new Claim. The final page and Claim set must agree.",
+          "Complete the current page job after its Markdown is written. Submit only sparse decisions: confirmedClaimIds for rechecked issue Claims retained unchanged, claims for revisions or additions, and retractedClaimIds for removals. Other current Claims are retained automatically. The final page and reconciled Claim set must agree.",
         schema: SubmitPageInput,
         handle: async (input) => this.submitPage(SubmitPageInput.parse(input)),
       },

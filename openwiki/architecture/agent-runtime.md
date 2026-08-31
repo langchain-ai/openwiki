@@ -10,8 +10,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T20:17:27.397Z
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -35,7 +35,7 @@ sources:
     resource: repo://src/config/reasoning.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -76,7 +76,7 @@ Provider selection is `resolveConfiguredProvider`: an explicit `OPENWIKI_PROVIDE
 
 The model id comes from `resolveModelId`: it prefers an explicit option or `OPENWIKI_MODEL_ID`, else the provider's default; a provider with no built-in model options requires the id to be set. The id is normalized and validated, and if it is a known model of a different provider a non-fatal mismatch warning is emitted (the run still proceeds, since a custom gateway may serve it). Resolution also queries `getSelectedModelAvailability`, which aborts the run when a model is provably `unavailable`, but treats an `unknown` result as fine — a catalogue lookup failure is not proof a model cannot be invoked, and only the direct `openai` provider (with an API key and no custom base URL) is actually checked.
 
-After model resolution, `resolveRunConfig` resolves three provider-neutral operational settings that flow into `createModel`: the retry count (`OPENWIKI_PROVIDER_RETRY_ATTEMPTS`), the per-request output-token cap (`OPENWIKI_MAX_OUTPUT_TOKENS`, translated to each SDK's field name), and — for `bedrock` only — the stream idle-timeout watchdog (`OPENWIKI_STREAM_IDLE_TIMEOUT`). These are reported through the debug log so a run's effective limits are observable.
+After model resolution, `resolveRunConfig` resolves three provider-neutral operational settings that flow into `createModel`: the retry count (`OPENWIKI_PROVIDER_RETRY_ATTEMPTS`), the per-request output-token cap via `resolveConfiguredMaxOutputTokens` (`OPENWIKI_MAX_OUTPUT_TOKENS` translated to each SDK's field name, with Bedrock falling back to a 16,000-token default when the neutral setting is unset), and — for `bedrock` only — the stream idle-timeout watchdog (`OPENWIKI_STREAM_IDLE_TIMEOUT`). These are reported through the debug log so a run's effective limits are observable.
 
 ## The provider matrix and model instantiation
 
@@ -89,10 +89,11 @@ Each branch constructs a purpose-built client:
 - **Gemini Enterprise (Vertex)** delegates to `createGeminiEnterpriseModel`, which picks the client from the model family: Claude via the Anthropic Vertex SDK, partner/open-weight models over Vertex's OpenAI-compatible MaaS surface, and Gemini/Gemma over native `generateContent`. Auth is uniform ADC + project + region; only the transport differs.
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
-- **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
+- **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
+- **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
 - **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
 
-The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies (Anthropic's modern-Claude default aside).
+The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 
 `createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is sent either as a Responses-API `reasoning.effort` payload or as a chat-completions `reasoning_effort` kwarg depending on the model's declared transport; an unsupported provider/model or an invalid effort value throws.
 

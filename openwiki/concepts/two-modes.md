@@ -3,9 +3,6 @@ type: concept
 title: Code vs Personal Modes
 description: How OpenWiki chooses between code mode (a repository wiki written to openwiki/) and personal mode (a knowledge brain written to ~/.openwiki/wiki), including mode selection, state directories, and which capabilities apply to each mode.
 tags: [modes, cli, configuration, repository-wiki, personal-wiki, output-mode]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
@@ -27,6 +24,9 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
 ---
 

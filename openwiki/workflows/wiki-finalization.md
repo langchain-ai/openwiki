@@ -22,10 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -221,14 +221,19 @@ At finish, the sequence is:
 4. **Apply deletions and reconcile deleted Claims.** Abandoned generated pages
    and the plan's explicit `deletePages` are removed, and
    `reconcileDeletedClaimPages` records deletions for any sidecar whose Markdown
-   page no longer exists.
+   page no longer exists. All three deletion paths tolerate a not-found backend
+   error via `isNotFoundBackendError` (which matches both the `"file_not_found"`
+   code and the human-readable `"not found"` string), so deleting a page that no
+   longer exists on disk does not abort finalization.
 5. **Run `finalizeWikiArtifacts`** against the rehydrated pre-authoring
    baseline, the run timestamp, the producer actor, the per-page producer-actor
    map, and the session's per-page evidence resources.
 6. **Restore skipped page Markdown.** After finalization, each skipped job's
    snapshot is replayed through `restoreRepositoryPageMarkdown`, writing the
    original bytes back (or deleting the file when the snapshot Markdown is
-   `null`; a missing file on delete is tolerated). This runs _after_
+   `null`; a missing file on that delete is tolerated via
+   `isNotFoundBackendError`, so a page already removed by a deletion step does
+   not abort the restore). This runs _after_
    `finalizeWikiArtifacts` so index synchronization and provenance stamping see
    the final wiki structure; the skipped pages are then returned to their
    pre-worker state, which is the structure the snapshot contract guaranteed.

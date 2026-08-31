@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest";
 import { ClaimSession } from "../../src/claims/brains/code/session.ts";
-import type { PageClaims } from "../../src/claims/brains/code/types.ts";
+import type {
+  GroundingIssue,
+  PageClaims,
+} from "../../src/claims/brains/code/types.ts";
 import type { Claim, EvidenceResolver } from "../../src/claims/core/types.ts";
 import { RepositoryRunError } from "../../src/generation/errors.ts";
 import {
   createRepositoryPlan,
-  replacePageClaims,
+  reconcilePageClaims,
 } from "../../src/generation/page-jobs.ts";
 
 const PAGE = "/openwiki/page.md";
@@ -45,6 +48,7 @@ function createSession(
   options: {
     resolver?: EvidenceResolver;
     ids?: string[];
+    issues?: GroundingIssue[];
   } = {},
 ): ClaimSession {
   const persisted: PageClaims = {
@@ -56,7 +60,7 @@ function createSession(
   return new ClaimSession({
     resolver: options.resolver ?? createResolver(),
     persisted: new Map([[PAGE, persisted]]),
-    issues: [],
+    issues: options.issues ?? [],
     orphanPages: [],
     createClaimId: () => ids.shift() ?? "claim_fallback",
   });
@@ -238,7 +242,7 @@ describe("createRepositoryPlan", () => {
   });
 });
 
-describe("replacePageClaims", () => {
+describe("reconcilePageClaims", () => {
   const existing: Claim[] = [
     {
       id: "claim_keep",
@@ -257,25 +261,23 @@ describe("replacePageClaims", () => {
     },
   ];
 
-  test("adds, confirms, updates, and retracts a complete Claim set", async () => {
+  test("retains omitted current Claims and applies sparse updates, additions, and retractions", async () => {
     const session = createSession(existing, { ids: ["claim_added"] });
 
-    await replacePageClaims(session, PAGE, [
-      {
-        id: "claim_keep",
-        statement: "The feature exists.",
-        evidence: [{ resource: "repo://feature.ts" }],
-      },
-      {
-        id: "claim_update",
-        statement: "The new value is enabled.",
-        evidence: [{ resource: "repo://new.ts" }],
-      },
-      {
-        statement: "A second feature exists.",
-        evidence: [{ resource: "repo://second.ts" }],
-      },
-    ]);
+    await reconcilePageClaims(session, PAGE, {
+      claims: [
+        {
+          id: "claim_update",
+          statement: "The new value is enabled.",
+          evidence: [{ resource: "repo://new.ts" }],
+        },
+        {
+          statement: "A second feature exists.",
+          evidence: [{ resource: "repo://second.ts" }],
+        },
+      ],
+      retractedClaimIds: ["claim_retract"],
+    });
 
     expect(session.inspectClaims(PAGE)).toEqual([
       {
@@ -296,37 +298,72 @@ describe("replacePageClaims", () => {
     ]);
   });
 
-  test("preserves an exact no-ID match and normalizes evidence as a set", async () => {
+  test("preserves exact current statements without model round-tripping", async () => {
     const session = createSession(existing);
 
-    await replacePageClaims(session, PAGE, [
-      {
-        statement: " The feature exists. ",
-        evidence: [
-          { resource: " repo://feature.ts " },
-          { resource: "repo://feature.ts" },
-        ],
-      },
-    ]);
+    await reconcilePageClaims(session, PAGE, {});
 
-    expect(session.inspectClaims(PAGE)).toEqual([
-      {
-        id: "claim_keep",
-        statement: "The feature exists.",
-        evidence: ["repo://feature.ts"],
-      },
-    ]);
+    expect(session.inspectClaims(PAGE)).toEqual(
+      existing.map(({ id, statement, evidence }) => ({
+        id,
+        statement,
+        evidence: evidence.map(({ resource }) => resource),
+      })),
+    );
   });
 
-  test("rejects duplicate complete proposals", async () => {
+  test("cannot paraphrase an omitted unchanged Claim while adding another", async () => {
+    const ownershipClaim: Claim = {
+      id: "claim_owner",
+      statement: "src/visualize/ owns the local graph viewer.",
+      evidence: [
+        { resource: "repo://src/visualize/server.ts", version: "old" },
+      ],
+    };
+    const session = createSession([ownershipClaim], { ids: ["claim_added"] });
+
+    await reconcilePageClaims(session, PAGE, {
+      claims: [
+        {
+          statement: "The viewer also supports static export.",
+          evidence: [{ resource: "repo://src/visualize/static-export.ts" }],
+        },
+      ],
+    });
+
+    expect(session.inspectClaims(PAGE)[0]?.statement).toBe(
+      "src/visualize/ owns the local graph viewer.",
+    );
+  });
+
+  test("requires an explicit decision for every stale or unresolved Claim", async () => {
+    const issue: GroundingIssue = {
+      page: PAGE,
+      claimId: "claim_keep",
+      kind: "stale",
+      resources: ["repo://feature.ts"],
+    };
+    const session = createSession(existing, { issues: [issue] });
+
+    await expect(reconcilePageClaims(session, PAGE, {})).rejects.toThrow(
+      "claim_keep is stale and requires an explicit confirm, update, or retract decision",
+    );
+
+    await reconcilePageClaims(session, PAGE, {
+      confirmedClaimIds: ["claim_keep"],
+    });
+    expect(session.inspectClaims(PAGE)).toHaveLength(3);
+  });
+
+  test("rejects duplicate sparse proposals", async () => {
     const session = createSession(existing);
     const proposal = {
-      statement: "The feature exists.",
-      evidence: [{ resource: "repo://feature.ts" }],
+      statement: "A newly proposed feature exists.",
+      evidence: [{ resource: "repo://new-feature.ts" }],
     };
 
     await expect(
-      replacePageClaims(session, PAGE, [proposal, proposal]),
+      reconcilePageClaims(session, PAGE, { claims: [proposal, proposal] }),
     ).rejects.toThrow("Duplicate proposed Claim");
     expect(session.inspectClaims(PAGE).map(({ id }) => id)).toEqual([
       "claim_keep",
@@ -335,21 +372,52 @@ describe("replacePageClaims", () => {
     ]);
   });
 
+  test("rejects conflicting decisions and a factual page with no final Claims", async () => {
+    const session = createSession(existing);
+    await expect(
+      reconcilePageClaims(session, PAGE, {
+        confirmedClaimIds: ["claim_keep"],
+        retractedClaimIds: ["claim_keep"],
+      }),
+    ).rejects.toThrow("more than one reconciliation decision");
+
+    await expect(
+      reconcilePageClaims(session, PAGE, {
+        retractedClaimIds: existing.map(({ id }) => id),
+      }),
+    ).rejects.toThrow("must retain or establish at least one material Claim");
+  });
+
+  test("treats an already absent retraction as an idempotent retry", async () => {
+    const session = createSession(existing);
+    const reconciliation = { retractedClaimIds: ["claim_retract"] };
+
+    await reconcilePageClaims(session, PAGE, reconciliation);
+    await reconcilePageClaims(session, PAGE, reconciliation);
+
+    expect(session.inspectClaims(PAGE).map(({ id }) => id)).toEqual([
+      "claim_keep",
+      "claim_update",
+    ]);
+  });
+
   test("does not conflate Claim fingerprints containing delimiter characters", async () => {
     const session = createSession([], {
       ids: ["claim_first", "claim_second"],
     });
 
-    await replacePageClaims(session, PAGE, [
-      {
-        statement: "alpha\u0000beta",
-        evidence: [{ resource: "repo://gamma.ts" }],
-      },
-      {
-        statement: "alpha",
-        evidence: [{ resource: "beta\u0000repo://gamma.ts" }],
-      },
-    ]);
+    await reconcilePageClaims(session, PAGE, {
+      claims: [
+        {
+          statement: "alpha\u0000beta",
+          evidence: [{ resource: "repo://gamma.ts" }],
+        },
+        {
+          statement: "alpha",
+          evidence: [{ resource: "beta\u0000repo://gamma.ts" }],
+        },
+      ],
+    });
 
     expect(session.inspectClaims(PAGE)).toHaveLength(2);
   });
@@ -370,15 +438,23 @@ describe("replacePageClaims", () => {
 
     for (const id of ["claim_unknown", otherId]) {
       await expect(
-        replacePageClaims(session, PAGE, [
-          {
-            id,
-            statement: "A proposal.",
-            evidence: [{ resource: "repo://feature.ts" }],
-          },
-        ]),
+        reconcilePageClaims(session, PAGE, {
+          claims: [
+            {
+              id,
+              statement: "A proposal.",
+              evidence: [{ resource: "repo://feature.ts" }],
+            },
+          ],
+        }),
       ).rejects.toThrow(`Claim ${id} is not owned by ${PAGE}`);
     }
+
+    await expect(
+      reconcilePageClaims(session, PAGE, {
+        retractedClaimIds: [otherId ?? ""],
+      }),
+    ).rejects.toThrow(`Claim ${otherId} is not owned by ${PAGE}`);
   });
 
   test("keeps session state atomic when evidence resolution fails", async () => {
@@ -388,18 +464,20 @@ describe("replacePageClaims", () => {
     const before = session.inspectClaims(PAGE);
 
     await expect(
-      replacePageClaims(session, PAGE, [
-        {
-          id: "claim_keep",
-          statement: "Changed before failure.",
-          evidence: [{ resource: "repo://feature.ts" }],
-        },
-        {
-          id: "claim_update",
-          statement: "This cannot resolve.",
-          evidence: [{ resource: "repo://missing.ts" }],
-        },
-      ]),
+      reconcilePageClaims(session, PAGE, {
+        claims: [
+          {
+            id: "claim_keep",
+            statement: "Changed before failure.",
+            evidence: [{ resource: "repo://feature.ts" }],
+          },
+          {
+            id: "claim_update",
+            statement: "This cannot resolve.",
+            evidence: [{ resource: "repo://missing.ts" }],
+          },
+        ],
+      }),
     ).rejects.toThrow("Evidence does not resolve: repo://missing.ts");
     expect(session.inspectClaims(PAGE)).toEqual(before);
   });

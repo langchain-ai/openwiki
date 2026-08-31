@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d9fec99a602b674accda34271a6c6d39ab9e7d18dc07d95c343cb772f5216f3a",
+  "pageVersion": "sha256:3c710a0d0e0e47caca6dacdf81c9c01ac447a897914bf66f560a9f5dca997b76",
   "claims": [
     {
       "id": "claim_da05ca1b44a042d9ab9a5935194059af",
-      "statement": "OpenWiki telemetry is opt-out and emits exactly one PostHog event, TELEMETRY_RUN_EVENT (\"openwiki_run\"), per completed init or update run, carrying command/outcome/environment and (on failure) error classification.",
+      "statement": "OpenWiki telemetry is opt-out and emits exactly one PostHog event, TELEMETRY_RUN_EVENT (true) per completed init or update run, carrying command/outcome/environment and (on failure) error classification.",
       "evidence": [
         {
           "resource": "repo://src/telemetry/config.ts#L26-L30",
@@ -54,7 +54,7 @@
     },
     {
       "id": "claim_9e531c35bc0a4109addd693eb90336f6",
-      "statement": "Every event is stamped with production provenance derived from build origin (isProductionBuild, true only when running from dist/, not from NODE_ENV) and a build_channel that is \"official\" only for npm-published upstream builds, so real usage and official-release signal can be separated from dev/fork telemetry.",
+      "statement": "Every event is stamped with production provenance derived from build origin (isProductionBuild, true only when running from dist/, not from NODE_ENV) and a build_channel that is true only for npm-published upstream builds, so real usage and official-release signal can be separated from dev/fork telemetry.",
       "evidence": [
         {
           "resource": "repo://src/telemetry/gates.ts#L1-L23",
@@ -86,11 +86,19 @@
     },
     {
       "id": "claim_71aafdf65786476c9a8e06cc4d52dbec",
-      "statement": "firstRunNoticePending returns true only on the run that mints the install id (isNew), returns false and mints no id when opted out or in CI (noticeSuppressed), and never throws; the CLI calls it once at startup before any event is sent and renders single-sourced disclosure copy from config.ts.",
+      "statement": "firstRunNoticePending returns true only on the run that mints the install id (isNew), returns false and mints no id when opted out or in CI (noticeSuppressed), and never throws; the CLI calls it once at startup before any event is sent (only when commandEmitsTelemetry is true, i.e. a non-dry-run init or update) and renders single-sourced disclosure copy from config.ts as an Ink box (TUI) or framed stderr text (print).",
       "evidence": [
         {
-          "resource": "repo://src/cli/cli.tsx#L72-L103",
-          "version": "repo-lines-v1:sha256:edd0bf0c5088e418c235581469f5d602b6ce3ffc3727292bb86815e46a33ea99:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZGVkNGE4ZWJjOTFjYzM0NTU0ZGJiMzVkYWQ2MGVkN2YyMThlMzZkOWFkMGRlM2IwMDBjYTRlYzJhOTFkOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1OTE3YmM5YTExM2E0Y2NhOGY4MTIxNTBmZmY1ZGRlOTc3NGE2NjA3NjBlMDAzMTliZGQyYjc3MDg0Mzc2NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZjI3NzA3YTcyMWNmMWY5NGQ2M2Q1ZWJhY2E4NGIxNmE5YmE5MTQxOGI1MWRjYjQ2NmE0ZDY0NjgwYWUwYzAifQ"
+          "resource": "repo://src/cli/cli.tsx#L72-L78",
+          "version": "repo-lines-v1:sha256:5cae9118e5501d7e02679a428079fec9ac8aa242cd865a817400bb213eecf357:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdkZWQ0YThlYmM5MWNjMzQ1NTRkYmIzNWRhZDYwZWQ3ZjIxOGUzNmQ5YWQwZGUzYjAwMGNhNGVjMmE5MWQ4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjU5MTdiYzlhMTEzYTRjY2E4ZjgxMjE1MGZmZjVkZGU5Nzc0YTY2MDc2MGUwMDMxOWJkZDJiNzcwODQzNzY2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ5YzQ3ZjRiZTJmNmM0OTUzMDNmNTZhYmEzNjc3YjJhOWExM2Q2NzZhMWE1OTQ1OTk2ODk1ZmQ1MDM2NDNmNyJ9"
+        },
+        {
+          "resource": "repo://src/cli/cli.tsx#L96-L105",
+          "version": "repo-lines-v1:sha256:621147ab37b29f405d95e6831ec20d72d01e730489f0819bbe1ef9b1d6e7617a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMGNhZmEwMDdhZmJlYmNkMDBhYTk1NDExMmJhOTM4NjI4MjA2YmJkNDgzNDZjMjcyNjg1ODJkZDY5YzNhM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNTcyOGMwZmI3ZTIyNzY3NmE5MTM4YWM4MTRiNWMzNTllNmFkYThmY2ZkOTUzZWIwODI3NGMzODFlZGY5ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4NGUxMTE3ODNhZWQ3NDM4MGU0M2JmMDhkMDIzYmJlYWM1NDYwZDQ5MDNkNWI0MGM2ODQ4ODA2M2UwMjk5NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2ZWU0YTQxNDNhZTE4MGZkOGUwMTczY2M2NzI5MTZkM2M4OTgxNWVjYzkzZjMzMjExOTA1ZTczMjYzZDg1MDgifQ"
+        },
+        {
+          "resource": "repo://src/cli/commands.ts#L1057-L1068",
+          "version": "repo-lines-v1:sha256:ef40ae736c21fc42dd47fca7086d383cd282fa41a9d04f94470cd03b1c814120:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhZWViMGYwMmRkZDI0ZDA4NWFiNzI4NjM2Y2I3MWQwOGI1NGY4YTEyMGEzZGI1ZWVmZjNiZjMwZTY1OTAzYjcifQ"
         },
         {
           "resource": "repo://src/telemetry/config.ts#L32-L41",
@@ -202,7 +210,7 @@
     },
     {
       "id": "claim_5bba6cb3f5b144c48af342dbf864c646",
-      "statement": "The --telemetry-file tee writes the exact record to an unguessable owner-only (0o600) scratch sibling opened with flag \"wx\" (refusing to follow a pre-planted symlink) and atomically renames it into place, defeating symlink attacks and permission leakage in shared directories; a failed tee logs to stderr but never fails the run.",
+      "statement": "The --telemetry-file tee writes the exact record to an unguessable owner-only (0o600) scratch sibling opened with flag true (refusing to follow a pre-planted symlink) and atomically renames it into place, defeating symlink attacks and permission leakage in shared directories; a failed tee logs to stderr but never fails the run.",
       "evidence": [
         {
           "resource": "repo://src/telemetry/senders.ts#L156-L165",
@@ -396,7 +404,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-29T08:08:01.897Z"
   }
 }

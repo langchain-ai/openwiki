@@ -6,6 +6,12 @@ tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
+  - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
+    resource: repo://src/integrations/core/protocol.ts
+  - id: openwiki-source-58835b77ce38a0dd1fed8d09
+    resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-eab9328975981f427c4218d0
+    resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6cc520117b0eb03bfd36a7c8
     resource: repo://test/agent/frontmatter-validator.test.ts
   - id: openwiki-source-e25b880bed632d812ac9f1a8
@@ -46,6 +52,12 @@ sources:
     resource: repo://test/generation/run-state.test.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
+  - id: openwiki-source-1830eb3a15f412bf58d08bef
+    resource: repo://test/integrations/mcp-server.test.ts
+  - id: openwiki-source-7586182fa3a8278fbe99d348
+    resource: repo://test/integrations/protocol.test.ts
+  - id: openwiki-source-d1d0d34cd042b7cd70476a68
+    resource: repo://test/integrations/session-manager.test.ts
   - id: openwiki-source-5c504746431185b33e3c7f39
     resource: repo://test/mermaid/dom-shim.test.ts
   - id: openwiki-source-43240ab040106a6f63192176
@@ -58,10 +70,10 @@ sources:
     resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+    at: 2026-08-30T10:21:48.925Z
 ---
 
 # Testing Guide
@@ -278,8 +290,21 @@ concern, mirroring `src/generation/`:
   atomic write/read, validation rejection (a wrong `schemaVersion` must not
   replace durable state), and temp-file cleanup when rename fails.
 - `test/generation/page-jobs.test.ts` exercises `createRepositoryPlan` and
-  `replacePageClaims` through a `ClaimSession` with a deterministic evidence
-  resolver, pinning plan construction and page-claim replacement.
+  `reconcilePageClaims` through a `ClaimSession` with a deterministic evidence
+  resolver. The `createRepositoryPlan` suite pins plan construction: init
+  requires `/openwiki/quickstart.md` and forbids init deletions, quickstart
+  deletion is forbidden, duplicate planned pages and generate/delete overlap
+  are rejected, structural and reserved working pages (`index.md`,
+  `nested/_draft.md`) are rejected, and page inputs are normalized with
+  quickstart ordered last. The `reconcilePageClaims` suite pins sparse
+  reconciliation: omitted issue-free Claims are retained without model
+  round-tripping, a stale or unresolved Claim requires an explicit
+  confirm/update/retract decision, duplicate sparse proposals and conflicting
+  double-decisions (the same id in both `confirmedClaimIds` and
+  `retractedClaimIds`) are rejected, retracting every Claim on a factual page
+  is forbidden, an already-absent retraction is an idempotent retry, Claim
+  fingerprints containing delimiter characters are not conflated, and session
+  state stays atomic when evidence resolution fails.
 - `test/generation/repository-run.test.ts` is the end-to-end run-lifecycle test
   described in detail below.
 
@@ -319,6 +344,57 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   any handler, so clicking blank graph space never clears the reader, while
   node clicks select a page and highlight its sidebar entry.
 
+### Integrations: protocol, session manager, and MCP server
+
+`test/integrations/` mirrors `src/integrations/`. It splits the host-integration
+surface by transport boundary: the transport-neutral protocol schema, the
+single-run session manager that adapts it, and the MCP transport server that
+exposes it:
+
+- `test/integrations/protocol.test.ts` exercises the strict Zod schemas in
+  `src/integrations/core/protocol.ts`. It validates the complete six-tool
+  protocol surface: `BeginInput` (strict, trims `root`/`language`, rejects
+  unknown modes and extra fields), `RunInput`/`NextPageInput` (shared strict
+  UUID run identity), `SubmitPlanInput` (strict, rejects extra fields),
+  `PlanPageInput` (canonicalizes `path`/`title`/`purpose`/`seedPaths`/
+  `relatedPages`/`instructions`), and `SubmitPageInput` — the sparse Claim
+  reconciliation schema with `confirmedClaimIds`/`claims`/`retractedClaimIds`.
+  It asserts that a proposed Claim with empty evidence is rejected and that a
+  proposed Claim carrying a code-owned `version` is rejected (only bare
+  `resource` is accepted). `ProposedPageClaimInput` trims and canonicalizes the
+  `id`/`statement`/`resource` fields. It also pins `isValidHostId`'s bounded
+  canonical identity rules (`[a-z0-9-]{1,64}`, rejecting uppercase, underscore,
+  and over-length identities).
+- `test/integrations/session-manager.test.ts` exercises
+  `HostSessionManager.create` and its single-run adapter over the real
+  repository lifecycle. It asserts the ordered six-tool lifecycle
+  (`openwiki_begin` → `openwiki_submit_plan` → `openwiki_next_page` →
+  `openwiki_inspect_page_claims` → `openwiki_submit_page` → `openwiki_finish`)
+  and that `inspectPageClaims` is exposed on demand. It covers resumability
+  across different hosts (a `codex`-started run is resumed by `claude-code`),
+  nested-path-to-Git-root resolution via `realpath`, the strict active-run-id
+  guard, begin conflict mapping (a second `begin` with a conflicting mode
+  rejects with `conflict` and retains the prior active run), the
+  one-operation-at-a-time guard, repository lifecycle failure mapping to
+  bounded `HostIntegrationError`s, and the durable-finish completion that
+  clears active state.
+- `test/integrations/mcp-server.test.ts` exercises
+  `createOpenWikiMcpServer` through linked in-memory MCP transports. It asserts
+  the server advertises the six lifecycle tools in order and that the
+  `INSTRUCTIONS` embedding (from `src/integrations/mcp/server.ts`) contains
+  the sparse-workflow guidance — the host's native repository tools,
+  `openwiki_submit_plan`/`openwiki_next_page`/`openwiki_inspect_page_claims`/
+  `openwiki_submit_page`, that issue-free Claims are "retained
+  automatically" and only sparse Claim decisions are submitted, the stale or
+  unresolved recheck requirement, "Never report success before finish", and
+  "source drift invalidated the plan" — while never mentioning the removed
+  `openwiki_resolve_claims`. It also covers successful tool calls (text JSON
+  plus structured content) and error bounding: a `HostIntegrationError` is
+  surfaced as a bounded `isError` result while an unknown failure is replaced
+  with a generic `OpenWiki MCP operation failed.` message and never leaks the
+  sensitive text to the client or stderr. A lifecycle smoke test completes one
+  factual init page through all five transport calls.
+
 ## Testing patterns you will reuse
 
 - **Dependency injection via `vi.mock` + `vi.hoisted`.** Failure-path tests
@@ -356,29 +432,46 @@ parts that can run in plain Node and the browser-only client glue that cannot:
 the repository generation workflow. It imports `parseFrontmatterFields` and
 `validateOkfFrontmatter` from `src/okf/frontmatter.ts`, plus the run lifecycle
 (`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
-`submitRepositoryPage`, `finishRepositoryRun`) and the skip primitives
-(`captureRepositoryPageSnapshot`, `skipRepositoryPage`) from
-`src/generation/repository-run.ts`, and drives the full begin → submit_plan →
-next_page → submit_page → finish lifecycle against a temporary Git repository.
-A `failureHarness` created with `vi.hoisted` wraps the real `page-manifest.js`,
-`agent/utils.js`, and `run-state.js` modules to inject failures on selected
-calls while otherwise delegating to the real implementation (see the testing
-patterns above). Each test creates a committed Git repository (via the
-`git`/`createRepository` helpers), optionally arms the failure counters in
-`beforeEach`, and removes the temporary directories in `afterEach`, so the run's
-recovery and rollback paths are exercised against a real repository without
-leaving state behind.
+`submitRepositoryPage`, `finishRepositoryRun`) and the skip/inspect primitives
+(`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
+`inspectRepositoryPageClaims`) from `src/generation/repository-run.ts`, and
+drives the full begin → submit_plan → next_page → submit_page → finish
+lifecycle against a temporary committed Git repository. A `failureHarness`
+created with `vi.hoisted` wraps the real `page-manifest.js`, `agent/utils.js`,
+and `run-state.js` modules to inject failures on selected calls while otherwise
+delegating to the real implementation (see the testing patterns above). Each
+test creates a committed Git repository (via the `git`/`createRepository`
+helpers), optionally arms the failure counters in `beforeEach`, and removes the
+temporary directories in `afterEach`, so the run's recovery and rollback paths
+are exercised against a real repository without leaving state behind.
 
-The suite also covers the **skip path** for a page whose worker does not submit:
-`captureRepositoryPageSnapshot` snapshots the on-disk Markdown and Claims before
-the page is mutated, `skipRepositoryPage` restores that snapshot and marks the
-page `skipped` (the `restores the exact pending Markdown and Claims snapshot`
-test), and `finishRepositoryRun` accepts a `skippedPageSnapshots` list so a
-finish-after-skip leaves the original content and Claims in place, drops run
-state, and stamps an `interrupted` last-update status. A separate
-`resets an interrupted skipped job to pending on resume` test proves that
-resuming a run whose first page was skipped re-queues that page as `pending`
-rather than carrying the skipped status forward.
+The suite covers the full **page-queue lifecycle**: `nextRepositoryPage`
+returns the first pending job (with its existing Claim count and
+Claims-requiring-attention), `submitRepositoryPage` does not complete a page
+until Claims and checkpoint state are durable (a Claims-persistence or
+run-state-write failure leaves the page pending), `inspectRepositoryPageClaims`
+returns the current pending page's complete Claims only for that page's job id
+and throws for any other id, and `finishRepositoryRun` finalizes completed
+work, stamps provenance, and persists run metadata.
+
+The suite also covers the **skip path** for a page whose worker does not
+submit: `captureRepositoryPageSnapshot` snapshots the on-disk Markdown and
+Claims before the page is mutated, `skipRepositoryPage` restores that snapshot
+and marks the page `skipped` (the `restores the exact pending Markdown and
+Claims snapshot` test), and `finishRepositoryRun` accepts a
+`skippedPageSnapshots` list so a finish-after-skip leaves the original content
+and Claims in place, drops run state, and stamps an `interrupted` last-update
+status. A separate `resets an interrupted skipped job to pending on resume`
+test proves that resuming a run whose page was skipped re-queues that page as
+`pending` rather than carrying the skipped status forward. A
+`treats an absent page as a restorable snapshot` parameterized test (init and
+update) proves a never-written page snapshots `markdown: null`/`claims: null`
+and rolling it back removes the file, and a
+`tolerates a human-readable not-found error from the backend when skipping a
+never-written page` test (regression for #765) asserts the skip path tolerates
+a DeepAgents backend that returns `Error: File '...' not found` rather than a
+`file_not_found` code, so rolling back a new page worker does not abort the
+whole run.
 
 ## Choosing the narrowest validation per subsystem
 
@@ -398,6 +491,10 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Source fingerprinting / changed paths:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts`.
 - **Page manifest persistence:** `pnpm exec vitest run test/generation/page-manifest.test.ts`.
 - **Run-state persistence:** `pnpm exec vitest run test/generation/run-state.test.ts`.
+- **Plan construction and Claim reconciliation:** `pnpm exec vitest run test/generation/page-jobs.test.ts`.
+- **Host protocol schema:** `pnpm exec vitest run test/integrations/protocol.test.ts`.
+- **Host session manager:** `pnpm exec vitest run test/integrations/session-manager.test.ts`.
+- **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
 - **Code-mode ingestion setup:** `pnpm exec vitest run test/ingestion/code-mode.test.ts`.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 

@@ -12,14 +12,13 @@ tags:
     opt-out,
     observability,
   ]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
+  - id: openwiki-source-3fc16f0371ced4d94330f06c
+    resource: repo://src/cli/commands.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
@@ -54,7 +53,10 @@ sources:
     resource: repo://test/telemetry/telemetry.test.ts
   - id: openwiki-source-9ba5e33980ba1f452c6884d4
     resource: repo://test/telemetry/with-run-telemetry.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T08:08:01.897Z
 ---
 
 # Telemetry and Diagnostics
@@ -108,10 +110,12 @@ only on the run that created it.
 That `isNew` signal drives the one-time disclosure. `firstRunNoticePending`
 returns true only on the first run on a machine, and returns false (minting no
 id) when telemetry is disabled or in CI (`noticeSuppressed`). It never throws.
-The CLI (`cli.tsx`) calls it once at startup before any event is sent, and
-renders the disclosure copy — single-sourced as `FIRST_RUN_NOTICE_BODY`,
-`FIRST_RUN_NOTICE_OPT_OUT`, and `FIRST_RUN_NOTICE_VERIFY` in `config.ts` — as an
-Ink box in the interactive TUI or plain framed text on stderr for print mode.
+The CLI (`cli.tsx`) calls it once at startup — only when `commandEmitsTelemetry`
+is true, i.e. a non-dry-run `init` or `update`, the only commands that emit the
+event — and before any event is sent, then renders the disclosure copy —
+single-sourced as `FIRST_RUN_NOTICE_BODY`, `FIRST_RUN_NOTICE_OPT_OUT`, and
+`FIRST_RUN_NOTICE_VERIFY` in `config.ts` — as an Ink box in the interactive TUI
+or plain framed text on stderr for print mode.
 
 ## The single run-telemetry boundary
 

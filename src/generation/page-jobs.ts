@@ -78,6 +78,24 @@ export interface ProposedPageClaim {
 }
 
 /**
+ * Sparse model/host reconciliation for one completed factual page.
+ *
+ * Existing issue-free Claims omitted from every field are confirmed
+ * deterministically. Claims with a stale or unresolved issue must be named by
+ * one of the explicit fields so required grounding work cannot be skipped.
+ */
+export interface ProposedPageClaimReconciliation {
+  /** Existing Claims explicitly rechecked and retained without content edits. */
+  confirmedClaimIds?: string[];
+
+  /** Revised existing Claims (with id) and genuinely new Claims (without id). */
+  claims?: ProposedPageClaim[];
+
+  /** Existing Claims explicitly removed from the completed page. */
+  retractedClaimIds?: string[];
+}
+
+/**
  * Complete planner submission before normalization and required-job insertion.
  */
 export interface ProposedRepositoryPlan {
@@ -371,27 +389,53 @@ function uniqueSorted(values: string[]): string[] {
 }
 
 /**
- * Reconciles one page's complete proposed Claim set into session operations.
+ * Reconciles one page's sparse Claim decisions into complete session operations.
  *
- * Exact no-ID matches preserve IDs; omitted existing Claims are retracted.
+ * Existing issue-free Claims omitted from the payload are confirmed without
+ * requiring the model to repeat their statements or evidence. Claims carrying
+ * a grounding issue require an explicit confirm, update, or retract decision.
  *
  * @param session - Active process-local Claims session.
- * @param pageInput - Page owning the complete proposed Claim set.
- * @param proposedInput - Complete replacement Claim proposals for the page.
+ * @param pageInput - Page owning the proposed Claim reconciliation.
+ * @param proposedInput - Sparse explicit Claim decisions for the page.
  */
-export async function replacePageClaims(
+export async function reconcilePageClaims(
   session: ClaimSession,
   pageInput: string,
-  proposedInput: readonly ProposedPageClaim[],
+  proposedInput: ProposedPageClaimReconciliation,
 ): Promise<void> {
   const page = normalizeWikiPagePath(pageInput);
   const existing = session.inspectClaims(page);
   const existingById = new Map(existing.map((claim) => [claim.id, claim]));
-  const usedExistingIds = new Set<string>();
+  const targetedExistingIds = new Set<string>();
   const proposedFingerprints = new Set<string>();
   const operations: ClaimOperation[] = [];
 
-  for (const raw of proposedInput) {
+  const targetExisting = (rawId: string, decision: string): InspectedClaim => {
+    const id = rawId.trim();
+    const current = existingById.get(id);
+    if (!current) {
+      throw new RepositoryRunError(
+        "invalid_input",
+        `Claim ${id || "(empty)"} is not owned by ${page}.`,
+      );
+    }
+    if (targetedExistingIds.has(id)) {
+      throw new RepositoryRunError(
+        "invalid_input",
+        `Claim ${id} has more than one reconciliation decision for ${page} (${decision}).`,
+      );
+    }
+    targetedExistingIds.add(id);
+    return current;
+  };
+
+  for (const id of proposedInput.confirmedClaimIds ?? []) {
+    const current = targetExisting(id, "confirm");
+    operations.push({ op: "confirm", id: current.id });
+  }
+
+  for (const raw of proposedInput.claims ?? []) {
     const proposed = normalizeProposedClaim(raw);
     const fingerprint = claimFingerprint(proposed.statement, proposed.evidence);
     if (proposedFingerprints.has(fingerprint)) {
@@ -403,20 +447,7 @@ export async function replacePageClaims(
     proposedFingerprints.add(fingerprint);
 
     if (proposed.id) {
-      const current = existingById.get(proposed.id);
-      if (!current) {
-        throw new RepositoryRunError(
-          "invalid_input",
-          `Claim ${proposed.id} is not owned by ${page}.`,
-        );
-      }
-      if (usedExistingIds.has(current.id)) {
-        throw new RepositoryRunError(
-          "invalid_input",
-          `Claim ${current.id} was proposed more than once for ${page}.`,
-        );
-      }
-      usedExistingIds.add(current.id);
+      const current = targetExisting(proposed.id, "update");
 
       if (sameClaim(current, proposed)) {
         operations.push({ op: "confirm", id: current.id });
@@ -436,13 +467,12 @@ export async function replacePageClaims(
       continue;
     }
 
-    const exactExisting = existing.find(
-      (candidate) =>
-        !usedExistingIds.has(candidate.id) && sameClaim(candidate, proposed),
+    const exactExisting = existing.find((candidate) =>
+      sameClaim(candidate, proposed),
     );
     if (exactExisting) {
-      usedExistingIds.add(exactExisting.id);
-      operations.push({ op: "confirm", id: exactExisting.id });
+      const current = targetExisting(exactExisting.id, "confirm");
+      operations.push({ op: "confirm", id: current.id });
     } else {
       operations.push({
         op: "add",
@@ -452,15 +482,40 @@ export async function replacePageClaims(
     }
   }
 
-  for (const current of existing) {
-    if (!usedExistingIds.has(current.id)) {
-      operations.push({ op: "retract", id: current.id });
+  for (const rawId of proposedInput.retractedClaimIds ?? []) {
+    const id = rawId.trim();
+    const current = existingById.get(id);
+    if (!current && id && !session.hasClaim(id)) {
+      // Retraction is delete-like: a retry after the first submission reached
+      // durable Claims persistence must remain safe even when later page-job
+      // checkpointing failed. Unknown update/confirm ids remain strict.
+      continue;
     }
+    const targeted = targetExisting(id, "retract");
+    operations.push({ op: "retract", id: targeted.id });
   }
 
-  if (operations.length > 0) {
-    await session.resolveClaims({ page, operations });
+  for (const current of existing) {
+    if (targetedExistingIds.has(current.id)) continue;
+    if (current.issue) {
+      throw new RepositoryRunError(
+        "invalid_input",
+        `Claim ${current.id} is ${current.issue.kind} and requires an explicit confirm, update, or retract decision.`,
+      );
+    }
+    operations.push({ op: "confirm", id: current.id });
   }
+
+  const retractedCount = operations.filter(({ op }) => op === "retract").length;
+  const addedCount = operations.filter(({ op }) => op === "add").length;
+  if (existing.length - retractedCount + addedCount === 0) {
+    throw new RepositoryRunError(
+      "invalid_input",
+      `Completed factual page ${page} must retain or establish at least one material Claim.`,
+    );
+  }
+
+  await session.resolveClaims({ page, operations });
 }
 
 /**
