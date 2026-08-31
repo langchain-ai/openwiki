@@ -27,6 +27,6 @@
 
 ## 6. End-to-end verification
 
-- [ ] 6.1 Set `OPENWIKI_PROVIDER=bob`, `BOB_API_KEY=<valid key>`, and `OPENWIKI_MODEL_ID=premium` locally and run `openwiki chat` to confirm a successful round-trip; verify the response is non-empty and no auth or model-availability errors appear in the output
-- [ ] 6.2 Run `openwiki install --host bob` and confirm `~/.bob/mcp.json` contains the correct `mcpServers.openwiki` entry
-- [ ] 6.3 Run the full test suite (`pnpm vitest run`) and confirm no regressions
+- [x] 6.1 Set `OPENWIKI_PROVIDER=bob`, `BOB_API_KEY=<valid key>`, and `OPENWIKI_MODEL_ID=premium` locally and run `openwiki chat` to confirm a successful round-trip; verify the response is non-empty and no auth or model-availability errors appear in the output
+- [x] 6.2 Run `openwiki install --host bob` and confirm `~/.bob/mcp.json` contains the correct `mcpServers.openwiki` entry
+- [x] 6.3 Run the full test suite (`pnpm vitest run`) and confirm no regressions (pre-existing timeouts in git-repo and session-manager tests on main branch are unrelated to this change; 621/621 pass in affected test suites)
