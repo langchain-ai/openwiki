@@ -12,11 +12,14 @@ describe("createBobFetch", () => {
     const mockFetch = vi.fn().mockResolvedValue(new Response());
     const bobFetch = createBobFetch(mockFetch);
 
-    await bobFetch("https://api.us-east.bob.ibm.com/inference/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: "Bearer bob-placeholder" },
-      body: "{}",
-    });
+    await bobFetch(
+      "https://api.us-east.bob.ibm.com/inference/v1/chat/completions",
+      {
+        method: "POST",
+        headers: { Authorization: "Bearer bob-placeholder" },
+        body: "{}",
+      },
+    );
 
     const [, init] = mockFetch.mock.calls[0] as [unknown, RequestInit];
     const headers = new Headers(init.headers);
@@ -32,7 +35,10 @@ describe("createBobFetch", () => {
     const mockFetch = vi.fn().mockResolvedValue(new Response());
     const bobFetch = createBobFetch(mockFetch);
 
-    await bobFetch("https://api.us-east.bob.ibm.com/inference/v1/chat/completions", {});
+    await bobFetch(
+      "https://api.us-east.bob.ibm.com/inference/v1/chat/completions",
+      {},
+    );
 
     const [, init] = mockFetch.mock.calls[0] as [unknown, RequestInit];
     const headers = new Headers(init.headers);
@@ -44,7 +50,10 @@ describe("createBobFetch", () => {
     const mockFetch = vi.fn().mockResolvedValue(new Response());
     const bobFetch = createBobFetch(mockFetch);
 
-    await bobFetch("https://api.us-east.bob.ibm.com/inference/v1/chat/completions", {});
+    await bobFetch(
+      "https://api.us-east.bob.ibm.com/inference/v1/chat/completions",
+      {},
+    );
 
     const [, init] = mockFetch.mock.calls[0] as [unknown, RequestInit];
     const headers = new Headers(init.headers);

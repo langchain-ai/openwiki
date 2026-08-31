@@ -88,13 +88,14 @@ OpenWiki can run inside an existing coding agent instead of launching its own mo
 Install the integration for your coding agent (choose one):
 
 ```sh
+openwiki integrations install bob
 openwiki integrations install codex
 openwiki integrations install claude
 openwiki integrations install opencode
 openwiki integrations install cursor
 ```
 
-The supported targets are **Codex**, **Claude Code**, **OpenCode**, and **Cursor**. All install at user level by default, so one installation works from any Git repository. Project paths are resolved to their Git repository root. User-level OpenCode integrations live under `~/.config/opencode`, OpenCode's global configuration directory on every supported platform. Restart the coding agent after installation, open the repository, and ask:
+The supported targets are **IBM Bob**, **Codex**, **Claude Code**, **OpenCode**, and **Cursor**. All install at user level by default, so one installation works from any Git repository. Project paths are resolved to their Git repository root. User-level OpenCode integrations live under `~/.config/opencode`, OpenCode's global configuration directory on every supported platform. Restart the coding agent after installation, open the repository, and ask:
 
 ```text
 Initialize this repository's OpenWiki from the current source and tests.
@@ -489,8 +490,8 @@ openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + 
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki integrations list       # show installed coding-agent integrations
-openwiki integrations install <codex|claude|opencode|cursor> [--project [path]]
-openwiki integrations uninstall <codex|claude|opencode|cursor> [--project [path]]
+openwiki integrations install <bob|codex|claude|opencode|cursor> [--project [path]]
+openwiki integrations uninstall <bob|codex|claude|opencode|cursor> [--project [path]]
 openwiki --help                  # full help
 ```
 

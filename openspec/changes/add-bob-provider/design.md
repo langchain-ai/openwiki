@@ -5,18 +5,21 @@ See `proposal.md — Why` for motivation.
 OpenWiki's provider system is declarative: a `PROVIDER_CONFIGS` record in [`src/config/constants.ts`](../../../src/config/constants.ts) maps each provider ID to its label, env keys, base URL, model list, and auth method. `createModel()` in [`src/agent/index.ts`](../../../src/agent/index.ts) switches on the provider to build the right LangChain chat model. Most providers fall into one of five patterns — OpenAI-compat (default), Anthropic, Gemini, Bedrock, and OAuth — and the default "else" branch handles everything that fits the OpenAI wire format.
 
 Bob does not fit the default branch cleanly for two reasons:
+
 1. Its auth header scheme is `Apikey` not `Bearer`, and LangChain's `ChatOpenAI` always sends `Authorization: Bearer <apiKey>`.
 2. Its Cloudflare WAF hard-blocks requests that don't carry a specific User-Agent (`ibm-bob-openwiki-provider`).
 
 ## Goals / Non-Goals
 
 **Goals:**
+
 - `OPENWIKI_PROVIDER=bob` + `BOB_API_KEY` works end-to-end (chat, update, init)
 - API-key auth path only (no OAuth/IBMid browser login)
 - Curated model list for the setup UI; custom model IDs still accepted
 - Credential stored, diagnosed, and manageable through the same flows as other providers
 
 **Non-Goals:**
+
 - OAuth / IBMid login flow (the gateway plugin supports it, but it requires a separate browser-login implementation comparable to `openai-chatgpt`; defer)
 - Instance/team routing headers (`x-instance-id` / `x-team-id`) for General key type (Inference keys don't need them; defer)
 - Dynamic model discovery via `/model/info` (curated static list is sufficient to start)
