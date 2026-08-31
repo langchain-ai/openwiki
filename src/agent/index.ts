@@ -49,6 +49,7 @@ import {
   readCodexTokensFromEnv,
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
+import { createBobFetch } from "./bob.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { syncBundledSkills } from "./skills.js";
 import {
@@ -1225,6 +1226,21 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+
+  if (provider === "bob") {
+    return new ChatOpenAI({
+      // Placeholder silences the ChatOpenAI constructor's "missing apiKey"
+      // check; the real key is injected via the custom fetch wrapper below.
+      apiKey: "bob-placeholder",
+      configuration: {
+        baseURL: baseURL ?? "https://api.us-east.bob.ibm.com/inference/v1",
+        fetch: createBobFetch(),
+      },
+      model: modelId,
+      ...maxTokensOptions,
+      ...retryOptions,
+    });
+  }
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),

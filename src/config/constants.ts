@@ -4,6 +4,8 @@ export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
+export const BOB_API_KEY_ENV_KEY = "BOB_API_KEY";
+export const BOB_BASE_URL_ENV_KEY = "BOB_BASE_URL";
 export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
@@ -107,6 +109,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "bedrock"
+  | "bob"
   | "copilot"
   | "fireworks"
   | "gemini"
@@ -238,6 +241,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "bob",
   "copilot",
   "gemini",
   "gemini-enterprise",
@@ -259,6 +263,19 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
+    ],
+  },
+  bob: {
+    apiKeyEnvKey: BOB_API_KEY_ENV_KEY,
+    baseURL: "https://api.us-east.bob.ibm.com/inference/v1",
+    baseUrlEnvKey: BOB_BASE_URL_ENV_KEY,
+    label: "IBM Bob",
+    modelOptions: [
+      { id: "premium", label: "Premium (Claude Sonnet 4.5)" },
+      { id: "premium-shell", label: "Premium Shell (Claude Sonnet 4.6)" },
+      { id: "fast", label: "Fast" },
+      { id: "ultra", label: "Ultra" },
+      { id: "explorer", label: "Explorer (Claude Haiku 4.5)" },
     ],
   },
   bedrock: {
