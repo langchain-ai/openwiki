@@ -276,7 +276,7 @@ async function beginNativeRepositoryRun(
 }
 
 /**
- * Runs one bounded planner that must submit exactly one durable plan.
+ * Runs one bounded planner that must submit a durable plan.
  *
  * @param run - Active durable repository run.
  * @param view - Current host-facing planning context.
@@ -310,11 +310,6 @@ async function runPlanningAgent(
       "Submit the final canonical OpenWiki page plan. This is the only completion action for planning.",
     schema: PlanSchema,
     func: async (input, _runManager, config) => {
-      if (submitted) {
-        throw new Error(
-          "submit_plan was already called for this planning worker.",
-        );
-      }
       try {
         const result = await submitRepositoryPlan(run, input);
         submitted = true;

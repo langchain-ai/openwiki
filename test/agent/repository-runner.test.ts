@@ -67,6 +67,8 @@ const harness = vi.hoisted(() => ({
   changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
   driftOnce: false,
+  duplicatePlanSubmission: false,
+  duplicatePlanToolResults: [] as unknown[],
   filesystemTools: [] as string[][],
   finishCalls: 0,
   invalidPageSubmissions: 0,
@@ -231,6 +233,13 @@ vi.mock("deepagents", async (importOriginal) => {
             } else {
               await completionTool.invoke(input);
               if (
+                toolName === "submit_plan" &&
+                harness.duplicatePlanSubmission
+              ) {
+                const duplicate = await completionTool.invoke(input);
+                harness.duplicatePlanToolResults.push(duplicate);
+              }
+              if (
                 toolName === "submit_page" &&
                 harness.pageWorkerPostSubmitFailures > 0
               ) {
@@ -327,6 +336,51 @@ vi.mock("../../src/generation/repository-run.js", () => ({
         "Invalid or reserved OpenWiki page path: /openwiki/_plan.md",
       );
     }
+    if (run.state.plan) {
+      const proposed = {
+        pages: input.pages.map((page) => ({
+          path: page.path,
+          title: page.title,
+          purpose: page.purpose,
+          seedPaths: [],
+          relatedPages: [],
+          instructions: page.instructions ?? [],
+        })),
+        deletePages: input.deletePages ?? [],
+      };
+      const current = {
+        pages: run.state.plan.pages.map(
+          ({
+            path,
+            title,
+            purpose,
+            seedPaths,
+            relatedPages,
+            instructions,
+          }) => ({
+            path,
+            title,
+            purpose,
+            seedPaths,
+            relatedPages,
+            instructions,
+          }),
+        ),
+        deletePages: run.state.plan.deletePages,
+      };
+      if (JSON.stringify(proposed) !== JSON.stringify(current)) {
+        const { RepositoryRunError } =
+          await import("../../src/generation/errors.js");
+        throw new RepositoryRunError(
+          "invalid_state",
+          "This OpenWiki run already has a different persisted plan.",
+        );
+      }
+      return Promise.resolve({
+        status: "accepted",
+        totalPages: run.state.plan.pages.length,
+      });
+    }
     run.state.phase = "generating";
     run.state.plan = {
       pages: input.pages.map((page, index) => ({
@@ -422,6 +476,8 @@ beforeEach(() => {
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
   harness.driftOnce = false;
+  harness.duplicatePlanSubmission = false;
+  harness.duplicatePlanToolResults = [];
   harness.filesystemTools = [];
   harness.finishCalls = 0;
   harness.invalidPageSubmissions = 0;
@@ -543,6 +599,21 @@ describe("runNativeRepositoryGeneration", () => {
     expect(rejection.text).toContain(
       '"retry":"Correct the plan and call submit_plan again."',
     );
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("continues when the planner repeats the same accepted plan", async () => {
+    harness.duplicatePlanSubmission = true;
+    harness.planPaths = ["/openwiki/quickstart.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.planSubmissionCalls).toBe(2);
+    expect(harness.duplicatePlanToolResults).toEqual([
+      '{"status":"accepted","totalPages":1}',
+    ]);
+    expect(harness.pageSubmissionCalls).toBe(1);
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
     expect(harness.finishCalls).toBe(1);
   });
 
