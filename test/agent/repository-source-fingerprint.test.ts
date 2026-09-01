@@ -210,13 +210,18 @@ describe("createRepositorySourceFingerprint", () => {
     expect(await fingerprint()).not.toBe(before);
   });
 
-  test("changes when a source file executable bit changes", async () => {
+  test("tracks executable bit changes when the platform exposes them", async () => {
     const trackedPath = path.join(repositoryRoot, "src", "tracked.ts");
     const before = await fingerprint();
 
     await chmod(trackedPath, 0o755);
 
-    expect(await fingerprint()).not.toBe(before);
+    const after = await fingerprint();
+    if (process.platform === "win32") {
+      expect(after).toBe(before);
+    } else {
+      expect(after).not.toBe(before);
+    }
   });
 
   test("hashes a symlink target string without following the target", async () => {
@@ -352,7 +357,10 @@ describe("createRepositorySourceFingerprint", () => {
   });
 
   test("parses unusual tracked filenames from NUL-delimited Git output", async () => {
-    const unusualName = " leading space\nsecond line\t雪.ts";
+    const unusualName =
+      process.platform === "win32"
+        ? "unicode-filename-雪.ts"
+        : " leading space\nsecond line\t雪.ts";
     const unusualPath = path.join(repositoryRoot, unusualName);
     await writeFile(unusualPath, "export const unusual = 1;\n", "utf8");
     await git(["add", "--", unusualName]);
