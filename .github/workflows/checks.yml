@@ -146,7 +146,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Windows portability tests
-        run: pnpm exec vitest run test/agent/skills.test.ts test/config/env-behavior.test.ts
+        run: pnpm exec vitest run test/agent/skills.test.ts test/config/env-behavior.test.ts test/agent/repository-source-fingerprint.test.ts
 
   audit:
     name: Audit

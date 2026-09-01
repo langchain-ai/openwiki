@@ -627,11 +627,7 @@ async function readFingerprintRegularFile(
 
   try {
     const openedStats = await fileHandle.stat({ bigint: true });
-    if (
-      !openedStats.isFile() ||
-      openedStats.dev !== inspectedStats.dev ||
-      openedStats.ino !== inspectedStats.ino
-    ) {
+    if (!isSameFingerprintRegularFile(inspectedStats, openedStats)) {
       throw new Error(
         `Source path changed while fingerprinting ${sourcePath}.`,
       );
@@ -644,6 +640,32 @@ async function readFingerprintRegularFile(
   } finally {
     await fileHandle.close();
   }
+}
+
+function isSameFingerprintRegularFile(
+  inspectedStats: BigIntStats,
+  openedStats: BigIntStats,
+): boolean {
+  if (!openedStats.isFile()) {
+    return false;
+  }
+
+  if (process.platform !== "win32") {
+    return (
+      openedStats.dev === inspectedStats.dev &&
+      openedStats.ino === inspectedStats.ino
+    );
+  }
+
+  // Windows can report different dev/ino values for the same file depending on
+  // which stat API produced them. Keep the same-file guard, but use metadata
+  // that is stable across lstat() and FileHandle.stat() on that platform.
+  return (
+    openedStats.size === inspectedStats.size &&
+    openedStats.mtimeNs === inspectedStats.mtimeNs &&
+    openedStats.ctimeNs === inspectedStats.ctimeNs &&
+    openedStats.birthtimeNs === inspectedStats.birthtimeNs
+  );
 }
 
 /**
