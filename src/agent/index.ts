@@ -90,6 +90,7 @@ import {
   getProviderCredentialHint,
   getProviderLabel,
   getProviderBaseUrlWarnings,
+  getProviderFixedModel,
   getProviderModelOptions,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderRegionEnvKeys,
@@ -1022,6 +1023,11 @@ export function resolveModelId(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
 ): string {
+  const fixedModel = getProviderFixedModel(provider);
+  if (fixedModel) {
+    return fixedModel;
+  }
+
   const configuredModelId =
     options.modelId ?? process.env[OPENWIKI_MODEL_ID_ENV_KEY];
 

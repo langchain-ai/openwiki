@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { createBobFetch, BOB_USER_AGENT } from "../../src/agent/bob.js";
+import {
+  providerHasFixedModel,
+  getProviderFixedModel,
+} from "../../src/config/constants.js";
 
 describe("createBobFetch", () => {
   afterEach(() => {
@@ -72,5 +76,20 @@ describe("createBobFetch", () => {
 
     expect(result).toBe(expectedResponse);
     expect(mockFetch).toHaveBeenCalledOnce();
+  });
+});
+
+describe("bob provider — fixed model", () => {
+  it("reports that bob has a fixed model", () => {
+    expect(providerHasFixedModel("bob")).toBe(true);
+  });
+
+  it("returns 'premium' as the fixed model", () => {
+    expect(getProviderFixedModel("bob")).toBe("premium");
+  });
+
+  it("other providers do not have a fixed model", () => {
+    expect(providerHasFixedModel("openai")).toBe(false);
+    expect(providerHasFixedModel("anthropic")).toBe(false);
   });
 });
