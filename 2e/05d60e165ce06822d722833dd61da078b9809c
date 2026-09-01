@@ -1,0 +1,26 @@
+test/openrouter-debug-fetch.test.ts
+  s_ca435ef6e27dfa::t_e50069ee6a450c 3
+.changeset/plain-badgers-grin.md
+  h_f78d33d4280f3f 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2e05d60e165ce06822d722833dd61da078b9809c",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_ca435ef6e27dfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05ad0-66de-7150-bba6-3140ea90e6cb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
