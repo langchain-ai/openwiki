@@ -1,0 +1,27 @@
+.github/workflows/checks.yml
+  s_ca435ef6e27dfa::t_b138acea54c236 149
+test/agent/repository-source-fingerprint.test.ts
+  s_ca435ef6e27dfa::t_6d07a572c2139a 54,56-58
+  s_ca435ef6e27dfa::t_8373b377663e74 2,24,67,130-136,139,146,148-151,272-281
+  s_ca435ef6e27dfa::t_fede757146a70f 46-53,55,59-61
+  s_ca435ef6e27dfa::t_4500a68909c684 282
+src/agent/utils.ts
+  s_ca435ef6e27dfa::t_46740a880f0b92 630,645-668
+  s_ca435ef6e27dfa::t_6dd7a88884740d 669-670
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "eea760f8a381c3d1189b47afb9c2cc456ce26d78",
+  "prompts": {},
+  "sessions": {
+    "s_ca435ef6e27dfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05ad0-66de-7150-bba6-3140ea90e6cb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
