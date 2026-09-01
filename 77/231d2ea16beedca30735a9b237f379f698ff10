@@ -1,0 +1,19 @@
+test/agent/repository-source-fingerprint.test.ts
+  s_ca435ef6e27dfa::t_bc85b5b7fd8c65 213,219-224,360-363
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "77231d2ea16beedca30735a9b237f379f698ff10",
+  "prompts": {},
+  "sessions": {
+    "s_ca435ef6e27dfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05ad0-66de-7150-bba6-3140ea90e6cb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
