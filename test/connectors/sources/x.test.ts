@@ -237,7 +237,7 @@ describe("x connector request construction", () => {
     expect(bookmarks?.searchParams.get("start_time")).toBeNull();
   });
 
-  test("throws when a stream request returns a non-ok status", async () => {
+  test("records a warning and errors when a stream request returns a non-ok status", async () => {
     const home = await createTempHome();
     await writeConnectorConfig(home, {
       enabled: true,
@@ -248,9 +248,13 @@ describe("x connector request construction", () => {
     stubFetchByPath(() => 500);
     const connector = await loadXConnector(home);
 
-    await expect(connector.ingest()).rejects.toThrow(
-      "X API request failed: 500",
-    );
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("error");
+    expect(result.rawFiles).toHaveLength(0);
+    expect(result.warnings).toEqual([
+      expect.stringContaining("user_posts: X API request failed: 500"),
+    ]);
   });
 
   test("paginates each configured list and carries newest id into state", async () => {

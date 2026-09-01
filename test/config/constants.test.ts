@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   BASETEN_BASE_URL_ENV_KEY,
+  BEDROCK_DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
@@ -28,6 +29,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  resolveBedrockMaxTokens,
   resolveConfiguredMaxOutputTokens,
   providerUsesStreaming,
   resolveConfiguredProvider,
@@ -547,6 +549,12 @@ describe("providerUsesStreaming", () => {
     }
   });
 
+  test("always forces streaming for copilot regardless of the opt-in", () => {
+    delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+
+    expect(providerUsesStreaming("copilot")).toBe(true);
+  });
+
   test("never applies to the other providers sharing the ChatOpenAI branch", () => {
     process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING = "true";
 
@@ -554,7 +562,6 @@ describe("providerUsesStreaming", () => {
       for (const provider of [
         "openai",
         "baseten",
-        "copilot",
         "fireworks",
         "nebius",
         "nvidia",
@@ -590,6 +597,30 @@ describe("resolveOpenRouterMaxTokens", () => {
   });
 });
 
+describe("resolveBedrockMaxTokens", () => {
+  test("returns the default ceiling (16000) when env var is unset", () => {
+    expect(resolveBedrockMaxTokens({})).toBe(BEDROCK_DEFAULT_MAX_TOKENS);
+    expect(resolveBedrockMaxTokens({})).toBe(16000);
+  });
+
+  test("parses a valid positive integer override", () => {
+    expect(
+      resolveBedrockMaxTokens({ OPENWIKI_BEDROCK_MAX_TOKENS: "8192" }),
+    ).toBe(8192);
+    expect(
+      resolveBedrockMaxTokens({ OPENWIKI_BEDROCK_MAX_TOKENS: " 4096 " }),
+    ).toBe(4096);
+  });
+
+  test("rejects zero, negative, fractional, and non-numeric values", () => {
+    for (const value of ["0", "-1", "1.5", "abc", "", "  ", "1e3", "0x10"]) {
+      expect(() =>
+        resolveBedrockMaxTokens({ OPENWIKI_BEDROCK_MAX_TOKENS: value }),
+      ).toThrow(/OPENWIKI_BEDROCK_MAX_TOKENS/u);
+    }
+  });
+});
+
 describe("resolveConfiguredMaxOutputTokens", () => {
   test("returns undefined when no provider-neutral limit is configured", () => {
     expect(resolveConfiguredMaxOutputTokens("anthropic", {})).toBeUndefined();
@@ -601,6 +632,30 @@ describe("resolveConfiguredMaxOutputTokens", () => {
     expect(resolveConfiguredMaxOutputTokens("anthropic", env)).toBe(16_384);
     expect(resolveConfiguredMaxOutputTokens("gemini", env)).toBe(16_384);
     expect(resolveConfiguredMaxOutputTokens("openai", env)).toBe(16_384);
+    expect(resolveConfiguredMaxOutputTokens("bedrock", env)).toBe(16_384);
+  });
+
+  test("uses the Bedrock default when no provider-neutral limit is configured", () => {
+    expect(resolveConfiguredMaxOutputTokens("bedrock", {})).toBe(
+      BEDROCK_DEFAULT_MAX_TOKENS,
+    );
+  });
+
+  test("uses the Bedrock-specific override when no provider-neutral limit is configured", () => {
+    expect(
+      resolveConfiguredMaxOutputTokens("bedrock", {
+        OPENWIKI_BEDROCK_MAX_TOKENS: "8192",
+      }),
+    ).toBe(8192);
+  });
+
+  test("prefers the provider-neutral limit over the Bedrock-specific override", () => {
+    expect(
+      resolveConfiguredMaxOutputTokens("bedrock", {
+        OPENWIKI_MAX_OUTPUT_TOKENS: "12288",
+        OPENWIKI_BEDROCK_MAX_TOKENS: "8192",
+      }),
+    ).toBe(12_288);
   });
 
   test("preserves the OpenRouter-specific override precedence", () => {

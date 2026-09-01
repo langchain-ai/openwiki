@@ -242,6 +242,29 @@ describe("createModel OpenAI-compatible transport selection", () => {
 
     expect(model.useResponsesApi).toBe(false);
   });
+
+  test("forces streaming transport for Claude Copilot models", () => {
+    // The Copilot API rejects non-streaming requests for Claude models,
+    // causing repository workers to exit without calling submit_plan or
+    // submit_page. streaming: true must be set so DeepAgents internal
+    // .invoke() calls reach the streaming transport.
+    const model = createModel("copilot", "claude-sonnet-4.6", 0) as {
+      streaming?: boolean;
+    };
+
+    expect(model.streaming).toBe(true);
+  });
+
+  test("forces streaming transport for Copilot GPT-5 models too", () => {
+    // GPT-5 models use the Responses API (useResponsesApi: true). Having
+    // streaming: true alongside is harmless and matches the openai-chatgpt
+    // pattern.
+    const model = createModel("copilot", "gpt-5.5", 0) as {
+      streaming?: boolean;
+    };
+
+    expect(model.streaming).toBe(true);
+  });
 });
 
 describe("createModel provider-neutral maxTokens mapping", () => {

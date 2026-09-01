@@ -1,4 +1,5 @@
 import { isValidModelId, normalizeModelId } from "../config/constants.js";
+import { openWikiLocalWikiDisplayPath } from "../config/openwiki-home.js";
 import type { OpenWikiCommand } from "../agent/types.js";
 import { resolveLanguage } from "../platform/language.js";
 import { isAuthProviderId } from "../auth/providers.js";
@@ -149,7 +150,6 @@ export type CliCommand =
       command: OpenWikiCommand;
       dryRun: boolean;
       language: string | null;
-      languageWarning: string | null;
       mode: OpenWikiRunMode;
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
@@ -978,9 +978,18 @@ function parseRunCommand(
     userMessageParts.length > 0 ? userMessageParts.join(" ") : null;
   const shouldStart = command !== "chat" || userMessage !== null;
 
-  // Canonicalize the requested locale here so an unrecognized value is dropped
-  // (and surfaced as a warning) before it reaches the run or persisted state.
+  // Reject an unrecognized locale here, before it can reach the run or any
+  // persisted state. Generating an English wiki from a typo is never what the
+  // caller asked for, and run state records the language it started with.
   const resolvedLanguage = resolveLanguage(language);
+
+  if (resolvedLanguage.kind === "unrecognized") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: resolvedLanguage.message,
+    };
+  }
 
   if (command !== "chat" && modeSource === "default") {
     mode = "code";
@@ -999,8 +1008,8 @@ function parseRunCommand(
     exitCode: 0,
     command,
     dryRun,
-    language: resolvedLanguage.language ?? null,
-    languageWarning: resolvedLanguage.warning ?? null,
+    language:
+      resolvedLanguage.kind === "resolved" ? resolvedLanguage.language : null,
     mode,
     modeSource,
     modelId,
@@ -1126,8 +1135,7 @@ export const helpContent: HelpContent = {
     },
     {
       label: "openwiki personal",
-      description:
-        "Run OpenWiki as your local personal brain over configured sources, writing to ~/.openwiki/wiki.",
+      description: `Run OpenWiki as your local personal brain over configured sources, writing to ${openWikiLocalWikiDisplayPath}.`,
     },
     {
       label: "openwiki",
@@ -1207,7 +1215,7 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate initial OpenWiki documentation. Defaults to code mode; use personal to initialize the local personal brain.",
+        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",
@@ -1222,7 +1230,7 @@ export const helpContent: HelpContent = {
     {
       label: "-l, --language <locale>",
       description:
-        "Generate wiki documentation in the requested language or locale.",
+        "Generate wiki documentation in the given BCP-47 locale, for example ko, zh-CN, or pt-BR.",
     },
     {
       label: "-p, --print",

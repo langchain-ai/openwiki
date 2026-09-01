@@ -8,6 +8,7 @@ import {
 } from "../../auth/tokens.js";
 import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
+import { openWikiConnectorsDisplayPath } from "../../config/openwiki-home.js";
 import {
   createRunId,
   readConnectorConfig,
@@ -106,11 +107,10 @@ async function ingest(
   if (!isGmailEnabled(config)) {
     return {
       connectorId: "google",
-      message:
-        "Google / Gmail connector is not enabled. Set enabled=true in ~/.openwiki/connectors/google/config.json.",
+      message: `Google / Gmail connector is not enabled. Set enabled=true in ${openWikiConnectorsDisplayPath}/google/config.json.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/google/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/google/state.json`,
       status: "skipped",
       warnings,
     };
@@ -179,7 +179,7 @@ async function ingest(
     message: `Fetched ${messages.length} Gmail message(s).`,
     rawFiles,
     runId,
-    statePath: "~/.openwiki/connectors/google/state.json",
+    statePath: `${openWikiConnectorsDisplayPath}/google/state.json`,
     status: rawFiles.length > 0 ? "success" : "skipped",
     warnings,
   };

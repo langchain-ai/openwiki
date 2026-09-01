@@ -1,5 +1,4 @@
 import { ToolMessage } from "@langchain/core/messages";
-import type { BackendProtocolV2 } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
 import { MUTATION_PATH_METADATA_KEY } from "../../src/agent/docs-only-backend.ts";
 import { addFrontmatterWarning } from "../../src/agent/okf-middleware.ts";
@@ -9,8 +8,10 @@ function markdown(frontmatter: string): string {
   return `---\n${frontmatter}\n---\n\n# Page\n`;
 }
 
-function backendWith(content: string) {
+function backendWith(initialContent: string) {
+  let content = initialContent;
   return {
+    current: () => content,
     readRaw: vi.fn(() => ({
       data: {
         content,
@@ -19,7 +20,11 @@ function backendWith(content: string) {
         modified_at: "2026-07-13T00:00:00.000Z",
       },
     })),
-  } satisfies Pick<BackendProtocolV2, "readRaw">;
+    write: vi.fn((_path: string, next: string) => {
+      content = next;
+      return {};
+    }),
+  };
 }
 
 function mutationMessage(path = "/openwiki/page.md") {
@@ -243,20 +248,27 @@ describe("validateOkfFrontmatter", () => {
 });
 
 describe("addFrontmatterWarning", () => {
-  test("appends actionable validation details after an invalid wiki write", async () => {
+  test("repairs invalid wiki metadata without asking the model to retry", async () => {
     const message = mutationMessage();
-    await addFrontmatterWarning(
-      message,
-      backendWith("# Missing front matter"),
-      "repository",
-      "write_file",
-    );
+    const backend = backendWith("# Missing front matter");
+    await addFrontmatterWarning(message, backend, "repository", "write_file");
+
+    expect(message.content).toBe("Successfully wrote file.");
+    expect(validateOkfFrontmatter(backend.current())).toEqual({ valid: true });
+    expect(backend.current()).toContain("# Missing front matter");
+  });
+
+  test("warns when deterministic repair cannot be persisted", async () => {
+    const message = mutationMessage();
+    const backend = backendWith("# Missing front matter");
+    vi.mocked(backend.write).mockResolvedValue({ error: "disk full" });
+
+    await addFrontmatterWarning(message, backend, "repository", "write_file");
 
     expect(message.content).toContain(
-      "YAML front matter was NOT formatted properly",
+      "could not persist deterministic YAML front matter repair",
     );
-    expect(message.content).toContain("[missing_opening_delimiter] line 1");
-    expect(message.content).toContain("MUST correct this file");
+    expect(message.content).toContain("[file_write_failed]");
   });
 
   test("leaves valid files and unrelated tool calls unchanged", async () => {
@@ -304,13 +316,10 @@ describe("addFrontmatterWarning", () => {
   test("edits tool messages nested in Command results", async () => {
     const message = mutationMessage();
     const command = { update: { messages: [message] } };
-    await addFrontmatterWarning(
-      command,
-      backendWith(markdown("title: Missing type")),
-      "repository",
-      "edit_file",
-    );
+    const backend = backendWith(markdown("title: Missing type"));
+    await addFrontmatterWarning(command, backend, "repository", "edit_file");
 
-    expect(message.content).toContain("[missing_type]");
+    expect(message.content).toBe("Successfully wrote file.");
+    expect(validateOkfFrontmatter(backend.current())).toEqual({ valid: true });
   });
 });

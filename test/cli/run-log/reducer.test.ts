@@ -79,6 +79,67 @@ describe("appendRunLogEvent text handling", () => {
   });
 });
 
+describe("appendRunLogEvent repository progress", () => {
+  test("replaces the current lifecycle stage without losing tool activity", () => {
+    const ref = idRef();
+    let log = appendRunLogEvent(
+      [],
+      { type: "repository_progress", stage: "planning", resumed: true },
+      ref,
+    );
+    log = appendRunLogEvent(
+      log,
+      {
+        type: "tool_start",
+        call: "read_file",
+        id: "read-1",
+        input: { path: "/README.md" },
+        name: "read_file",
+      },
+      ref,
+    );
+    log = appendRunLogEvent(
+      log,
+      {
+        type: "repository_progress",
+        stage: "generating",
+        page: "/openwiki/quickstart.md",
+        pageIndex: 1,
+        pageCount: 3,
+      },
+      ref,
+    );
+
+    expect(log.filter((item) => item.type === "repository_progress")).toEqual([
+      expect.objectContaining({
+        id: 0,
+        stage: "generating",
+        page: "/openwiki/quickstart.md",
+        pageIndex: 1,
+        pageCount: 3,
+      }),
+    ]);
+    expect(log).toContainEqual(
+      expect.objectContaining({ type: "tool", actionCount: 1 }),
+    );
+  });
+
+  test("retains planning, replanning, finalizing, and no-op states", () => {
+    const ref = idRef();
+    let log: RunLogItem[] = [];
+    for (const stage of [
+      "planning",
+      "replanning",
+      "finalizing",
+      "noop",
+    ] as const) {
+      log = appendRunLogEvent(log, { type: "repository_progress", stage }, ref);
+      expect(log).toContainEqual(expect.objectContaining({ stage }));
+    }
+    expect(ref.current).toBe(1);
+  });
+});
+
 describe("appendRunLogEvent tool grouping", () => {
   const start = (id: string, name = "grep"): OpenWikiRunEvent => ({
     type: "tool_start",
@@ -239,6 +300,42 @@ describe("appendRunLogEvent tool grouping", () => {
     expect(
       log.find((item) => item.activityPath === "src/agent/index.ts"),
     ).toMatchObject({ activityStatus: "recent", activeToolCallIds: [] });
+    expect(log.find((item) => item.type === "tool")?.exploredPaths).toEqual([
+      "src/agent/index.ts",
+    ]);
+  });
+
+  test("records only unique successful repository reads as explored", () => {
+    const ref = idRef();
+    let log: RunLogItem[] = [];
+
+    for (const [id, activityPath, status] of [
+      ["read-1", "/src/agent/index.ts", "finished"],
+      ["read-2", "/src/agent/index.ts", "finished"],
+      ["read-wiki", "/openwiki/quickstart.md", "finished"],
+      ["read-failed", "/src/agent/prompt.ts", "error"],
+    ] as const) {
+      log = appendRunLogEvent(
+        log,
+        {
+          type: "tool_start",
+          call: `read_file(path=${activityPath})`,
+          id,
+          input: { path: activityPath },
+          name: "read_file",
+        },
+        ref,
+      );
+      log = appendRunLogEvent(
+        log,
+        { type: "tool_end", id, name: "read_file", status },
+        ref,
+      );
+    }
+
+    expect(log.find((item) => item.type === "tool")?.exploredPaths).toEqual([
+      "src/agent/index.ts",
+    ]);
   });
 
   test("records unique persistent OpenWiki pages after successful writes", () => {
@@ -248,7 +345,6 @@ describe("appendRunLogEvent tool grouping", () => {
     for (const [id, activityPath] of [
       ["write-1", "/openwiki/quickstart.md"],
       ["write-2", "/openwiki/quickstart.md"],
-      ["write-plan", "/openwiki/_plan.md"],
     ]) {
       log = appendRunLogEvent(
         log,

@@ -9,6 +9,7 @@ import type { OpenWikiOutputMode } from "../agent/types.js";
 import {
   getConnectorConfigPath,
   getConnectorRawDir,
+  openWikiConnectorsDisplayPath,
   openWikiHomeDir,
   openWikiLocalWikiDir,
   resolveConnectorRawPath,
@@ -19,7 +20,12 @@ import {
   discoverMcpConnectorTools,
   isMcpConnectorId,
 } from "./mcp-runtime.js";
-import type { ConnectorId, ConnectorIngestOptions } from "./types.js";
+import type {
+  ConnectorId,
+  ConnectorIngestOptions,
+  ConnectorIngestResult,
+  ConnectorRuntime,
+} from "./types.js";
 
 export function createOpenWikiConnectorTools(
   outputMode: OpenWikiOutputMode = "local-wiki",
@@ -47,8 +53,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_list_mcp_tools",
-      description:
-        'List live MCP tools for a configured MCP connector and write discovery under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"custom-mcp"}. Use exact returned tool names.',
+      description: `List live MCP tools for a configured MCP connector and write discovery under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"notion"}. Use exact returned tool names.`,
       schema: {
         type: "object",
         properties: {
@@ -67,8 +72,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_call_mcp_tool",
-      description:
-        'Call one exact discovered read-only MCP tool and write the result under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"custom-mcp","toolName":"exact_tool_name","args":{"query":"Applied AI"}}.',
+      description: `Call one exact discovered read-only MCP tool and write the result under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"notion","toolName":"exact_tool_name","args":{"query":"Applied AI"}}.`,
       schema: {
         type: "object",
         properties: {
@@ -98,8 +102,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_ingest_connector",
-      description:
-        'Run deterministic ingestion for one built-in connector and write raw data/manifests under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"x","streams":["bookmarks"],"limit":1}.',
+      description: `Run deterministic ingestion for one built-in connector and write raw data/manifests under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"x","streams":["bookmarks"],"limit":1}.`,
       schema: {
         type: "object",
         properties: {
@@ -147,8 +150,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_list_raw_items",
-      description:
-        'List raw files for a connector under ~/.openwiki/connectors/<id>/raw. Input: {"connectorId":"x"}.',
+      description: `List raw files for a connector under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"x"}.`,
       schema: {
         type: "object",
         properties: {
@@ -177,8 +179,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_read_raw_item",
-      description:
-        'Read a raw connector file by connector ID and relative path. Only files inside ~/.openwiki/connectors/<id>/raw are allowed. Input: {"connectorId":"x","path":"2026-.../bookmarks.json","maxBytes":50000}.',
+      description: `Read a raw connector file by connector ID and relative path. Only files inside ${openWikiConnectorsDisplayPath}/<id>/raw are allowed. Input: {"connectorId":"x","path":"2026-.../bookmarks.json","maxBytes":50000}.`,
       schema: {
         type: "object",
         properties: {
@@ -286,14 +287,41 @@ async function callMcpToolForConnector(
 
 async function ingestAllConnectors() {
   const registry = createConnectorRegistry();
-  const results = [];
+  const connectors = Object.values(registry);
 
-  for (const connector of Object.values(registry)) {
-    results.push(await connector.ingest());
-  }
+  // Run connectors concurrently and isolate failures: one connector that
+  // throws (e.g. an un-refreshable token) must not discard the results of the
+  // connectors that succeeded. Each rejection becomes an `error` result so the
+  // agent still sees everything that ran.
+  const settled = await Promise.allSettled(
+    connectors.map((connector) => connector.ingest()),
+  );
+
+  const results: ConnectorIngestResult[] = settled.map((outcome, index) =>
+    outcome.status === "fulfilled"
+      ? outcome.value
+      : ingestFailureResult(connectors[index], outcome.reason),
+  );
 
   return {
     results,
+  };
+}
+
+function ingestFailureResult(
+  connector: ConnectorRuntime,
+  reason: unknown,
+): ConnectorIngestResult {
+  const message = reason instanceof Error ? reason.message : String(reason);
+
+  return {
+    connectorId: connector.id,
+    message: `${connector.displayName} ingestion failed: ${message}`,
+    rawFiles: [],
+    runId: "",
+    statePath: `${openWikiConnectorsDisplayPath}/${connector.id}/state.json`,
+    status: "error",
+    warnings: [message],
   };
 }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, useApp } from "ink";
+import { Box, useApp, useInput } from "ink";
 import { scheduler } from "node:timers/promises";
 import { createOpenWikiThreadId, runOpenWikiAgent } from "../../agent/index.js";
 import type {
@@ -60,6 +60,7 @@ import { isDebugMode, shouldShowCredentialDiagnostics } from "../debug.js";
 import { getAuthFix } from "../diagnostics/auth-fix.js";
 import { getErrorDiagnostics } from "../diagnostics/error-diagnostics.js";
 import { getDisplayModelId, isExitMessage } from "../format.js";
+import { requestProcessInterrupt } from "../process-interrupt.js";
 import { appendRunLogEvent } from "../run-log/reducer.js";
 import type { RunLogItem } from "../run-log/types.js";
 import {
@@ -124,6 +125,7 @@ export function App({ command }: AppProps) {
   const [sessionReasoningEffort, setSessionReasoningEffort] =
     useState<ReasoningEffort | null>(getConfiguredReasoningEffort);
   const activeRunId = useRef(0);
+  const interruptRequested = useRef(false);
   const agentRunInFlight = useRef(false);
   const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
   const sessionThreadMode = useRef<OpenWikiRunMode>(runMode);
@@ -182,6 +184,17 @@ export function App({ command }: AppProps) {
     clearTimeout(activeRunRenderTimer.current);
     activeRunRenderTimer.current = null;
   }
+
+  useInput((input, key) => {
+    if (!key.ctrl || input !== "c" || interruptRequested.current) {
+      return;
+    }
+
+    interruptRequested.current = true;
+    process.exitCode = 130;
+    cancelPendingRunLogRender();
+    requestProcessInterrupt(app.exit);
+  });
 
   function submitChatMessage(message: string) {
     if (isExitMessage(message)) {

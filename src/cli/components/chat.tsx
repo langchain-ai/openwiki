@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import type { OpenWikiCommand } from "../../agent/types.js";
+import { openWikiEnvDisplayPath } from "../../config/openwiki-home.js";
 import {
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -81,7 +82,7 @@ export function ChatHistory({ runs }: { runs: CompletedRun[] }) {
           </Text>
           <Box flexDirection="column" marginLeft={2} marginTop={1}>
             {run.log.length > 0 ? (
-              <CompletedRunDetails log={run.log} />
+              <CompletedRunDetails command="chat" log={run.log} />
             ) : (
               <Text color="gray">No assistant output captured.</Text>
             )}
@@ -430,7 +431,7 @@ export function ChatInput({
 
       if (providerUsesAwsSdkCredentials(currentProvider)) {
         setError(
-          `${getProviderLabel(currentProvider)} uses the AWS SDK credential chain; /api-key cannot safely configure an access-key pair. ${getProviderCredentialHint(currentProvider) ?? ""} Legacy BEDROCK_AWS_ACCESS_KEY_ID and BEDROCK_AWS_SECRET_ACCESS_KEY values must be configured or removed together in the shell and ~/.openwiki/.env.`.trim(),
+          `${getProviderLabel(currentProvider)} uses the AWS SDK credential chain; /api-key cannot safely configure an access-key pair. ${getProviderCredentialHint(currentProvider) ?? ""} Legacy BEDROCK_AWS_ACCESS_KEY_ID and BEDROCK_AWS_SECRET_ACCESS_KEY values must be configured or removed together in the shell and ${openWikiEnvDisplayPath}.`.trim(),
         );
         return;
       }

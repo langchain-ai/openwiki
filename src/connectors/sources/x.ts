@@ -13,6 +13,10 @@ import type {
   ConnectorRuntime,
 } from "../types.js";
 import { OPENWIKI_X_ACCESS_TOKEN_ENV_KEY } from "../../config/constants.js";
+import {
+  openWikiConnectorsDisplayPath,
+  openWikiEnvDisplayPath,
+} from "../../config/openwiki-home.js";
 import { getOAuthAccessToken } from "../../auth/tokens.js";
 import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
@@ -86,11 +90,10 @@ async function ingest(
   if (!config.enabled) {
     return {
       connectorId: "x",
-      message:
-        "X connector is not enabled. Configure ~/.openwiki/connectors/x/config.json and set OPENWIKI_X_ACCESS_TOKEN in ~/.openwiki/.env.",
+      message: `X connector is not enabled. Configure ${openWikiConnectorsDisplayPath}/x/config.json and set OPENWIKI_X_ACCESS_TOKEN in ${openWikiEnvDisplayPath}.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/x/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/x/state.json`,
       status: "skipped",
       warnings,
     };
@@ -102,7 +105,7 @@ async function ingest(
       message: `${OPENWIKI_X_ACCESS_TOKEN_ENV_KEY} is required for X ingestion.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/x/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/x/state.json`,
       status: "error",
       warnings,
     };
@@ -115,53 +118,71 @@ async function ingest(
   const latestIds = { ...(state.latestIds ?? {}) };
   const startTime = getWindowStartTime(options.windowHours);
 
+  // Each stream (and each list within list_posts) is isolated: a failure — for
+  // example a 429 on one endpoint — records a warning and moves on instead of
+  // aborting the whole run. That way already-fetched dumps are kept and the
+  // state write below still advances every stream's since_id cursor, so a
+  // partial failure does not force a full re-fetch next run.
   for (const stream of streams) {
     if (stream === "list_posts") {
       for (const listId of listIds) {
         const key = `list_posts:${listId}`;
-        const pages = await fetchPaginatedX(
-          accessToken,
-          `/lists/${encodeURIComponent(listId)}/tweets`,
-          {
-            since_id: latestIds[key],
-            start_time: startTime,
-          },
-          config.maxPagesPerStream,
-        );
-        latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
-        rawFiles.push(
-          await writeRawJson("x", runId, `list-${listId}.json`, {
-            fetchedAt: new Date().toISOString(),
-            listId,
-            pages,
-            stream,
-            windowHours: normalizeWindowHours(options.windowHours),
-          }),
-        );
+        try {
+          const pages = await fetchPaginatedX(
+            accessToken,
+            `/lists/${encodeURIComponent(listId)}/tweets`,
+            {
+              since_id: latestIds[key],
+              start_time: startTime,
+            },
+            config.maxPagesPerStream,
+          );
+          latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
+          rawFiles.push(
+            await writeRawJson("x", runId, `list-${listId}.json`, {
+              fetchedAt: new Date().toISOString(),
+              listId,
+              pages,
+              stream,
+              windowHours: normalizeWindowHours(options.windowHours),
+            }),
+          );
+        } catch (error) {
+          warnings.push(`list_posts:${listId}: ${getErrorMessage(error)}`);
+        }
       }
       continue;
     }
 
     const key = stream;
-    const pages = await fetchPaginatedX(
-      accessToken,
-      getStreamPath(stream, userId),
-      stream === "bookmarks"
-        ? {}
-        : { since_id: latestIds[key], start_time: startTime },
-      config.maxPagesPerStream,
-    );
-    latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
-    rawFiles.push(
-      await writeRawJson("x", runId, `${stream}.json`, {
-        fetchedAt: new Date().toISOString(),
-        pages,
-        stream,
-        userId,
-        windowHours: normalizeWindowHours(options.windowHours),
-      }),
-    );
+    try {
+      const pages = await fetchPaginatedX(
+        accessToken,
+        getStreamPath(stream, userId),
+        stream === "bookmarks"
+          ? {}
+          : { since_id: latestIds[key], start_time: startTime },
+        config.maxPagesPerStream,
+      );
+      latestIds[key] = getNewestId(pages) ?? latestIds[key] ?? "";
+      rawFiles.push(
+        await writeRawJson("x", runId, `${stream}.json`, {
+          fetchedAt: new Date().toISOString(),
+          pages,
+          stream,
+          userId,
+          windowHours: normalizeWindowHours(options.windowHours),
+        }),
+      );
+    } catch (error) {
+      warnings.push(`${stream}: ${getErrorMessage(error)}`);
+    }
   }
+
+  // Nothing fetched but a stream failed => surface it as an error rather than a
+  // benign "skipped" (which means "no configured work to do").
+  const status =
+    rawFiles.length > 0 ? "success" : warnings.length > 0 ? "error" : "skipped";
 
   const nextState = updateStateWithRun(
     {
@@ -172,7 +193,7 @@ async function ingest(
       at: new Date().toISOString(),
       rawFiles,
       runId,
-      status: rawFiles.length > 0 ? "success" : "skipped",
+      status,
       warnings,
     },
   );
@@ -183,10 +204,14 @@ async function ingest(
     message: `Fetched ${rawFiles.length} X stream dump(s).`,
     rawFiles,
     runId,
-    statePath: "~/.openwiki/connectors/x/state.json",
-    status: rawFiles.length > 0 ? "success" : "skipped",
+    statePath: `${openWikiConnectorsDisplayPath}/x/state.json`,
+    status,
     warnings,
   };
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function fetchAuthenticatedUserId(accessToken: string): Promise<string> {

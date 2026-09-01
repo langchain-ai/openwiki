@@ -62,6 +62,7 @@ const PLIST_PATH = path.join(LAUNCH_AGENTS_DIR, `${LABEL}.plist`);
 const LAUNCHD_DOMAIN = `gui/${process.getuid?.() ?? os.userInfo().uid}`;
 
 const ORIGINAL_PLATFORM = process.platform;
+const ORIGINAL_CONFIG_DIR = process.env.OPENWIKI_CONFIG_DIR;
 
 /**
  * Outcome the execFile stub should produce for a given invocation. Returning an
@@ -118,6 +119,8 @@ afterEach(() => {
     value: ORIGINAL_PLATFORM,
   });
   execFileMock.mockReset();
+  if (ORIGINAL_CONFIG_DIR === undefined) delete process.env.OPENWIKI_CONFIG_DIR;
+  else process.env.OPENWIKI_CONFIG_DIR = ORIGINAL_CONFIG_DIR;
 });
 
 afterAll(async () => {
@@ -227,6 +230,7 @@ describe("installConnectorSchedule (darwin native install)", () => {
     // "0 2 * * *" -> launchd StartCalendarInterval Minute 0, Hour 2.
     expect(plist).toContain("<key>Minute</key>\n    <integer>0</integer>");
     expect(plist).toContain("<key>Hour</key>\n    <integer>2</integer>");
+    expect(plist).not.toContain("<key>OPENWIKI_CONFIG_DIR</key>");
 
     // Pre-existing agents are booted out before the new one is bootstrapped.
     const bootout = findCall("launchctl", "bootout");
@@ -234,6 +238,24 @@ describe("installConnectorSchedule (darwin native install)", () => {
     expect(bootout?.[1]).toEqual(["bootout", `${LAUNCHD_DOMAIN}/${LABEL}`]);
     expect(bootstrap?.[1]).toEqual(["bootstrap", LAUNCHD_DOMAIN, PLIST_PATH]);
     expectSafeArgv(bootstrap as unknown[], "launchctl");
+  });
+
+  test("persists the resolved config directory for scheduled runs", async () => {
+    const configuredDir = path.join(HOME, "state & <configured>");
+    process.env.OPENWIKI_CONFIG_DIR = configuredDir;
+
+    await installConnectorSchedule({
+      connectorId: "git-repo",
+      cronExpression: "0 2 * * *",
+      cwd: "/repo",
+    });
+
+    const plist = await readFile(PLIST_PATH, "utf8");
+    expect(plist).toContain("<key>EnvironmentVariables</key>");
+    expect(plist).toContain("<key>OPENWIKI_CONFIG_DIR</key>");
+    expect(plist).toContain(
+      `<string>${configuredDir.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</string>`,
+    );
   });
 
   test("propagates a launchctl bootstrap failure", async () => {

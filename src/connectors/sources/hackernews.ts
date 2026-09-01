@@ -8,6 +8,7 @@ import {
 } from "../io.js";
 import { fetchWithResilience } from "../http.js";
 import { normalizeStringArray } from "../config.js";
+import { openWikiConnectorsDisplayPath } from "../../config/openwiki-home.js";
 import type {
   ConnectorDefinition,
   ConnectorIngestOptions,
@@ -118,11 +119,10 @@ async function ingest(
   if (!config.enabled) {
     return {
       connectorId: "hackernews",
-      message:
-        "Hacker News connector is not enabled. Set enabled=true in ~/.openwiki/connectors/hackernews/config.json.",
+      message: `Hacker News connector is not enabled. Set enabled=true in ${openWikiConnectorsDisplayPath}/hackernews/config.json.`,
       rawFiles,
       runId,
-      statePath: "~/.openwiki/connectors/hackernews/state.json",
+      statePath: `${openWikiConnectorsDisplayPath}/hackernews/state.json`,
       status: "skipped",
       warnings,
     };
@@ -255,7 +255,7 @@ async function finishHackerNewsRun({
     message,
     rawFiles,
     runId,
-    statePath: "~/.openwiki/connectors/hackernews/state.json",
+    statePath: `${openWikiConnectorsDisplayPath}/hackernews/state.json`,
     status,
     warnings,
   };

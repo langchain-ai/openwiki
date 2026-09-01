@@ -4,7 +4,7 @@ import { createMiddleware } from "langchain";
 import path from "node:path";
 import type { ClaimEvidenceResources } from "../okf/claim-sources.js";
 import {
-  validatePersistedFile,
+  repairPersistedFile,
   type FrontmatterIssue,
 } from "../okf/frontmatter.js";
 import {
@@ -96,6 +96,7 @@ export function createOpenWikiIndexMiddleware(
         backend,
         outputMode,
         request.toolCall.name,
+        conceptType,
       );
     },
     afterAgent: async () => {
@@ -121,13 +122,15 @@ export function createOpenWikiIndexMiddleware(
 }
 
 /**
- * Appends an actionable warning when a wiki write leaves invalid front matter.
+ * Deterministically repairs invalid OKF metadata after a wiki write. A warning
+ * is appended only when the repaired bytes cannot be persisted or re-read.
  */
 export async function addFrontmatterWarning<Result>(
   result: Result,
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   toolName: string,
+  conceptType: string = ENGLISH_CONCEPT_TYPE,
 ): Promise<Result> {
   if (!WRITE_TOOLS.has(toolName)) return result;
 
@@ -143,10 +146,10 @@ export async function addFrontmatterWarning<Result>(
     );
   if (!mutation) return result;
 
-  const validation = await validatePersistedFile(backend, mutation.path);
-  if (validation.valid) return result;
+  const repair = await repairPersistedFile(backend, mutation.path, conceptType);
+  if (repair.validation.valid) return result;
 
-  const warning = formatWarning(mutation.path, validation.issues);
+  const warning = formatWarning(mutation.path, repair.validation.issues);
   mutation.message.content =
     typeof mutation.message.content === "string"
       ? `${mutation.message.content}\n\n${warning}`
@@ -196,7 +199,7 @@ function formatWarning(path: string, issues: FrontmatterIssue[]): string {
         `- [${code}]${line ? ` line ${line}:` : ""} ${message}`,
     )
     .join("\n");
-  return `WARNING: YAML front matter was NOT formatted properly in \`${path}\`.\n${details}\nYou MUST correct this file's YAML front matter before continuing.`;
+  return `WARNING: OpenWiki could not persist deterministic YAML front matter repair in \`${path}\`.\n${details}\nRewrite this file before continuing.`;
 }
 
 /**

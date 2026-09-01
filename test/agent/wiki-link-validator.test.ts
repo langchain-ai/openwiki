@@ -379,7 +379,7 @@ describe("validateWikiInternalLinks", () => {
     const { backend, rootDir } = await setupWiki();
     const dir = path.join(rootDir, "openwiki");
     await mkdir(dir, { recursive: true });
-    for (const name of ["index.md", "log.md", "_plan.md", "INSTRUCTIONS.md"]) {
+    for (const name of ["index.md", "log.md", "INSTRUCTIONS.md"]) {
       await writeFile(path.join(dir, name), "Broken [link](./missing.md).\n");
     }
 

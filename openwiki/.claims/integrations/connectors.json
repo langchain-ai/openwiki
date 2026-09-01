@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7ae63c5949a7a323e6f5cc77f9f4c0c8a8a312da456532695d1d714e327e0c41",
+  "claims": [
+    {
+      "id": "claim_877c98c88bd841fdb1bcd9de28cb0448",
+      "statement": "Every OpenWiki connector implements the ConnectorRuntime contract: a static ConnectorDefinition (id, displayName, description, backend, mode, requiredEnv, supportsAgenticDiscovery) plus an ingest() method returning a ConnectorIngestResult with status success/skipped/error, runId, rawFiles, statePath, message, and warnings.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/types.ts#L15-L61",
+          "version": "repo-lines-v1:sha256:7489e48f3ab386d812de301c84e41cc4aff1768f211dcaa81a1f8f84d6782433:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjU1YzJiZTJlNDJlNWRhMTRiNDdhYThhOGJmODJhMGRjZDE4NjRkZGRjOWQ0Y2I2ZWFmOTNmN2YzNjQ3NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliOThmNWNhNDIwZTczYmMxYzRlZjk2MWZmOTM5OTE5ZTE4NWM3MGFhM2JhNGM4MGYwODQ3YzJjZWMwZDRiMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1N2RlM2QyNDlkNjczOTk3YzEwNDEwNjI5ZmUzNjU3N2Q2YWI1ZThmMmQ0NTc2MmViZDI4Mjg4NTgzMTZlNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_31ba2cb2a837453b839ab533395ec31c",
+      "statement": "ConnectorId is a closed union of nine connector ids (custom-mcp, git-repo, google, hackernews, langsmith, notion, slack, web-search, x) and ConnectorBackend is one of direct-api, local-git, mcp-http, or mcp-stdio.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/types.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:1860d06f279fe50801645b66ad792aaf39d68bd78e90b88867c5460f0377254d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTI0NjRlNjQxYjg3MmZiNjhlZTZjZTgyM2E5YjBkZmNiY2UzZTcyNzE4M2MzNDBlMzA5MGU5ZmRhZGFjNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxMTNiZDFkNWI1YmEyZWQzM2Q2ZmNiNTUyMzRlMDQxMjFkMDJhN2Y1MGRiMDdmMDAwZDIwZTUxNTRjMzAwYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlN2IxNDE0ZjJhZDUyZDRiZDg2NzNjNDhhZDg5MmEzMDg2OWI0MzM2YTgxNDkwMzBhOWQ0YTM0NGZiYmNkMDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ac99baa11b249ab9a6286f639b45c9f",
+      "statement": "createConnectorRegistry() builds a fresh map from every ConnectorId to its runtime, wiring custom-mcp and notion through createMcpConnector and the remaining connectors through their per-source factory functions; CONNECTOR_IDS is the canonical id enumeration.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/registry.ts#L12-L52",
+          "version": "repo-lines-v1:sha256:88e1faa042d76767bdaf8dd835af80c009291a052673df5a4316c670bc675a7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhYTJjZmY5OTljMjI1ZTdkYjBjYjMwMTM3MWY3ZmQ2MWM2NjViMGFjY2NmMGYxZjE0ODFlYmI1NTAxODlmOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2OTg1MTgxODg3NDVlYTgzZjhmNTUyODFlMTE1ZmFhZGI0MDk2NDI4YTY5ODVlNTA2N2RmNmYxYTVhNzk1MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ZDcxZTFmY2RlZmMyMTBlZmY2YmFhYTkwZTRiOWFlNzNjMjAwYzQ4OWZlOTY2YTNjZmY2YzVjNWZjZWU0ZjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b7173a69aff451ba2847d0733c2f098",
+      "statement": "getConfiguredConnectorIds() returns connector ids that require auth and have all required env vars set, used only as a telemetry adoption signal, and isConnectorId() validates arbitrary strings against the ConnectorId union.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/registry.ts#L54-L72",
+          "version": "repo-lines-v1:sha256:f9c6e4e3b3826b71be0d8729bf882c26c838fd8cc9a87569ad2e87a78c26b73d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwM2JlM2ZmMWJlNDJhYTRmNzE3YjhjMWIxMzBkMDY3YjEyYTFlOWQwZmM2NDFjYjUyY2M0NGZiZTRmMmYzNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f7aa50610244e159a43be75f4f18883",
+      "statement": "Connectors persist under ~/.openwiki/connectors/<id>/ with config in config.json (merged over a default, missing file falls back to the default), state in state.json, and raw dumps in raw/<run-id>/<file>.json where the run id is an ISO timestamp with ':' and '.' replaced by '-'.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L53-L67",
+          "version": "repo-lines-v1:sha256:6c4f9de33d1d8c29a73ded3ad7672b937b2c559150ac2c27f2fcda23d166760f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NDhlNDc1MGI5MjcwNzYyODA5MGVhMWVlOTRmN2E5ZDkzNTljYWQ5NmUzZjY3ZTVjNzUxYjZkMzgwNjkzYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZjAxMDkxMzAzN2JlZTE3M2FjMWY5Yzc1MGU2OWRlYjRiZDVkMmM5YzljY2I3MWE4YzU0ZDc3NzI0MjE0NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0YTU3YjdhYTI3OGJkNmYwZDFmZWRjNDFhYjI2Y2E5MDgxNDcxNmVkYzY0NzhhZTk2YWU3YTlhZjUzNDg3OGIifQ"
+        },
+        {
+          "resource": "repo://src/connectors/io.ts#L11-L74",
+          "version": "repo-lines-v1:sha256:c499b2aeaa43d73e7427d75f5357f29042049ea8a8a4fd71e433f5045e9b00ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyZWU4YjdiOGE0OTllZmNkMjg5M2JiOGE4M2VhOTUyNDRhMjRiNWQzODM5NjQ0Yzk3M2U3ZTM0MTFjN2I4NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4ZjVjNmI1ODQyYTRjNjgwOTNkMjA3MDdlMThkMmQ5NTQ1ZDk1MDQ2MmI4ZDRjZTI4ZDVjMzg2NDFiYjlkNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNmJmYzdkZTRjMGIxZTk5NTBhMTRiNjcxMjczMDM4ZmM5N2Y2ZmQ4MzUxMzlkMjM5Yzc4NWE5MDIxYTZhZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19695d78920b4274bf854af1d2b23c6d",
+      "statement": "Connector state is versioned (version:1) and updateStateWithRun prepends each run summary to the runs history and truncates it to the 20 most recent runs while recording lastRunAt.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/io.ts#L76-L86",
+          "version": "repo-lines-v1:sha256:da0a7be8bac076765edd05356cdc8d08283fb0c6176b18b623554783f9f505de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxMWI4NDJlMTAzYWQ5NDQyN2RiOTczMGZjNTQ5ZWRiYjcxZWQ5OWY2NTI0NTgzMTVhNzAzMzFiZTFmZDM3ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MjAyNWRhYWYwNTk3NmU0ZmZmZTc2N2RkYWU2ZDk2YjI3ZGQ1ZDk1ZGI1M2ZjZmVmYTY2MzI1NGFjMTIwZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3ZmQ2YWU2NGY2NTg5MmRiMGNlNTc4ZjZlZDA1ODNiNmFlNjJjOGMyZWVkNjNiYjBmZjQ5Mjk4ZTBkNjcyYjMifQ"
+        },
+        {
+          "resource": "repo://src/connectors/types.ts#L48-L61",
+          "version": "repo-lines-v1:sha256:40d3061cf5913e58157b5a9b78be60630afa28dd270f22c92edb5f6868d7454c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Zjg1OTE4OGE0NzhiNDVhZmU5YjVjODliOWQ0ZTM1MWVhYWY0Y2MwMjQ1NzY5ZGEwNDZkZTY0NDQ0YmYwMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjZGUyMTBmM2VlYmJmZDk4MDk2MjU4OGMxN2I2NDAwMmM3N2QzMjFkYmY4ZWI1OGRhZThkMjFjZWJhZmE4NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1N2RlM2QyNDlkNjczOTk3YzEwNDEwNjI5ZmUzNjU3N2Q2YWI1ZThmMmQ0NTc2MmViZDI4Mjg4NTgzMTZlNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4cabd3c9efb43529c041896c12805ed",
+      "statement": "Connector state and raw files are written with owner-only permissions (files 0600, directories 0700) via writePrivateJson.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/io.ts#L88-L100",
+          "version": "repo-lines-v1:sha256:53478c32ce06f5e4178c51a2a462c3191e29f00b887159480a383cb195c81875:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YTNiYzg0ZDNhZDMzODNkY2MwMWViOTBiZGMyN2RmNzY1ZDdiZDQ0ODFjNTQwYWQ2NTU5ZDY5YmIxYjczMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NzNkZWM1MWIwYjgxODRiNmEzOWI2M2Y4ZTgxZmRiNzRiYmQyNDljMTk3NTRmMjVhOTkwYzljYTI5MGY2MzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1d8768c8b4d14993be1b3c1523462a42",
+      "statement": "Connector ids are validated with assertSafeConnectorId and raw reads/writes are confined inside the connector's raw/ directory: resolveConnectorRawPath rejects any relative path that resolves outside raw/, preventing path traversal outside the staging area.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L97-L118",
+          "version": "repo-lines-v1:sha256:05494beae9b22d652a98fce54281227c1666bd0a48edf998fc66edf2ccd8db86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNjMyZDIwOGRiNGI5NjUwOTFhNDQzZGYzNzMwN2Q0Y2VjOTUxZTcwODIzYjU4MTllNTNmM2M2ZDU3YTU2ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4Yzc0YTkyNDM3ZDEzY2FjZDNmMmZmYWE4NDI5NTkyMGFmY2IwNDdiYTBkMjJkMGEzODc2ZTk2ZGRkOTlkMjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_054e01a74a7e4a65b898c936972e9b70",
+      "statement": "createOpenWikiConnectorTools returns an empty tool array for repository (code) output mode, so codebase-documentation runs are never handed connector ingestion tools; the connector tools are wired into the agent from this factory.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L483-L483",
+          "version": "repo-lines-v1:sha256:7b5743d70b3818e4683d8c4a49f98fba193f8f0c964753a5a2635c123cfa65bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I1NzQzZDcwYjM4MThlNDY4M2Q4YzRhNDlmOThmYmExOTNmOGYwYzk2NDc1M2E1YTI2MzVjMTIzY2ZhNjViYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I1NzQzZDcwYjM4MThlNDY4M2Q4YzRhNDlmOThmYmExOTNmOGYwYzk2NDc1M2E1YTI2MzVjMTIzY2ZhNjViYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTgyMzA5ODFkNzcyYWI2NmIxNzYyMzQ1OTk0NTYxNGFmNjQwMGIwOTg0ODJlNTZmYWViMTA2NTBjZWM3MmMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQwZTJlZGRiOTE5ZDllM2RkMTczOTVhNDlhZWI0NDdlMTMwNWQzZTdjNzQ2ODU2NTk1MjM5NTgzMmM1NTU0MCJ9"
+        },
+        {
+          "resource": "repo://src/connectors/tools.ts#L25-L36",
+          "version": "repo-lines-v1:sha256:4d1a958666f9c0c77142f80e9a58c011c6d154534d1d24bb69d5e8273a77b053:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzY2NWM4ZTkzNWFjODdmZjJiYjkzYTY4NjU0NWJhMzAyNzBkYmY0MDMxMjVjNGZmZjEyY2I3NjMzOTJmMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjk0OWRjMTljOTNhZDQyMTRmZDMyMzc4NDczNDJiMTI1NjgxZTYyMGFmNGU1Yzc4YzE3ZmJhOWRjNDExMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMmM0YjIwNjBmZDRmMzBmYjZhYjJiYmFjYTM2NGFkODljZTg0Nzg2ZmIyNGQxOTMyYjAyM2JjYWIyZDBhMjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1598a06d9b624a2381278e3231a7b9f2",
+      "statement": "In personal/local-wiki mode the connector tool set exposes openwiki_list_connectors, openwiki_list_mcp_tools, openwiki_call_mcp_tool, openwiki_ingest_connector, openwiki_ingest_all_connectors, openwiki_list_raw_items, and openwiki_read_raw_item.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/tools.ts#L37-L214",
+          "version": "repo-lines-v1:sha256:290999f5fda3bd2c403e21c6b2ea503584c82d135db62ff305a24c781ace53fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmZTBlNDAyNGRjMzI1ZTE4Yjc1ZTU2MDEyODAzMGZjZGY0MTkxZmZhMjExMGM1YTM2NjNjZDUwYzJiNjU0YzMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwNDAxOTBhMzA1OGQ5YjFlNzZiM2M1NTM3ZTcyN2I1YmMzNmRiMDU1NGI4NzFlNTBkYmI4ZGM5NWI4Njk4MjYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkZWM5MzNkNTc3NGE3Y2IwZWEyYWU3ZTk2ODBjYTk4YjE1NWVlNWQ0NGE3NjBlMmYyNDlhMmQ4MjI5MjY4MDkyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTFkZDM3ZWRjNDlhZmE2YTM3N2ZhNjY0ZGZiOTRiNzE4MGI1YjZmM2RmNTY4YjQ0M2QxNmI5ZGMxYzBhMmIwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c968e42761f40a08f8a9c07255936d2",
+      "statement": "The MCP discovery/call tools accept only custom-mcp and notion as connectorId; openwiki_list_mcp_tools and openwiki_call_mcp_tool reject any non-MCP-backed connector.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/tools.ts#L263-L281",
+          "version": "repo-lines-v1:sha256:37946aff79b84fda134790abeca15187eed7f314c559d6f632ef0165bcd29c8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MmZiODE5NzczNWU1MzQ5ZDdjMWZkNDNiYzc2N2I2ZTNmMWFjZmQ4ZDc3YWNkMzlkMzZkMDE5Yzc5N2RhYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlMGQ0Y2NmZDBkYWIyY2IwODM0ZmZmMjUxNmM0ZjUzMDA2MzkyZDQwNDBlNmYxYjg4MDMxZjU4NGUwMzdkNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjYzYwZmFhZTUxNTI5NjkzMzFiMzNlOGYzYmFmODNiNDE4OWU1YTYzOTQ4NmU1ZDUwOGFjNjA3ODY5YWMyMmYifQ"
+        },
+        {
+          "resource": "repo://src/connectors/tools.ts#L49-L97",
+          "version": "repo-lines-v1:sha256:260935234766f4595f6b9f017a81b36897d63d1e2da24dc187ee70e3ade9c02d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyN2NmNjFkMzgxZTRiNmE0ZjU0MDI5ODY5N2U5Y2U0MTljOGU4ZTY2OGMzN2I4YjZmNTA1ODUxNzg5Nzc5NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTBlYjZjY2RiMGZlZmNjM2M5YTg4M2M4NzljOTg2NmJlMzM5MzFjYWFhYmYzNjYyZDdhYzRjNDEzZWM4YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmMDFkN2E4MzY5YWNhMzY5NmViMWMzZGVmM2VlMDcwZjJlM2MwZTc2MWZlZWZhNzkxNzIyYzI0MDcxNDJmNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjM2FmNjU0MmE3NWUwODgxMWUzNWViYzI1MGM5Yjc3ODM4NzAzZjUzZTlhN2EwMTFmMTgzYTgyODA3OTU0MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c8dd5a061a54f7aac4ce360778e2e44",
+      "statement": "listConnectors and the raw-read tools never return secret values: required env vars are reported as presence-only status, and openwiki_read_raw_item caps a read at 500 KB and confines it to the connector raw directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/tools.ts#L217-L252",
+          "version": "repo-lines-v1:sha256:ef9f52f5436ec1b6c05bc3a47db9d746698f3cb70edf0b459570d943e1ed331a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5OTQ1MjBiYmIzOWNjNGZjYTMzNTI2MTg4ZTE0NzM4M2QwOTE2ZWZiNTRkNDRhM2M1MDYyOTFmNmIyMGNmZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MDA1MjRmZDJjOWUwNzVhNzQ2YjM3MTc0M2EwMjFmNDY0ODlkNjYwYTMxNjA1YjkzNTA2MjcyODZjM2M2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYWVhMDQ3NmE3MmY4MGNlNzNmODcwYTg4MTRlOTA2ZmE4NWFkMDY4NGY1ZDg1NzZiMzhkNzAzM2UwM2YwZTkifQ"
+        },
+        {
+          "resource": "repo://src/connectors/tools.ts#L316-L340",
+          "version": "repo-lines-v1:sha256:1c284930d13d0b267fab8e79fd72ad3a1002f0ef1e1edb5d21cdcfcd5892db10:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxY2E5MGM2MDMzMjU5YzA5NGVkYzRjNjQzN2VmZDZjN2VhYWNkMGI3MmExOWFhMGE5ZTQ4MGE3NmU5YWQ2YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMGVjMTYzYzUwOTVhMTYyZTY1NTA1ZTEzNjI0M2RmNWM5OTlmNGE1Y2NlOTgyZWFjYTZjNjdmMzM1YWI5MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNTU0MTZlNmQ5OTdlYmY5NmI3ZDY4Y2ZjMzVlMThhMWZkODU3NDdmZGNkMmQwODI0MzA3MzhhYzNiNTZlOGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d2538207f202472399d2fec412f0ed44",
+      "statement": "createMcpConnector builds both custom-mcp and notion from one shared runtime whose backend is mcp-stdio, mode personal, and supportsAgenticDiscovery true.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/registry.ts#L29-L47",
+          "version": "repo-lines-v1:sha256:733aced8a8601a8e8ff25395b189d72dd8416f405b504496416e81c772b3bdb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNTRiNjY1NmIwODk0YTA3ZDg0MjA3MDE2NjY4Yjg0ZDNhMjdiNWNmYWIyNmMxNDUyNTY2YzJjNTJmYzNiYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTBlYjZjY2RiMGZlZmNjM2M5YTg4M2M4NzljOTg2NmJlMzM5MzFjYWFhYmYzNjYyZDdhYzRjNDEzZWM4YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjN2JiMzM1MTI1NDg4YmUzNmQ3ZGY1ZTgwMDcxOGE1NDliMzZjY2E2ZDNhYWYyMTQ2ZjVlYjEzMDI3M2NmOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxOGYzMTM1MDZkZmNkOGIzODliODJlYzNkNmRlNDliZDgwZmQzYmQ5YjY1OTMyZGNkOWFmN2I1ZGY5MzliNTgifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/mcp.ts#L26-L38",
+          "version": "repo-lines-v1:sha256:973baaa9e52db0e27dac11abd6f76fb859ab05fd3dfbb52a8141c09cc62dd66a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmZjFjMDNjMWFmN2ZmM2E1ZDc5NWE1NTMxYjM3ZDM5ZWU2ZDAzNjg0NTI1YjI4NzM0MTI5OTFjMmNkZjA0MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlMjkxZDFiNDg4NmM5NDE3ZmNmNjM0MjNhNDAyNmNiZjExOTkxMGYxNzUwMzJiZjM3MWE4NWU5YmQxOTU3YjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmN2ZjOGFmMTliNGY5MGZjOTA5YWI0MDhjYTMzNDhjOWRkMzAzNzRlYTU2ZjYxNDU5ODhjNGExZmY3Y2Y1ZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a500c579c54a46de8da008820082a23b",
+      "statement": "MCP connector ingest is enable/config gated: not enabled returns skipped, missing transport or readOnlyOperations returns error, an empty readOnlyOperations list lists MCP tools and returns skipped without guessing, and a populated list executes the read-only operations and returns success.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/mcp.ts#L40-L120",
+          "version": "repo-lines-v1:sha256:0f8289a029c2858b2d8d337577ed943dbad8e2b13bcf816991921100de9cbc2d:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MGQ2ODZiN2M4NTU1NmFkZmQ0ZDI3YTE2NDRiMDA3YmVhNzMxYjMwNmM1NWMwMmQ1Mjk1YjBmN2YxZDQ4MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZTE3MGQ1OTcyNDI0YWIxYWEwZGJmMmQyN2E2YjM2ZTEwNjNiY2I5YzhjOTUxMjg1YzdkODUxNjMzNmNhOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_501f756f090b47279666c8554f23fbed",
+      "statement": "MCP connector config resolution uses on-disk config.json as the base and lets an ingest-time connectorConfig override win field-by-field without inventing defaults.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/mcp.ts#L122-L146",
+          "version": "repo-lines-v1:sha256:06e4adc935bca2d353ce6631f94d6202b0a56d417a598c623b8efd87e93db1bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZjNhNGE5ZmNjYTkwMTkwODc2NGM3ODQ2ZDJkMzY1Yzg0MjJkMGI0MWVmZjQwNjU5N2JhNzU1ZDNlYTlkMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9ee0bc2aa704456b2d9f930798f6ca0",
+      "statement": "getToolCallPolicy enforces read-only MCP tool calls: a tool is allowed only if listed in connector config allowedTools, or annotated readOnlyHint:true, or (for notion only) served by the hosted https://mcp.notion.com/mcp endpoint with a read-only-looking name/description; otherwise it is rejected.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-runtime.ts#L197-L244",
+          "version": "repo-lines-v1:sha256:db0442d6965b462af31bd811d1645de448e7332aa5e467c52255773c705b0299:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmQ0YjBlNGFmOTMyZTYyZDIzZGFhZWY5MzI4ZGMxZDNhMWRiNzBiY2RjNWFiNjJkZmRkOTgyNDlkMmJmOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyODJhMGRiMmEzNmMyYzViZDdlNDVkYzU5MTFhYjA1ODNiZDUzMzYxYzIzMTBhMmExMGI1MDhjNWRjMzZkNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0fd0694ac944126b8859e46859074e5",
+      "statement": "callMcpConnectorTool rejects any tool name not returned by a live tools/list discovery, forcing agents to discover and use exact tool names before calling.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-runtime.ts#L77-L99",
+          "version": "repo-lines-v1:sha256:89ecaca549032cb80cd2a55efb2f2daaf5e18501daf0b8d8e63d8471ba55456d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NmJjYjc4MzU2NDVmOGUyMWEyMzhjNjY4MjM0YjU2ZjI0M2M2NjIwM2FjNmVmMzZlNTNiZjZhNmZmNDgxNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZmY1ODcyN2UyYTUxOWQ1MTA4MDA0YTEyZGQ5YTQ1NGRhMGM1YThmZjEyNjE2ZDM5YzYxZGNkOGY2NDVkZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3Y2VjNzEzZjJlYzNiMjAwOTQ5NGI3NDJiNTQ5OTdjZDdmZjQwZTlhZjNhZTBjOTMxZTVlMDQ0OTRlYjZjNDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_375f7b74078e466380d6587be63ee370",
+      "statement": "Persisted MCP transports are sanitized before being written into raw dumps: sanitizeMcpTransport replaces ${ENV} references in headers with <env-ref> so secret env references never land in raw files.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-runtime.ts#L132-L154",
+          "version": "repo-lines-v1:sha256:876b84a481ba6d2fb18db5546dc766a1bc32a8361a6f791d478c0f867e2702ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MjIxYzkyNjVmNGE4ODYxNDBkZGM5M2Q1NWVlMmQ0NjQ0NzdjODgwZTY5OWE2MjFjZDdmNmQ2NTkyZjA2YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhN2E3MTg5YmE0OWI3Y2MxMTU4ZmFkYjI0YTYwNDA5ZWE3YWNiYjVjODE4ODYxM2QxMWQ1NTRiZTEyOWQ5OTMifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/mcp.ts#L97-L109",
+          "version": "repo-lines-v1:sha256:22e7ed4aaf8ba020bfc8f435d15179e7b11ebe2302edfc826805209f18bff176:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyYmJmOWQ4ZTYzMGRhNDA1OWE1MDhmNmQyYjM2NzliODA5ODZmOWFiMzEwMTkwZWU2MGEyODc2YzFlMTAxMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYmE5OTk0NTk2ODk0OThhMWFjM2QxNjk3Mjg3YjY1NWVhYTg5N2RkNGRlY2Y1YjJiN2VmZjdkZjlhZjg0Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_158c7fc59bc44aa5b90d75ee59cac5d9",
+      "statement": "The MCP client speaks JSON-RPC 2.0 over stdio (a spawned child process with shell:false) or HTTP, dispatching read-only operations, tool calls, and tools/list to the matching transport.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L162-L180",
+          "version": "repo-lines-v1:sha256:92df8960da266582cc02a3091e5436de49728c3f92cc93d794cc1cdbcac86b4f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYjFhOTI5OTZlNTdlN2E4YjE2MTNkNTQ3M2I5NGFlYjk5NzE3OTg2MDkzYzFlYTk5YTIwYmE1OWIwN2Y5ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4MTYxYTE0ZDg3ZDMxMDliNTNhN2U4NGJjOTEwZjc0NjFjMWFlZTQyY2I3ODBmZGM2MzY0YjkyMmJlZjA1Y2YifQ"
+        },
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L58-L96",
+          "version": "repo-lines-v1:sha256:4ec19142b0e61ac703a5586f4fabb10a6b0643cae5531a749ce6f657e2c6ad36:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNjkxZWQ5OWFiNGE3OGFkZTRlZGVjZDMxNjY3NThiYjIxNTFlNmU1NTM2ZDU5NzUwYjQyNGNkZmY5MWEwNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NGZiMjRhMTM1NjNkZDZmZjg2ZGVlMDZlZTZlMjJmMjQ3N2I5YmJhNjE0MzNmODBmZDg1M2JlZjEzMmMzNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyNzhmMzIyZmE4NzVhZjhjZDU2Y2FlZjNkOTA1ZTA1NTM2YTk1MjM5ZWM1ZDhiNjU0MjAxOTE4YmFmZjc0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_035d3d82f95d435286e601a1fb600faa",
+      "statement": "HTTP MCP URLs must use https except for http to localhost, and HTTP MCP headers must reference credentials as ${ENV_VAR} (never a literal secret); env references resolve from process.env or, for OAuth access-token env keys, through the OAuth token layer.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L855-L908",
+          "version": "repo-lines-v1:sha256:3aba67d7b14b3bf38a364b5cd61099249ca6519b2155bd1d637e14be5d823ebc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NmVlZjFkMTUyMmQ1NmM5ZTMxZTE1ZjU5MjQ2NDM2ZmQ4NWM4OTdhYjJjZDViMWQ0MmRjMjY1MWE2ZmUwZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNzcxMDkzYWFkMGZlMTAwNjgyMGFiMWM1M2VmZDNhYWY4YjY2ZWQ0MmE3NTEwMjg3MDkwYzQ4YWFmMmEwZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYWUxM2UxYTViY2I5ZjJiZjY0YWQyYzE5OGQ1YmIwYzgxOTI0ZDhkODM5NWU5ZmM3NTI3N2U0Y2JmN2Q0MzkifQ"
+        },
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L958-L970",
+          "version": "repo-lines-v1:sha256:7a0071f852a31b876943f403482bc546d9a638e9d83bdad16904c2dcfa2384de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMjZiMWI5OWI0MGE1MDA3MDBkMGFkZTMzZDBiOWI1YWE5MjY3ODQ2ZDc5Yzc5ZWNkODg1YTU1ZTYxYzQwZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3N2M5NmFlYTI3ZjIxYTAyZTE4NzQwNTk1ZmRjNTFhYmYzODRiMjhkNTg3ZTNlNDkzN2NlZjI1ODUwYWNjMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e4e70888390465594575859e3bdb249",
+      "statement": "MCP tools/list is fully paginated but bounded twice against a misbehaving server: iteration stops on a repeated cursor and on a 100-page cap.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L10-L11",
+          "version": "repo-lines-v1:sha256:ed3743a6dca6a13f2531c206c3e0ab0ec67166ecd0adb99664721058d36e176b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg3MGYyOGIxODcwMTQwNTMxOTc0NDQzZjk1ZTAwZmE0OTU3M2E3NGI3YjAyODA2MTljZmNiMGVkNGUxZGFmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTFkZjk2NzczM2JmMTdhNzUzZGYwZDNkMzEwMjJmY2QyMTQ4ZTVhZmNkOWE5Y2E3ZWJkZWE1NDI2ZTM4MzM2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTc1MjRmNjM4MTRiMDE4N2RjZmRjMjRiMjFhOGM3NzlmMzNlNGVjMTVjYjllZWVjZTQ1OGZjZDc3ZWNlYmY1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTViMjMzNzk4YjY5NzQ1NDlhMzFiMjM1MTg0OGU2Njk0YzE2YzFmMDgyMjQzMGJmYzU0M2I1MWJmY2FlZDRjYiJ9"
+        },
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L407-L429",
+          "version": "repo-lines-v1:sha256:41917bc2b4aefabbcebdc3aacd5509b567f6d3b3e220bd9612cae7cf703a2e93:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMWMzNWEzYzRhMzFmNDJjMzNiYzhhNmU0NmY1NGFlNGQ2MzAwYmNhZWY1YTBhMGY2NjhiZDBiZTFiNmJhMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhY2QxYjZmOWEzNjJlZGExYzY5ZDk0NjIwMTdlYzk3MTEzNjdhMzA5ZjNjMmU0MzA0OTUwNGRhOTNhNTIwZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjNWZmNjI4NjVlNTkwYzMzNWU1ZDZhZWFkNmZkZTk1ZTYyNjQ0ZDU1YjQzYTYwZDNmNzFhNjgwYTMwYjE1NzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f8e65358b89424da700e9deff2d2f6c",
+      "statement": "MCP stdio commands and args are validated (command pattern allowlist, no control characters in args), and each JSON-RPC request times out after 60s with the child killed on close, so a hung server cannot block ingestion.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L521-L569",
+          "version": "repo-lines-v1:sha256:e9d6ff5362353906ee52813ac8bb6358f45e2f46ccfb676b70bf9b1d26c5ae79:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZmVkYjgyNTNhZWY5OThiMTg1MTRkY2JiMDJhMDk4OTgzZDE0YWUyMWNmNTU2OTk0NTZiYWMwMzY2MDM4YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjYzJiZGUxZGI4MWUxNDAwMmM4NGZlODY2ZmNlNjRhODE1YWU1NGJlYjhjMTJhNWI2YWFiNTBhMzE0N2MyYTMifQ"
+        },
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L923-L940",
+          "version": "repo-lines-v1:sha256:3bb5d4a25ccdbf29eb1958baf3113067b1b21bea01aebcda7f8636310a0d0eb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMmQyZGIxYWUwYTBiN2QxYjNiZDY5OTVjOGI4MmFhZDhiNTdlZDYxZWQ1NDI5NTdlOTdlZWY0MTc2ZTMyNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZTNmZDg4NDQ0Y2M2ODQ2OWY5OWQ5MzhiOTJjY2Y5NjliZDRhZjlkZWQwNGMyMzVjZTk2ODExNTNmZjFhMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzNzU2ZTg0NjE4ZGQzZTEyZTgxOGVhODQ3ZDIxNGQ4ZmU4ZTY4NjhjZjczMThmOWVmOTZkODBhZGFhOTdjMjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c588a24c17f24416a60b52579071876a",
+      "statement": "The git-repo connector is a local-git backend with no required env that reads configured local clones and writes compact per-repo manifests (branch, HEAD, recent commits, status, changed files), records each repo's HEAD as a latestIds cursor, and skips repos with unsafe ids.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/git-repo.ts#L40-L129",
+          "version": "repo-lines-v1:sha256:d178bdc86ef941e318e1b6dcb721bdcb9c5e88edeef408c8ca4be87060205204:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NzlmNjIwOGZkY2NiNjJjYzNmZTJhMjRhOGFhNzMzMjYwMDE2YmEwMjBmODc0Y2MxODkzOWE4NTMyZjA3NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzOTg0MGY1ZTU3Njk0OWI1OTk2NTQyZjM2OWYwZGM3ZjgyYWRiMzIzZGIyMDBjNTQyMWE5NjI2NWEwZmQ1NWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3712db1ca3646f7a5d46c050d25cc60",
+      "statement": "The Gmail connector (id google) is a direct-api backend that fetches recent Gmail messages via the Gmail API and requires OAuth access and refresh token env vars (OPENWIKI_GMAIL_ACCESS_TOKEN and OPENWIKI_GMAIL_REFRESH_TOKEN).",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L78-L81",
+          "version": "repo-lines-v1:sha256:0a9d4477f02a8bc15eaa60a09f233796ea4612fbcfbd6a6b0406583a941745fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U4MWVkOTJlYjcxMjMzNmE4ZTQ4ZGI3NDRmMTJhMDJlNzYxODA0NTM0NTRhMDExMzY2OTlhZWQ2YTIwZTI0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMyMDUxY2Q5YTYwYWEyMGQ1Y2NiMjUzNDY2OTY4OTIzZWNlMDY4NGNkMjk5ZmExZWNkOWVlNmJiMGI4YmRiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJkMmY0M2U3NTg1ZDFhYWVkODA2MTgzOWMwNTY1M2NiZmRhYjNjZTA4ZGFlODBhMTQzZTc5MWI1NTFkYmJmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdjMWVhYTBlMTJmM2MxZDY1YzQ0YWE5ZTAxN2RiYWNiOWJjNTFlODVmYTBmZDhlNWZiNmQzN2U0NDk2MWM3ZiJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/gmail.ts#L65-L77",
+          "version": "repo-lines-v1:sha256:9ed769e576d6abc7fe86f593d5760a431018d76dc596d42cd5b96645c896aa60:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiNThjNzIxZjYyMWQyYmQ3ZWE3YmI4MDg2NGUzNWU2YWIwNzY4M2ZhY2IwZmM5ZTgzNTJhNzU4MGNkZGMwYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzNmNkNjYwN2MxZDI1MTdkNDgxNzE1NGQ4ZTQ1MTAzYjQ3NTg1YTZkOTMyOWRiZWU3Y2MxMjU4MjFjZTY5YjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c629c2fb3e3b4bf9b88368662b2c3eb3",
+      "statement": "The Slack connector is a direct-api backend requiring OPENWIKI_SLACK_USER_TOKEN that fetches conversations, recent messages, and assistant search context across recent_messages, my_messages_search, and assistant_search streams.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L93-L93",
+          "version": "repo-lines-v1:sha256:9268117cdcd0089e156017748106e873de5acbac2ba77eab658d0e0c0a0a9c47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI2ODExN2NkY2QwMDg5ZTE1NjAxNzc0ODEwNmU4NzNkZTVhY2JhYzJiYTc3ZWFiNjU4ZDBlMGMwYTBhOWM0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI2ODExN2NkY2QwMDg5ZTE1NjAxNzc0ODEwNmU4NzNkZTVhY2JhYzJiYTc3ZWFiNjU4ZDBlMGMwYTBhOWM0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NmOGJkZTI1ZGUzOTFlYWMyNDgzNjkxMTE0YzI4Y2E2OGRlN2Y1MmRhZDFjYmU4Y2NiNjNjMjRjZDExNmQ1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI0OWM5YWRmNzNkY2NmNzIxYzk0MzY0OGJlODA4MGE0OTJlM2YyOTFlZTEzOGNkZDBlMGRkNDZiMDYzZmM2MCJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/slack.ts#L128-L159",
+          "version": "repo-lines-v1:sha256:462c09f4529fa8d66389150654b272aa9720abb9719a0a15eb171ea8fd0015e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZGU2MTExZDQwY2UwYmRjMTk3NTgzZTI3YzU3M2NlNGM3NjQ2MjE5ZDg3MzFiMGZjMGY1ZjZkYzkyOTk5MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4MTFiZmNmYWUzNzEwMDA5NjBkNzhhNzlhYjkzZDU0NDE2ZmJmMGZhMTBjNzcyMzY3NWFmNGU4MmI4ZDYwYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZjg1YjU2MzE3M2JkMWE3OGU3MDZkMmYzNmM3MWM3M2E2ZGUyMDBmMzBkNzhmYWMzY2IwZjMyZWE4ZTg5NjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b7d1484e7df4308bfe40b5ae99d57d2",
+      "statement": "The X/Twitter connector is a direct-api backend requiring OPENWIKI_X_ACCESS_TOKEN that fetches home timeline, user posts, mentions, list posts, and bookmarks via X API v2 with OAuth user context.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L94-L94",
+          "version": "repo-lines-v1:sha256:73f075e9b53c2c2942aef3484f98ad290ef7ece8d226caf83aa1a5d4d8c5a4db:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNmMDc1ZTliNTNjMmMyOTQyYWVmMzQ4NGY5OGFkMjkwZWY3ZWNlOGQyMjZjYWY4M2FhMWE1ZDRkOGM1YTRkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNmMDc1ZTliNTNjMmMyOTQyYWVmMzQ4NGY5OGFkMjkwZWY3ZWNlOGQyMjZjYWY4M2FhMWE1ZDRkOGM1YTRkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDg4MWYzM2MyODFhMDIxYzdmYWZkZWU2MDdhZjdmYmIwNjRlYWM3YzlmNzY4ZWY2ZGIxYzAwYmEwM2QxZDNmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyMTFmNDU4NmM5NzFkZmMzNThhMzgyMTkxZDNlOGE4ZWQyYjc5Y2RlMWVlNDc5ODY2NTlmMGNlMmEzOGFlYiJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/x.ts#L46-L64",
+          "version": "repo-lines-v1:sha256:3161ce4a87082e8ac0f56a6c892b63fdfbb59b194a8e5d4f2ccea1105ab7ca92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2YTk5ODJjZTU5YWE1NzM2NDEwYTMxNDNiYzk2ZTA1NDFkMmNiOThmMjUwNGYxMTIxMzAzYmVhNmFiOTIwNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0YTc2MDI3ZDY4ZTM2ZDRiYTczYmE0ZTJkNzRjNTczMjJjMTQwMWZjZTg0NzNhOWJjMWUxZWEyNmI3ZmQ2NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYTA2ZTYyYjI4OTYwNTVjMWI5NDlhNDRiOTQ1MWMwNWM1ODY3ZjZiNjEwZGE1MTdmMmRjOGI1YjA3NDY2ZTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_afbcbf56c98b4dc5a8d7a6e8623a1753",
+      "statement": "The web-search connector is a direct-api backend requiring TAVILY_API_KEY that runs Tavily searches via the LangChain Tavily integration; it is enabled by default but produces nothing without configured queries.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L98-L98",
+          "version": "repo-lines-v1:sha256:75dde753071292423834078688d4caa67cc9839f5ef429fb866fbad180d24961:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVkZGU3NTMwNzEyOTI0MjM4MzQwNzg2ODhkNGNhYTY3Y2M5ODM5ZjVlZjQyOWZiODY2ZmJhZDE4MGQyNDk2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVkZGU3NTMwNzEyOTI0MjM4MzQwNzg2ODhkNGNhYTY3Y2M5ODM5ZjVlZjQyOWZiODY2ZmJhZDE4MGQyNDk2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWUyMTFmNDU4NmM5NzFkZmMzNThhMzgyMTkxZDNlOGE4ZWQyYjc5Y2RlMWVlNDc5ODY2NTlmMGNlMmEzOGFlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE4NjUzM2M4NjdhNTE5YzU4Nzk5OWM3ODNiM2E1ZDhmODRlMTQzZWVjM2Q0ODdkNGM2MzhkODg1NDk0N2Q5YSJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/web-search.ts#L41-L90",
+          "version": "repo-lines-v1:sha256:9edca09feb40679e7b19d247b19c1e20ddb5eb3d9f0e56a133f58362569a2c0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NDU4NzJlZmY1NzgwMjcxNzU2MWVmOTRmYTA3OWZhMDY3YWRjNWU5ZTAyNzcyZDg3MWYwZWVlNGRhN2RkMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1N2U2Yzg5ZWQyYWZlNTk5YTk2ZDQ0OTU4YjBmMjljNDE0NDIwODc1YWMyMTc2ZWU5NjI3YTQ0YTA3NTU4NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_18b3ccce303f4a759bd6606e1ccff915",
+      "statement": "The Hacker News connector is a direct-api backend with no required env that pulls public HN feeds (Firebase) and Algolia search results without credentials.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/hackernews.ts#L64-L91",
+          "version": "repo-lines-v1:sha256:d2140b07290e92219c71ea14c47c579f49c9b069d29f27f742269d06ee55276f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4N2RkZTU3MmRkZDIxZGUyMjY1N2ZhNzVjNTQwMTQ2NjgyYjM1ZjA0M2U2YzJlOWY3NDExYjg1MTVmZWYyZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZTEzNGU1ZjEwOWY1OWRjZDQwMjA1MjA3MTdkZDVlM2RhNzY3MmJmMWM3MWUyNjE5NjZhM2UyOGM0MzUyMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1ZmIwN2YxZmU5ZTI0ZjRjZTQ4MTRjYmI2YmI0ODkwYTdkMDc2NGQwNjI4YjJjYTJhNjJkNTgyNDgxZTRlMTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bcecc05591d84ac9aa17ce713cc737f9",
+      "statement": "The LangSmith connector is the only code-mode connector: it requires a repoRoot and committed repo workspace config, requires OPENWIKI_LANGSMITH_API_KEY (with additional per-workspace key env vars), and skips cleanly when invoked without a repoRoot or configured workspaces.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L136-L156",
+          "version": "repo-lines-v1:sha256:4c949b1f5c1e057f85f2d01d6e1b97018a0f7ad5a2d12c2a5e1dec32286fb4ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMTBmZjZhMTFlYjlkMTI0ODE2M2JkMmE4Y2M0MTA2MjliMTRkNmQxMDhiNjE3NjMzZjM2ZTM4MGMwMTM1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmMWEyZDEzN2I0YTBlMjJkMDZiM2EyYTA5MmEzOGRmNGNjNDM5NDk5ZDU2OGZjNjk0NjQ0YmMxYTExY2Q0YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MDhlNzMwMWFjOGZmODc5YzcwMTQ2YjYzYWJlMTA3MTQwOTA2NmFjMmRmYmIwMTAxZjIyNDkyYmRkZTIzMzIifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L86-L95",
+          "version": "repo-lines-v1:sha256:bb0fe6e32ec16febb2ee1ba29b5dfd084ab3ed7a52cd7ef01c6ed4a5628792ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzA3YThiZTRkYWI5OTgyMDg5NzE3MDU4ZjM0ZmMwMDZjMmU5MjhjZjRlODRiZGEwOTlkYzQ0NzQzMTg4ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1N2JmN2YzY2M5MTlkZWJhMjkyNDQ4MTM5ODc2ODQ5NTMyZTA0MTA4ZmY5YjE1OWE4OWFiMjdkYzViZjA2Y2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_818059dca6e74a609ee8d43d2159badf",
+      "statement": "The LangSmith connector pulls an anomaly-weighted trace sample capped at 20 traces (errors first up to 10, then latency outliers up to 5) and degrades per-workspace/per-project failures to warnings rather than failing the whole run.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L131-L200",
+          "version": "repo-lines-v1:sha256:d8cc0e9a97eb719ec62d956ce8af8ddf8ee09186f6cf2301d2b837161ce88c88:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0OTk5NzRjNjRmMmMzNjMwY2I0MDE2MTlhYzhmODU1NTYxYjY2Y2QzMTZjZGEzNDhjOWQyMjg0MzQ4OGQzZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NjEwM2ZkNjk2ZGM3NjZiZGYyMWMwMTg0MjljNmE4MTYyYWE0N2JiOGJmMWY4OGVkYWM5OTY4Y2M5NWMyOTIifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L51-L76",
+          "version": "repo-lines-v1:sha256:46e3ca388d494028d1d8e497a7622554a8b85498465cbe40c12703502bec643f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MjMyZTA5ZDRiN2ZmYjQxZDAwZDk3M2FmOTBmNjg5ZjBjNzBiNGRmYzE0MjUxNmQzMzE0NTY1N2UwNjBjMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNTljYTI5NDIzYWFkZTg0ODBiNDI1OWU1YTg3ZjkyZTM1YTc4YjdlZDc5YmE4Njg0OTI0YmFlMzlkYzlhNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyOGUzMjBiMTE4ZTQ0ODFhODIyZjg2MmE4Mzk0ZmUwYTk0ODk1OGQxNGJlMDU4Y2E2MjVlMTNkOGNmYmVjN2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1bd9e3f8e694afd962747db8ee820bf",
+      "statement": "All direct-API connectors and the HTTP MCP client fetch through fetchWithResilience, which adds a per-attempt timeout and bounded exponential backoff with full jitter on 429/5xx and network errors (honoring Retry-After within a cap) while returning 401/403 and other 4xx unchanged so callers can refresh tokens instead of retrying.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/http.ts#L1-L52",
+          "version": "repo-lines-v1:sha256:fdcfa611f52bef297786ddbe2d5cb49326dd97f348c91f1cd422fea9e882ff28:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ODM5Zjk2MmI1MmZhMDAyZTEzMDU0MmJjMjQ5ZDZhNTYwZThlYzVmZjQ3Mjk0ODkwZjY1ZDNlOTRhOTk1NWMifQ"
+        },
+        {
+          "resource": "repo://src/connectors/http.ts#L95-L145",
+          "version": "repo-lines-v1:sha256:7c68756851eb1b754549dc4f725c08a2767c3c5b06b559505178233a5e782117:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNDI2ZWQ5MmM2ZmMyOWYzZWYwZjliMGI2MzUwNDc0MDNmMTI0YTQ3MDFhNjIwZGFiNWVmMGYxZDUxNTM3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzYjZiNDQyNDQyNjE5OWJlOTVlNmIxNGRjM2IxM2M0MTAwZDViZjJhYjEzYTVlYzkyOTUyOWYyNjE5YTE0OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1934699036684b68a5b420f4f71b4763",
+      "statement": "Adding a connector requires registering its id in types.ts and registry.ts and implementing a ConnectorRuntime under src/connectors/sources/, but the documented preference is to reuse custom-mcp for any read-only MCP server and add a bespoke connector only for provider-specific auth, scoping, or deterministic pulls MCP cannot express.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-connector/SKILL.md#L10-L28",
+          "version": "repo-lines-v1:sha256:fee5d1b04227766a498aa0a7fa2c708e149adf8eb20da6eec3286551d0aca964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmYzRlYzcwNmJlM2JmZTIxMTNkZWQ0MmFiZGVjNWI3MjhjMTcyOTIzNGUzMjM0YjFlMjM3NDlkMjlkMjdlNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxOGZiMzEzOWQzYWYyZjQzN2Q4ZDRmZDlmOGJhZTg4MWY0NDRhNjdkNGMxNGI2ZTcyMzZhNDAxN2Y0OWUyYTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMWEyMWI4MjllZTBiMGY3MTI2ZmUzZTEzNjdlNjBmN2JhMWUwNmRjOTBiYzNmZGQ4MDUyMGE1YTJhNGNiZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMDhiNTM0NTcwOWJkZmQ0ZDlmNjM5OGQ4MjZiOGU2YTQ4NzExZmJiMzY2NzdjNTY5NzRmNzZhMmQ2MDNlZmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d523ae25197647389e4011d79e030929",
+      "statement": "Connector authoring rules require secrets to live in ~/.openwiki/.env referenced only by env var name (never read, logged, returned, or hardcoded), connector ids and raw paths to be validated, incremental sources to store cursors/hashes, and any wrapped MCP server to be treated as read-only.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-connector/SKILL.md#L30-L46",
+          "version": "repo-lines-v1:sha256:2f2a2924ef5497104228128459b49164745b899400832af508e7ffe50e8dee6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMDA0NTdiYzNjNThkZWFmNmNiMTk2NjQ0MDUzYWI0YTJjOTYzMDU1NjA3NzJiMzA1NjZhMWM4OTM1MDA2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMTM4N2MzOWIyOTAwNDdlOTAzNmM5ODRmYjY3NjBlNWY1MTIyOWNjYWIwMGYwNTgyYmM3ZTg4NzlkMjRmOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmNjUyYzRjN2NjNTg5MTI5MDY2MjdmMWE0NmM4Yjk4MWY0NmFkYmMxNTAyNGI4YTdlZDlkODI1NWFkNWI2ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxNzlhN2VkMTEwMjExN2UzN2MzMWNlZTZmNDk4YzBmODVmMGE3NDlkMTk4MzRkYmZkYzcyMjY2M2ZkM2YxN2EifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.3.3",
+    "at": "2026-08-25T02:14:25.283Z"
+  }
+}

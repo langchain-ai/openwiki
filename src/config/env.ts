@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile, chmod, rename } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import os from "node:os";
 import path from "node:path";
 import {
   ANTHROPIC_API_KEY_ENV_KEY,
@@ -10,6 +9,7 @@ import {
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+  OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   COPILOT_API_KEY_ENV_KEY,
   COPILOT_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
@@ -65,6 +65,7 @@ import {
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   resolveConfiguredProvider,
+  resolveBedrockMaxTokens,
   resolveMaxOutputTokens,
   resolveOpenRouterMaxTokens,
   resolveProviderRetryAttempts,
@@ -73,20 +74,17 @@ import {
 } from "./constants.js";
 import { isReasoningEffort } from "./reasoning.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
+import { openWikiEnvDisplayPath, openWikiHomeDir } from "./openwiki-home.js";
 import { restrictDirToCurrentUser } from "../platform/windows-acl.js";
 
-export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
+export const openWikiEnvDir = openWikiHomeDir;
 export const openWikiEnvPath = path.join(openWikiEnvDir, ".env");
 
 type EnvMap = Record<string, string>;
 
 export type CredentialDiagnostic = {
   key: string;
-  source:
-    | "process.env"
-    | "~/.openwiki/.env"
-    | "process.env over ~/.openwiki/.env"
-    | "unset";
+  source: string;
   length: number | null;
   preview: string;
   warnings: string[];
@@ -134,6 +132,7 @@ export const MANAGED_ENV_KEYS = [
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   BEDROCK_AWS_REGION_ENV_KEY,
+  OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
@@ -407,19 +406,21 @@ function createCredentialDiagnostic(
           ? getProviderWarnings(value)
           : key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY
             ? getMaxOutputTokensWarnings(value)
-            : key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY
-              ? getOpenRouterMaxTokensWarnings(value)
-              : key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY
-                ? getStreamIdleTimeoutWarnings(value, provider)
-                : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
-                    key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY
-                  ? getBooleanWarnings(value)
-                  : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
-                    ? getRetryAttemptsWarnings(value)
-                    : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
-                      ? getReasoningEffortWarnings(value)
-                      : (getBaseUrlDiagnosticWarnings(key, value) ??
-                        getCredentialWarnings(value)),
+            : key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY
+              ? getBedrockMaxTokensWarnings(value)
+              : key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY
+                ? getOpenRouterMaxTokensWarnings(value)
+                : key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY
+                  ? getStreamIdleTimeoutWarnings(value, provider)
+                  : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
+                      key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY
+                    ? getBooleanWarnings(value)
+                    : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+                      ? getRetryAttemptsWarnings(value)
+                      : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
+                        ? getReasoningEffortWarnings(value)
+                        : (getBaseUrlDiagnosticWarnings(key, value) ??
+                          getCredentialWarnings(value)),
   };
 }
 
@@ -428,7 +429,7 @@ function getCredentialSource(
   fileValue: string | undefined,
 ): CredentialDiagnostic["source"] {
   if (processValue !== undefined && fileValue !== undefined) {
-    return "process.env over ~/.openwiki/.env";
+    return `process.env over ${openWikiEnvDisplayPath}`;
   }
 
   if (processValue !== undefined) {
@@ -436,7 +437,7 @@ function getCredentialSource(
   }
 
   if (fileValue !== undefined) {
-    return "~/.openwiki/.env";
+    return openWikiEnvDisplayPath;
   }
 
   return "unset";
@@ -478,6 +479,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
+    key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY ||
     key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_REASONING_EFFORT_ENV_KEY ||
@@ -559,6 +561,18 @@ function getMaxOutputTokensWarnings(value: string): string[] {
   try {
     resolveMaxOutputTokens({
       [OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid output token limit"];
+  }
+}
+
+function getBedrockMaxTokensWarnings(value: string): string[] {
+  try {
+    resolveBedrockMaxTokens({
+      [OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY]: value,
     });
 
     return [];

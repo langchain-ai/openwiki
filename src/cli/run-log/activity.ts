@@ -46,6 +46,21 @@ export interface ActivityTreeLine {
 }
 
 /**
+ * A printable line in the cumulative repository exploration map.
+ */
+export interface ExplorationTreeLine {
+  /**
+   * Fully formatted tree branch, directory count, or active filename.
+   */
+  label: string;
+
+  /**
+   * Whether this line belongs to the file currently being read.
+   */
+  active: boolean;
+}
+
+/**
  * Internal trie node used to merge shared path ancestry.
  */
 interface ActivityTreeNode {
@@ -165,16 +180,32 @@ export function buildActivityTreeLines(
 }
 
 /**
+ * Builds a cumulative directory map containing every successfully read
+ * repository file. The current read is included and highlighted while active.
+ */
+export function buildExplorationTreeLines(
+  exploredPaths: readonly string[],
+  activePath: string | undefined,
+): ExplorationTreeLine[] {
+  const activities: ActivityTreeInput[] = [...new Set(exploredPaths)].map(
+    (exploredPath) => ({ path: exploredPath, status: "recent" }),
+  );
+  if (activePath) {
+    activities.push({ path: activePath, status: "active" });
+  }
+
+  return buildActivityTreeLines(activities).map((line) => ({
+    active: line.status === "active",
+    label: line.label,
+  }));
+}
+
+/**
  * Returns whether a normalized activity path is a persistent OpenWiki page.
- * Temporary planning files and non-Markdown sidecars are deliberately
- * excluded from completion page counts.
+ * Non-Markdown sidecars are deliberately excluded from completion page counts.
  */
 export function isOpenWikiPagePath(activityPath: string): boolean {
-  return (
-    activityPath.startsWith("openwiki/") &&
-    activityPath.endsWith(".md") &&
-    path.posix.basename(activityPath) !== "_plan.md"
-  );
+  return activityPath.startsWith("openwiki/") && activityPath.endsWith(".md");
 }
 
 function appendTreeLines(

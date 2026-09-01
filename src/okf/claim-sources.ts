@@ -6,7 +6,11 @@ import {
   formatRepositoryEvidenceResource,
   parseRepositoryEvidenceResource,
 } from "../claims/evidence/repository/resource.js";
-import { parseFrontmatterFields, setOkfSources } from "./frontmatter.js";
+import {
+  parseFrontmatterFields,
+  repairOkfFrontmatter,
+  setOkfSources,
+} from "./frontmatter.js";
 import { listWikiConceptPaths } from "./index-sync.js";
 
 /**
@@ -44,17 +48,19 @@ export async function synchronizeClaimSources(
   for (const page of pages) {
     if (!concepts.has(page)) continue;
     const content = await readRequiredContent(backend, page);
-    const currentSources = readSourceEntries(content);
+    const repaired = repairOkfFrontmatter(content, page).content;
+    const currentSources = readSourceEntries(repaired);
     const nextSources = mergeClaimSources(
       currentSources,
       resourcesByPage.get(page) ?? [],
     );
-    if (isDeepStrictEqual(currentSources, nextSources)) continue;
+    const projected = isDeepStrictEqual(currentSources, nextSources)
+      ? repaired
+      : repairOkfFrontmatter(setOkfSources(repaired, nextSources), page)
+          .content;
+    if (projected === content) continue;
 
-    const result = await backend.write(
-      page,
-      setOkfSources(content, nextSources),
-    );
+    const result = await backend.write(page, projected);
     if (result.error) {
       throw new Error(
         `Unable to synchronize OKF sources for ${page}: ${result.error}`,

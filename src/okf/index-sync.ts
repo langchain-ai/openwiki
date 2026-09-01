@@ -13,12 +13,7 @@ import {
 
 const INDEX_FILE = "index.md";
 const LOG_FILE = "log.md";
-const EXCLUDED_FILES = new Set([
-  INDEX_FILE,
-  LOG_FILE,
-  "_plan.md",
-  "INSTRUCTIONS.md",
-]);
+const EXCLUDED_FILES = new Set([INDEX_FILE, LOG_FILE, "INSTRUCTIONS.md"]);
 
 /**
  * A wiki directory paired with the entries it directly contains.

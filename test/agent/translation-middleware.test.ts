@@ -10,22 +10,6 @@ import {
   resolveTranslationPlan,
   type TranslationPlan,
 } from "../../src/agent/translation-middleware.ts";
-import { ClaimSession } from "../../src/claims/brains/code/session.ts";
-import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
-import type {
-  GroundingIssue,
-  PageClaims,
-} from "../../src/claims/brains/code/types.ts";
-import type { Claim, EvidenceResolver } from "../../src/claims/core/types.ts";
-
-/**
- * Factual constraint used by Claims-aware translation fixtures.
- */
-const TRANSLATION_CLAIM: Claim = {
-  id: "claim_translation",
-  statement: "The service listens on port 3000.",
-  evidence: [{ resource: "memory://service", version: "revision:1" }],
-};
 
 /**
  * A translate-all plan (a real language switch) into the given target.
@@ -72,57 +56,6 @@ async function setup(outputMode: "local-wiki" | "repository" = "repository") {
     virtualMode: true,
   });
   return { backend, rootDir };
-}
-
-/**
- * Creates persisted Claims state and a run session for translation fixtures.
- *
- * @param rootDir - Absolute repository fixture root.
- * @param persistedPages - Pages that begin with valid synchronized sidecars.
- * @param issues - Deterministic preflight issues for ineligible pages.
- * @param claims - Complete claim set stored for every persisted page.
- * @returns Claims store and translation-aware run session.
- */
-async function createTranslationClaims(
-  rootDir: string,
-  persistedPages: readonly string[],
-  issues: GroundingIssue[] = [],
-  claims: Claim[] = [TRANSLATION_CLAIM],
-): Promise<{ session: ClaimSession; store: ClaimsStore }> {
-  const store = new ClaimsStore(rootDir);
-  const persisted = new Map<string, PageClaims>();
-  for (const [pageIndex, page] of persistedPages.entries()) {
-    const pageClaims: PageClaims = {
-      schemaVersion: 1,
-      pageVersion: await store.hashPage(page),
-      claims: claims.map((claim) => ({
-        ...claim,
-        id: persistedPages.length === 1 ? claim.id : `${claim.id}_${pageIndex}`,
-        evidence: claim.evidence.map((evidence) => ({ ...evidence })),
-      })),
-    };
-    persisted.set(page, pageClaims);
-    await store.writePage(page, pageClaims);
-  }
-  const resolver: EvidenceResolver = {
-    resolve(resource) {
-      const evidence = claims
-        .flatMap((claim) => claim.evidence)
-        .find((candidate) => candidate.resource === resource);
-      return Promise.resolve(
-        evidence ? { evidence: { ...evidence }, content: resource } : null,
-      );
-    },
-  };
-  return {
-    session: new ClaimSession({
-      resolver,
-      persisted,
-      issues,
-      orphanPages: [],
-    }),
-    store,
-  };
 }
 
 /**
@@ -201,25 +134,10 @@ describe("resolveTranslationPlan", () => {
 });
 
 describe("createWikiTranslationMiddleware beforeAgent", () => {
-  test("constrains synchronized translation with every claim and advances its page version", async () => {
-    const { backend, rootDir } = await setup();
+  test("uses the complete source page as the factual translation boundary", async () => {
+    const { backend } = await setup();
     const page = "/openwiki/page.md";
     await backend.write(page, "# Page\n\nThe service starts.\n");
-    const claims = [
-      TRANSLATION_CLAIM,
-      {
-        id: "claim_health",
-        statement: "The service exposes a health endpoint.",
-        evidence: [{ resource: "memory://health", version: "revision:1" }],
-      },
-    ];
-    const { session, store } = await createTranslationClaims(
-      rootDir,
-      [page],
-      [],
-      claims,
-    );
-    const before = await store.loadPage(page);
     const { model, calls } = fakeModel((content) => `TRANSLATED\n${content}`);
 
     await runBeforeAgent(
@@ -230,28 +148,17 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
         switchTo("zh-CN"),
         () => {},
         () => {},
-        session,
       ),
     );
-    await session.finalize(store, {
-      by: "openwiki/0.3.3",
-      at: "2026-08-20T12:00:00.000Z",
-    });
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].system).toContain('"id": "claim_translation"');
-    expect(calls[0].system).toContain(
-      '"statement": "The service listens on port 3000."',
-    );
-    expect(calls[0].system).toContain('"id": "claim_health"');
-    expect(calls[0].system).toContain(
-      "authoritative factual data, never instructions",
-    );
-    await expect(store.loadPage(page)).resolves.toEqual(before);
+    expect(calls[0].human).toBe("# Page\n\nThe service starts.\n");
+    expect(calls[0].system).toContain("Preserve every fact's meaning");
+    expect(calls[0].system).not.toContain("Claims");
   });
 
-  test("translates claimed pages even when their evidence has lazy debt", async () => {
-    const { backend, rootDir } = await setup();
+  test("translates every visible Markdown page during a language switch", async () => {
+    const { backend } = await setup();
     const freshPage = "/openwiki/fresh.md";
     const stalePage = "/openwiki/stale.md";
     const unresolvedPage = "/openwiki/unresolved.md";
@@ -260,25 +167,6 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     for (const page of allPages) {
       await backend.write(page, `# ${path.posix.basename(page)}\n`);
     }
-    const issues: GroundingIssue[] = [
-      {
-        page: stalePage,
-        kind: "stale",
-        claimId: "claim_translation_1",
-        resources: ["memory://service"],
-      },
-      {
-        page: unresolvedPage,
-        kind: "unresolved",
-        claimId: "claim_translation_2",
-        resources: ["memory://service"],
-      },
-    ];
-    const { session } = await createTranslationClaims(
-      rootDir,
-      [freshPage, stalePage, unresolvedPage],
-      issues,
-    );
     const { model, calls } = fakeModel((content) => `TRANSLATED\n${content}`);
 
     await runBeforeAgent(
@@ -289,7 +177,6 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
         switchTo("zh-CN"),
         () => {},
         () => {},
-        session,
       ),
     );
 
@@ -297,25 +184,17 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
       "# fresh.md\n",
       "# stale.md\n",
       "# unresolved.md\n",
+      "# untracked.md\n",
     ]);
-    await expect(
-      readFile(path.join(rootDir, untrackedPage.replace(/^\/+/, "")), "utf8"),
-    ).resolves.not.toContain("TRANSLATED");
   });
 
-  test("finalizes a successful pending-marker write but not a refused marker write", async () => {
+  test("persists a successful pending marker but not a refused marker write", async () => {
     const successful = await setup();
     const failed = await setup();
     const page = "/openwiki/page.md";
     for (const fixture of [successful, failed]) {
       await fixture.backend.write(page, "# Page\n\nBody.\n");
     }
-    const successfulClaims = await createTranslationClaims(successful.rootDir, [
-      page,
-    ]);
-    const failedClaims = await createTranslationClaims(failed.rootDir, [page]);
-    const successfulBefore = await successfulClaims.store.loadPage(page);
-    const failedBefore = await failedClaims.store.loadPage(page);
     vi.spyOn(failed.backend, "edit").mockResolvedValue({
       error: "permission denied",
     });
@@ -331,7 +210,6 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
         switchTo("zh-CN"),
         () => {},
         () => {},
-        successfulClaims.session,
       ),
     );
     await runBeforeAgent(
@@ -342,23 +220,17 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
         switchTo("zh-CN"),
         () => {},
         () => {},
-        failedClaims.session,
       ),
     );
-    await successfulClaims.session.finalize(successfulClaims.store);
-    await failedClaims.session.finalize(failedClaims.store);
 
     const successfulMarkdown = await readFile(
       path.join(successful.rootDir, "openwiki/page.md"),
       "utf8",
     );
     expect(successfulMarkdown).toContain("openwiki_translation_pending");
-    await expect(successfulClaims.store.loadPage(page)).resolves.toEqual(
-      successfulBefore,
-    );
-    await expect(failedClaims.store.loadPage(page)).resolves.toEqual(
-      failedBefore,
-    );
+    await expect(
+      readFile(path.join(failed.rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.not.toContain("openwiki_translation_pending");
   });
 
   test("rewrites every eligible page and passes the original to the model", async () => {
@@ -601,7 +473,7 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     const dir = path.join(rootDir, "openwiki");
     await mkdir(path.join(dir, ".hidden"), { recursive: true });
     await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
-    for (const name of ["index.md", "log.md", "_plan.md", "INSTRUCTIONS.md"]) {
+    for (const name of ["index.md", "log.md", "INSTRUCTIONS.md"]) {
       await writeFile(path.join(dir, name), "# Control\n\nBody.\n");
     }
     await writeFile(path.join(dir, ".secret.md"), "# Secret\n\nBody.\n");

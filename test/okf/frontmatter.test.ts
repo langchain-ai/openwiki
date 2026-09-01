@@ -6,6 +6,8 @@ import {
   parseFrontmatterFields,
   readFrontmatterField,
   removeFrontmatterField,
+  repairOkfFrontmatter,
+  repairPersistedFile,
   renderFrontmatter,
   setFrontmatterField,
   setGeneratedEvent,
@@ -44,16 +46,20 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toBe(content);
   });
 
-  test("keeps a page that has a usable type even when optional fields are junk", () => {
-    // A valid `type` plus a non-string title is tolerated, not clobbered (#376).
+  test("repairs optional fields while preserving producer extensions", () => {
     const content =
       "---\ntype: Domain\ntitle: 123\ndescription: [one, two]\ncustom_ext: keep-me\n---\n\n# Orders\n";
     const result = normalizeConceptContent(content, PATH);
 
-    expect(result.changed).toBe(false);
-    expect(result.content).toBe(content);
-    // the producer extension field is preserved because nothing was rewritten
+    expect(result.changed).toBe(true);
+    expect(parseFrontmatterFields(result.content)).toMatchObject({
+      custom_ext: "keep-me",
+      title: "Orders",
+      type: "Domain",
+    });
+    expect(result.content).not.toContain("description:");
     expect(result.content).toContain("custom_ext: keep-me");
+    expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
   });
 
   test("regenerates a page whose front matter has no type", () => {
@@ -165,6 +171,102 @@ describe("normalizeConceptContent", () => {
   });
 });
 
+describe("repairOkfFrontmatter", () => {
+  test.each([
+    {
+      field: "type",
+      yaml: "type: [Reference]",
+      expected: {
+        openwiki_generated: true,
+        title: "Page",
+        type: "Referenca",
+      },
+    },
+    {
+      field: "title",
+      yaml: "type: Guide\ntitle: 42",
+      expected: { title: "Page", type: "Guide" },
+    },
+    {
+      field: "description",
+      yaml: "type: Guide\ndescription: [invalid]",
+      absent: "description",
+    },
+    {
+      field: "resource",
+      yaml: "type: Guide\nresource: {invalid: true}",
+      absent: "resource",
+    },
+    {
+      field: "timestamp",
+      yaml: "type: Guide\ntimestamp: []",
+      absent: "timestamp",
+    },
+    {
+      field: "tags",
+      yaml: 'type: Guide\ntags: [docs, 7, "", api]',
+      expected: { tags: ["docs", "api"] },
+    },
+    {
+      field: "generated",
+      yaml: "type: Guide\ngenerated: {at: 2026-08-20T00:00:00Z}",
+      absent: "generated",
+    },
+    {
+      field: "verified",
+      yaml: "type: Guide\nverified:\n  - {by: human:reviewer, at: 2026-08-20T00:00:00Z}\n  - {by: human:broken, at: someday}",
+      expected: {
+        verified: [{ by: "human:reviewer", at: "2026-08-20T00:00:00Z" }],
+      },
+    },
+    {
+      field: "sources",
+      yaml: "type: Guide\nsources:\n  - {id: good, resource: repo://README.md}\n  - {id: missing-resource}",
+      expected: {
+        sources: [{ id: "good", resource: "repo://README.md" }],
+      },
+    },
+    {
+      field: "status",
+      yaml: "type: Guide\nstatus: reviewed",
+      absent: "status",
+    },
+    {
+      field: "stale_after",
+      yaml: "type: Guide\nstale_after: someday",
+      absent: "stale_after",
+    },
+  ])("deterministically degrades invalid $field metadata", (fixture) => {
+    const content = `---\n${fixture.yaml}\nproducer_extension: keep\n---\n\n# Page\n\nAuthored body.\n`;
+    const repaired = repairOkfFrontmatter(content, PATH, "Referenca");
+    const fields = parseFrontmatterFields(repaired.content);
+
+    expect(repaired.changed).toBe(true);
+    expect(fields).toMatchObject({
+      producer_extension: "keep",
+      ...(fixture.expected ?? {}),
+    });
+    if (fixture.absent) expect(fields).not.toHaveProperty(fixture.absent);
+    expect(repaired.content).toContain("# Page\n\nAuthored body.\n");
+    expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
+  });
+
+  test("falls back to minimal valid metadata for an unusable YAML mapping", () => {
+    const repaired = repairOkfFrontmatter(
+      "---\ntype: Guide\ntype: Domain\n---\n\n# Page\n\nBody.\n",
+      PATH,
+    );
+
+    expect(parseFrontmatterFields(repaired.content)).toEqual({
+      openwiki_generated: true,
+      title: "Page",
+      type: "Reference",
+    });
+    expect(repaired.content).toContain("# Page\n\nBody.\n");
+    expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
+  });
+});
+
 describe("setOkfSources", () => {
   test("adds a structured sources list without rewriting sibling fields", () => {
     const result = setOkfSources(
@@ -233,7 +335,7 @@ describe("setGeneratedEvent", () => {
         "2026-08-18T09:00:00.000Z",
       ),
     ).toBe(
-      '---\ntype: Reference\ntitle: Page\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Page\n',
+      '---\ntype: Reference\ntitle: Page\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\n---\n\n# Page\n',
     );
   });
 
@@ -245,8 +347,21 @@ describe("setGeneratedEvent", () => {
         "2026-08-18T09:00:00.000Z",
       ),
     ).toBe(
-      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\ntitle: Page\n---\n\n# Page\n',
+      '---\ntype: Reference\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\ntitle: Page\n---\n\n# Page\n',
     );
+  });
+
+  test("replaces a multiline generated mapping as one complete field", () => {
+    const stamped = setGeneratedEvent(
+      '---\ntype: Reference\ngenerated:\n  by: openwiki/0.3.0\n  at: "2026-08-17T09:00:00.000Z"\ntitle: Page\n---\n\n# Page\n',
+      "openwiki/0.3.1",
+      "2026-08-18T09:00:00.000Z",
+    );
+
+    expect(stamped).toBe(
+      '---\ntype: Reference\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\ntitle: Page\n---\n\n# Page\n',
+    );
+    expect(validateOkfFrontmatter(stamped)).toEqual({ valid: true });
   });
 
   test("emits a bare {by} event when no time is supplied", () => {
@@ -256,7 +371,7 @@ describe("setGeneratedEvent", () => {
         "openwiki/0.3.1",
       ),
     ).toBe(
-      '---\ntype: Reference\ngenerated: {by: "openwiki/0.3.1"}\n---\n\n# Page\n',
+      '---\ntype: Reference\ngenerated: { by: "openwiki/0.3.1" }\n---\n\n# Page\n',
     );
   });
 
@@ -268,7 +383,7 @@ describe("setGeneratedEvent", () => {
         "2026-08-18T09:00:00.000Z",
       ),
     ).toBe(
-      '---\ngenerated: {by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z"}\n---\n\n# Page\nBody.\n',
+      '---\ngenerated: { by: "openwiki/0.3.1", at: "2026-08-18T09:00:00.000Z" }\n---\n\n# Page\nBody.\n',
     );
   });
 
@@ -339,6 +454,15 @@ describe("removeFrontmatterField", () => {
     expect(
       removeFrontmatterField(content, "openwiki_translation_pending"),
     ).toBe(content);
+  });
+
+  test("removes a complete multiline mapping", () => {
+    expect(
+      removeFrontmatterField(
+        '---\ntype: Reference\ngenerated:\n  by: openwiki/0.3.0\n  at: "2026-08-17T09:00:00.000Z"\ntitle: Page\n---\n\n# Page\n',
+        "generated",
+      ),
+    ).toBe("---\ntype: Reference\ntitle: Page\n---\n\n# Page\n");
   });
 
   test("returns the content unchanged when there is no block", () => {
@@ -519,6 +643,33 @@ describe("validatePersistedFile", () => {
         valid: false,
       });
     }
+  });
+});
+
+describe("repairPersistedFile", () => {
+  test("writes and re-validates a deterministic repair", async () => {
+    let content =
+      "---\ntype: Guide\nstatus: reviewed\n---\n\n# Page\n\nBody.\n";
+    const backend = {
+      readRaw: vi.fn(() => ({
+        data: {
+          content,
+          mimeType: "text/markdown",
+          created_at: "2026-07-13T00:00:00.000Z",
+          modified_at: "2026-07-13T00:00:00.000Z",
+        },
+      })),
+      write: vi.fn((_path: string, next: string) => {
+        content = next;
+        return {};
+      }),
+    } as unknown as BackendProtocolV2;
+
+    await expect(
+      repairPersistedFile(backend, "/openwiki/page.md"),
+    ).resolves.toEqual({ changed: true, validation: { valid: true } });
+    expect(content).not.toContain("status:");
+    expect(content).toContain("# Page\n\nBody.\n");
   });
 });
 

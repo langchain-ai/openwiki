@@ -1,37 +1,69 @@
 import { describe, expect, test } from "vitest";
 import {
+  requireResolvedLanguage,
   getPrimaryLanguageSubtag,
   resolveLanguage,
 } from "../../src/platform/language.ts";
 
 describe("resolveLanguage", () => {
   test("canonicalizes recognized BCP-47 codes", () => {
-    expect(resolveLanguage("zh-CN")).toEqual({ language: "zh-CN" });
-    expect(resolveLanguage("hi")).toEqual({ language: "hi" });
-    expect(resolveLanguage("PT-br")).toEqual({ language: "pt-BR" });
-    expect(resolveLanguage("  en-US  ")).toEqual({ language: "en-US" });
+    expect(resolveLanguage("zh-CN")).toEqual({
+      kind: "resolved",
+      language: "zh-CN",
+    });
+    expect(resolveLanguage("hi")).toEqual({ kind: "resolved", language: "hi" });
+    expect(resolveLanguage("PT-br")).toEqual({
+      kind: "resolved",
+      language: "pt-BR",
+    });
+    expect(resolveLanguage("  en-US  ")).toEqual({
+      kind: "resolved",
+      language: "en-US",
+    });
+    // A three-letter ISO 639-2 code narrows to its two-letter equivalent.
+    expect(resolveLanguage("kor")).toEqual({
+      kind: "resolved",
+      language: "ko",
+    });
   });
 
-  test("returns nothing for empty or missing input", () => {
-    expect(resolveLanguage(undefined)).toEqual({});
-    expect(resolveLanguage(null)).toEqual({});
-    expect(resolveLanguage("   ")).toEqual({});
+  test("reports empty or missing input as absent, never as unrecognized", () => {
+    expect(resolveLanguage(undefined)).toEqual({ kind: "absent" });
+    expect(resolveLanguage(null)).toEqual({ kind: "absent" });
+    expect(resolveLanguage("   ")).toEqual({ kind: "absent" });
   });
 
-  test("warns and drops malformed tags", () => {
+  test("rejects malformed tags", () => {
     const result = resolveLanguage("fake-language");
 
-    expect(result.language).toBeUndefined();
-    expect(result.warning).toContain("fake-language");
+    expect(result.kind).toBe("unrecognized");
+    if (result.kind !== "unrecognized") throw new Error("expected rejection");
+    expect(result.input).toBe("fake-language");
+    expect(result.message).toContain("fake-language");
   });
 
-  test("warns and drops structurally valid but unknown codes", () => {
-    for (const unknown of ["xx", "english"]) {
+  test("rejects a language name written out instead of its code", () => {
+    // "korean" is a structurally legal 5-8 letter BCP-47 subtag that was never
+    // registered, so only the DisplayNames check catches it.
+    for (const unknown of ["xx", "english", "Korean", "한국어"]) {
       const result = resolveLanguage(unknown);
 
-      expect(result.language, unknown).toBeUndefined();
-      expect(result.warning, unknown).toBeTruthy();
+      expect(result.kind, unknown).toBe("unrecognized");
     }
+  });
+});
+
+describe("requireResolvedLanguage", () => {
+  test("returns the canonical tag, or undefined when none was requested", () => {
+    expect(requireResolvedLanguage("PT-br")).toBe("pt-BR");
+    expect(requireResolvedLanguage(undefined)).toBeUndefined();
+    expect(requireResolvedLanguage("  ")).toBeUndefined();
+  });
+
+  test("throws when an unrecognized value slipped past an entry point", () => {
+    // Post-boundary code must never quietly resolve a typo to English; that
+    // silent fallback is what persisted the wrong language and wedged the run.
+    expect(() => requireResolvedLanguage("Korean")).toThrow("Korean");
   });
 });
 

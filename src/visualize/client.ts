@@ -204,11 +204,6 @@ interface ForceGraphInstance {
   onNodeHover(handler: (node: GraphNode | null) => void): ForceGraphInstance;
 
   /**
-   * Register the background (empty space) click handler.
-   */
-  onBackgroundClick(handler: () => void): ForceGraphInstance;
-
-  /**
    * Set the canvas width in pixels.
    */
   width(width: number): ForceGraphInstance;
@@ -386,11 +381,6 @@ const edgeColor = (): string => cssVar("--edge");
 const graphBg = (): string => cssVar("--graph-bg");
 
 /**
- * The reader panel's empty-state markup, captured before any page is rendered.
- */
-const EMPTY_HTML = $("#detail").innerHTML;
-
-/**
  * Whether a node is the entry (anchor) page.
  */
 const isAnchor = (n: { id: string }): boolean => n.id === anchorId;
@@ -535,8 +525,10 @@ function initGraph(): void {
     .linkDirectionalParticleSpeed(0.006)
     .linkDirectionalParticleColor(() => "#7FC8FF")
     .onNodeClick((n) => selectNode(n.id))
-    .onNodeHover(hoverHighlight)
-    .onBackgroundClick(clearSelection);
+    .onNodeHover(hoverHighlight);
+  // Deliberately NO onBackgroundClick handler: clicking empty graph space must
+  // not change any page state (issue #670). Clearing the selection/reader on a
+  // stray click made the open page vanish, so background clicks are a no-op.
 
   // Pin the canvas to its column. Without this, force-graph falls back to the
   // window width and centres the graph behind the reader/index panels.
@@ -662,18 +654,6 @@ function selectNode(id: string): void {
   current = id;
   neighborsOf(nodeById.get(id));
   renderReader(id);
-}
-
-/**
- * Clear the selection and restore the reader's empty state.
- */
-function clearSelection(): void {
-  current = null;
-  readerId = null;
-  highlightNodes.clear();
-  highlightLinks.clear();
-  $("#detail").innerHTML = EMPTY_HTML;
-  refreshSidebarActive();
 }
 
 /**
@@ -910,9 +890,8 @@ function initGraphPanelControls(): void {
   const mainEl = $("#main");
   const graphEl = $("#graph");
   const splitterEl = $("#splitter");
-  const legendEl = $("#legend");
-  const hintEl = $("#hint");
   const toggleBtn = $("#toggle-graph");
+  const overlayEl = $("#graph-overlay");
   const WIDTH_KEY = "openwiki-graph-width";
   const COLLAPSED_KEY = "openwiki-graph-collapsed";
 
@@ -924,8 +903,7 @@ function initGraphPanelControls(): void {
     localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
     graphEl.style.width = collapsed ? "0px" : lastWidth;
     splitterEl.classList.toggle("hidden", collapsed);
-    legendEl.style.display = collapsed ? "none" : "";
-    hintEl.style.display = collapsed ? "none" : "";
+    overlayEl.style.display = collapsed ? "none" : "";
     toggleBtn.classList.toggle("active", collapsed);
     toggleBtn.title = collapsed ? "Show graph" : "Hide graph";
   }

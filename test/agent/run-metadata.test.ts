@@ -5,9 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
   persistRunMetadataIfChanged,
-  removeTemporaryWorkingFiles,
 } from "../../src/agent/utils.ts";
-import type { OpenWikiOutputMode } from "../../src/agent/types.ts";
 
 async function createTempRepo(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), "openwiki-run-metadata-"));
@@ -203,37 +201,6 @@ describe("persistRunMetadataIfChanged", () => {
     expect(metadata?.status).toBe("complete");
   });
 
-  test("refreshes metadata when only the temporary plan file changed", async () => {
-    const cwd = await createTempRepo();
-    await mkdir(path.join(cwd, "openwiki"), { recursive: true });
-    await writeFile(path.join(cwd, "openwiki", "index.md"), "# Docs\n", "utf8");
-    const snapshotBefore = await createOpenWikiContentSnapshot(
-      cwd,
-      "repository",
-    );
-
-    await writeFile(
-      path.join(cwd, "openwiki", "_plan.md"),
-      "# Temporary plan\n",
-      "utf8",
-    );
-
-    // The plan file is excluded from the snapshot, so content is unchanged;
-    // metadata must still be refreshed to record that OpenWiki ran.
-    const written = await persistRunMetadataIfChanged(
-      "update",
-      cwd,
-      "test-model",
-      "repository",
-      snapshotBefore,
-    );
-
-    expect(written).toBe(true);
-    expect(
-      await readMetadata(cwd, "openwiki/.last-update.json"),
-    ).not.toBeNull();
-  });
-
   test("skips for chat runs", async () => {
     const cwd = await createTempRepo();
 
@@ -248,31 +215,4 @@ describe("persistRunMetadataIfChanged", () => {
     expect(written).toBe(false);
     expect(await readMetadata(cwd, "openwiki/.last-update.json")).toBeNull();
   });
-});
-
-describe("removeTemporaryWorkingFiles", () => {
-  test.each([
-    ["repository", "openwiki"],
-    ["local-wiki", ""],
-  ] as const)(
-    "removes temporary planning artifacts in %s mode",
-    async (outputMode: OpenWikiOutputMode, relativeWikiRoot: string) => {
-      const cwd = await createTempRepo();
-      const wikiRoot = path.join(cwd, relativeWikiRoot);
-      const planPath = path.join(wikiRoot, "_plan.md");
-      const skeletonPath = path.join(wikiRoot, "_skeleton.md");
-      await mkdir(wikiRoot, { recursive: true });
-      await writeFile(planPath, "# Temporary plan\n", "utf8");
-      await writeFile(skeletonPath, "# Temporary skeleton\n", "utf8");
-
-      await expect(
-        removeTemporaryWorkingFiles(cwd, outputMode),
-      ).resolves.toEqual(["_plan.md", "_skeleton.md"]);
-      await expect(readFile(planPath, "utf8")).rejects.toThrow();
-      await expect(readFile(skeletonPath, "utf8")).rejects.toThrow();
-      await expect(
-        removeTemporaryWorkingFiles(cwd, outputMode),
-      ).resolves.toEqual([]);
-    },
-  );
 });

@@ -21,7 +21,6 @@ function runCommand(
     dryRun: false,
     exitCode: 0,
     language: null,
-    languageWarning: null,
     mode: "local-wiki",
     modeSource: "default",
     modelId: null,

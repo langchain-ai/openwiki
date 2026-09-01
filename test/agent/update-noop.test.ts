@@ -102,6 +102,21 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("detects a no-op when migration only adds the page manifest", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await writeFile(
+      path.join(repo, "openwiki", ".page-manifest.json"),
+      '{"schemaVersion":1,"pages":{}}\n',
+      "utf8",
+    );
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
   test("does not skip update when the worktree has uncommitted changes", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);

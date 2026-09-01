@@ -100,7 +100,6 @@ describe("runClaimsPreflight", () => {
 
     expect(result.issues).toEqual([]);
     expect(result.persisted.size).toBe(0);
-    expect(result.ungroundedPages).toEqual(["/openwiki/quickstart.md"]);
   });
 
   test("ignores page hash drift", async () => {
@@ -118,8 +117,6 @@ describe("runClaimsPreflight", () => {
 
     expect(synchronized.issues).toEqual([]);
     expect(changed.issues).toEqual([]);
-    expect(synchronized.ungroundedPages).toEqual([page]);
-    expect(changed.ungroundedPages).toEqual([page]);
   });
 
   test("classifies stale and unresolved claims with unresolved precedence", async () => {
@@ -184,7 +181,6 @@ describe("runClaimsPreflight", () => {
         resources: [missingResource],
       },
     ]);
-    expect(result.ungroundedPages).toEqual([]);
     expect(calls).toEqual(
       new Map([
         [staleResource, 1],
@@ -270,7 +266,6 @@ describe("runClaimsPreflight", () => {
     const result = await runClaimsPreflight(store, createResolver(new Map()));
 
     expect(result.orphanPages).toEqual([orphanPage]);
-    expect(result.ungroundedPages).toEqual([currentPage]);
     await expect(store.loadPage(orphanPage)).resolves.not.toBeNull();
   });
 
