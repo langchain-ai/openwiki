@@ -1,0 +1,14 @@
+.changeset/cold-crabs-walk.md
+  h_f78d33d4280f3f 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1d09be1b20df4b09e0e50aa8605e5a1d6cf43597",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
