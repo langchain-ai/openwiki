@@ -50,6 +50,10 @@ sources:
     resource: repo://test/generation/repository-run.test.ts
   - id: openwiki-source-1adcdcd6832678e0e848f408
     resource: repo://test/generation/run-state.test.ts
+  - id: openwiki-source-a0cec66bd3bed0c13c668ff0
+    resource: repo://test/git-repo-connector.test.ts
+  - id: openwiki-source-caa199fea0a0f4f89151a0c8
+    resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
   - id: openwiki-source-1830eb3a15f412bf58d08bef
@@ -62,18 +66,22 @@ sources:
     resource: repo://test/mermaid/dom-shim.test.ts
   - id: openwiki-source-43240ab040106a6f63192176
     resource: repo://test/okf/frontmatter.test.ts
+  - id: openwiki-source-7ab91e61f234ef2c4b6b6258
+    resource: repo://test/openrouter-debug-fetch.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
   - id: openwiki-source-e3be493bc871948f42420690
     resource: repo://test/visualize/client-interaction.test.ts
   - id: openwiki-source-1904eaebd82125a3a3881dac
     resource: repo://test/visualize/page.test.ts
+  - id: openwiki-source-dbb4558a2e1f7159813c79c5
+    resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-09-01T08:10:26.687Z" }
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+    at: 2026-09-01T08:10:26.687Z
 ---
 
 # Testing Guide
@@ -230,10 +238,15 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   It pins fingerprint stability, sensitivity (tracked/staged/unstaged content,
   deletions, untracked files, executable-bit, symlink-target changes,
   `.openwikiignore` rules), the exclusion of generated pages/Claims
-  sidecars/run metadata, and a TOCTOU race where an inspected file becomes a
-  symlink before opening — it injects that race by wrapping `node:fs/promises`
-  with `vi.mock` and asserts the fingerprinter fails closed rather than
-  following the swapped target.
+  sidecars/run metadata, and two failure-mode races injected by wrapping
+  `node:fs/promises` with `vi.mock`: a TOCTOU race where an inspected file
+  becomes a symlink before opening (the fingerprinter fails closed rather than
+  following the swapped target), and a Windows stat-identity drift tolerance
+  test (`does not reject Windows file handles solely because dev and ino
+  differ`) that stubs `process.platform` to `win32` and injects a
+  stat-identity mismatch (`dev`/`ino += 1n`) via the mocked `open`, asserting
+  the fingerprinter still resolves rather than rejecting on Windows where
+  file handles can report inconsistent `dev`/`ino` values.
 
 ### Claims: nested layout
 
@@ -258,6 +271,45 @@ throwaway temp directory, feed controlled API responses through a stubbed
 dump it writes to disk — no real network call or OAuth token is involved. To add
 a new connector, use the `write-connector` skill and add a matching test under
 `test/connectors/sources/`.
+
+A small number of connector-related tests live at the `test/` root rather than
+under `test/connectors/sources/` because they cross the single-source boundary
+and exercise isolation contracts that only make sense across connectors or
+streams:
+
+- `test/git-repo-connector.test.ts` builds real throwaway git repos in temp
+  dirs and drives the git-repo connector across two runs. It asserts the
+  second-run manifest describes what was committed *since* the recorded head
+  (issue #409) — naming the file added in the new commit, not the file from the
+  already-ingested first commit, with the prior head carried as `previousHead`
+  — and that a first run reports the working-tree diff only with no
+  `previousHead`, and a second run against an unreachable recorded head (as
+  after a force-push or garbage-collected rewrite) falls back to the
+  working-tree diff rather than throwing.
+- `test/ingest-all-connectors.test.ts` pins `openwiki_ingest_all_connectors`
+  failure isolation (issue #412): it mocks the connector registry with two
+  fake connectors — one that resolves and one that rejects — and asserts the
+  tool still returns both outcomes, so a throwing connector does not discard a
+  succeeding connector's result (the failure is surfaced as an `error` status
+  with the message mirrored into `warnings`, while the success keeps its
+  `rawFiles`).
+- `test/x-connector-stream-isolation.test.ts` pins X-connector per-stream
+  failure isolation (issue #412): it stubs `fetch` so one stream
+  (`mentions`) returns 429 while another (`user_posts`) succeeds, and asserts
+  the run does not abort — the succeeding dump is kept, the failing stream's
+  failure is surfaced as a warning, both streams were still attempted, and state
+  is still written. A complementary case where every stream fails asserts the
+  run yields an `error` status (not a benign skip) with the per-stream warning.
+- `test/openrouter-debug-fetch.test.ts` pins the OpenRouter debug-fetch
+  concurrency contract (issue #411): `ChatOpenRouter` calls `globalThis.fetch`
+  directly, so `installOpenRouterDebugFetch` patches the global. The test
+  asserts that a single run restores the exact original `fetch` on detach, that
+  overlapping runs each keep their own captured failure and the real `fetch` is
+  restored exactly once — only after the last run detaches (reference-counted,
+  with a redundant `restore()` being a no-op that does not prematurely restore
+  while another run is still active) — that an OpenRouter failure fans out to
+  every active run's sink while each run can clear its own failure, and that
+  non-OpenRouter requests pass through untouched.
 
 ### OKF: frontmatter and index
 
@@ -483,6 +535,10 @@ file or directory, or `-t "<name>"` to scope by test name.
   matching directory from the table above).
 - **A single file:** `pnpm exec vitest run test/agent/repository-runner.test.ts`.
 - **A single connector source:** `pnpm exec vitest run test/connectors/sources/slack.test.ts`.
+- **Git-repo connector incremental diff:** `pnpm exec vitest run test/git-repo-connector.test.ts`.
+- **Connector failure isolation (ingest-all):** `pnpm exec vitest run test/ingest-all-connectors.test.ts`.
+- **X connector stream isolation:** `pnpm exec vitest run test/x-connector-stream-isolation.test.ts`.
+- **OpenRouter debug-fetch concurrency:** `pnpm exec vitest run test/openrouter-debug-fetch.test.ts`.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
