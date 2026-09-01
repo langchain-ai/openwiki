@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1e297c4af8ea666446676b296ab053a27d8d234389fadaded3034bd8ca53d03c",
+  "pageVersion": "sha256:2af80a00c2799548645bc3465d2712ff171792eb00c36d48e474dfb134c93e2a",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -380,19 +380,19 @@
     },
     {
       "id": "claim_cd76ff3e81e64efab8da81f70e2b85b6",
-      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a committed Git repository in mkdtemp: it pins fingerprint stability and sensitivity (tracked/staged/unstaged content, deletions, untracked files, executable-bit, symlink-target changes, .openwikiignore rules), the exclusion of generated pages/Claims sidecars/run metadata, and a TOCTOU race where an inspected file becomes a symlink before opening — it injects that race by wrapping node:fs/promises with vi.mock and asserts the fingerprinter fails closed rather than following the swapped target.",
+      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a committed Git repository in mkdtemp: it pins fingerprint stability and sensitivity (tracked/staged/unstaged content, deletions, untracked files, executable-bit, symlink-target changes, .openwikiignore rules), the exclusion of generated pages/Claims sidecars/run metadata, and two failure-mode races injected by wrapping node:fs/promises with vi.mock — a TOCTOU race where an inspected file becomes a symlink before opening (the fingerprinter fails closed rather than following the swapped target), and a Windows stat-identity drift tolerance test that stubs process.platform to win32 and injects a stat-identity mismatch (dev/ino += 1n) via the mocked open, asserting the fingerprinter still resolves rather than rejecting on Windows where file handles can report inconsistent dev/ino values.",
       "evidence": [
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L125-L260",
-          "version": "repo-lines-v1:sha256:5520bf6c6a39fd7909729b3dd346ec8ac535a602440df9c6d8ab3379e9c95032:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4YTk0NDg1MmQ4MmE0OGZmYjA2ZTRiOTc0Y2I0NDM4MjcwMmEyNWUyZjgwMmFiZjcxMTZlYWQxYWEyZTI5ZjNjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5MDRhOWU1ZDJjMTU0YzIyMjA1MmYzYmI3MjM4ODg4MDc5ZWRjNjM3NWQyYTY3MWEzOGE5ODUxYjFlZjQ2NGJiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMzhiMjAwYmNmNzg0OWE5YTUyMzM4YzRmMGRhMjQ3NWUxYmE0ZjdiZTk3YjVmNDAyOTRiZWZkNWZjMmY3ZTc3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkYWFjZDY3MWRiYTZkYWY3ODc4OTc1ZWFmODc2NWI3M2U2NTdjNWRjOThkY2QwNmVkM2QyMTdlNWYzM2E3NWYxIn0"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L22-L64",
+          "version": "repo-lines-v1:sha256:57edec939cc768b8ea0625a9b3d3c8bf79dff38bec01170dbcc23a9e5feb728e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMGM3ZjRiMmU2MDVjZWY4NjZmMjZjMmE5MTg4NGM4ZWM2MzU0MGU0ZDBhNWQ1ZDc0Yjc4YmYwNzFmZmFmNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhMDVkMmZhZjZlMzczNDM3NTE3ZDc3MDBjZjBkYmFkNWI0NmE5ZWRjOTM5YWEwZjU3MDU0MWRlNzQzNjY3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YzJhNjAzMjZkODcwN2ViZWE1ZWVkZWRmMTg4ZTY2MGZjMjljMWEwNzg0ODRlY2JkOTIxZGQ4YjQ0M2M5OGUifQ"
         },
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L219-L240",
-          "version": "repo-lines-v1:sha256:17ed3a0d306f9c28be582be6be415141d52f8cba7b8cab9a1cb6213e619fb126:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MWJjZTcyYmQ4Y2I1YjQ3NzViMWNlNWIzMDU5MjI1ZDRjYzRiYzQxMjQwYzA4ZTY1NTNkNGQyMDMwZmU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGEzZmZiZmQyNWVkYzNiNjBiZTMyNTVjNjljNmQ4ODM1MDc0ZjUwY2YwZDUyYjBiNzU0ZjhmOWEyYzg3ZTYifQ"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L254-L286",
+          "version": "repo-lines-v1:sha256:721166ad9aedb2012012667cc72ea57f17d58afde42856a4d32aa22217050e13:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MWJjZTcyYmQ4Y2I1YjQ3NzViMWNlNWIzMDU5MjI1ZDRjYzRiYzQxMjQwYzA4ZTY1NTNkNGQyMDMwZmU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGEzZmZiZmQyNWVkYzNiNjBiZTMyNTVjNjljNmQ4ODM1MDc0ZjUwY2YwZDUyYjBiNzU0ZjhmOWEyYzg3ZTYifQ"
         },
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L336-L386",
-          "version": "repo-lines-v1:sha256:91e3d92d8e77a313dae75f2a95af952ed259666b9d48f84c35394f4241778584:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNzcyYWFiN2ZlZWIzZjA4OWUwMzg1MGI0MzUwZGI0Y2FiY2QxY2I2Y2Y4YjJlNDFhMzk0NjlmMmFhYTIyMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L306-L357",
+          "version": "repo-lines-v1:sha256:a7490e9b2d9ac53cbd0b59f0df806e770e5010a648cf3bfbc20d95ec4407adb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGE5ZTVkMmMxNTRjMjIyMDUyZjNiYjcyMzg4ODgwNzllZGM2Mzc1ZDJhNjcxYTM4YTk4NTFiMWVmNDY0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MmRkNDliMDJjODJlMmJmYTFkNDgyMDljNmY3ZjhhNzllOTJhYjkwZjk2ZDAzZmI2MjhhZjdkNGZmYzJlZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMDQ0ZmFkMGFhYTVmYjBmYTgzNjM2NmY2OGQzM2Y3ZWQzZTkwNTQzOGFiYzIxZjRmNmM2ODk3NTY5MWY5MGIifQ"
         }
       ]
     },
@@ -509,10 +509,74 @@
           "version": "repo-lines-v1:sha256:c2185e1a3c5e372ef74b8c47433ea713f403f3d0d066baaa0c0961e199f6a158:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMGFkMWQ5NzUzNWMzYTJmMDhiNmQ4MGRhZTUyY2UxODJmOTYwZDFiYmZmNWY1ZTUwODU0MmZkNDZjM2FkZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3N2YwYTkwYzYyYzc1NzFmMzUwN2M1MWQ4NWVkNGE0NTI3N2M0MWExMjhiN2JmYzc2M2UyYjEyNWYxMjFmZDAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_fd2a78f1ff974dafaa90dde8196bc6df",
+      "statement": "test/git-repo-connector.test.ts builds real throwaway git repos in temp dirs and drives the git-repo connector across two runs: it asserts the second-run manifest describes what was committed since the recorded head (issue #409), naming the file added in the new commit rather than the already-ingested first commit and carrying the prior head as previousHead, and that a first run reports the working-tree diff only with no previousHead, while a second run against an unreachable recorded head (as after a force-push or garbage-collected rewrite) falls back to the working-tree diff rather than throwing.",
+      "evidence": [
+        {
+          "resource": "repo://test/git-repo-connector.test.ts#L1-L16",
+          "version": "repo-lines-v1:sha256:6255097fb5e40b03a6ab0e1c65fd779d721a883b84afd5a3d7779b7e2968d054:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MWM4MDY1NjhlNWMxYmZhMGU2YzM1MGVmMzYwYjg0YWEzMTk5MGY5MDhhNWY2Njk5OTBlYTc4NjlmOWQ2ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMjU5NGZlOGRkMjJkM2M0NzIwYWU4ZTRhYjFiYTczN2E1YTY0NDA3MzVhMTFhNzA5ZTdjMjdlY2M1MWVjOTAifQ"
+        },
+        {
+          "resource": "repo://test/git-repo-connector.test.ts#L123-L195",
+          "version": "repo-lines-v1:sha256:41c4160767cc3b0a26b789b4bbc1ebced40608ac1e076826a04895956df8b954:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZjIzMDM5OTZjYWY0NGFjNmY5OTQxMmYzY2YxZDg0ZWE4MzA1ZWU2Y2YyMjNmN2Y5MDcxNjZhNzkyNDE3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzYmRmMDE0OGJiM2QxNDQ1ZWQyNThjZTY1ZWRiMDFjOTM5ZWZhZmM3OGJmZTMwYjJlZWE1ZTZkYmZiMTgyNzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb00b96b2ad24ce5b1f96956c075f19f",
+      "statement": "test/ingest-all-connectors.test.ts pins the openwiki_ingest_all_connectors failure-isolation contract (issue #412): it mocks the connector registry with two fake connectors — one that resolves and one that rejects — and asserts the tool still returns both outcomes, so a throwing connector does not discard a succeeding connector's result; the failure is surfaced as an error status with the message mirrored into warnings while the success keeps its rawFiles.",
+      "evidence": [
+        {
+          "resource": "repo://test/ingest-all-connectors.test.ts#L1-L50",
+          "version": "repo-lines-v1:sha256:87e6bf736c6c0631d57bdd6c4e61ac6f8df8404a5b605fef6dfeddea65442e99:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhOWNkYTlhOGU5NzAxNGQ4ZjI2ZDk4YmQ1N2ZkYjBkYTUxOWRjMjk1MzQzMjhhODgyZDMzNTk0YTQ5YTM2ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4YzM4MjhlOWM1Mjk2ZDU0ZjY4ZDBlYjg3YmYxNWM3ZjU5YWZkNDFjMjMzYzhmNzJkMzVkN2QxMzA5OWQyYzAifQ"
+        },
+        {
+          "resource": "repo://test/ingest-all-connectors.test.ts#L68-L83",
+          "version": "repo-lines-v1:sha256:57281ae278fffda9c963218379e8afda26ea81bdf7f8be3e4bec65926b2a0d08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZjA3ZDM2MTUxNTlhMzhmYzUyYzBmNTQzZDcxZTdiNWQzMmJiZjVhOTZiNmNkN2JlYjE4MWMyNDM0ZWY3MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlMTE4MjhiMGQ4NDQyNTE5YjY1YTU3ZDE0OTNmNTcyOTU2ODUxZDFiZTE5MDE5ZjIwNGU4ZTc5ZjJjN2E1M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d78c943764e54ae08e165c6deb4c1e38",
+      "statement": "test/x-connector-stream-isolation.test.ts pins X-connector per-stream failure isolation (issue #412): stubbing fetch so one stream (mentions) returns 429 while another (user_posts) succeeds, it asserts the run does not abort — the succeeding dump is kept, the failing stream's failure is surfaced as a warning, both streams were still attempted, and state is still written; a complementary case where every stream fails asserts an error status (not a benign skip) with the per-stream warning.",
+      "evidence": [
+        {
+          "resource": "repo://test/x-connector-stream-isolation.test.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:af5a326cb204a7d97032fccbaae34e750cdf7e7a6549ba5efc578e7298874b48:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZWYzZWE0NGNhMWQ5YWQ2OThlNzY5MTk0ZDRlNzgyNDU5YjA3YWI3NGIzZDVjMDBjMzY3ZDgyZGQ2ZTE1MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNjRkMzg1NTNiZDQzYTk5Yjk4MTNlYTI1YzQ1Y2RlNjk0YTAwMzQ0OTAxMWJlMWIxYzBhMWI2NGZjY2YyM2EifQ"
+        },
+        {
+          "resource": "repo://test/x-connector-stream-isolation.test.ts#L132-L158",
+          "version": "repo-lines-v1:sha256:fe9146a479ffd8b8bb9abf5046f7bf8a49c84c8f0ef5c7743a526dbe8e0c84c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZTM5NjQ5YWE3MjljNTEzNTVmNWI3N2U0MWNmOGM4MDJkYWEyNWIyYWI2OTNkY2Y1ZjUzYmM3OGViMzlkM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmZGQyNjNlOTE2OWQ1MmQ2NTIzMmY5Yjc5NzlmYjNlNGQ1ZGNiOGYwZDFkOWVlODFiOWU5ZDFlMmY5YWI2ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://test/x-connector-stream-isolation.test.ts#L76-L130",
+          "version": "repo-lines-v1:sha256:ba2a180728e4452134d19a751707ea2f086553a7e9997907d827e9007b4ef390:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNzM0MjJlNGMzMDY0NDVjODQwZmQxMDQxMDNjYjFmYjI2NTkyZWRlZGEyMGQzYWMwMDkwMDg2NmE0NjBhNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjJjNzJmNWE1MjVmMTZkY2Y3ODFkNDE2NGI0MGM3YTNhMzc0ZTY0YWY2ZDZiOTc2Nzg4Y2YwZjViZjg2M2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_642ae3ccd0d74e40bfdf845cbbff8a7b",
+      "statement": "test/openrouter-debug-fetch.test.ts pins the OpenRouter debug-fetch concurrency contract (issue #411): ChatOpenRouter calls globalThis.fetch directly, so installOpenRouterDebugFetch patches the global. The test asserts that a single run restores the exact original fetch on detach, that overlapping runs each keep their own captured failure and the real fetch is restored exactly once — only after the last run detaches, reference-counted so a redundant restore() is a no-op that does not prematurely restore while another run is active — that an OpenRouter failure fans out to every active run's sink while each run can clear its own failure, and that non-OpenRouter requests pass through untouched.",
+      "evidence": [
+        {
+          "resource": "repo://test/openrouter-debug-fetch.test.ts#L1-L10",
+          "version": "repo-lines-v1:sha256:aff3753df08a97e2243d7431d000498340883a50d34857125a9fafad65748ab3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZThiMWI2ZTYyYzcyMmUxNjYyNjBiZjcwZjFkM2I1ZmM3NTUzNmIzZDE2YTVmYTk0NGZiZDg2YzMyYWE4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwN2Q2MTk0NjczYTMzZTAzMWEyZTg0NTllNWNhNjllOTM0YzUwOGQyNGNjNzNjODg4ZDhhM2I3ZjVlMGUwMWYifQ"
+        },
+        {
+          "resource": "repo://test/openrouter-debug-fetch.test.ts#L115-L129",
+          "version": "repo-lines-v1:sha256:7230f058af7020c256b112f056d1e8b636e3dab5fd675d959f746b4ed39c731c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1OTBkMmQwYTI5OTFkZThiNTE2NDkxNzcwZGEyNmRhYzk0MGE1YWFlNjM1NGY4Y2Q5YTVmZGFkZTI2ZDM4ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNWJlNmZmZDVhMzc1ZTBmMjBkZmUxY2QxNmRmMTgzMWM3MzJhMDNkMTNkYjQxNDIxYzQ4MmM4N2MxMDFmMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://test/openrouter-debug-fetch.test.ts#L46-L113",
+          "version": "repo-lines-v1:sha256:384fca5fa9eadc81d5c8e21b602fbc14d350ea85e5b9d65bab3310032e02d833:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNTlmMzI4ODU3OGViNmI4M2M3MzE2NGFkMDU0ZTI1MDc2NTE0NmUxM2FkY2IxYTdkYjA5MDJiNTUxYjkzNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNTcwZTliZDQwMmNkYzM2YmM0Mzk0MzhmNjhlM2JmYTBjYTZkOGJjNjIyMTQ4MzVkZTUwZWM3NGZhMWY1YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMDUyYTFiOTNhMmRhOTliYWUzZWUwOGYwYzc0MjFkNDA5NDlhOWVmMGNiMDJhMzQ4NGZmMjkwNTU5NzFiN2YifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-30T10:21:48.925Z"
+    "at": "2026-09-01T08:10:26.687Z"
   }
 }

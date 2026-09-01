@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7ae63c5949a7a323e6f5cc77f9f4c0c8a8a312da456532695d1d714e327e0c41",
+  "pageVersion": "sha256:f87c48af17afcb1c1cbada9db8ab5defce475ffcb30d6a28a024dc292e04b0e1",
   "claims": [
     {
       "id": "claim_877c98c88bd841fdb1bcd9de28cb0448",
@@ -268,11 +268,19 @@
     },
     {
       "id": "claim_c588a24c17f24416a60b52579071876a",
-      "statement": "The git-repo connector is a local-git backend with no required env that reads configured local clones and writes compact per-repo manifests (branch, HEAD, recent commits, status, changed files), records each repo's HEAD as a latestIds cursor, and skips repos with unsafe ids.",
+      "statement": "The git-repo connector is a local-git backend with no required env that reads configured local clones and writes compact per-repo manifests (branch, HEAD, recent commits, status, changed files), records each repo's HEAD as a latestIds cursor, skips repos with unsafe ids, and is incremental: createRepoManifest resolves a usable previous head via resolveReachableHead (verifying the recorded commit is still reachable with git rev-parse --verify before diffing against it), and when previousHead is undefined, matches the current head, or is no longer reachable (history rewritten/force-push), falls back to the working-tree diff (git diff --name-status HEAD) rather than failing.",
       "evidence": [
         {
+          "resource": "repo://src/connectors/sources/git-repo.ts#L136-L219",
+          "version": "repo-lines-v1:sha256:8fd11f2968d809d89216e8ab0a07373f27cb3c966b34f71f488e3781e838ac3c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YzNhOWU5NGNjNjE4NjllYWI2MjFhNGI1NjJlNjk0NTA5YmE3ODBlYTk4Zjc0Nzg3MDhhNWI4NWUwNDAxNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZDQzNmMwMDVlZWMwNGEwYTQ3MjViNjQ2NzlmZWVmNDU1YWM5OTNlNmQ3ZDZiODkzMzhjZGY4MWRiMTVkZWEifQ"
+        },
+        {
           "resource": "repo://src/connectors/sources/git-repo.ts#L40-L129",
-          "version": "repo-lines-v1:sha256:d178bdc86ef941e318e1b6dcb721bdcb9c5e88edeef408c8ca4be87060205204:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NzlmNjIwOGZkY2NiNjJjYzNmZTJhMjRhOGFhNzMzMjYwMDE2YmEwMjBmODc0Y2MxODkzOWE4NTMyZjA3NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzOTg0MGY1ZTU3Njk0OWI1OTk2NTQyZjM2OWYwZGM3ZjgyYWRiMzIzZGIyMDBjNTQyMWE5NjI2NWEwZmQ1NWUifQ"
+          "version": "repo-lines-v1:sha256:92dad83f149f7b87a5460f9200e7dd9f39a0d80bedc9ca9fd8a550f8061c1f48:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjN2EwNWUxMDNjZDg4MGUxODBjZTI2NjUwNTRjNTcyNzAzMDRlZmE0NzRiOThiYmZhNWRhNGVlMWEyNTQ4YTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NzlmNjIwOGZkY2NiNjJjYzNmZTJhMjRhOGFhNzMzMjYwMDE2YmEwMjBmODc0Y2MxODkzOWE4NTMyZjA3NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NDliYTJjYmI0N2MxNTIyYzI1MmFhNWNkMzY4OWNmZTI4YzVhM2Q3NjhkOTVkY2RkNDExYzg0YjA2OTUwNDQifQ"
+        },
+        {
+          "resource": "repo://test/git-repo-connector.test.ts#L123-L195",
+          "version": "repo-lines-v1:sha256:41c4160767cc3b0a26b789b4bbc1ebced40608ac1e076826a04895956df8b954:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZjIzMDM5OTZjYWY0NGFjNmY5OTQxMmYzY2YxZDg0ZWE4MzA1ZWU2Y2YyMjNmN2Y5MDcxNjZhNzkyNDE3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzYmRmMDE0OGJiM2QxNDQ1ZWQyNThjZTY1ZWRiMDFjOTM5ZWZhZmM3OGJmZTMwYjJlZWE1ZTZkYmZiMTgyNzkifQ"
         }
       ]
     },
@@ -403,10 +411,52 @@
           "version": "repo-lines-v1:sha256:2f2a2924ef5497104228128459b49164745b899400832af508e7ffe50e8dee6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMDA0NTdiYzNjNThkZWFmNmNiMTk2NjQ0MDUzYWI0YTJjOTYzMDU1NjA3NzJiMzA1NjZhMWM4OTM1MDA2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMTM4N2MzOWIyOTAwNDdlOTAzNmM5ODRmYjY3NjBlNWY1MTIyOWNjYWIwMGYwNTgyYmM3ZTg4NzlkMjRmOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmNjUyYzRjN2NjNTg5MTI5MDY2MjdmMWE0NmM4Yjk4MWY0NmFkYmMxNTAyNGI4YTdlZDlkODI1NWFkNWI2ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxNzlhN2VkMTEwMjExN2UzN2MzMWNlZTZmNDk4YzBmODVmMGE3NDlkMTk4MzRkYmZkYzcyMjY2M2ZkM2YxN2EifQ"
         }
       ]
+    },
+    {
+      "id": "claim_47017b6ca23c43e4a8b9f2cb1d2c43db",
+      "statement": "The X connector isolates per-stream failures: each stream (and each list within list_posts) is fetched independently, and a failure on one stream (e.g. a 429 on mentions) records a warning and moves on rather than aborting the whole run — already-fetched dumps are kept, other streams keep going, and state is still written so successful streams' since_id cursors advance.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/x.ts#L121-L185",
+          "version": "repo-lines-v1:sha256:40935a0dfce2f17f178e9dd32e755a724b7cb2fe2eff828c104b9d852bf73883:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZmQ5OTBjMzg2OWU4YjU1ZDVlZjRiNjYzOWZhOThlZmEyMGI3YzZiMjBhYjI5ZWVkNjYzOWM4ZDJiYWU1NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0ZTJmYTVmNWE2Y2JhYmM5Mzk4YjcxMDlmZWE4ODUxODE1YTMxMDNkNGI3OWJkN2ZlYTg3ZWI1YmYwNmY3ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YmJmYzY2NWI0MzgxZmM0MmZmMTZmYzRjMjIwNDBkNDlhY2Q2Yjk3OWZhNjc5YjViZTFkYjg2YjQ0N2Y3MGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YzRjM2VjNGNlZTNmNjU4ZDc4NWFiNjZmMGEzZWI1NmJiOGI4ZjEyZmQ0MTgyMGZhYTQzNWJmMzM4OWExNjMifQ"
+        },
+        {
+          "resource": "repo://test/x-connector-stream-isolation.test.ts#L76-L130",
+          "version": "repo-lines-v1:sha256:ba2a180728e4452134d19a751707ea2f086553a7e9997907d827e9007b4ef390:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNzM0MjJlNGMzMDY0NDVjODQwZmQxMDQxMDNjYjFmYjI2NTkyZWRlZGEyMGQzYWMwMDkwMDg2NmE0NjBhNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YjJjNzJmNWE1MjVmMTZkY2Y3ODFkNDE2NGI0MGM3YTNhMzc0ZTY0YWY2ZDZiOTc2Nzg4Y2YwZjViZjg2M2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b33b543f45a344a2b4ea2924ffde2e68",
+      "statement": "The X connector's run status is success when at least one dump was produced, error when nothing was fetched but a stream failed (not a benign skipped), and skipped when there was no configured work to do.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/x.ts#L182-L185",
+          "version": "repo-lines-v1:sha256:e1986e8f14ad4a994499af24a252c84c798a90e3fbc25ba032bea645766c87fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc5NDVlMDg3MDEwMWFkZWFkZjU4ODcwMDhiZDYwNDI4MTRlYTkwODAzNGYzMzI4YzYwNWFlNTE3OTNjMmQwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRlMmZhNWY1YTZjYmFiYzkzOThiNzEwOWZlYTg4NTE4MTVhMzEwM2Q0Yjc5YmQ3ZmVhODdlYjViZjA2ZjdlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTdjNGMzZWM0Y2VlM2Y2NThkNzg1YWI2NmYwYTNlYjU2YmI4YjhmMTJmZDQxODIwZmFhNDM1YmYzMzg5YTE2MyJ9"
+        },
+        {
+          "resource": "repo://test/x-connector-stream-isolation.test.ts#L132-L158",
+          "version": "repo-lines-v1:sha256:fe9146a479ffd8b8bb9abf5046f7bf8a49c84c8f0ef5c7743a526dbe8e0c84c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZTM5NjQ5YWE3MjljNTEzNTVmNWI3N2U0MWNmOGM4MDJkYWEyNWIyYWI2OTNkY2Y1ZjUzYmM3OGViMzlkM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmZGQyNjNlOTE2OWQ1MmQ2NTIzMmY5Yjc5NzlmYjNlNGQ1ZGNiOGYwZDFkOWVlODFiOWU5ZDFlMmY5YWI2ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_156f2787e78240d4becd184d514c8ffa",
+      "statement": "ingestAllConnectors runs every connector concurrently with Promise.allSettled and isolates per-connector failures: one connector that throws does not discard the results of connectors that succeeded, and each rejection is converted to an error result via ingestFailureResult so the agent still sees every outcome.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/tools.ts#L288-L326",
+          "version": "repo-lines-v1:sha256:84f276a6e39833b23bc8f626346b2528e43292956b9128554fd0d6925f780600:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YzJmYTYzNjNiYTc0NmVhOTk5YTk2NTQ3ZTJkYjczNGM5YTEwYTQ4MTQ2NmRjNWY5MWVlYmZkMDYwYjZlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwMThhNmI2YWIyN2E0NWMzZmNiOGUyNWY4OGZkMTQxMThlOTYwNWU0OTVjZmUxMmQ2YzExNWFiNDk3NmExMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3OWNiNjU2NTM1YWUyMjhhZGU3MjUzZGY0YTM0Y2E3OGZlNGU5NDZhOWNmZWU4ZmZmM2I2YzAzMTQ5NDVmM2QifQ"
+        },
+        {
+          "resource": "repo://test/ingest-all-connectors.test.ts#L43-L82",
+          "version": "repo-lines-v1:sha256:a2d5f79b669a762fd36446c4bdb8662288890b78d92ecd21746756bddad2dbb9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxY2FiZGRkZTk3MjhkMzdmMWJhM2I1MDU4NTM3OGU3ZTZiMTZlYzU2ZDk5MDhmZWRmZDk4ZWEyM2Y5YzdlMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzMDZkMzhiZmVkZTBjYmQwZmM4ZGNmODRiZjgxYTc3NDUwMzkwZmM5MzZkODUwZWUwM2NlNjNmMzY2ZDBhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.4.3",
+    "at": "2026-09-01T08:10:26.687Z"
   }
 }

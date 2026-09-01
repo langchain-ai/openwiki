@@ -4,8 +4,8 @@ title: Source Connectors
 description: How OpenWiki's built-in source connectors (Custom MCP, Notion, Slack, Gmail/Google, X, Web Search, Hacker News, LangSmith, git-repo) are defined, run under the ConnectorRuntime contract, exposed as agent tools, and how to add a new one.
 tags: [connectors, mcp, ingestion, personal-wiki, integrations, security]
 verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
+  - by: openwiki/0.4.3
+    at: 2026-09-01T08:10:26.687Z
 sources:
   - id: openwiki-source-8db5c5b61ad96006091c727e
     resource: repo://skills/write-connector/SKILL.md
@@ -45,7 +45,13 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
     resource: repo://src/connectors/types.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+  - id: openwiki-source-a0cec66bd3bed0c13c668ff0
+    resource: repo://test/git-repo-connector.test.ts
+  - id: openwiki-source-caa199fea0a0f4f89151a0c8
+    resource: repo://test/ingest-all-connectors.test.ts
+  - id: openwiki-source-dbb4558a2e1f7159813c79c5
+    resource: repo://test/x-connector-stream-isolation.test.ts
+generated: { by: "openwiki/0.4.3", at: "2026-09-01T08:10:26.687Z" }
 ---
 
 # Source Connectors
@@ -69,7 +75,8 @@ Two implementation families exist:
 
 Related pages: [Source map](../architecture/source-map.md),
 [Model providers](../concepts/model-providers.md),
-[Personal ingestion](../workflows/personal-ingestion.md).
+[Personal ingestion](../workflows/personal-ingestion.md),
+[Testing overview](../testing/overview.md).
 
 ## The ConnectorRuntime contract
 
@@ -150,7 +157,11 @@ personal/local-wiki mode it exposes:
   single exact read-only tool call; both accept only `custom-mcp` or `notion`.
 - `openwiki_ingest_connector` / `openwiki_ingest_all_connectors` — run
   deterministic ingestion for one or every configured connector (unconfigured
-  connectors are skipped).
+  connectors are skipped). `ingestAllConnectors` runs every connector
+  concurrently with `Promise.allSettled` and **isolates per-connector failures**:
+  a connector that throws does not discard the results of connectors that
+  succeeded — each rejection is converted to an `error` result
+  (`ingestFailureResult`) so the agent still sees every outcome.
 - `openwiki_list_raw_items` / `openwiki_read_raw_item` — enumerate and read raw
   files, newest run first, capped at 500 KB per read and confined to the
   connector's `raw/` directory.
@@ -203,15 +214,30 @@ or HTTP. Key safeguards:
 
 - **git-repo** (`local-git`, no env): reads configured local clones and writes
   compact per-repo manifests (branch, HEAD, recent commits, status, changed
-  files); the local repo remains the source of truth. Records each repo's HEAD as
-  a `latestIds` cursor and rejects unsafe repo ids.
+  files); the local repo remains the source of truth. It is incremental: each run
+  records every repo's HEAD as a `latestIds` cursor in state, and the next run
+  diffs against that recorded head to describe what landed since. A repo with an
+  unsafe id is skipped. `createRepoManifest` resolves a usable previous head via
+  `resolveReachableHead`, which verifies the recorded commit is still reachable
+  (`git rev-parse --verify ...^{commit}`) before diffing against it. When
+  `previousHead` is undefined (first run), equals the current head (nothing new),
+  or is no longer reachable (history rewritten or a force-push made the recorded
+  commit disappear), the manifest falls back to the working-tree diff
+  (`git diff --name-status HEAD`) rather than failing, so the manifest still
+  reflects local, uncommitted work.
 - **google / Gmail** (`direct-api`): fetches recent messages from the Gmail API
   using OAuth access + refresh tokens.
 - **slack** (`direct-api`): fetches conversations, recent messages, and assistant
   search context with a Slack user token; supports `recent_messages`,
   `my_messages_search`, and `assistant_search` streams.
 - **x / Twitter** (`direct-api`): fetches home timeline, user posts, mentions,
-  list posts, and bookmarks via X API v2 with an OAuth access token.
+  list posts, and bookmarks via X API v2 with an OAuth access token. Each stream
+  (and each list within `list_posts`) is **isolated per run**: a failure on one
+  stream — e.g. a 429 on `mentions` — records a warning and moves on instead of
+  aborting the whole run. Already-fetched dumps are kept, other streams keep
+  going, and state is still written so every successful stream's `since_id`
+  cursor advances. If at least one dump was produced the run status is `success`;
+  if nothing fetched and any stream failed it is `error` (not a benign `skipped`).
 - **web-search** (`direct-api`): runs Tavily searches via the LangChain Tavily
   integration; enabled by default but produces nothing without configured
   queries.
