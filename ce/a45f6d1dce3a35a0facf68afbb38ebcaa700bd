@@ -1,0 +1,21 @@
+src/connectors/sources/x.ts
+  s_ca435ef6e27dfa::t_26b73fd520a089 182-186,196
+test/x-connector-stream-isolation.test.ts
+  s_ca435ef6e27dfa::t_9830aabc8cda84 1,35-44,152,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cea45f6d1dce3a35a0facf68afbb38ebcaa700bd",
+  "prompts": {},
+  "sessions": {
+    "s_ca435ef6e27dfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05ad0-66de-7150-bba6-3140ea90e6cb",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
