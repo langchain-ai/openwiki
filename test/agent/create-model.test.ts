@@ -13,6 +13,10 @@ const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
 const GEMINI_KEY = "GEMINI_API_KEY";
 const MAX_OUTPUT_TOKENS_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 const REASONING_EFFORT_KEY = "OPENWIKI_REASONING_EFFORT";
+const OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED";
+const OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
 const CHATGPT_TOKEN_KEYS = [
   "OPENAI_CHATGPT_ACCESS_TOKEN",
   "OPENAI_CHATGPT_REFRESH_TOKEN",
@@ -307,17 +311,33 @@ describe("createModel provider-neutral maxTokens mapping", () => {
 
 describe("createModel reasoning configuration", () => {
   let savedReasoningEffort: string | undefined;
+  let savedOpenAiCompatibleReasoningEffortSupported: string | undefined;
+  let savedOpenAiCompatibleUseResponsesApi: string | undefined;
   let savedChatGptTokens: Record<string, string | undefined>;
 
   beforeEach(() => {
     savedReasoningEffort = process.env[REASONING_EFFORT_KEY];
+    savedOpenAiCompatibleReasoningEffortSupported =
+      process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY];
+    savedOpenAiCompatibleUseResponsesApi =
+      process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
     savedChatGptTokens = Object.fromEntries(
       CHATGPT_TOKEN_KEYS.map((key) => [key, process.env[key]]),
     );
+    delete process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY];
+    delete process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
   });
 
   afterEach(() => {
     restoreEnv(REASONING_EFFORT_KEY, savedReasoningEffort);
+    restoreEnv(
+      OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY,
+      savedOpenAiCompatibleReasoningEffortSupported,
+    );
+    restoreEnv(
+      OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY,
+      savedOpenAiCompatibleUseResponsesApi,
+    );
     for (const key of CHATGPT_TOKEN_KEYS) {
       restoreEnv(key, savedChatGptTokens[key]);
     }
@@ -417,6 +437,45 @@ describe("createModel reasoning configuration", () => {
     ) as { modelKwargs?: Record<string, unknown> };
 
     expect(model.modelKwargs).toMatchObject({ reasoning_effort: "high" });
+  });
+
+  test("rejects OpenAI-compatible effort without the explicit opt-in", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+
+    expect(() =>
+      createModel("openai-compatible", "Qwen/Qwen3.7-235B", 0),
+    ).toThrow(/not supported/u);
+  });
+
+  test("maps opted-in OpenAI-compatible effort to chat completions", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+    process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY] = "true";
+
+    const model = createModel("openai-compatible", "Qwen/Qwen3.7-235B", 0) as {
+      modelKwargs?: Record<string, unknown>;
+      reasoning?: { effort?: string };
+      useResponsesApi?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(false);
+    expect(model.modelKwargs).toMatchObject({ reasoning_effort: "high" });
+    expect(model.reasoning).toBeUndefined();
+  });
+
+  test("maps opted-in OpenAI-compatible effort to Responses API reasoning", () => {
+    process.env[REASONING_EFFORT_KEY] = "max";
+    process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY] = "true";
+    process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY] = "true";
+
+    const model = createModel("openai-compatible", "Qwen/Qwen3.7-235B", 0) as {
+      modelKwargs?: Record<string, unknown>;
+      reasoning?: { effort?: string };
+      useResponsesApi?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(true);
+    expect(model.reasoning).toEqual({ effort: "max" });
+    expect(model.modelKwargs?.reasoning_effort).toBeUndefined();
   });
 
   test("serializes NVIDIA NIM effort in the Chat Completions request", async () => {
