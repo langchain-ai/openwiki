@@ -667,12 +667,27 @@ export function parseEnv(content: string): EnvMap {
 
 function parseEnvValue(value: string): string {
   if (value.startsWith('"') && value.endsWith('"')) {
-    return value
-      .slice(1, -1)
-      .replace(/\\n/gu, "\n")
-      .replace(/\\r/gu, "\r")
-      .replace(/\\"/gu, '"')
-      .replace(/\\\\/gu, "\\");
+    // A single left-to-right pass that consumes each backslash escape as one
+    // atomic unit. Sequential independent replace() calls (the previous
+    // implementation) are not safe here: unescaping "\\n" back into a raw
+    // backslash can produce a new "\<char>" pair that a later or earlier
+    // pass then misreads as its own escape sequence (e.g. a Windows path
+    // like "C:\name\creds.json" gets its "\\" + "name" read as "\n" +
+    // "ame", corrupting the value with a real newline).
+    return value.slice(1, -1).replace(/\\(.)/gsu, (match, escaped: string) => {
+      switch (escaped) {
+        case "n":
+          return "\n";
+        case "r":
+          return "\r";
+        case '"':
+          return '"';
+        case "\\":
+          return "\\";
+        default:
+          return match;
+      }
+    });
   }
 
   return value;
