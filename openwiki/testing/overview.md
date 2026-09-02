@@ -6,6 +6,8 @@ tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -78,10 +80,10 @@ sources:
     resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.3", at: "2026-09-01T08:10:26.687Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-02T08:09:44.873Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-09-01T08:10:26.687Z
+  - by: openwiki/0.5.0
+    at: 2026-09-02T08:09:44.873Z
 ---
 
 # Testing Guide
@@ -222,7 +224,15 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   `skipRepositoryPage` to restore the captured snapshot, marks that page
   `skipped`, finishes the run, and emits a `text` event telling the user the
   page will be "reconsidered on the next update" — leaving the skipped page to
-  be re-queued as `pending` on resume.
+  be re-queued as `pending` on resume. It also covers duplicate-plan tolerance
+  (`continues when the planner repeats the same accepted plan`, armed via
+  `duplicatePlanSubmission`, which repeats the accepted `submit_plan` call and
+  asserts the runner proceeds to page generation rather than treating the
+  repeat as a conflict) and post-submit page durability (`keeps a durably
+  completed page after a later worker failure`, armed via
+  `pageWorkerPostSubmitFailures`, which makes the worker throw *after*
+  `submit_page` succeeds and asserts the page is not rolled back —
+  `restoreCalls` stays `0` and the page remains `complete`).
 - `test/agent/update-noop.test.ts` is the dedicated suite for the update no-op
   fast-skip path: it builds a real committed Git repository with an OpenWiki
   tree and exercises `getUpdateNoopStatus` across the conditions that should and
@@ -543,6 +553,8 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
 - **Agent worker-exit/skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
+- **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
+- **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.
 - **Source fingerprinting / changed paths:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts`.
 - **Page manifest persistence:** `pnpm exec vitest run test/generation/page-manifest.test.ts`.
