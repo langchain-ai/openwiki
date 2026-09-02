@@ -1,0 +1,52 @@
+evals/sweqapro/README.md
+  s_db76009bd8008d::t_6c6896a5169244 130-132,136,181
+  s_db76009bd8008d::t_b2f401cad7ca72 133-135,137-142,177-180,182-183
+  s_db76009bd8008d::t_a000bb4901b224 184
+integrations/openwiki/SKILL.md
+  s_db76009bd8008d::t_9fa00dab77d707 3,8-9,18,24-26,29-32
+evals/sweqapro/run.py
+  s_db76009bd8008d::t_b2f401cad7ca72 34,316,321-322,326-327,345-346,363-364,478-486,514
+evals/sweqapro/tests/test_routed_openwiki_agent.py
+  s_db76009bd8008d::t_b99cce8f3ce912 30,32,36,38,44
+  s_db76009bd8008d::t_b2f401cad7ca72 1-29,31,33-35,37,39-43,45-86
+test/integrations/skill.test.ts
+  s_db76009bd8008d::t_c3e360477e5b14 59-60,90-92
+test/integrations/session-manager.test.ts
+  s_db76009bd8008d::t_4d2a79073e94c9 215,221,240-251,262-273
+evals/sweqapro/routed_openwiki_agent.py
+  s_db76009bd8008d::t_b2f401cad7ca72 1-22,55-59,61-62,70-153
+  s_db76009bd8008d::t_15b609d8374be1 23-54,60,63-69
+test/integrations/mcp-server.test.ts
+  s_db76009bd8008d::t_b36472a947fc6a 97,102-107,151,160,382-386
+src/retrieval/repository-context.ts
+  s_db76009bd8008d::t_38f2ed25a4f7be 323-339,502
+  s_db76009bd8008d::t_b2ff9ce71a8a91 20-28,68-133,136-138,289,296-322,340-341,486-501,503-572
+  s_db76009bd8008d::t_f65121775ae2c2 342
+  s_db76009bd8008d::t_a19372076b911b 573
+src/integrations/core/protocol.ts
+  s_db76009bd8008d::t_2f4bae30fa2e95 15
+evals/sweqapro/tests/test_run.py
+  s_db76009bd8008d::t_b2f401cad7ca72 57-74,78-81
+src/integrations/core/session-manager.ts
+  s_db76009bd8008d::t_c4a4179000fb72 226,232-238,242
+src/integrations/mcp/server.ts
+  s_db76009bd8008d::t_46d2eaff72c3f8 12
+test/retrieval/repository-context.test.ts
+  s_db76009bd8008d::t_72c232d071a765 26-31,55-57,70-72,138-150,156-159,178-189,199-205,309-312,330-341,363-374
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "21eb90f9ef4f585ce5c5026559b7c225b6598944",
+  "prompts": {},
+  "sessions": {
+    "s_db76009bd8008d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05fac-b902-7ce2-af5c-42fcad07e78b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
