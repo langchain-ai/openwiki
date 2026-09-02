@@ -1,0 +1,19 @@
+evals/sweqapro/agentic_openwiki_agent.py
+  s_db76009bd8008d::t_c6d4b6912e03c8 29-36,43-46,58-59,61-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "39b561a0dee712082baa4b8ff6940bd39f1ca096",
+  "prompts": {},
+  "sessions": {
+    "s_db76009bd8008d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05fac-b902-7ce2-af5c-42fcad07e78b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
