@@ -1,0 +1,33 @@
+evals/sweqapro/baseline_agent.py
+  s_db76009bd8008d::t_ff2962506a3c15 1-45
+evals/sweqapro/openwiki_agent.py
+  s_db76009bd8008d::t_ff2962506a3c15 12,41
+evals/sweqapro/run.py
+  s_db76009bd8008d::t_eca1079ecf0844 291-293,301-303
+  s_db76009bd8008d::t_ff2962506a3c15 33,280,285-290,294-300,304-306,330,396-400
+  s_db76009bd8008d::t_be603a78c80264 281-284,323-327
+evals/sweqapro/tests/test_run.py
+  s_db76009bd8008d::t_ff2962506a3c15 25-34
+evals/sweqapro/runner_overrides.py
+  s_db76009bd8008d::t_ff2962506a3c15 1-39
+evals/sweqapro/README.md
+  s_db76009bd8008d::t_ff2962506a3c15 104-115
+evals/sweqapro/tests/test_runner_overrides.py
+  s_db76009bd8008d::t_eca1079ecf0844 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0e35afc85eada37c8b4a6eed53c13c4a8d3877fa",
+  "prompts": {},
+  "sessions": {
+    "s_db76009bd8008d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05fac-b902-7ce2-af5c-42fcad07e78b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
