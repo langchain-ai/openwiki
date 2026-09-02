@@ -7,6 +7,7 @@ import {
   matchesFilter,
   nodeRadius,
   normalize,
+  resolveWikilinks,
   signature,
   stripFrontmatter,
 } from "../../src/visualize/client-lib.ts";
@@ -119,6 +120,46 @@ describe("stripFrontmatter", () => {
 
   test("returns a body without frontmatter unchanged", () => {
     expect(stripFrontmatter("# Body\n")).toBe("# Body\n");
+  });
+});
+
+describe("resolveWikilinks", () => {
+  const resolve = (target: string): string | undefined =>
+    target === "arch/server" ? "arch/server" : undefined;
+
+  test("turns a resolved [[target]] into a markdown link to its page", () => {
+    expect(resolveWikilinks("See [[arch/server]].", resolve)).toBe(
+      "See [arch/server](arch/server.md).",
+    );
+  });
+
+  test("uses the label from [[target|label]]", () => {
+    expect(resolveWikilinks("See [[arch/server|the server]].", resolve)).toBe(
+      "See [the server](arch/server.md).",
+    );
+  });
+
+  test("degrades an unresolved wikilink to plain text, not a dead link", () => {
+    expect(resolveWikilinks("See [[missing/page|Missing]].", resolve)).toBe(
+      "See Missing.",
+    );
+    expect(resolveWikilinks("See [[missing/page]].", resolve)).toBe(
+      "See missing/page.",
+    );
+  });
+
+  test("leaves wikilinks inside code spans and fences untouched", () => {
+    expect(resolveWikilinks("Use `[[arch/server]]` syntax.", resolve)).toBe(
+      "Use `[[arch/server]]` syntax.",
+    );
+    const fenced = "```md\n[[arch/server]]\n```\n";
+    expect(resolveWikilinks(fenced, resolve)).toBe(fenced);
+  });
+
+  test("returns a body without wikilinks unchanged", () => {
+    expect(resolveWikilinks("Just [a link](x.md).", resolve)).toBe(
+      "Just [a link](x.md).",
+    );
   });
 });
 
