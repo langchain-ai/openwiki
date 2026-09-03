@@ -1,17 +1,19 @@
 allowBuilds:
   better-sqlite3: true
   esbuild: true
-# Force patched versions of transitive dev-only dependencies flagged by
-# Dependabot or pnpm audit. js-yaml is pulled in only by @changesets/cli (both
-# majors coexist, so each keeps its own patched line); the remaining packages
-# come through lint or test tooling. None ship in the published runtime.
+# Force patched versions of transitive dependencies flagged by Dependabot,
+# pnpm audit, or Trivy. js-yaml is pulled in only by @changesets/cli (both
+# majors coexist, so each keeps its own patched line); fast-uri is pulled
+# through @modelcontextprotocol/sdk -> ajv in the published runtime.
 #   brace-expansion GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895
+#   fast-uri CVE-2026-75899, CVE-2026-75931, CVE-2026-75975, CVE-2026-76172
 #   js-yaml GHSA-5p4m-2wfm-xmqj  (quadratic-CPU DoS in !!omap resolution)
 #   nanoid GHSA-2v37-7h3g-55p8
 #   undici  GHSA-4cwx-7wf7-3272, -m8rv-5g2x-5cg5, -jr45-8vmc-qm54,
 #           -v3r7-h72x-cjcm, -8xcm-r25x-g524
 overrides:
   brace-expansion: 5.0.9
+  fast-uri: 3.1.6
   js-yaml@3: ^3.15.1
   js-yaml@4: ^4.3.1
   nanoid: 3.3.17
