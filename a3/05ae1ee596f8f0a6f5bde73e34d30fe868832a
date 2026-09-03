@@ -1,0 +1,14 @@
+.changeset/upset-canyons-cheer.md
+  h_f78d33d4280f3f 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a305ae1ee596f8f0a6f5bde73e34d30fe868832a",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
