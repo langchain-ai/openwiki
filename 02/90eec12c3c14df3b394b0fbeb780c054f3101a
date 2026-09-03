@@ -1,0 +1,28 @@
+src/visualize/client-lib.ts
+  s_eed55c3357b6c3::t_7cce6060c44b4f 100-134
+src/visualize/client.ts
+  s_eed55c3357b6c3::t_7cce6060c44b4f 9,308-312,599-607,654,668
+  s_eed55c3357b6c3::t_f86cb8fac489a5 652
+test/visualize/visualize-client-lib.test.ts
+  s_eed55c3357b6c3::t_7cce6060c44b4f 10,68-126
+  s_eed55c3357b6c3::t_568ceb8a9a24e4 127-128
+test/visualize/client-interaction.test.ts
+  s_eed55c3357b6c3::t_7cce6060c44b4f 18-22,25-31,99-108,122-137,176-213,232,235,273-291
+  s_eed55c3357b6c3::t_c40e2dac750cda 292-294
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0290eec12c3c14df3b394b0fbeb780c054f3101a",
+  "prompts": {},
+  "sessions": {
+    "s_eed55c3357b6c3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a067d6-703a-7eb2-b72a-f95ba11435c7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
