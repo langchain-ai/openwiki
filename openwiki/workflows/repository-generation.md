@@ -35,10 +35,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-02T08:09:44.873Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.0
+    at: 2026-09-02T08:09:44.873Z
 ---
 
 # Repository Generation Lifecycle
@@ -224,14 +224,32 @@ A `PageJobStatus` is one of `pending`, `skipped`, or `complete`. `skipped` is a
 third durable per-job status, distinct from `complete`, that records "this page
 was attempted, failed or abandoned, and was rolled back to its pre-worker state."
 
-The native runner skips a worker in two situations, both inside `runPageAgent`:
-the worker throws a non-fatal error before submitting, or the worker returns
-without having called `submit_page`. A fatal submission failure (an error from
-`submitRepositoryPage` that is not a correctable `invalid_input`) is rethrown
-rather than skipped, because it signals a durable-invariant violation the worker
-cannot correct. `submit_page` rejections with `invalid_input` are by design
-returned to the worker as failed tool results so its loop stays active; only a
-failure or a clean exit-without-submit triggers a skip.
+The native runner handles four failure modes inside `runPageAgent`, each of
+which preserves the per-job durability guarantee differently:
+
+1. **Non-fatal pre-submit error** — the worker throws a recoverable error before
+   calling `submit_page`. The catch block calls `skipRepositoryPage` with the
+   pre-worker snapshot, restoring the page and marking the job `skipped`.
+2. **Exit without submit** — the worker returns cleanly without ever calling
+   `submit_page` (for example, because the model stopped early). The post-loop
+   guard calls `skipRepositoryPage` with the snapshot, same as above.
+3. **Fatal pre-submit error** — a fatal submission failure (an error from
+   `submitRepositoryPage` that is not a correctable `invalid_input`) is rethrown
+   rather than skipped, because it signals a durable-invariant violation the
+   worker cannot correct. `submit_page` rejections with `invalid_input` are by
+   design returned to the worker as failed tool results so its loop stays active;
+   only a non-`invalid_input` failure triggers a rethrow.
+4. **Post-submit failure (durability guarantee)** — a worker that throws after
+   `submit_page` succeeds does NOT get rolled back. The `submitted` flag is set
+   before `submitRepositoryPage` returns, so the catch block checks
+   `if (submitted) return null;` and the post-loop guard does the same — neither
+   calls `skipRepositoryPage`, and the page stays durably complete. The page is
+   already a self-contained durability unit: its Claims were persisted and proven
+   durable by `assertPageClaimsDurable` before the job was marked `complete`, so a
+   later failure cannot undo that durability. The test "keeps a durably
+   completed page after a later worker failure" (the `pageWorkerPostSubmitFailures`
+   harness field) verifies that `restoreCalls` stays zero and the page's status
+   remains `complete`.
 
 ### Snapshot capture, skip, and restore
 
