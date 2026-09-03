@@ -1,0 +1,20 @@
+.github/workflows/checks.yml
+  s_eed55c3357b6c3::t_ab32cbccce0ee5 162-164,171,176-188
+  s_eed55c3357b6c3::t_84c7b97730ef99 189-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c260b8d67a7ebcc2eaeb3eb003a1e033b540b4e8",
+  "prompts": {},
+  "sessions": {
+    "s_eed55c3357b6c3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a067d6-703a-7eb2-b72a-f95ba11435c7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
