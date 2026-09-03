@@ -1,0 +1,21 @@
+pnpm-workspace.yaml
+  s_eed55c3357b6c3::t_0c38266d14f34f 4-7,9,16
+pnpm-lock.yaml
+  s_eed55c3357b6c3::t_2c854417ad56ef 9,1806-1807,4416,5066
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a324bb219be7406f0cae1a07cb33259020f22e5f",
+  "prompts": {},
+  "sessions": {
+    "s_eed55c3357b6c3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a067d6-703a-7eb2-b72a-f95ba11435c7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
