@@ -1,0 +1,132 @@
+test/integrations/protocol.test.ts
+  s_db76009bd8008d::t_1aa7599b83995b 108-116,122-130
+test/integrations/session-manager.test.ts
+  s_db76009bd8008d::t_c33ee1e75a0a04 274
+  s_db76009bd8008d::t_6c5c2e31058149 251
+evals/sweqapro/runner_overrides.py
+  s_db76009bd8008d::t_506438ff87d3e2 11,31-32,35-36,38-40,42-73
+src/generation/page-jobs.ts
+  s_db76009bd8008d::t_e304ea8b1a6aa8 12-15,81-85,437,443,461,487,508,521-525,529-530,534-581,585-624
+  s_db76009bd8008d::t_39f417aae35b85 582-584
+  s_db76009bd8008d::t_feaeda973761d2 625
+src/claims/core/types.ts
+  s_db76009bd8008d::t_722c4833bed18b 17-60,79-83,114-118,163-169
+  s_db76009bd8008d::t_310a9b172fce6a 16
+src/retrieval/repository-context.ts
+  s_db76009bd8008d::t_7001801a8d090f 498-535,537-539,541-544,546,552,562-583,590-595,608-609,618,648,661,670
+  s_db76009bd8008d::t_a62dfebd1ac54b 409
+  s_db76009bd8008d::t_84f6d26e9b9e1d 1-2
+  s_db76009bd8008d::t_a1cc0652886b73 410-413,418-459,463-476,479-488
+  s_db76009bd8008d::t_a37738e725dcae 536,619-620
+  s_db76009bd8008d::t_c3cad195d314fd 724-728,736-739,743-750,756-757,759-778,786-827
+  s_db76009bd8008d::t_7f778a5fe8ba7e 210-213
+  s_db76009bd8008d::t_a13f3522239cd1 303-304,306-310
+  s_db76009bd8008d::t_8ee9cdd8981261 21
+  s_db76009bd8008d::t_64bcb54d2f4ff0 58,78,80,132,134
+  s_db76009bd8008d::t_2112cba765bc5e 548,551,596-607,611-617,621,629,659,663-664
+  s_db76009bd8008d::t_9776dcfb776a8f 758,828-829,837-848
+  s_db76009bd8008d::t_f453c5c28ab3a2 830-836
+  s_db76009bd8008d::t_14262b4a92b41f 851-884
+  s_db76009bd8008d::t_deaf7dcd4ed129 950-954
+  s_db76009bd8008d::t_35bb49451a64d6 111,849,1043-1069,1074-1080,1085,1093,1101-1139
+  s_db76009bd8008d::t_8c12b9f5aaa4b5 489-497
+  s_db76009bd8008d::t_6c19747378aaa9 15,18,20,23-36,92-110,195-197
+  s_db76009bd8008d::t_3cd8637bcff847 361-366,368-371,374-378
+  s_db76009bd8008d::t_63968249976d43 962-977
+  s_db76009bd8008d::t_b759e1127bdf24 414-417,460-462,477-478
+  s_db76009bd8008d::t_4c5af8fbd12cdd 314,319
+  s_db76009bd8008d::t_9c41ca075c0046 888,894-895
+  s_db76009bd8008d::t_051a2fc8fd7beb 343-347,553-561,584-589,679,731-735,779-785,902-920,1070-1073
+  s_db76009bd8008d::t_47f531c4f5eab9 5,56-57,79,133
+  s_db76009bd8008d::t_143b08e2865dd7 321,334
+  s_db76009bd8008d::t_fea1dc01a3cfad 22
+  s_db76009bd8008d::t_fd997f8eed49c6 112
+  s_db76009bd8008d::t_aa7fa10fbe7363 850
+  s_db76009bd8008d::t_d886a7f0c107e2 1140
+evals/sweqapro/run.py
+  s_db76009bd8008d::t_a9dcbe635850a8 429-434
+  s_db76009bd8008d::t_2e98f41a5651ce 35-40
+  s_db76009bd8008d::t_ef5e5f522be0ad 540-544
+  s_db76009bd8008d::t_5848b7b2ad4910 34,297-301,304,317-321,348-352,358,369,450
+src/claims/brains/code/session.ts
+  s_db76009bd8008d::t_a796cb0e3bc6ab 596
+src/integrations/core/session-manager.ts
+  s_db76009bd8008d::t_69fadffa7f602a 235
+  s_db76009bd8008d::t_81d642713c9087 270
+src/claims/guidance.ts
+  s_db76009bd8008d::t_8a934b101e7284 16-28,38
+  s_db76009bd8008d::t_446979ea41a7a4 15
+evals/sweqapro/agentic_openwiki_agent.py
+  s_db76009bd8008d::t_0730ac6dc4568e 16,57,123-127,133,141-147,154,165-186
+  s_db76009bd8008d::t_21682b8b00aa95 187
+test/agent/repository-prompts.test.ts
+  s_db76009bd8008d::t_5070ad1e35ad49 138-139
+test/claims/core/mutations.test.ts
+  s_db76009bd8008d::t_889078cb91a826 169-231
+  s_db76009bd8008d::t_2994ffaaecb73f 498
+src/agent/repository-runner.ts
+  s_db76009bd8008d::t_19c02c131826e7 55-66,74,439
+evals/sweqapro/tests/test_agentic_openwiki_agent.py
+  s_db76009bd8008d::t_1429da5013d743 22-25,30,32,35,54,57,59,61-64
+src/claims/core/mutations.ts
+  s_db76009bd8008d::t_0ff3bd4fc47758 6,129-135,209,282-287,339,342-376
+  s_db76009bd8008d::t_b66c2ce7194bdf 106-108
+  s_db76009bd8008d::t_7b71df478293bd 258-262,264
+test/retrieval/repository-context.test.ts
+  s_db76009bd8008d::t_5eec86f99d6a61 498
+  s_db76009bd8008d::t_d6b1f773c5c111 179,500,503-563,569-586,685-687
+  s_db76009bd8008d::t_8f5c0f4ef2e737 1
+  s_db76009bd8008d::t_5832f553130029 499,502,587-590,594-672,677-684
+  s_db76009bd8008d::t_a3d9468ea2e970 591-593,673-676
+  s_db76009bd8008d::t_051a2fc8fd7beb 237-240,475-476
+  s_db76009bd8008d::t_548ca61e636692 181-236,241-247
+  s_db76009bd8008d::t_b759e1127bdf24 564-568
+  s_db76009bd8008d::t_dda6849b070f6a 161-178,402-474,477-497
+  s_db76009bd8008d::t_ce6ef2def18393 747
+  s_db76009bd8008d::t_afa2d859449c25 180,501
+test/claims/brains/code/store.test.ts
+  s_db76009bd8008d::t_9705a35e7b28d9 124-132
+evals/sweqapro/tests/test_runner_overrides.py
+  s_db76009bd8008d::t_b4d51f7b70263a 12-16,34-43,52-65
+  s_db76009bd8008d::t_c319fdd784c0ba 66
+src/claims/brains/code/types.ts
+  s_db76009bd8008d::t_a67cc646f8d0b2 1-5,182-185
+  s_db76009bd8008d::t_4e56d9c28a9787 186
+test/generation/page-jobs.test.ts
+  s_db76009bd8008d::t_b753608a4a6510 247-251,273-277,295-299,324-381
+src/agent/repository-prompts.ts
+  s_db76009bd8008d::t_076141917b03c0 3,161
+  s_db76009bd8008d::t_8235e7f158fa12 162
+src/claims/brains/code/store.ts
+  s_db76009bd8008d::t_675e6e03892016 50-63,72
+  s_db76009bd8008d::t_427fef098d9130 49
+src/integrations/core/protocol.ts
+  s_db76009bd8008d::t_e824551d22261f 6-17,154
+evals/sweqapro/tests/test_run.py
+  s_db76009bd8008d::t_f1b91d22a0ccdc 97-102
+  s_db76009bd8008d::t_6e43626c6128ff 10,51-66,119-140
+  s_db76009bd8008d::t_e262beecae710a 141
+evals/sweqapro/summary.py
+  s_db76009bd8008d::t_fd2f74e89cd4e9 140
+  s_db76009bd8008d::t_23c4f62fcec242 38-43,52-57,80,91-139,141-185
+  s_db76009bd8008d::t_64323b5d7fb95a 186
+src/integrations/mcp/server.ts
+  s_db76009bd8008d::t_78f7aad8f04fb5 15
+  s_db76009bd8008d::t_867b8c5af836ab 3-6,25-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a4ae54a4ffc3a779613b2290844a3002b42e28c9",
+  "prompts": {},
+  "sessions": {
+    "s_db76009bd8008d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05fac-b902-7ce2-af5c-42fcad07e78b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
