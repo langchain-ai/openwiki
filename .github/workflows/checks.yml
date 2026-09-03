@@ -159,9 +159,25 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # `pnpm audit` calls npm's retired quick-audit endpoint (HTTP 410), so we
-      # scan the lockfile with Trivy instead. `severity: HIGH,CRITICAL` +
-      # `exit-code: 1` preserves the previous `--audit-level=high` gate.
+      # scan the lockfile with Trivy instead. Keep the blocking gate in table
+      # mode so Trivy applies the severity filter to the exit code and prints
+      # the vulnerable package in the job log.
       - name: Audit dependencies
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: false
+
+      # Generate all-severity SARIF for the Security tab separately from the
+      # blocking gate. Trivy's SARIF mode intentionally builds the report with
+      # all severities unless limit-severities-for-sarif is set.
+      - name: Build Trivy SARIF report
+        if: always()
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -169,8 +185,7 @@ jobs:
           scanners: vuln
           format: sarif
           output: trivy-results.sarif
-          severity: HIGH,CRITICAL
-          exit-code: "1"
+          exit-code: "0"
           ignore-unfixed: false
 
       # Populates the Security tab. Fork PRs run with a read-only GITHUB_TOKEN
