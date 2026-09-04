@@ -1,0 +1,57 @@
+src/cli/cli.tsx
+  s_6beac10ac66cdc::t_eee43326cc097d 29,81-83
+test/cli/run-status-command.test.ts
+  s_6beac10ac66cdc::t_eee43326cc097d 1-197
+test/generation/repository-run.test.ts
+  s_e907eac4ca09d8::t_6f5df4ae1e920b 99,1730-1796
+  s_e907eac4ca09d8::t_179722e3de385e 1688-1729,1797-1798
+test/consumption/read.test.ts
+  s_6beac10ac66cdc::t_d9e4eab5492c6d 80-106
+  s_6beac10ac66cdc::t_73114b7ed79e3d 71,73-79,107-117,119
+test/cli/telemetry-cli.test.ts
+  s_6beac10ac66cdc::t_eee43326cc097d 14,22
+src/cli/run-status.ts
+  s_6beac10ac66cdc::t_97b1b559b7288c 10
+  s_6beac10ac66cdc::t_eee43326cc097d 1-9,11-37
+test/agent/wiki-link-validator.test.ts
+  s_e907eac4ca09d8::t_179722e3de385e 378-405
+src/agent/wiki-link-validator.ts
+  s_e907eac4ca09d8::t_179722e3de385e 23-28,333,337-351,361-402,408-430
+  s_e907eac4ca09d8::t_674fc0443383f0 403-407
+  s_e907eac4ca09d8::t_53a88998638282 431
+src/cli/commands.ts
+  s_6beac10ac66cdc::t_eee43326cc097d 145,183-192,1143,1203-1207,1325
+src/generation/repository-run.ts
+  s_e907eac4ca09d8::t_6f5df4ae1e920b 1607,1649-1681
+  s_e907eac4ca09d8::t_4aa1d7d5853c1a 1682-1683
+test/integrations/mcp-server.test.ts
+  s_6beac10ac66cdc::t_73114b7ed79e3d 467-476,478
+  s_6beac10ac66cdc::t_d9e4eab5492c6d 477
+src/consumption/read.ts
+  s_6beac10ac66cdc::t_d9e4eab5492c6d 196-201,204
+  s_6beac10ac66cdc::t_73114b7ed79e3d 11,42,177,194-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "62ce979e9c4c2fec77476e4b58e18778fcc0761e",
+  "prompts": {},
+  "sessions": {
+    "s_6beac10ac66cdc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06ae6-0228-7bb2-ba5b-4926c601d8be",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_e907eac4ca09d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06965-cfcf-7e82-8f87-bf7b78cfbd70",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
