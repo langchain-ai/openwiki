@@ -1,0 +1,23 @@
+integrations/openwiki/SKILL.md
+  s_e907eac4ca09d8::t_2de0e4e564dcb4 18-23
+AGENTS.md
+  s_e907eac4ca09d8::t_2de0e4e564dcb4 18-21,34-35
+CLAUDE.md
+  s_e907eac4ca09d8::t_2de0e4e564dcb4 18-21,34-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6234e7242d149f61948a20d6f5e14730af28329c",
+  "prompts": {},
+  "sessions": {
+    "s_e907eac4ca09d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06965-cfcf-7e82-8f87-bf7b78cfbd70",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
