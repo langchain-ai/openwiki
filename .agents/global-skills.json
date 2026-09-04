@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "project": "openwiki",
+  "globalRoot": "~/.agents/skills",
+  "generatedBy": "global-skills/scripts/bridge-project.mjs",
+  "discovery": [
+    "Devin global skill root",
+    "Claude global skill root",
+    "Codex ~/.agents/skills"
+  ],
+  "windsurfBridge": ".windsurf/skills -> ~/.agents/skills"
+}
