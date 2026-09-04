@@ -1,0 +1,101 @@
+test/integrations/session-manager.test.ts
+  s_e907eac4ca09d8::t_28d4a9b3784f36 174
+  s_e907eac4ca09d8::t_6db81eacb1994b 170-173,175,263
+  s_e907eac4ca09d8::t_e2bdd4f5b7d1f9 169
+src/consumption/read.ts
+  s_e907eac4ca09d8::t_d81e99307d3aa6 21
+  s_e907eac4ca09d8::t_8c9813a751b48a 12,27-30,173
+test/consumption/outline.test.ts
+  s_e907eac4ca09d8::t_743a9abccdacbe 1-41,43-84
+  s_e907eac4ca09d8::t_b798ba1c69fcb8 42
+test/integrations/skill.test.ts
+  s_e907eac4ca09d8::t_6db81eacb1994b 59
+src/cli/commands.ts
+  s_66d42845acbc06::t_f727d48a1902c7 145
+  s_66d42845acbc06::t_2f989a980d6b65 1148,1335
+  s_66d42845acbc06::t_662df39fdae775 184-195
+  s_66d42845acbc06::t_f2badbc1dcf7f4 1302-1306
+  s_66d42845acbc06::t_a72989119c1a34 1209,1211
+AGENTS.md
+  s_e907eac4ca09d8::t_d3c9db91c35444 20-21,23,25-30,33
+src/consumption/types.ts
+  s_e907eac4ca09d8::t_8c9813a751b48a 17-22,24-25,46
+  s_e907eac4ca09d8::t_7fb94b38b1cd33 23
+test/ingestion/code-mode.test.ts
+  s_e907eac4ca09d8::t_a1bf3da58ba9b4 149-155
+test/consumption/read.test.ts
+  s_e907eac4ca09d8::t_743a9abccdacbe 80,106
+test/consumption/orient.test.ts
+  s_e907eac4ca09d8::t_743a9abccdacbe 41,55,77-80
+  s_e907eac4ca09d8::t_e578793a2f85f6 32-33
+src/cli/run-status.ts
+  s_66d42845acbc06::t_00b276136e784d 1-6,10-65,70,72-75,79,82-91
+test/cli/run-status-command.test.ts
+  s_66d42845acbc06::t_a1b90942172a68 122,129-130
+  s_66d42845acbc06::t_10ff607f33b4a1 23
+  s_66d42845acbc06::t_777d64b3ffe4cd 123-124
+  s_66d42845acbc06::t_0a73b7d4c2d9d8 201-256
+  s_66d42845acbc06::t_10fd04d4bcf600 120,125-128,134,136-143
+src/integrations/mcp/server.ts
+  s_e907eac4ca09d8::t_d1a2a09234a098 13-21
+test/integrations/mcp-server.test.ts
+  s_e907eac4ca09d8::t_6db81eacb1994b 109-113,164,175,178,191,451-461
+  s_e907eac4ca09d8::t_d15532246f4a80 108
+  s_e907eac4ca09d8::t_6656e565003f74 462
+src/consumption/outline.ts
+  s_e907eac4ca09d8::t_7fb94b38b1cd33 3,9
+  s_e907eac4ca09d8::t_8c9813a751b48a 1-2,4-8,10-12
+src/consumption/metadata.ts
+  s_e907eac4ca09d8::t_8c9813a751b48a 11,42-58,61-62
+  s_e907eac4ca09d8::t_7fb94b38b1cd33 10,59
+src/integrations/core/protocol.ts
+  s_e907eac4ca09d8::t_75c7646239f14e 16,30-36,190-194
+  s_e907eac4ca09d8::t_48b27f51c44404 195-197
+src/integrations/core/session-manager.ts
+  s_e907eac4ca09d8::t_75c7646239f14e 3,19,29,233-238,255,259-266,270
+CLAUDE.md
+  s_e907eac4ca09d8::t_d3c9db91c35444 20-21,23,25-30,33
+.changeset/clever-claims-ask.md
+  s_e907eac4ca09d8::t_d3c9db91c35444 5
+CONTRIBUTING.md
+  s_e907eac4ca09d8::t_d81e99307d3aa6 57-60
+integrations/openwiki/SKILL.md
+  s_e907eac4ca09d8::t_d3c9db91c35444 22-28
+test/integrations/protocol.test.ts
+  s_e907eac4ca09d8::t_5704235e423157 5,132,138-146,161-166
+  s_e907eac4ca09d8::t_909ec79f7b147f 167
+README.md
+  s_e907eac4ca09d8::t_6986a2f0706185 111-116,126
+src/consumption/page.ts
+  s_e907eac4ca09d8::t_8c9813a751b48a 1-50
+src/cli/cli.tsx
+  s_66d42845acbc06::t_c603e5da6ceb30 82
+src/consumption/orient.ts
+  s_e907eac4ca09d8::t_8c9813a751b48a 49,61
+src/ingestion/code-mode.ts
+  s_e907eac4ca09d8::t_d3c9db91c35444 413-414,416,418-423,426
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a469a5fc5e46359bf8c8bbf0496cd8e92f284c89",
+  "prompts": {},
+  "sessions": {
+    "s_66d42845acbc06": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "035ddad6-f7f5-4d14-abf2-7e6f9228d35e",
+        "model": "grok-4.6"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_e907eac4ca09d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06965-cfcf-7e82-8f87-bf7b78cfbd70",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
