@@ -66,6 +66,8 @@ Keep it current automatically by adding a scheduled CI job that opens a docs PR 
 - **GitLab CI:** copy [`openwiki-update.gitlab-ci.yml`](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your pipeline.
 - **Bitbucket Pipelines:** copy [`openwiki-update.bitbucket-pipelines.yml`](./examples/openwiki-update.bitbucket-pipelines.yml) into `bitbucket-pipelines.yml`, then schedule the `openwiki-update` pipeline.
 
+To deploy OpenWiki as a continuously improving research brain for a particular topic, start with the [Managed Deep Agents topic-brain example](./examples/mda-topic-brain/README.md). It includes web search, shared knowledge, a Slack interface, and optional read-only Slack and Notion MCP connectors.
+
 > [!NOTE]
 > On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
 
