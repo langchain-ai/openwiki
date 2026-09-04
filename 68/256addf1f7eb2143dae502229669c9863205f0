@@ -1,0 +1,23 @@
+test/integrations/installer.test.ts
+  s_e907eac4ca09d8::t_d5fae37e6f4005 683-692,698-707
+  s_e907eac4ca09d8::t_3fe33f119026e1 693-697
+src/integrations/install/skill-bundle.ts
+  s_e907eac4ca09d8::t_d5fae37e6f4005 262-263,265,297-301
+  s_e907eac4ca09d8::t_0a80f29b620c3b 302-304
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "68256addf1f7eb2143dae502229669c9863205f0",
+  "prompts": {},
+  "sessions": {
+    "s_e907eac4ca09d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06965-cfcf-7e82-8f87-bf7b78cfbd70",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
