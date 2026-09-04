@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:367518f4b0a14d1f876dfa7f74ec5c798692ee148bdee0d0d7f2dc810e70f9c3",
+  "pageVersion": "sha256:7efd74f3cb9705a3deb5f0853935ee9886520e0acc45be0d640b6b3f298557ae",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
       "statement": "OpenWiki's test suite is run by Vitest, using the vitest runner and @vitest/coverage-v8 as dev dependencies rather than any separate test framework.",
       "evidence": [
         {
-          "resource": "repo://package.json#L108-L118",
-          "version": "repo-lines-v1:sha256:6ee9bcc6f51ebfe9c9f897beaa9fe6f20c4625ba155a3666911a9131f2fb6ccc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlMmI5ODFiNjY3NDNlMjZmNDEzY2U4MGVlYmViMzg1ZmNmOGZjOWFlOWFkMTYyZmY4YmZjMGY0YzZjNjU2OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYjQyYmEyMDQ2MTUyMWY3NzFkZGJhNTNlMzIzOWI0OTZmYmVjODNkYzk4YmE3N2U5YTVkZmIyNjhmYzk3ZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MmUzOGM0NDQ0ZjRmYzhmM2I1M2NhZjkwOWE3MTUyNDYyZTcyMzRjMjM1YTQ2ZDdjZThkM2ZiYmE1YWY3ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlODYwMGZjMTk1NzIxMTI1ZjY4YTE4YjYxYmQyNzE3ZDI4OGRmYTllNzcxYTAzOWRmNmU5NzYwZWY2MmU2ZDAifQ"
+          "resource": "repo://package.json#L101-L119",
+          "version": "repo-lines-v1:sha256:bd25e87dfadec88c0672d20cb07e61a7ad7caa968b020163d4156946d24eab6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NzYxMWQ0YWM4YTI1ODgyMDA5M2NjZmNhNDQ2MDNhODQ1YTE5OWJiMTkyNjNlNGY3MTE0NjNjNGNhM2U4M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwYzY4NTE2MDUyOWZmYWJjYzMyMTIxZThlNmU2MDM4OWY5NzgxYzM3OTg4NDAxNzAxY2MzNDkyOWU4ODc2ZjAifQ"
         },
         {
           "resource": "repo://vitest.config.ts#L1-L18",
@@ -344,19 +344,23 @@
     },
     {
       "id": "claim_56ba77b4ae3c4fe1a7aac085cb98419b",
-      "statement": "test/visualize/client-interaction.test.ts runs under @vitest-environment jsdom to test the browser-only src/visualize/client.ts: it mounts a minimal DOM, replaces the ForceGraph/marked/DOMPurify/mermaid/ResizeObserver/fetch globals with recording stubs, imports the client under data-static-export, and asserts the issue #670 regression that background clicks are not wired to any handler (so clicking blank graph space never clears the reader) while node clicks select a page and highlight its sidebar entry.",
+      "statement": "test/visualize/client-interaction.test.ts runs under @vitest-environment jsdom to test the browser-only src/visualize/client.ts: it mounts a minimal DOM, replaces the ForceGraph/marked/DOMPurify/mermaid/ResizeObserver/fetch globals with recording stubs, imports the client under data-static-export, and asserts the issue #670 regression that background clicks are not wired to any handler (so clicking blank graph space never clears the reader) while node clicks select a page and highlight its sidebar entry. It also asserts the graph-label decluttering feature driven by shouldShowNodeLabel: no labels are painted by default, hovering a node draws only that node's label, and clicking a node draws its label plus the labels of its directly connected neighbours, by calling the registered onNodeHover/onNodeClick handlers and painting every node through the recorded nodeCanvasObject handler to collect the fillText calls.",
       "evidence": [
         {
           "resource": "repo://test/visualize/client-interaction.test.ts#L1-L13",
           "version": "repo-lines-v1:sha256:30d0535520c5432946ba2b15519075141a8d3f04671caec6b624e2fcb939b019:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNTE3MjMxODg0ZjVhZWU3NWRkM2IwNTA5ZjEwYjMxOGM4N2QxOWY3ZjNkNDlhNDUyZjg2ZWM1ODNiMzgxY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmODQ2YjU1MTExN2U3OTM2MTVjOGNkZjhiZTMwYjZhNWI4M2FkZWNjODU0ZTBmNTZlZmZlNDZlZDk1ZTNiNGMifQ"
         },
         {
-          "resource": "repo://test/visualize/client-interaction.test.ts#L167-L198",
-          "version": "repo-lines-v1:sha256:64d705b89852f30d16357d1097d65ea6065f570dc72548d81f47941ea1354cd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNTY5MTY2NzUwMTdmZjI1NWQ3MTdiNGY0ZTcyZGI3ZjhmYWRmNzIwMWY4ZWIyZDBkMGMzMTUxZmUzNzZhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NTk5NWIwYmVhZDU1NzBhODk0OGIzOTRkYmNlMzhhNTRlNmE1MGM1ZDA0ZmIzNmNhNWJkOGJjOTU2ODg5YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://test/visualize/client-interaction.test.ts#L204-L224",
+          "version": "repo-lines-v1:sha256:40befd9bc93c6eaa0f6979a52981953a2ae1b2b300fc8997dc2d8cadc749d30e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MmUzYzg3YjU3NjVjZDU1MzdhM2RmMDY2NzM0MzEzNWI3OTM1YmJhZmM4Zjc1ZjM5MDJkZWEzOTRkZjkyY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZmNjYjc0ZTViMTNiYjk0NWJlNGNlNjI2YWIxMWVhM2MyZDM2MjgyNWJiNjE1MDU5NDA4MDgxZWMzYWU2NGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3YWI5MzEzMTVjOTFmYjIyZTA3ZmQ3YjU4ZjkwZGVjZjMwYmMxNDBiNTEzYWRlYzg2NzRiMzA5MTYyY2ZhYjQifQ"
         },
         {
-          "resource": "repo://test/visualize/client-interaction.test.ts#L55-L151",
-          "version": "repo-lines-v1:sha256:0fec58585915c3e635ac17e271f18c6f452d4478d7a43279569748994681e7f7:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YzZhYWVkNDM3MDA4NDk2NWFjODE0ZDYxNzY5OWJjMzc1YzM0MDliMDQ2ZDIxODFiNzY4MmVkZDZiZGQ3NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZmZkZjJhOWE1YzEzMzI4ZTY5ZTBjZDI4OWI4MmJjODQ3YmI3YTgyYzIxYjA2MTJiMWM5NDZhZmJjZWRmZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3YWI5MzEzMTVjOTFmYjIyZTA3ZmQ3YjU4ZjkwZGVjZjMwYmMxNDBiNTEzYWRlYzg2NzRiMzA5MTYyY2ZhYjQifQ"
+          "resource": "repo://test/visualize/client-interaction.test.ts#L248-L272",
+          "version": "repo-lines-v1:sha256:52980d10f93ad15a75c35329863b481e0591515eac34db7d94181ed027f4b084:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiOGU0Zjg1YzJiMmVmMDI5ODczYzExMDFiMzVmZTdkOTY5OTkwYWIzZTJjOTAwZGQ5NWFhNzQxMWE2ODVlNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMzM2YTE5Y2E1MDlhMjI4ZGRkMGQyNmRhYTAwMmZlMjdiYTA5OWNlY2FjZTdhYjE5M2IyMWJhZGUxZWE0MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxNmEzNmJjZWE4ZDExM2ZlNTRkMGU0ZWU5NjA0NWVjM2NkOWNmOGYzZTMyOGNmZjlmMzI1ZGQxMDVhYTFkZDkifQ"
+        },
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L274-L295",
+          "version": "repo-lines-v1:sha256:b318d0013ffea6d6f00ca6ce2cdfa9fe652a66c7cc337bed2ea18a5fadb1a367:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZDA4Mzg1MTVkZWQwZDc2MWNiYzQzZDk5ZTE1YjY1YzU4NWY2YmM4ZmNmOTY0NjEyZjVlMmI2MmEwMDk0YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMTYwMmFjZmI3Yzk2NzIwOGM2N2YwYmY1ZmZjYjlmODFkMjk2M2RmYTJlNzFjNGU4ZjVlNzNlZTVkM2QzMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
     },
@@ -595,6 +599,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-02T08:09:44.873Z"
+    "at": "2026-09-04T08:13:11.978Z"
   }
 }

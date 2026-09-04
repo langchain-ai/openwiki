@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:316b06ac0e020cbf8d00d253245b293aa04cc74502b99b8de4f13910a88d8d3a",
+  "pageVersion": "sha256:93bea3be8c2959855ba281da34ae8d7cfa5b5c3011ecacff8e25994607ab5cd2",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -187,12 +187,12 @@
       "statement": "The browser client renders three coordinated views from the graph — the force-directed canvas, a type/color legend, and a per-type sidebar page index — and selecting a node opens it in the reader without moving the camera.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/client.ts#L404-L470",
-          "version": "repo-lines-v1:sha256:3b79a616649bad7f5c8db3bc3376d859f03692b1a762115f2ef49f2b93034671:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMjI3ODk4YmUyYzQ1ZTIyMzkxMGE0NzViZDczYjFhZGI3NjRkYTRlM2E1MmQwMGNmOWZmNDE0M2I0MGNiMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhZDI3ODcwNzA0Y2JmYjU3N2Y4NzhlMDgzYTgzZDNkMzQwYTE3NWM1NTk1NmZiNGM1OGQ5MzUxNGFjYmI1MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliNzgzMGY4M2ExMTI2YzQyOTRjYzkyYzAxMjE1MzBmNjdmODU3ZTM0ODYxZmE4ODc2NzcxNDQ5ZjRhNWUyY2UifQ"
+          "resource": "repo://src/visualize/client.ts#L404-L466",
+          "version": "repo-lines-v1:sha256:39cdf92370c6a5eab5b03031e5ee2772e21744e595b4d962841b3c9217cd9625:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ODVmMWExNmU4ZGVmYmRlMDkxNmQyYzk2YjI2MWJhNWYyMGVhODM0M2E4NjBlMDFiMDAzYTc1NTYwNjc0ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliNzgzMGY4M2ExMTI2YzQyOTRjYzkyYzAxMjE1MzBmNjdmODU3ZTM0ODYxZmE4ODc2NzcxNDQ5ZjRhNWUyY2UifQ"
         },
         {
-          "resource": "repo://src/visualize/client.ts#L653-L665",
-          "version": "repo-lines-v1:sha256:5eb3c3e3ee8cd4689303af2a98dd7e0f27b9161aff34801f999ebfaa914f1fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZWZmOWQ5OWE5MzBhNmQ5OTA4M2M5YzM5OTc3MmM1YzM0ZDc3Y2Q5ZmQwZTM5MTEwMTIyYTU0ZjZjMjU4Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljNjY2ZjBjMTQxYmM4YmI0ZjY1OWEwMjI0NjhiNjEwNzk0MzZhNjdhYWUyMjY1YWQ1MzU0ZjhmMDU5MTdlNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2Y2ZhZjhlM2Q2NDBlMzdiNDE0ZTBhZjhjOTVlOTIxMDI3YTRjYzY0NWFlZmY1YjQ4YTg1NTQyMjNiMTgxYjgifQ"
+          "resource": "repo://src/visualize/client.ts#L660-L670",
+          "version": "repo-lines-v1:sha256:d398550fa2bc27eec01b3e82d57c4764185aea1610754cd447adfc61e0196385:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MjdjODNkOWQ4YjMzYTFlZTU4MWY3NzFjNzE1ODQ0ZDliODQxODZiMGM2MDcxMWU5NTU1ZjU3MTEzODMwMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhMWU0YjQ3MGU3MDcyNDE3YmQ3ZDM5YmZjMTY3NmZhYWNjZjVkNjdjNmQ4MTE2ZTJmZjIzNjgyYTcyYTJkNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         }
       ]
     },
@@ -268,15 +268,15 @@
     },
     {
       "id": "claim_29e0770df00e467099e8d6fa48bd2503",
-      "statement": "Pure DOM-independent client helpers (escapeHtml, colorsForTypes, nodeRadius, signature, matchesFilter, normalize, stripFrontmatter, hexA) are isolated in client-lib.ts so they can be unit-tested without a browser.",
+      "statement": "Pure DOM-independent client helpers (escapeHtml, colorsForTypes, nodeRadius, signature, matchesFilter, normalize, stripFrontmatter, hexA, and shouldShowNodeLabel with its NodeLabelContext interface) are isolated in client-lib.ts so they can be unit-tested without a browser.",
       "evidence": [
         {
           "resource": "repo://src/visualize/client-lib.ts#L47-L156",
-          "version": "repo-lines-v1:sha256:47df5f3d54631cf42bc2b23c2fddd848bdbf95f3a3fbc23df14769d4663de5b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MGFhN2JjMTJhM2ViOTI2MWQxNmEwMmRkMGM1MmI4YmY5NjI1ODZiMThmYjIxNDBiZjVlYTM4NzZlMTBmOTQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "version": "repo-lines-v1:sha256:5946b02ab9fc25485a8efa3aa23d92f84d02a72a6b1f56d435872022905875d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwNzAwZmM4NDFhMTY1NDA4N2Y1Mzg3YjY4NzVhY2FhYjM1N2RmODAyNjU1OTg3MmVmMGJkODI1YmFmNDJmNjdmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MGFhN2JjMTJhM2ViOTI2MWQxNmEwMmRkMGM1MmI4YmY5NjI1ODZiMThmYjIxNDBiZjVlYTM4NzZlMTBmOTQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMmJmMzYzYjE5YWI1MTUyODY4NmEzMWI3ZDEyNTc2ZTY1NjIzMmFmMWY3MzBhMGU0OTkxZDIwMGVmNWY4N2U1In0"
         },
         {
-          "resource": "repo://test/visualize/visualize-client-lib.test.ts",
-          "version": "repo-file-v1:sha256:a2090389e887f89957a26c973659a70b24b5a48cdd018fda9815be8577aedfac"
+          "resource": "repo://test/visualize/visualize-client-lib.test.ts#L1-L127",
+          "version": "repo-lines-v1:sha256:2c865bca6fde0b74139b3cbb0c870d9dd4dd43743ed2a862681ed720f4ec48fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4M2FhNTY2NzFmOGNjNDQyM2U4ZjdlNDQyYjA5NmJlZTZkMDk4ZWI3OWE3YTliNTkwMDJjOTNiZTFkNjgwNDRjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NWYwNzY2MzFkOGVkZmNlNDZhYWU3MDRlZTNjZGU3NThhNzlhZTk1ZWExMzQ2NDk4ODRjNmY2MmQyMDZlNGYyIn0"
         }
       ]
     },
@@ -379,10 +379,32 @@
           "version": "repo-lines-v1:sha256:a2630875b35b8cfecb7fd67f126b0b6432af3e7545b5ef2365f2f4329c2cc65f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiOGU0Zjg1YzJiMmVmMDI5ODczYzExMDFiMzVmZTdkOTY5OTkwYWIzZTJjOTAwZGQ5NWFhNzQxMWE2ODVlNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMzM2YTE5Y2E1MDlhMjI4ZGRkMGQyNmRhYTAwMmZlMjdiYTA5OWNlY2FjZTdhYjE5M2IyMWJhZGUxZWE0MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNjE5MGNiMTFiMGYyMWUzZjY2NDJjNmQzYzc4MDI3MDJjYjFiMWE5N2VjNWQzYTc3MGJhZDBmMTZiNTljNDEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f1125eb372374c6c996a5655589f29d5",
+      "statement": "Graph canvas labels are contextual, not always-on: by default no node labels are painted (the sidebar index is the always-visible page list); paintNode consults the pure shouldShowNodeLabel helper with the current selection, hover, and neighbourhood state, so hovering reveals only the hovered node's label and selecting a node reveals its label plus its directly connected neighbours' labels, while unrelated nodes never show labels; hoverHighlight is suppressed while a selection is active so the selected neighbourhood's labels hold.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L100-L133",
+          "version": "repo-lines-v1:sha256:e582709d528350bb9d39505f1fea0227cbd72a7b7890fc3d5546459a8bdba889:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1MTk0YjdmYjdmMGUzNGY4OTY0ZDFmZWYxZmJlNzQ3ZDM0ODE5YWJlZjMzMGJmYTVkMzdkNTcxNjZmM2IxNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhOTBlYzY1MmEzZTlkZTE0MjgzYWVlNDNlODRkODVjMjQ0Y2JmZjNjMGRlYTAzNzMzNTE0ZjJlMDg0ZTZhYWQifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L599-L621",
+          "version": "repo-lines-v1:sha256:18f480b247e4110d9fd04535d001a952ad2ce292401e412b049836c77f959148:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzNDI5OGJkNjhkYmZkYTQzZDgzYjdlMmViMDM0NTM4ZWE0MGZhODcwZTA1ZGRjZWNkYjQ2MzA0MDEzMzFkZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiZDYxOGMzNTlmNzU0NWVlNWZhZGJmNTE3YWE2YzI0YTgzN2Q4ODliOTAwMzI0MjJmYmJiZTBmZTk0MzA1N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExMWRlYTA2ZTNkMGI5NDI0Zjk3NjE0MmI5ZTNmYmExZDRhOTQzNGRmZWY4ODUyYmZkZDNmYzM1N2E2MDI4MzUifQ"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L648-L656",
+          "version": "repo-lines-v1:sha256:7fe0f80f9db54af8932670c74c8cd5e14f12d48c8fb012633ad0b1524c35691d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmQwZjJkM2EzYWFkYTI3NTg2NDU3OGQwYTQzOTE1NjM4ZDU0M2ZlY2EyYzk0ODU4ZGI5NDEyMTFlODZjZWYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGExZTRiNDcwZTcwNzI0MTdiZDdkMzliZmMxNjc2ZmFhY2NmNWQ2N2M2ZDgxMTZlMmZmMjM2ODJhNzJhMmQ3MiJ9"
+        },
+        {
+          "resource": "repo://test/visualize/client-interaction.test.ts#L274-L296",
+          "version": "repo-lines-v1:sha256:f7740d1b4cc819570a4531b093bc408f5ac9007539598980c9d6475ae9727069:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZDA4Mzg1MTVkZWQwZDc2MWNiYzQzZDk5ZTE1YjY1YzU4NWY2YmM4ZmNmOTY0NjEyZjVlMmI2MmEwMDk0YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMTYwMmFjZmI3Yzk2NzIwOGM2N2YwYmY1ZmZjYjlmODFkMjk2M2RmYTJlNzFjNGU4ZjVlNzNlZTVkM2QzMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.0",
-    "at": "2026-08-26T22:32:29.466Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-04T08:13:11.978Z"
   }
 }

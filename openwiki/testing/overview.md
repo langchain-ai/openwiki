@@ -80,10 +80,10 @@ sources:
     resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-02T08:09:44.873Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-04T08:13:11.978Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-02T08:09:44.873Z
+    at: 2026-09-04T08:13:11.978Z
 ---
 
 # Testing Guide
@@ -404,7 +404,14 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   `data-static-export`, and asserts on the handlers it registers. Its primary
   target is the issue #670 regression: background clicks must not be wired to
   any handler, so clicking blank graph space never clears the reader, while
-  node clicks select a page and highlight its sidebar entry.
+  node clicks select a page and highlight its sidebar entry. It also asserts
+  the graph-label decluttering feature driven by `shouldShowNodeLabel`: by
+  default no labels are painted, hovering a node draws only that node's label,
+  and clicking a node draws its label plus the labels of its directly
+  connected neighbours. These assertions call the registered
+  `onNodeHover`/`onNodeClick` handlers and then paint every node through the
+  recorded `nodeCanvasObject` handler, collecting the `fillText` calls to
+  verify exactly which labels appear.
 
 ### Integrations: protocol, session manager, and MCP server
 
