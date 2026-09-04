@@ -1,0 +1,108 @@
+src/claims/brains/code/preflight.ts
+  s_2dfebe0ca8f3c9::t_1f680b0724988c 56-64
+test/generation/page-jobs.test.ts
+  s_2dfebe0ca8f3c9::t_bdfbe22e8d8c0b 200-202,293,299,362-422
+  s_2dfebe0ca8f3c9::t_4a28c9e918a7f3 423
+src/integrations/mcp/server.ts
+  s_2dfebe0ca8f3c9::t_4c7888e3272ef4 11-17
+test/retrieval/repository-wiki.test.ts
+  s_2dfebe0ca8f3c9::t_28f0b84580386a 1-80,92,94-96,108,120-205,212,214,216-233,240-248,252-254
+  s_2dfebe0ca8f3c9::t_732e609b403bfe 81-91,93,97-107,109-119,206-211,213,215,234-239
+  s_2dfebe0ca8f3c9::t_739266d5d7cf0d 249-251
+test/claims/brains/code/runtime.test.ts
+  s_2dfebe0ca8f3c9::t_bdfbe22e8d8c0b 115,195,258,347,411,483
+  s_2dfebe0ca8f3c9::t_732e609b403bfe 139,371
+src/agent/repository-prompts.ts
+  s_2dfebe0ca8f3c9::t_531e893d5c8d71 156-159
+src/integrations/core/protocol.ts
+  s_2dfebe0ca8f3c9::t_cf084537399a7c 12
+  s_2dfebe0ca8f3c9::t_c9d72ba16fb744 15-17,87-104,201
+  s_2dfebe0ca8f3c9::t_6fb4f7e876189c 154
+test/integrations/mcp-server.test.ts
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 274
+  s_2dfebe0ca8f3c9::t_6d10a81b35c823 178-181
+  s_2dfebe0ca8f3c9::t_2e8daef22192a1 115-118,130,135-142,184-188,190-201
+  s_2dfebe0ca8f3c9::t_c4afbbab04f51a 151-153
+  s_2dfebe0ca8f3c9::t_c0b2383b5dd9d1 264-266
+  s_2dfebe0ca8f3c9::t_cf084537399a7c 2,97-114,119-129,131-134,143-150,154-177,182-183,189,202-207
+src/claims/brains/code/types.ts
+  s_2dfebe0ca8f3c9::t_50ba719ce99e64 117,174-178
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 139-140
+  s_2dfebe0ca8f3c9::t_112a073a6f52a0 179
+test/claims/brains/code/preflight.test.ts
+  s_2dfebe0ca8f3c9::t_2e8daef22192a1 193-226
+  s_2dfebe0ca8f3c9::t_c5dae6a6262675 68
+src/claims/brains/code/session.ts
+  s_2dfebe0ca8f3c9::t_31fc1670f480d4 608
+src/ingestion/code-mode.ts
+  s_2dfebe0ca8f3c9::t_7d013350dbd0a7 412-413
+test/integrations/skill.test.ts
+  s_2dfebe0ca8f3c9::t_c0b2383b5dd9d1 78,80
+  s_2dfebe0ca8f3c9::t_739266d5d7cf0d 79
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 112
+integrations/openwiki/SKILL.md
+  s_2dfebe0ca8f3c9::t_531e893d5c8d71 68-73
+  s_2dfebe0ca8f3c9::t_4c7888e3272ef4 8-9,11-12,18-23,26,28,51-52,74,76
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 135-136,142-143
+src/integrations/core/session-manager.ts
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 314
+  s_2dfebe0ca8f3c9::t_2a620a0622060a 11-15,21-23,56-62,94-96,104-109,113,142,146-169,267,273-292,294-296
+  s_2dfebe0ca8f3c9::t_6fb4f7e876189c 293,329
+test/ingestion/code-mode.test.ts
+  s_2dfebe0ca8f3c9::t_7d013350dbd0a7 147-150,153
+src/claims/guidance.ts
+  s_2dfebe0ca8f3c9::t_531e893d5c8d71 19,21,23
+test/agent/repository-prompts.test.ts
+  s_2dfebe0ca8f3c9::t_540537a5707cec 146,148
+src/retrieval/repository-wiki.ts
+  s_2dfebe0ca8f3c9::t_18ec2139f53f57 1-2,7,12-46,48,50-73,76-101,103-117,121,129-131,135,139-179,184-187,191-215,217,219-237,251-262,269-279,282-286
+  s_2dfebe0ca8f3c9::t_739266d5d7cf0d 3-6,74-75,180-183,188,190
+  s_2dfebe0ca8f3c9::t_26a2a4dba7bae1 8-11,47,49,102,118-120,122-128,132-134,136-138,189,216,218,238-250,263-268
+  s_2dfebe0ca8f3c9::t_31fc1670f480d4 280-281
+src/markdown/sections.ts
+  s_2dfebe0ca8f3c9::t_26a2a4dba7bae1 1-71
+test/generation/repository-run.test.ts
+  s_2dfebe0ca8f3c9::t_2e8daef22192a1 1475-1532
+  s_2dfebe0ca8f3c9::t_bdfbe22e8d8c0b 575,2087
+src/claims/core/mutations.ts
+  s_2dfebe0ca8f3c9::t_6c47ea6fb79074 104-106
+  s_2dfebe0ca8f3c9::t_cfa4eb7acfffdb 127-130,190-195,259-263,275-276
+  s_2dfebe0ca8f3c9::t_540537a5707cec 265
+  s_2dfebe0ca8f3c9::t_70e2c727963053 277
+src/claims/brains/code/store.ts
+  s_2dfebe0ca8f3c9::t_50ba719ce99e64 55
+src/generation/page-jobs.ts
+  s_2dfebe0ca8f3c9::t_d5c84f1910bde3 70-74,90-92,256,285,413,422-437,459-465,482,492,497,504-505,507-518,520,524,551,576,597-598,611-625
+  s_2dfebe0ca8f3c9::t_af5847a0828a7d 69
+src/generation/repository-run.ts
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 412
+  s_2dfebe0ca8f3c9::t_b8a5cf728fa3bf 33,37,1253-1260,1382
+src/agent/repository-runner.ts
+  s_2dfebe0ca8f3c9::t_6fb4f7e876189c 60,440
+  s_2dfebe0ca8f3c9::t_9792c4476ca494 432
+src/claims/core/types.ts
+  s_2dfebe0ca8f3c9::t_cfa4eb7acfffdb 30-36,67-69,112-116
+  s_2dfebe0ca8f3c9::t_384d0998702ba7 117
+test/integrations/session-manager.test.ts
+  s_2dfebe0ca8f3c9::t_c0b2383b5dd9d1 215,221-223
+CONTRIBUTING.md
+  s_2dfebe0ca8f3c9::t_38cae3a86f1ecb 57-65
+README.md
+  s_2dfebe0ca8f3c9::t_38cae3a86f1ecb 113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2813994b05c25bd24e972f66ca6eb1b5dbd5dd9e",
+  "prompts": {},
+  "sessions": {
+    "s_2dfebe0ca8f3c9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06d6b-dbcc-7d90-b39d-8d011c799d05",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
