@@ -15,8 +15,20 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 interface RecordedHandlers {
   onNodeClick?: (node: unknown) => void;
   onNodeHover?: (node: unknown) => void;
+  nodeCanvasObject?: (
+    node: Record<string, unknown>,
+    ctx: CanvasRenderingContext2D,
+    scale: number,
+  ) => void;
   onBackgroundClick?: (handler: () => void) => void;
   backgroundClickHandler?: () => void;
+  graphData?: {
+    nodes: Record<string, unknown>[];
+    links: {
+      source: Record<string, unknown>;
+      target: Record<string, unknown>;
+    }[];
+  };
 }
 
 const handlers: RecordedHandlers = {};
@@ -84,7 +96,16 @@ function stubGlobals(): void {
     backgroundColor: chain,
     nodeRelSize: chain,
     nodeCanvasObjectMode: chain,
-    nodeCanvasObject: chain,
+    nodeCanvasObject: (
+      h: (
+        node: Record<string, unknown>,
+        ctx: CanvasRenderingContext2D,
+        scale: number,
+      ) => void,
+    ) => {
+      handlers.nodeCanvasObject = h;
+      return instance;
+    },
     nodePointerAreaPaint: chain,
     linkColor: chain,
     linkWidth: chain,
@@ -98,8 +119,22 @@ function stubGlobals(): void {
     width: chain,
     height: chain,
     zoom: chain,
-    graphData: (data?: unknown) =>
-      data === undefined ? { nodes: [], links: [] } : instance,
+    graphData: (data?: {
+      nodes: Record<string, unknown>[];
+      links: { source: string; target: string }[];
+    }) => {
+      if (data === undefined)
+        return handlers.graphData ?? { nodes: [], links: [] };
+      const byId = new Map(data.nodes.map((node) => [node.id, node]));
+      handlers.graphData = {
+        nodes: data.nodes,
+        links: data.links.map((link) => ({
+          source: byId.get(link.source)!,
+          target: byId.get(link.target)!,
+        })),
+      };
+      return instance;
+    },
     d3Force: () => ({ strength: () => {} }),
     onNodeClick: (h: (node: unknown) => void) => {
       handlers.onNodeClick = h;
@@ -138,6 +173,44 @@ function stubGlobals(): void {
   Element.prototype.scrollIntoView = () => {};
 }
 
+function recordingCanvas(): {
+  ctx: CanvasRenderingContext2D;
+  fills: string[];
+  strokes: string[];
+} {
+  const fills: string[] = [];
+  const strokes: string[] = [];
+  const ctx = {
+    globalAlpha: 1,
+    fillStyle: "",
+    font: "",
+    lineWidth: 1,
+    strokeStyle: "",
+    textAlign: "center",
+    textBaseline: "top",
+    arc: () => {},
+    beginPath: () => {},
+    createRadialGradient: () => ({
+      addColorStop: () => {},
+    }),
+    fill: () => {},
+    fillText: (text: string) => fills.push(text),
+    stroke: () => {},
+    strokeText: (text: string) => strokes.push(text),
+  } as unknown as CanvasRenderingContext2D;
+  return { ctx, fills, strokes };
+}
+
+function paintLabels(): string[] {
+  const canvas = recordingCanvas();
+  for (const node of handlers.graphData?.nodes ?? []) {
+    node.x = 0;
+    node.y = 0;
+    handlers.nodeCanvasObject!(node, canvas.ctx, 1);
+  }
+  return canvas.fills;
+}
+
 async function importClient(): Promise<void> {
   mountDom();
   stubGlobals();
@@ -156,8 +229,10 @@ describe("visualizer client graph interaction", () => {
     vi.clearAllMocks();
     handlers.onNodeClick = undefined;
     handlers.onNodeHover = undefined;
+    handlers.nodeCanvasObject = undefined;
     handlers.onBackgroundClick = undefined;
     handlers.backgroundClickHandler = undefined;
+    handlers.graphData = undefined;
   });
 
   afterEach(() => {
@@ -194,5 +269,28 @@ describe("visualizer client graph interaction", () => {
     handlers.onNodeClick!({ id: "overview" });
     const active = document.querySelector(".nav-item.active");
     expect(active?.textContent).toContain("Overview");
+  });
+
+  test("does not draw graph labels by default", async () => {
+    await importClient();
+    expect(paintLabels()).toEqual([]);
+  });
+
+  test("hover draws only the hovered node label", async () => {
+    await importClient();
+    const quickstart = handlers.graphData!.nodes.find(
+      (node) => node.id === "quickstart",
+    )!;
+    handlers.onNodeHover!(quickstart);
+    expect(paintLabels()).toEqual(["Quickstart"]);
+  });
+
+  test("click draws selected and directly connected node labels", async () => {
+    await importClient();
+    const quickstart = handlers.graphData!.nodes.find(
+      (node) => node.id === "quickstart",
+    )!;
+    handlers.onNodeClick!(quickstart);
+    expect(paintLabels()).toEqual(["Quickstart", "Overview"]);
   });
 });

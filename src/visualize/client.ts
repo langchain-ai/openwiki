@@ -6,6 +6,7 @@ import {
   matchesFilter,
   nodeRadius,
   normalize,
+  shouldShowNodeLabel,
   signature,
   stripFrontmatter,
 } from "./client-lib.js";
@@ -305,6 +306,11 @@ let current: string | null = null;
 let readerId: string | null = null;
 
 /**
+ * Id of the node under the pointer, used only for contextual label display.
+ */
+let hoverId: string | null = null;
+
+/**
  * Id of the entry page, drawn larger and always labelled, or null before load.
  */
 let anchorId: string | null = null;
@@ -590,9 +596,15 @@ function paintNode(
     ctx.stroke();
   }
 
-  // Label: always drawn when zoomed in enough (or for notable nodes), with a
-  // dark halo behind the text so it stays readable over links and glows.
-  if (scale > 0.5 || sel || hot || n.anchor) {
+  // Label: contextual only. The sidebar is the always-visible index; the graph
+  // labels the current interaction target or selected neighbourhood.
+  if (
+    shouldShowNodeLabel(n, {
+      selectedId: current,
+      hoveredId: hoverId,
+      isInSelectedNeighborhood: hot,
+    })
+  ) {
     const fs = Math.max(10 / scale, 3.2);
     ctx.font = `${sel || n.anchor ? 700 : 600} ${fs}px Inter, sans-serif`;
     ctx.textAlign = "center";
@@ -637,9 +649,10 @@ function neighborsOf(node: GraphNode | undefined): void {
  * Highlight a node's neighbourhood on hover, unless a page is already selected.
  */
 function hoverHighlight(node: GraphNode | null): void {
-  if (current) return; // a selected page keeps its own highlight
-  neighborsOf(node ?? undefined);
   $("#graph").style.cursor = node ? "pointer" : "";
+  if (current) return; // a selected page keeps its own highlight
+  hoverId = node?.id ?? null;
+  neighborsOf(node ?? undefined);
 }
 
 // --- Selection and reader ---------------------------------------------------
@@ -652,6 +665,7 @@ function hoverHighlight(node: GraphNode | null): void {
  */
 function selectNode(id: string): void {
   current = id;
+  hoverId = null;
   neighborsOf(nodeById.get(id));
   renderReader(id);
 }
