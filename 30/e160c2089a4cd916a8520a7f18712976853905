@@ -1,0 +1,38 @@
+src/agent/repository-prompts.ts
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 10,49-51,58-60,67-68
+  s_2dfebe0ca8f3c9::t_8c7ffaaed5030c 52-57
+test/integrations/skill.test.ts
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 102-103,107,114-116
+  s_2dfebe0ca8f3c9::t_8c7ffaaed5030c 119
+  s_2dfebe0ca8f3c9::t_660d3b91b3d43a 99-101,104-106,108-113
+  s_2dfebe0ca8f3c9::t_40865a3d99c689 120
+src/integrations/mcp/server.ts
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 7,26
+test/integrations/mcp-server.test.ts
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 269-271,275-277,284
+  s_2dfebe0ca8f3c9::t_660d3b91b3d43a 272-274,278-283
+src/generation/planning-guidance.ts
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 1-10,12
+  s_2dfebe0ca8f3c9::t_8c7ffaaed5030c 11
+integrations/openwiki/SKILL.md
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 29,35-48,54-58
+test/agent/repository-prompts.test.ts
+  s_2dfebe0ca8f3c9::t_47de1bfcc64d63 108-110,114,121-123,126
+  s_2dfebe0ca8f3c9::t_660d3b91b3d43a 105-107,111-113,115-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "30e160c2089a4cd916a8520a7f18712976853905",
+  "prompts": {},
+  "sessions": {
+    "s_2dfebe0ca8f3c9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06d6b-dbcc-7d90-b39d-8d011c799d05",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
