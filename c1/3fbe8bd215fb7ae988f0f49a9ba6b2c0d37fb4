@@ -1,0 +1,264 @@
+src/agent/types.ts
+  s_e907eac4ca09d8::t_7e712ccccc7f6d 82
+src/context/tokenize.ts
+  s_e907eac4ca09d8::t_14627897177233 1-36,44-45,48-51,53-54,57-59,61-63
+  s_e907eac4ca09d8::t_d5ef20db90774a 37-43,46-47,60
+  s_e907eac4ca09d8::t_33b19b0b9fbdc3 52
+  s_e907eac4ca09d8::t_93cc4b12db3593 55-56
+src/claims/brains/code/types.ts
+  s_e907eac4ca09d8::t_834e046ce44362 1-4,6,11,31,54-75,143-144,155-157,178-180,211-213,219
+  s_e907eac4ca09d8::t_17cd5c14d5209f 5,89-91
+src/context/service.ts
+  s_e907eac4ca09d8::t_93cc4b12db3593 80,83,88,91,110,216
+  s_e907eac4ca09d8::t_9ae09e4ff20182 34-36,44
+  s_e907eac4ca09d8::t_776e8597d33933 138-140
+  s_e907eac4ca09d8::t_8022ed5aa199b1 102-104,187-201,217-220,247
+  s_e907eac4ca09d8::t_33b19b0b9fbdc3 13
+  s_e907eac4ca09d8::t_d5ca89be76c3e7 20,28-32,42,48,89-90,92-93,108-109,111-112,120,122,124,136-137,142-185,210,214-215,223,231,234-246,248
+  s_e907eac4ca09d8::t_14627897177233 1-12,14-19,21-27,33,37-41,43,45-47,49-79,81-82,84-87,94-101,105-107,113-119,121,123,125-135,141,186,202-209,211-213,221-222,224-230,232-233,249
+.changeset/clever-claims-ask.md
+  s_e907eac4ca09d8::t_5126402056163a 1-5
+test/agent/repository-prompts.test.ts
+  s_e907eac4ca09d8::t_7182d85a3d5313 146
+src/claims/guidance.ts
+  s_e907eac4ca09d8::t_d355a27d802b14 19,21-24
+test/claims/content/resolver.test.ts
+  s_e907eac4ca09d8::t_d5ef20db90774a 49-63
+  s_e907eac4ca09d8::t_e5fda27624bf0f 1-35,40-48,64
+  s_e907eac4ca09d8::t_8022ed5aa199b1 36-39
+integrations/openwiki-ask/agents/openai.yaml
+  s_e907eac4ca09d8::t_0234ae56b56558 1-7
+openwiki/.run.json
+  s_e907eac4ca09d8::t_ff5831b2f82d36 5-758
+  s_e907eac4ca09d8::t_6e399146e868df 2-4
+  s_e907eac4ca09d8::t_528acf00bd1379 759-760
+src/integrations/install/types.ts
+  s_e907eac4ca09d8::t_e58e8b731cd32d 176-178
+src/integrations/mcp/server.ts
+  s_e907eac4ca09d8::t_399caf0b011871 11-17
+test/claims/brains/code/session.test.ts
+  s_e907eac4ca09d8::t_8022ed5aa199b1 53
+  s_e907eac4ca09d8::t_5a8d20b6364a1b 48-52,54-58,169,189,267,347,409,482,560
+  s_e907eac4ca09d8::t_67694f30243e1f 60-72,111-120,142-149,209,238,280,291
+test/claims/core/mutations.test.ts
+  s_e907eac4ca09d8::t_6afd9b00389244 10,14-25,76,98,102,116,157,161,180,203,223,243,249,256,321,347,374,388,408,414,428,447,455
+  s_e907eac4ca09d8::t_20945b368ce939 469
+src/integrations/install/installer.ts
+  s_e907eac4ca09d8::t_18af2f8e67247a 71-76,486,493-498,507-520,523-530,534-538,574-579,584,586-593,605-610
+  s_e907eac4ca09d8::t_776e8597d33933 244-253
+  s_e907eac4ca09d8::t_a89642f00f4da5 141-143,156-159,182,187-200,203,217-220,238-239,262-275,278,285-296
+  s_e907eac4ca09d8::t_f9128f51e9d6e8 242,323-335,338,343,357-363,373-377,387-389,392-396,411-412,414,416,419,426,447-451,455,457-461,464-466
+  s_e907eac4ca09d8::t_8022ed5aa199b1 539
+  s_e907eac4ca09d8::t_752f66fb6ff95a 240-241
+test/integrations/protocol.test.ts
+  s_e907eac4ca09d8::t_9400dd867aae6f 4,86,92,128-150
+  s_e907eac4ca09d8::t_8269a6b5dcea82 151-152
+src/claims/brains/code/preflight.ts
+  s_e907eac4ca09d8::t_5d86b88ab33b87 109-110,113-114
+  s_e907eac4ca09d8::t_58f980fd33b89c 3,56-61,81,89,95-108,115-139,165-166,168,171-172,177
+  s_e907eac4ca09d8::t_8022ed5aa199b1 111-112,173-176
+  s_e907eac4ca09d8::t_57d70a3c6902e3 178
+src/claims/brains/code/store.ts
+  s_e907eac4ca09d8::t_5d86b88ab33b87 611
+  s_e907eac4ca09d8::t_059231770347a2 26,51,59-71,85,87-97,104-108,612-620
+  s_e907eac4ca09d8::t_d5ef20db90774a 281-282
+  s_e907eac4ca09d8::t_6a5585891272e2 621
+test/context/service.test.ts
+  s_e907eac4ca09d8::t_21114fb9a54af1 94
+  s_e907eac4ca09d8::t_9827ff4c857da7 95
+  s_e907eac4ca09d8::t_18c8dcbedbe8dc 1,3-74,76,85-93,96-102,109-116,121-140,206,261-262
+  s_e907eac4ca09d8::t_647256f2d044d4 150,153
+  s_e907eac4ca09d8::t_f6637ccfe61168 2,75,77-80,103-108,141-147,151-152,154-167,171-191,195-205,207-216,220-226,230-231,236-244,249-255
+  s_e907eac4ca09d8::t_8022ed5aa199b1 81-84,117-120,148-149,168-170,192-194,217-219,227-228,232-235,245-248,256-260
+  s_e907eac4ca09d8::t_93cc4b12db3593 229
+test/context/rank.test.ts
+  s_e907eac4ca09d8::t_f6637ccfe61168 1,6-119
+  s_e907eac4ca09d8::t_8022ed5aa199b1 2-5
+test/agent/repository-runner.test.ts
+  s_e907eac4ca09d8::t_064908a43009a3 179,227
+test/claims/brains/code/preflight.test.ts
+  s_e907eac4ca09d8::t_44cacefbf51bb4 180,187,194,335
+  s_e907eac4ca09d8::t_a11c455c4ccbcd 13,50-54,70-74,78-81
+src/agent/repository-runner.ts
+  s_e907eac4ca09d8::t_ff095fa6499607 163-165,276
+  s_e907eac4ca09d8::t_5d86b88ab33b87 63-65
+test/integrations/installer.test.ts
+  s_e907eac4ca09d8::t_8022ed5aa199b1 92-95,562-564,741-745,833-835,840-842
+  s_e907eac4ca09d8::t_275cf0deb05a39 1082-1084,1091-1093
+  s_e907eac4ca09d8::t_89b08db17d4c0e 86-91,96-97,286-301,549,587,604,608-620,630,731-740,746-755,826-832,836-839
+  s_e907eac4ca09d8::t_7e3cffa77fd048 1085-1090
+  s_e907eac4ca09d8::t_e6ef818db0a468 843,1066-1081,1094-1095
+  s_e907eac4ca09d8::t_99d69e83c6eb76 844
+src/context/rank.ts
+  s_e907eac4ca09d8::t_d5ef20db90774a 99,102,104,108
+  s_e907eac4ca09d8::t_8022ed5aa199b1 2,58-60
+  s_e907eac4ca09d8::t_14627897177233 1,3-6,8-57,61-98,100-101,109-133
+  s_e907eac4ca09d8::t_3b0b9922c679c8 7
+  s_e907eac4ca09d8::t_d5ca89be76c3e7 103,105-107
+src/ingestion/code-mode.ts
+  s_e907eac4ca09d8::t_a5d87a442be99f 413
+evals/openwiki-ask/README.md
+  s_e907eac4ca09d8::t_f097729376e57c 1-17
+evals/openwiki-ask/metrics.test.ts
+  s_e907eac4ca09d8::t_f097729376e57c 1-58
+src/claims/core/mutations.ts
+  s_e907eac4ca09d8::t_e630627e9f9ca7 6,10-11,34-36,67,92-93,98,111-113,115-116,118,128,149,174-206,274,276-283,288-291,321-331,348-352,354,368,377-384,388-390
+  s_e907eac4ca09d8::t_ac757d83b98f68 94-95,97,275,365-367,442-444
+  s_e907eac4ca09d8::t_2e76cbb6faf739 69,96,156-158,163-173
+  s_e907eac4ca09d8::t_8022ed5aa199b1 114,117,159-162,287
+  s_e907eac4ca09d8::t_c6ae793b2523e2 361-364
+test/integrations/package-contents.test.ts
+  s_e907eac4ca09d8::t_d5ef20db90774a 11,47,51-53,78,84
+  s_e907eac4ca09d8::t_8022ed5aa199b1 79-82
+  s_e907eac4ca09d8::t_e5ad2c76002c58 83
+src/integrations/install/skill-bundle.ts
+  s_e907eac4ca09d8::t_e58e8b731cd32d 34-36,81-84,89,184,190,211,226,266,292,307
+  s_e907eac4ca09d8::t_8022ed5aa199b1 273-275
+  s_e907eac4ca09d8::t_d5ef20db90774a 272,277,282,308-314
+src/claims/content/markdown-blocks.ts
+  s_e907eac4ca09d8::t_8022ed5aa199b1 86,88-90,182-184,193-195
+  s_e907eac4ca09d8::t_e5fda27624bf0f 1-85,87,91-181,185-192,196
+test/integrations/skill.test.ts
+  s_e907eac4ca09d8::t_24acc5b3d9236a 9-10,159-165,173-195,197
+  s_e907eac4ca09d8::t_9400dd867aae6f 113
+  s_e907eac4ca09d8::t_21114fb9a54af1 166-172
+  s_e907eac4ca09d8::t_289db25a7bd161 196
+  s_e907eac4ca09d8::t_f13a7322f2ef83 198
+test/claims/brains/code/runtime.test.ts
+  s_e907eac4ca09d8::t_8022ed5aa199b1 254,420,493
+  s_e907eac4ca09d8::t_ddacc5ecd03352 49-52,137,143-155,188-190,209,272,384-396,402,407-413,415,440,512
+evals/openwiki-ask/benchmark.json
+  s_e907eac4ca09d8::t_f097729376e57c 1-32
+src/generation/page-jobs.ts
+  s_e907eac4ca09d8::t_8022ed5aa199b1 297,495
+  s_e907eac4ca09d8::t_6c61c7be52b337 295
+  s_e907eac4ca09d8::t_577c3393251b87 137,187-192,296
+  s_e907eac4ca09d8::t_18a11f8fcfc5d0 12-15,81-85,421,451-456,462-466,486-489,512,532-535,538,553,566,583-592,597,610-614,618-630,662,667
+  s_e907eac4ca09d8::t_a535f7116be15a 86
+test/generation/repository-run.test.ts
+  s_e907eac4ca09d8::t_87d2f25227d903 101,600-603,2180-2184
+  s_e907eac4ca09d8::t_a9ccd92f0689e0 118,596,598-599,2177-2179
+  s_e907eac4ca09d8::t_403d4242de2603 1333,1350,1400,1434,1590,1750,1793,2127
+  s_e907eac4ca09d8::t_871ffc71bc8162 1579-1582,1742
+  s_e907eac4ca09d8::t_bb7eaa08b144e4 102,639-641,645-688,692-704,708-757
+  s_e907eac4ca09d8::t_21114fb9a54af1 622-629
+  s_e907eac4ca09d8::t_8022ed5aa199b1 642-644,689-691,705-707,1785
+  s_e907eac4ca09d8::t_29502d459ab9c1 161,300
+  s_e907eac4ca09d8::t_c2c0583b89758a 758
+test/claims/brains/code/store.test.ts
+  s_e907eac4ca09d8::t_e9d3906d68d616 82-87,182
+evals/openwiki-ask/metrics.ts
+  s_e907eac4ca09d8::t_f097729376e57c 1-78
+src/context/types.ts
+  s_e907eac4ca09d8::t_14627897177233 1-52,54-64
+  s_e907eac4ca09d8::t_8022ed5aa199b1 53
+test/claims/content/markdown-blocks.test.ts
+  s_e907eac4ca09d8::t_8022ed5aa199b1 26-44
+  s_e907eac4ca09d8::t_e5fda27624bf0f 1-25,45-120
+src/claims/brains/code/session.ts
+  s_e907eac4ca09d8::t_ced861a2937228 16,260-314,731-742
+  s_e907eac4ca09d8::t_2b076b132b7715 41,147
+  s_e907eac4ca09d8::t_5d86b88ab33b87 160-167
+  s_e907eac4ca09d8::t_17cd5c14d5209f 11-15,40,42,115-118,168-169,173,214-215,411,553,575-591,701,706-707,709-710,713
+  s_e907eac4ca09d8::t_67694f30243e1f 726-730
+  s_e907eac4ca09d8::t_3d087bb41f31b2 119
+  s_e907eac4ca09d8::t_e9ad9931991628 259
+test/integrations/mcp-server.test.ts
+  s_e907eac4ca09d8::t_d5ef20db90774a 272-283
+  s_e907eac4ca09d8::t_8022ed5aa199b1 170-171
+  s_e907eac4ca09d8::t_9400dd867aae6f 97,138-143,157,168,262,340,342,357
+  s_e907eac4ca09d8::t_83ac5a4889bef4 169
+src/claims/core/types.ts
+  s_e907eac4ca09d8::t_e630627e9f9ca7 17-26,45-47,60-67,86-88,133-139,181-189,206-214
+  s_e907eac4ca09d8::t_a8145ad661db5a 16
+src/integrations/core/protocol.ts
+  s_e907eac4ca09d8::t_ff095fa6499607 50-52,76
+  s_e907eac4ca09d8::t_9400dd867aae6f 12,201
+  s_e907eac4ca09d8::t_64083ab17e8032 139-141
+  s_e907eac4ca09d8::t_399caf0b011871 20-21,158-168,187-188
+  s_e907eac4ca09d8::t_86d976b80f82cb 189
+src/integrations/core/session-manager.ts
+  s_e907eac4ca09d8::t_399caf0b011871 2,15,23,221-230,281-286
+  s_e907eac4ca09d8::t_ff095fa6499607 138
+  s_e907eac4ca09d8::t_d5ef20db90774a 232,255
+  s_e907eac4ca09d8::t_68dbd1dea1ec22 287
+integrations/openwiki/SKILL.md
+  s_e907eac4ca09d8::t_9400dd867aae6f 150
+  s_e907eac4ca09d8::t_18d73584cc3f9e 53-55,58-60,64-65
+  s_e907eac4ca09d8::t_8022ed5aa199b1 130
+  s_e907eac4ca09d8::t_bfe8768bd02561 126-129,131-139,142-143,146,151-152
+src/agent/index.ts
+  s_e907eac4ca09d8::t_7e712ccccc7f6d 206
+src/claims/brains/code/runtime.ts
+  s_e907eac4ca09d8::t_89b519e592cbc4 12,82,89,100
+src/agent/repository-prompts.ts
+  s_e907eac4ca09d8::t_d355a27d802b14 154-159
+src/claims/content/types.ts
+  s_e907eac4ca09d8::t_e5fda27624bf0f 1-32
+src/generation/run-state.ts
+  s_e907eac4ca09d8::t_577c3393251b87 157-159,277
+src/cli/commands.ts
+  s_e907eac4ca09d8::t_7e712ccccc7f6d 152,743,778-789,998-1005,1021
+  s_e907eac4ca09d8::t_2b076b132b7715 1209,1228-1232,1293
+src/cli/app/app.tsx
+  s_e907eac4ca09d8::t_7e712ccccc7f6d 562
+src/integrations/install/install-paths.ts
+  s_e907eac4ca09d8::t_e58e8b731cd32d 56-58,105-109,115,269,278
+src/cli/integrations.ts
+  s_e907eac4ca09d8::t_accd518538561d 75-76
+  s_e907eac4ca09d8::t_0f4344706db29c 2,60
+README.md
+  s_e907eac4ca09d8::t_5126402056163a 28,110-119,124,133,145-148
+  s_e907eac4ca09d8::t_0ec5786e69ced7 149
+test/generation/page-jobs.test.ts
+  s_e907eac4ca09d8::t_1b2eabe37d4a8c 11,54-62,64,66,75-84,88-111,371,377,383,398,432,438,523
+  s_e907eac4ca09d8::t_2b076b132b7715 248-266,270-276,284-286
+  s_e907eac4ca09d8::t_8022ed5aa199b1 267-269,277-283
+  s_e907eac4ca09d8::t_678cef26da010e 112-113
+test/cli/integrations-runners.test.ts
+  s_e907eac4ca09d8::t_7182d85a3d5313 122,128-129
+src/claims/content/resolver.ts
+  s_e907eac4ca09d8::t_e5fda27624bf0f 1-7,9-35,47-48,62-76,84
+  s_e907eac4ca09d8::t_8022ed5aa199b1 8,79
+  s_e907eac4ca09d8::t_e4be961589bda2 36-46,49-61,77-78,80-83
+test/integrations/session-manager.test.ts
+  s_e907eac4ca09d8::t_9400dd867aae6f 69,71,134,229,253,265
+  s_e907eac4ca09d8::t_d5ef20db90774a 155-168,173-181,185-188
+  s_e907eac4ca09d8::t_8022ed5aa199b1 169-172,182-184
+evals/openwiki-ask/run.ts
+  s_e907eac4ca09d8::t_f097729376e57c 1-68
+src/cli/runners.ts
+  s_e907eac4ca09d8::t_7e712ccccc7f6d 282
+src/context/catalog.ts
+  s_e907eac4ca09d8::t_14627897177233 1-39,43-47,50-54,57-78,80-132
+  s_e907eac4ca09d8::t_8022ed5aa199b1 40-42,48-49,55-56
+  s_e907eac4ca09d8::t_776e8597d33933 79
+integrations/openwiki-ask/SKILL.md
+  s_e907eac4ca09d8::t_0234ae56b56558 1-29
+package.json
+  s_e907eac4ca09d8::t_f097729376e57c 45
+src/generation/repository-run.ts
+  s_e907eac4ca09d8::t_577c3393251b87 98-100,424-425,486,902,925
+  s_e907eac4ca09d8::t_6de0951c7ac3ef 27-28,1015-1017,1262-1271,1340-1345,1384-1388,1407-1414
+test/cli/commands.test.ts
+  s_e907eac4ca09d8::t_2b076b132b7715 72,270-289
+  s_e907eac4ca09d8::t_171ae4f1fd44c3 290-291
+AGENTS.md
+  s_e907eac4ca09d8::t_9a985adb5037d0 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c13fbe8bd215fb7ae988f0f49a9ba6b2c0d37fb4",
+  "prompts": {},
+  "sessions": {
+    "s_e907eac4ca09d8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06965-cfcf-7e82-8f87-bf7b78cfbd70",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
