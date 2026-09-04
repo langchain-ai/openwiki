@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
   getProviderAuthMethod,
@@ -8,10 +8,11 @@ import {
   OPENWIKI_VERSION,
   resolveConfiguredProvider,
   resolveOpenAiCompatibleStreaming,
+  UPDATE_METADATA_PATH,
 } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
-import { UPDATE_METADATA_PATH } from "../config/constants.js";
+import { writeGeneratedFile } from "../safe-write.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
 
@@ -35,6 +36,12 @@ export interface CodeModeRepoSetupOptions {
   /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
   cronExpression?: string;
   /**
+   * When true, a freshly created workflow runs
+   * `openwiki code --update --recursive --print` so scheduled refreshes keep the
+   * monorepo's per-subproject sub-wikis up to date.
+   */
+  recursive?: boolean;
+  /**
    * Environment the generated workflow's provider block is derived from.
    * Defaults to `process.env`, which by this point holds the credentials setup
    * resolved for this run.
@@ -55,6 +62,7 @@ export async function ensureCodeModeRepoSetup(
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
+      options.recursive === true,
       options.env ?? process.env,
     );
   }
@@ -69,6 +77,7 @@ export async function ensureCodeModeRepoSetup(
 async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
+  recursive: boolean,
   env: NodeJS.ProcessEnv,
 ): Promise<void> {
   const workflowPath = path.join(
@@ -87,11 +96,12 @@ async function ensureCodeModeWorkflow(
     }
   }
 
-  await mkdir(path.dirname(workflowPath), { recursive: true });
-  await writeFile(
+  // writeGeneratedFile creates the parent directory and refuses to follow a
+  // symlinked destination (CWE-59) — see safe-write.ts.
+  await writeGeneratedFile(
+    cwd,
     workflowPath,
-    createCodeModeWorkflow(cronExpression, env),
-    "utf8",
+    createCodeModeWorkflow(cronExpression, recursive, env),
   );
 }
 
@@ -207,8 +217,10 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
   );
 
   await Promise.all(
+    // writeGeneratedFile refuses a symlinked destination (CWE-59) — AGENTS.md /
+    // CLAUDE.md live at the untrusted repo root. See safe-write.ts.
     updates.map(({ agentsPath, nextContent }) =>
-      writeFile(agentsPath, nextContent, "utf8"),
+      writeGeneratedFile(cwd, agentsPath, nextContent),
     ),
   );
 }
@@ -322,8 +334,12 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
 
 function createCodeModeWorkflow(
   cronExpression: string,
+  recursive: boolean,
   env: NodeJS.ProcessEnv,
 ): string {
+  const updateCommand = recursive
+    ? "openwiki code --update --recursive --print"
+    : "openwiki code --update --print";
   return `name: OpenWiki Update
 
 on:
@@ -359,7 +375,7 @@ jobs:
       - name: Run OpenWiki
         id: openwiki
         continue-on-error: true
-        run: openwiki code --update --print
+        run: ${updateCommand}
         env:
           ${createWorkflowProviderEnv(env)}
           # Required for the LangSmith connector's code-mode pull to authenticate.
@@ -381,6 +397,7 @@ jobs:
         with:
           add-paths: |
             openwiki
+            **/openwiki
             AGENTS.md
             CLAUDE.md
             .github/workflows/openwiki-update.yml

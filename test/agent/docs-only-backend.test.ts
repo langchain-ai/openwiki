@@ -306,4 +306,30 @@ describe("OpenWikiLocalShellBackend", () => {
       readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
     ).resolves.toBe("must not become a second file");
   });
+
+  test("rooted at a subproject, accepts /openwiki writes into that subproject", async () => {
+    // The recursive orchestrator re-roots the backend at packages/foo. The
+    // write guard keys off the virtual /openwiki prefix + rootDir, so the same
+    // /openwiki/x.md path lands under packages/foo/openwiki with no guard change.
+    const repoRoot = await mkdtemp(path.join(os.tmpdir(), "openwiki-mono-"));
+    const subprojectDir = path.join(repoRoot, "packages", "foo");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir: subprojectDir,
+      virtualMode: true,
+    });
+
+    const write = await backend.write("/openwiki/quickstart.md", "ok");
+    expect(write).toEqual(
+      expect.objectContaining({ path: "/openwiki/quickstart.md" }),
+    );
+    await expect(
+      readFile(path.join(subprojectDir, "openwiki", "quickstart.md"), "utf8"),
+    ).resolves.toBe("ok");
+
+    // A sibling escape is still refused just as at the repo root.
+    const refused = await backend.write("/src/code.ts", "nope");
+    expect(refused.error).toContain("Refused path: /src/code.ts");
+  });
 });

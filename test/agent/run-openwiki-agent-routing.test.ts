@@ -132,4 +132,28 @@ describe("runOpenWikiAgent repository routing", () => {
     expect(harness.runNativeRepositoryGeneration).not.toHaveBeenCalled();
     expect(harness.createDeepAgent).toHaveBeenCalledTimes(1);
   });
+
+  test("forwards recursive-monorepo options to the page-job runner", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "openwiki-routing-"));
+    temporaryDirectories.push(root);
+
+    await runOpenWikiAgent("update", root, {
+      outputMode: "repository",
+      recursionRole: "subproject",
+      wikiGoalOverride: "Document only this subproject.",
+      skipRepoSetup: true,
+    });
+
+    // These feature fields must survive the hop into runNativeRepositoryGeneration;
+    // nothing else asserts the plumbing, so a silent drop would go unnoticed.
+    expect(harness.runNativeRepositoryGeneration).toHaveBeenCalledWith(
+      expect.objectContaining({
+        root,
+        mode: "update",
+        recursionRole: "subproject",
+        wikiGoalOverride: "Document only this subproject.",
+        skipRepoSetup: true,
+      }),
+    );
+  });
 });

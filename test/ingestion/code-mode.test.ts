@@ -85,7 +85,7 @@ function expectFailurePreservingWorkflow(workflow: string): void {
   expect(pullRequest.with?.["commit-message"]).toBe("docs: update OpenWiki");
   expect(pullRequest.with?.title).toBe("docs: update OpenWiki");
   expect(pullRequest.with?.["add-paths"]).toBe(
-    "openwiki\nAGENTS.md\nCLAUDE.md\n.github/workflows/openwiki-update.yml\n",
+    "openwiki\n**/openwiki\nAGENTS.md\nCLAUDE.md\n.github/workflows/openwiki-update.yml\n",
   );
   expect(pullRequest.with?.body).toContain(
     "OpenWiki result: ${{ steps.openwiki.outcome }}",
@@ -394,6 +394,36 @@ jobs:
     await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
 
     expect(await readIfPresent(workflowPath)).toBe(customizedWorkflow);
+  });
+
+  test("non-recursive workflow uses the plain update command", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    expect(workflow).toContain("run: openwiki code --update --print");
+    expect(workflow).not.toContain("--recursive");
+  });
+
+  test("recursive workflow reruns with --recursive", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, {
+      createWorkflow: true,
+      recursive: true,
+    });
+
+    const workflow = await readIfPresent(
+      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+    );
+    expect(workflow).toContain(
+      "run: openwiki code --update --recursive --print",
+    );
+    // Nested sub-wikis are staged in the PR.
+    expect(workflow).toContain("**/openwiki");
   });
 });
 

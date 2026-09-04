@@ -13,6 +13,8 @@ import {
   ensureCodeModeRepoSetup,
   runCodeModeConnectors,
 } from "../ingestion/code-mode.js";
+import { runRecursiveOpenWiki } from "../monorepo/orchestrator.js";
+import { resolveRecursionActivation } from "../monorepo/workspaces.js";
 import { runOpenWikiIngestion } from "../ingestion/ingestion.js";
 import { getErrorMessage } from "../platform/diagnostics.js";
 import {
@@ -296,6 +298,30 @@ export async function runPrintCommand(
       runOptions,
       telemetryContext,
       async () => {
+        // Recursive monorepo docs: the orchestrator handles ensureCodeModeRepoSetup
+        // once and delimits each subproject in the streamed output. It only applies
+        // to code (repository) mode and to init/update runs.
+        const activation =
+          command.mode === "code" && command.command !== "chat"
+            ? await resolveRecursionActivation(
+                runtimeCwd,
+                command.recursive,
+                (message) =>
+                  handlePrintEvent({ type: "text", text: `\n${message}\n` }),
+              )
+            : ({ kind: "plain", reason: "not a code init/update run" } as const);
+
+        if (activation.kind === "recurse") {
+          await runRecursiveOpenWiki(
+            command.command,
+            runtimeCwd,
+            runOptions,
+            activation.manifest,
+            telemetryContext,
+          );
+          return;
+        }
+
         if (command.mode === "code") {
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: command.command === "init",
@@ -304,7 +330,8 @@ export async function runPrintCommand(
 
         // Code-mode connectors (e.g. langsmith) pull their evidence and augment
         // the agent message before the run, so --print behaves exactly like
-        // interactive.
+        // interactive. Plain (non-recurse) path only; recursive runs go through
+        // the orchestrator, which does not pull connectors.
         const userMessage =
           command.mode === "code" && command.command !== "chat"
             ? await runCodeModeConnectors(
