@@ -111,6 +111,7 @@ import {
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  providerBaseUrlIsCustom,
   providerRequiresBaseUrl,
   providerRequiresRegion,
   providerRequiresSecretKey,
@@ -295,6 +296,7 @@ async function resolveRunConfig(
     onProviderResolved(provider);
 
     const providerBaseUrl = resolveProviderBaseUrl(provider);
+    const baseUrlIsCustom = providerBaseUrlIsCustom(provider);
     emitDebug(options, `provider=${provider}`);
     if (providerBaseUrl) {
       emitDebug(
@@ -331,10 +333,11 @@ async function resolveRunConfig(
       modelId,
       apiKey: getProviderApiKey(provider),
       baseUrl: providerBaseUrl,
+      baseUrlIsCustom,
     });
     if (modelAvailability.status === "unavailable") {
       throw new Error(
-        `${getProviderLabel(provider)} does not make model "${modelId}" available to the configured credentials. Set ${OPENWIKI_MODEL_ID_ENV_KEY} to an available model.`,
+        `${getProviderLabel(provider)} does not make model "${modelId}" available. ${modelAvailability.reason} Set ${OPENWIKI_MODEL_ID_ENV_KEY} to an available model.`,
       );
     }
     if (modelAvailability.status === "unknown") {
