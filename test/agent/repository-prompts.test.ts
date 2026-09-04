@@ -216,37 +216,53 @@ describe("recursion role guidance in repository prompts", () => {
     expect(page).toContain("Monorepo root scope");
   });
 
-  test("root role consults sub-wiki quickstarts as read-only reference", () => {
+  test("root role consults the workspaces.md digest first, full quickstarts on demand", () => {
     const guidance = recursionRoleGuidance("root");
 
-    // Directs consulting each sub-wiki entrypoint...
-    expect(guidance).toMatch(/CONSULT each subproject's sub-wiki/);
-    expect(guidance).toContain("openwiki/quickstart.md");
-    // ...enumerated from the workspaces manifest...
-    expect(guidance).toContain("openwiki/workspaces.json");
+    // DEFAULT: the bounded per-subproject digest in workspaces.md, not O(N)
+    // full-page reads.
+    expect(guidance).toMatch(/DEFAULT to the per-subproject descriptions/);
     expect(guidance).toContain("openwiki/workspaces.md");
+    expect(guidance).toMatch(/one line per subproject/);
+    expect(guidance).toMatch(/do not read every sub-wiki in full/);
     // ...for scope/naming/terminology consistency...
     expect(guidance).toMatch(/scope, naming, and terminology/);
-    // ...as read-only reference that must not be duplicated.
+
+    // ON DEMAND: open a specific full quickstart only when the digest is
+    // insufficient, still as read-only reference that must not be duplicated.
+    expect(guidance).toMatch(/ON DEMAND/);
+    expect(guidance).toContain("openwiki/quickstart.md");
+    expect(guidance).toMatch(/only when its one-line description/);
     expect(guidance).toMatch(/read-only reference/);
     expect(guidance).toMatch(/do not copy, quote, or restate sub-wiki content/);
 
-    // The consult guidance reaches both planner and page prompts.
+    // PRIORITIZE: focus deep reads on the subprojects the planning context
+    // reports as changed this run.
+    expect(guidance).toMatch(/PRIORITIZE/);
+    expect(guidance).toMatch(/planning context reports as updated this run/);
+    expect(guidance).toMatch(/rely on the openwiki\/workspaces\.md digest/);
+
+    // The manifest is still named as the enumeration source.
+    expect(guidance).toContain("openwiki/workspaces.json");
+
+    // The two-tier guidance reaches both planner and page prompts.
     const planner = createRepositoryPlannerPrompt(
       planningView(),
       undefined,
       "root",
     );
-    expect(planner).toMatch(/CONSULT each subproject's sub-wiki/);
+    expect(planner).toMatch(/DEFAULT to the per-subproject descriptions/);
+    expect(planner).toMatch(/ON DEMAND/);
 
     const page = createRepositoryPagePrompt(pageJob(), [pageJob()], "en", "root");
-    expect(page).toMatch(/CONSULT each subproject's sub-wiki/);
+    expect(page).toMatch(/DEFAULT to the per-subproject descriptions/);
+    expect(page).toMatch(/ON DEMAND/);
 
-    // The subproject role must NOT gain the root's consult-the-quickstarts
-    // directive: sub-wikis stay a root-only read-only reference.
-    expect(recursionRoleGuidance("subproject")).not.toMatch(
-      /CONSULT each subproject's sub-wiki/,
-    );
+    // The subproject role must NOT gain the root's digest/on-demand directives:
+    // sub-wikis stay a root-only read-only reference.
+    const subproject = recursionRoleGuidance("subproject");
+    expect(subproject).not.toMatch(/DEFAULT to the per-subproject descriptions/);
+    expect(subproject).not.toMatch(/ON DEMAND/);
   });
 
   test("absent role adds no recursion section (backward compatible)", () => {

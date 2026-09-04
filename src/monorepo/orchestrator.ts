@@ -1,7 +1,9 @@
 import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { runOpenWikiAgent } from "../agent/index.js";
+import { readFrontmatterField } from "../okf/frontmatter.js";
 import { loadOpenWikiEnv } from "../config/env.js";
 import { syncBundledSkills } from "../agent/skills.js";
 import { ensureCodeModeRepoSetup } from "../ingestion/code-mode.js";
@@ -17,6 +19,7 @@ import {
   resolveWorkspaceRuns,
   writeWorkspacesState,
   type ResolvedWorkspacePlan,
+  type ResolvedWorkspaceRun,
   type WorkspaceManifest,
   type WorkspacesState,
 } from "./workspaces.js";
@@ -125,6 +128,13 @@ export async function runRecursiveOpenWiki(
   const subprojectResults: OpenWikiRunResult[] = [];
   const skippedWorkspaces: { path: string; reason: string }[] = [];
   const failedWorkspaces: { path: string; error: string }[] = [];
+  // Documented subprojects that actually regenerated this pass vs. those that
+  // ran but internally no-op'd (result.skipped === true). Kept in plan order so
+  // the root planning-context note is deterministic. This is ephemeral run
+  // state: it travels only through the root run's planning context, never a
+  // committed file.
+  const regeneratedPaths: string[] = [];
+  const unchangedPaths: string[] = [];
   const state: WorkspacesState = await readWorkspacesState(repoRoot);
 
   for (const run of plan.runs) {
@@ -158,6 +168,15 @@ export async function runRecursiveOpenWiki(
         skipRepoSetup: true,
       });
       subprojectResults.push(result);
+
+      // A run that internally no-op'd reports skipped === true; anything else
+      // regenerated its sub-wiki this pass. Classify so the root run can
+      // prioritize its on-demand deep reads on the ones that changed.
+      if (result.skipped === true) {
+        unchangedPaths.push(run.relativePath);
+      } else {
+        regeneratedPaths.push(run.relativePath);
+      }
 
       // Record the subproject's git HEAD so future runs can reason about which
       // subprojects moved. Best-effort: a missing HEAD does not fail the run.
@@ -198,6 +217,12 @@ export async function runRecursiveOpenWiki(
   // can physically read the nested sub-wikis. It is kept from re-documenting them
   // by the "root" recursion role guidance (link DOWN, do not deep-document), not
   // by hard scoping. See runRecursiveOpenWiki doc comment.
+  //
+  // Thread the changed-subproject set to the root run through the existing
+  // planning-context channel (userMessage -> planningContext). The root guidance
+  // uses it to prioritize on-demand deep reads on the subprojects that changed
+  // this pass, relying on the workspaces.md digest for the unchanged ones. Merge
+  // it with any caller-supplied userMessage rather than clobbering it.
   const rootResult = await runOpenWikiAgent(
     command,
     repoRoot,
@@ -207,6 +232,10 @@ export async function runRecursiveOpenWiki(
       recursionRole: "root",
       threadId: undefined,
       wikiGoalOverride: plan.rootGoal,
+      userMessage: mergeUserMessage(
+        options.userMessage,
+        composeChangedSubprojectsNote(regeneratedPaths, unchangedPaths),
+      ),
       // Repo setup already ran once above; don't repeat it per sub-run.
       skipRepoSetup: true,
     },
@@ -222,6 +251,15 @@ export async function runRecursiveOpenWiki(
  * root, linking down to each subproject's sub-wiki entrypoint. Includes valid
  * OKF front matter (type: Reference) so migrateWikiToOkf does not rewrite or
  * retag it during the root run.
+ *
+ * Each row's summary prefers the subproject's DISTILLED output — the `description`
+ * front-matter field of its generated openwiki/quickstart.md — over the manifest
+ * INPUT brief (`run.goal`). This gives the root run a bounded, deterministic
+ * digest to consult instead of reading every sub-wiki in full. Summary reads are
+ * best-effort: a missing or unreadable quickstart, or one without a description,
+ * falls back to `run.goal`, then to no summary at all, and never fails
+ * aggregation. Determinism is preserved (same inputs -> same bytes): rows keep
+ * plan order and the reads are pure.
  */
 export async function writeRootAggregation(
   repoRoot: string,
@@ -229,14 +267,17 @@ export async function writeRootAggregation(
 ): Promise<void> {
   const openWikiDir = path.join(repoRoot, "openwiki");
 
-  const rows = plan.runs
-    .map((run) => {
-      const label = run.name ?? run.relativePath;
-      const href = `../${run.relativePath}/openwiki/quickstart.md`;
-      const goal = run.goal ? ` — ${escapeTableCell(run.goal)}` : "";
-      return `- [${escapeLinkLabel(label)}](${encodeSubwikiHref(href)})${goal}`;
-    })
-    .join("\n");
+  const rows = (
+    await Promise.all(
+      plan.runs.map(async (run) => {
+        const label = run.name ?? run.relativePath;
+        const href = `../${run.relativePath}/openwiki/quickstart.md`;
+        const summary = await resolveSubprojectSummary(repoRoot, run);
+        const suffix = summary ? ` — ${escapeTableCell(summary)}` : "";
+        return `- [${escapeLinkLabel(label)}](${encodeSubwikiHref(href)})${suffix}`;
+      }),
+    )
+  ).join("\n");
 
   const content = `---
 type: Reference
@@ -256,6 +297,42 @@ ${rows || "No documented subprojects."}
     path.join(openWikiDir, "workspaces.md"),
     content,
   );
+}
+
+/**
+ * Resolves one subproject's row summary for the aggregation digest: its
+ * generated quickstart `description` when available, otherwise the manifest
+ * `run.goal`, otherwise undefined (no summary). Best-effort and never throws.
+ */
+async function resolveSubprojectSummary(
+  repoRoot: string,
+  run: ResolvedWorkspaceRun,
+): Promise<string | undefined> {
+  const description = await readSubprojectDescription(
+    repoRoot,
+    run.relativePath,
+  );
+  return description ?? run.goal;
+}
+
+/**
+ * Reads a subproject's generated openwiki/quickstart.md front-matter
+ * `description`, or undefined when the file is missing/unreadable or has no
+ * description. Safe: swallows read errors so aggregation never fails.
+ */
+async function readSubprojectDescription(
+  repoRoot: string,
+  relativePath: string,
+): Promise<string | undefined> {
+  try {
+    const content = await readFile(
+      path.join(repoRoot, relativePath, "openwiki", "quickstart.md"),
+      "utf8",
+    );
+    return readFrontmatterField(content, "description");
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -297,6 +374,45 @@ async function readGitHead(cwd: string): Promise<string | undefined> {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Composes a short, deterministic planning-context note listing which documented
+ * subprojects regenerated this pass and which stayed unchanged, so the root
+ * guidance can focus deep reads on the changed ones and rely on the digest for
+ * the rest. Returns undefined when there is nothing to report (e.g. no
+ * documented subprojects).
+ */
+function composeChangedSubprojectsNote(
+  regenerated: readonly string[],
+  unchanged: readonly string[],
+): string | undefined {
+  if (regenerated.length === 0 && unchanged.length === 0) return undefined;
+  const parts: string[] = [];
+  if (regenerated.length > 0) {
+    parts.push(`Subprojects updated in this run: ${regenerated.join(", ")}.`);
+  }
+  if (unchanged.length > 0) {
+    parts.push(
+      `Subprojects unchanged in this run (consult their workspaces.md descriptions rather than re-reading their full quickstart): ${unchanged.join(", ")}.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+/**
+ * Merges a caller-supplied userMessage with an orchestrator planning-context
+ * note, preserving both. Returns undefined when neither carries content, so the
+ * root run's userMessage stays unset in that case.
+ */
+function mergeUserMessage(
+  existing: string | null | undefined,
+  note: string | undefined,
+): string | undefined {
+  const parts = [existing?.trim(), note?.trim()].filter(
+    (part): part is string => Boolean(part),
+  );
+  return parts.length > 0 ? parts.join("\n\n") : undefined;
 }
 
 /**
