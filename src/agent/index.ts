@@ -49,6 +49,7 @@ import {
   readCodexTokensFromEnv,
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
+import { createBobFetch } from "./bob.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { syncBundledSkills } from "./skills.js";
 import {
@@ -89,6 +90,7 @@ import {
   getProviderCredentialHint,
   getProviderLabel,
   getProviderBaseUrlWarnings,
+  getProviderFixedModel,
   getProviderModelOptions,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderRegionEnvKeys,
@@ -1021,6 +1023,11 @@ export function resolveModelId(
   options: OpenWikiRunOptions,
   provider: OpenWikiProvider,
 ): string {
+  const fixedModel = getProviderFixedModel(provider);
+  if (fixedModel) {
+    return fixedModel;
+  }
+
   const configuredModelId =
     options.modelId ?? process.env[OPENWIKI_MODEL_ID_ENV_KEY];
 
@@ -1225,6 +1232,21 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+
+  if (provider === "bob") {
+    return new ChatOpenAI({
+      // Placeholder silences the ChatOpenAI constructor's "missing apiKey"
+      // check; the real key is injected via the custom fetch wrapper below.
+      apiKey: "bob-placeholder",
+      configuration: {
+        baseURL: baseURL ?? "https://api.us-east.bob.ibm.com/inference/v1",
+        fetch: createBobFetch(),
+      },
+      model: modelId,
+      ...maxTokensOptions,
+      ...retryOptions,
+    });
+  }
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),

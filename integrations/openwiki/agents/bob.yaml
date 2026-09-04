@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenWiki"
+  short_description: "Initialize and update repository OpenWiki docs"
+  default_prompt: "Use $openwiki to update this repository's OpenWiki from current source and tests."
