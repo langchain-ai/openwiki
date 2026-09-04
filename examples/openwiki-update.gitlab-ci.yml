@@ -21,7 +21,26 @@ openwiki_update:
     - git checkout -b "$OPENWIKI_BRANCH"
     - git add openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml
     - git commit -m "docs: update OpenWiki"
-    - git push "https://oauth2:${OPENWIKI_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "$OPENWIKI_BRANCH"
+    - |
+      # Configure OPENWIKI_GITLAB_TOKEN as a protected, masked CI/CD variable.
+      # Keep tracing disabled while the temporary helper can read the token.
+      set +x
+      credential_helper="$(mktemp)"
+      trap 'rm -f "$credential_helper"' EXIT
+      chmod 700 "$credential_helper"
+      cat > "$credential_helper" <<'EOF'
+      #!/bin/sh
+      case "$1" in
+        get)
+          printf 'username=%s\n' oauth2
+          printf 'password=%s\n' "$OPENWIKI_GITLAB_TOKEN"
+          ;;
+      esac
+      EOF
+      git -c credential.helper= -c credential.helper="$credential_helper" \
+        push "https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "$OPENWIKI_BRANCH"
+      rm -f "$credential_helper"
+      trap - EXIT
     - |
       curl --fail --request POST \
         --header "PRIVATE-TOKEN: ${OPENWIKI_GITLAB_TOKEN}" \
