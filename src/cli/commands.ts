@@ -128,6 +128,7 @@ export type CliCommand =
       open: boolean;
       exportDir: string | null;
     }
+  | { kind: "doctor"; exitCode: 0 }
   | {
       kind: "ingest";
       exitCode: 0;
@@ -399,6 +400,19 @@ export function parseCommand(argv: string[]): CliCommand {
     }
 
     return { kind: "visualize", exitCode: 0, wikiDir, port, open, exportDir };
+  }
+
+  if (argv[0] === "doctor") {
+    const unknownOption = argv[1];
+    if (unknownOption) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: `Unknown option for doctor: ${unknownOption}`,
+      };
+    }
+
+    return { kind: "doctor", exitCode: 0 };
   }
 
   if (argv[0] === "ingest") {
@@ -1108,6 +1122,7 @@ export const helpContent: HelpContent = {
     "openwiki cron delete all",
     "openwiki ngrok start [url] [--port <port>]",
     "openwiki visualize [path] [--port <port>] [--no-open] [--export <dir>]",
+    "openwiki doctor",
     "openwiki integrations list [--project [path]]",
     `openwiki integrations install <${formatSupportedHostTargets("|")}> [--force] [--project [path]]`,
     `openwiki integrations uninstall <${formatSupportedHostTargets("|")}> [--project [path]]`,
@@ -1189,6 +1204,11 @@ export const helpContent: HelpContent = {
       label: "openwiki integrations uninstall <host> [--project [path]]",
       description:
         "Safely remove a global integration, or a project integration with --project.",
+    },
+    {
+      label: "openwiki doctor",
+      description:
+        "Check the repository wiki for source references that no longer exist and pages whose sources changed. No model calls.",
     },
   ],
   options: [
@@ -1285,6 +1305,7 @@ export const helpContent: HelpContent = {
     "openwiki visualize",
     "openwiki visualize openwiki --port 4400 --no-open",
     "openwiki visualize openwiki --export docs/openwiki-visualizer",
+    "openwiki doctor",
     "openwiki integrations list",
     "openwiki integrations install codex",
     "openwiki integrations uninstall codex",
