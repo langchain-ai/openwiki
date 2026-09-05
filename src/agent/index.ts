@@ -1094,7 +1094,18 @@ export function createModel(
       : { maxOutputTokens: configuredMaxOutputTokens };
   const streamIdleTimeoutOptions =
     streamIdleTimeout === undefined ? {} : { streamIdleTimeout };
-  const reasoningConfig = resolveReasoningConfig(provider, modelId);
+  const chatOpenAiUsesResponsesApi = providerUsesResponsesApi(
+    provider,
+    modelId,
+  );
+  const reasoningConfig = resolveReasoningConfig(
+    provider,
+    modelId,
+    process.env,
+    {
+      useResponsesApi: chatOpenAiUsesResponsesApi,
+    },
+  );
 
   // GPT-5.6 supports `max` before some OpenAI SDK type unions include it. The
   // documented Responses payload is still `reasoning: { effort }`, so keep the
@@ -1234,7 +1245,7 @@ export function createModel(
         }
       : undefined,
     model: modelId,
-    useResponsesApi: providerUsesResponsesApi(provider, modelId),
+    useResponsesApi: chatOpenAiUsesResponsesApi,
     ...maxTokensOptions,
     ...responsesReasoningOptions,
     ...chatCompletionsReasoningOptions,

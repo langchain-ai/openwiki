@@ -156,6 +156,12 @@ describe("MANAGED_ENV_KEYS", () => {
   test("manages the reasoning effort setting", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_REASONING_EFFORT");
   });
+
+  test("manages the OpenAI-compatible reasoning effort opt-in", () => {
+    expect(MANAGED_ENV_KEYS).toContain(
+      "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED",
+    );
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {

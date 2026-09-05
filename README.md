@@ -413,6 +413,15 @@ OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true
 
 It stays off by default because this provider points at arbitrary third-party endpoints, where SSE is not guaranteed to survive proxies and load balancers. Enabling it also makes the client report estimated rather than server-reported token counts.
 
+**Reasoning-capable gateways.** OpenAI-compatible endpoints are user-supplied, so OpenWiki does not assume that an arbitrary model supports reasoning controls. If your gateway accepts OpenAI-style reasoning effort, opt in explicitly before setting `OPENWIKI_REASONING_EFFORT`:
+
+```bash
+OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED=true
+OPENWIKI_REASONING_EFFORT=high
+```
+
+When `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` is also set, the effort is sent through the Responses API reasoning field. Otherwise it is sent as the chat-completions `reasoning_effort` model argument.
+
 </details>
 
 <details>

@@ -34,6 +34,7 @@ import {
   providerUsesStreaming,
   resolveConfiguredProvider,
   resolveMaxOutputTokens,
+  resolveOpenAiCompatibleReasoningEffortSupported,
   resolveOpenAiCompatibleStreaming,
   resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterMaxTokens,
@@ -422,6 +423,17 @@ describe("reasoning capabilities", () => {
     ).toBeUndefined();
   });
 
+  test("keeps OpenAI-compatible reasoning unsupported unless explicitly opted in", () => {
+    expect(
+      getReasoningCapability("openai-compatible", "Qwen/Qwen3.7-235B", {}),
+    ).toBeUndefined();
+    expect(() =>
+      resolveReasoningConfig("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_REASONING_EFFORT: "high",
+      }),
+    ).toThrow(/not supported/u);
+  });
+
   test("resolves supported values for OpenAI and NVIDIA NIM", () => {
     expect(
       resolveReasoningConfig("openai-chatgpt", "gpt-5.6-luna", {
@@ -436,6 +448,36 @@ describe("reasoning capabilities", () => {
       effort: "high",
       transport: "chat-completions-reasoning-effort",
     });
+  });
+
+  test("resolves OpenAI-compatible reasoning to chat completions when opted in", () => {
+    expect(
+      getReasoningCapability("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+      }),
+    ).toEqual({
+      transport: "chat-completions-reasoning-effort",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(
+      resolveReasoningConfig("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+        OPENWIKI_REASONING_EFFORT: " high ",
+      }),
+    ).toEqual({
+      effort: "high",
+      transport: "chat-completions-reasoning-effort",
+    });
+  });
+
+  test("resolves OpenAI-compatible reasoning to Responses when both opt-ins are set", () => {
+    expect(
+      resolveReasoningConfig("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "true",
+        OPENWIKI_REASONING_EFFORT: "max",
+      }),
+    ).toEqual({ effort: "max", transport: "responses-reasoning" });
   });
 
   test("rejects invalid or unsupported reasoning effort settings before a request", () => {
@@ -503,6 +545,32 @@ describe("resolveOpenAiCompatibleUseResponsesApi", () => {
     expect(
       resolveOpenAiCompatibleUseResponsesApi({
         OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "false",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("resolveOpenAiCompatibleReasoningEffortSupported", () => {
+  test("requires an explicit true opt-in", () => {
+    expect(resolveOpenAiCompatibleReasoningEffortSupported({})).toBe(false);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: " TRUE ",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "false",
+      }),
+    ).toBe(false);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "yes",
       }),
     ).toBe(false);
   });
