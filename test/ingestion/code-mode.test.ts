@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -146,10 +153,28 @@ describe("ensureCodeModeRepoSetup agent files", () => {
 
     // CLAUDE.md should reference AGENTS.md rather than duplicate its instructions.
     expect(claudeContent).toContain("AGENTS.md");
+    // The reference has to be Claude Code's `@path` import. A Markdown link is
+    // inert text to its loader, and it does not read AGENTS.md on its own once
+    // a CLAUDE.md exists, so a link would leave the block unreachable.
+    expect(claudeContent).toContain("@AGENTS.md");
+    expect(claudeContent).not.toContain("[AGENTS.md](AGENTS.md)");
     // CLAUDE.md should be shorter than AGENTS.md because it is a pointer, not a copy.
     expect((claudeContent ?? "").length).toBeLessThan(
       (agentsContent ?? "").length,
     );
+  });
+
+  test("inlines the instructions when CLAUDE.md is a link to AGENTS.md", async () => {
+    const repo = await createTempRepo();
+    await writeFile(path.join(repo, "AGENTS.md"), "", "utf8");
+    await symlink("AGENTS.md", path.join(repo, "CLAUDE.md"));
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    // Importing AGENTS.md here would point the file at itself.
+    expect(content).not.toContain("@AGENTS.md");
+    expect(content).toContain("generated `openwiki/` evidence index");
   });
 
   test("refreshes the OpenWiki block in place and preserves surrounding content", async () => {

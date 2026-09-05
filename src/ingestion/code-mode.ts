@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   getProviderAuthMethod,
@@ -190,7 +190,15 @@ async function readLastUpdatedAt(
 
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
   const agentsSnippet = createCodeModeAgentsSnippet();
-  const claudeSnippet = createCodeModeClaudeSnippet();
+  // Some repositories make CLAUDE.md a link to AGENTS.md. There the import
+  // would point the file at itself, so the block carries the instructions
+  // instead of referring to them.
+  const claudeSnippet = (await resolvesToSameFile(
+    path.join(cwd, "AGENTS.md"),
+    path.join(cwd, "CLAUDE.md"),
+  ))
+    ? agentsSnippet
+    : createCodeModeClaudeSnippet();
   const snippetByFile: Record<string, string> = {
     "AGENTS.md": agentsSnippet,
     "CLAUDE.md": claudeSnippet,
@@ -419,16 +427,38 @@ ${OPENWIKI_AGENTS_SNIPPET_END}`;
 
 /**
  * The snippet placed inside CLAUDE.md's managed block. It is intentionally
- * minimal -- a single pointer to AGENTS.md -- so that one file remains the
+ * minimal -- a single import of AGENTS.md -- so that one file remains the
  * canonical source of agent instructions while Claude Code still has a file
  * it reads at startup.
+ *
+ * The import has to be `@AGENTS.md` rather than a Markdown link: Claude Code
+ * expands only its own `@path` syntax, and it falls back to reading AGENTS.md
+ * itself only when no CLAUDE.md sits beside it -- which, once this snippet is
+ * written, is never. A link leaves the block inert.
  */
 function createCodeModeClaudeSnippet(): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
 ## OpenWiki
 
-See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
+@AGENTS.md
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
+}
+
+/**
+ * Whether two paths are the same file on disk, following symlinks. Inode 0 is
+ * treated as unknown because some Windows filesystems report it for every
+ * file, which would otherwise make unrelated paths compare equal.
+ */
+async function resolvesToSameFile(
+  first: string,
+  second: string,
+): Promise<boolean> {
+  try {
+    const [a, b] = await Promise.all([stat(first), stat(second)]);
+    return a.ino !== 0 && a.ino === b.ino && a.dev === b.dev;
+  } catch {
+    return false;
+  }
 }
