@@ -177,4 +177,16 @@ describe("parseEnv <-> formatEnv round-trip", () => {
 
     expect(parseEnv(formatEnv(original))).toEqual(original);
   });
+
+  test("Windows paths with a backslash immediately before 'n' or 'r' survive a format -> parse round-trip", () => {
+    // Regression test: a raw backslash escaped to "\\" followed by a path
+    // segment starting with "n" or "r" (e.g. "\name", "\repos") must not be
+    // misread as the "\n"/"\r" escape sequence on parse.
+    const original = {
+      GOOGLE_APPLICATION_CREDENTIALS: "C:\\name\\creds.json",
+      OPENAI_API_KEY: "C:\\repos\\secrets\\key.json",
+    };
+
+    expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
 });
