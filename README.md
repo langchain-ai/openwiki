@@ -452,7 +452,7 @@ OPENWIKI_OPENROUTER_MAX_TOKENS=8192
 
 The OpenRouter-specific setting takes precedence over `OPENWIKI_MAX_OUTPUT_TOKENS` for OpenRouter runs. A cap trades those hard 402 failures for possible truncation when a long wiki generation genuinely needs more output tokens, so prefer the largest value your balance allows.
 
-**Retry attempts.** OpenWiki uses LangChain's retry handling for transient provider errors. Override the retry count (default 3) with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
+**Retry attempts.** OpenWiki uses LangChain's retry handling for transient provider errors. For OpenAI and OpenAI-compatible transports, this also covers retryable streaming HTTP responses surfaced by the underlying SDK. Override the retry count (default 3) with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
 
 **Bedrock stream idle timeout.** For the Bedrock provider, set `OPENWIKI_STREAM_IDLE_TIMEOUT` to control how long the client waits for the first or next streamed response chunk, for example `OPENWIKI_STREAM_IDLE_TIMEOUT=300000`. The value is milliseconds and must be an integer from `0` to `2147483647`. Set it to `0` to disable the watchdog. If unset, OpenWiki preserves the `@langchain/aws` provider default. Prefer a sufficiently long finite timeout over disabling the watchdog so a stalled stream cannot hang forever.
 
