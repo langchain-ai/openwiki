@@ -403,10 +403,17 @@ describe("resolveStreamIdleTimeoutForProvider", () => {
 });
 
 describe("reasoning capabilities", () => {
-  test("returns the configured capability for the initial OpenAI and NVIDIA models", () => {
+  const GEMINI_REASONING_MODEL = "gemini-3.6-flash";
+  const GEMINI_REASONING_VALUES = ["low", "medium", "high"] as const;
+
+  test("returns the configured capability for the initial OpenAI, Gemini, and NVIDIA models", () => {
     expect(getReasoningCapability("openai", "gpt-5.6-luna")).toEqual({
       transport: "responses-reasoning",
       values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("gemini", GEMINI_REASONING_MODEL)).toEqual({
+      transport: "gemini-thinking-level",
+      values: GEMINI_REASONING_VALUES,
     });
     expect(
       getReasoningCapability("nvidia", "nvidia/nemotron-3-super-120b-a12b"),
@@ -422,12 +429,20 @@ describe("reasoning capabilities", () => {
     ).toBeUndefined();
   });
 
-  test("resolves supported values for OpenAI and NVIDIA NIM", () => {
+  test("resolves supported values for OpenAI, Gemini, and NVIDIA NIM", () => {
     expect(
       resolveReasoningConfig("openai-chatgpt", "gpt-5.6-luna", {
         OPENWIKI_REASONING_EFFORT: " max ",
       }),
     ).toEqual({ effort: "max", transport: "responses-reasoning" });
+    expect(
+      resolveReasoningConfig("gemini", GEMINI_REASONING_MODEL, {
+        OPENWIKI_REASONING_EFFORT: "medium",
+      }),
+    ).toEqual({
+      effort: "medium",
+      transport: "gemini-thinking-level",
+    });
     expect(
       resolveReasoningConfig("nvidia", "nvidia/nemotron-3-super-120b-a12b", {
         OPENWIKI_REASONING_EFFORT: "high",
@@ -449,6 +464,11 @@ describe("reasoning capabilities", () => {
         OPENWIKI_REASONING_EFFORT: "max",
       }),
     ).toThrow(/Supported values: none, low, high/u);
+    expect(() =>
+      resolveReasoningConfig("gemini", GEMINI_REASONING_MODEL, {
+        OPENWIKI_REASONING_EFFORT: "max",
+      }),
+    ).toThrow(/Supported values: low, medium, high/u);
     expect(() =>
       resolveReasoningConfig("nvidia", "openai/gpt-oss-120b", {
         OPENWIKI_REASONING_EFFORT: "high",

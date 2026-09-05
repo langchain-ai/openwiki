@@ -31,6 +31,16 @@ function googleMaxOutputTokens(model: ChatGoogle): number | undefined {
   ).generationConfig?.maxOutputTokens;
 }
 
+function googleThinkingLevel(model: ChatGoogle): string | undefined {
+  return (
+    model.invocationParams({}) as {
+      generationConfig?: {
+        thinkingConfig?: { thinkingLevel?: string };
+      };
+    }
+  ).generationConfig?.thinkingConfig?.thinkingLevel;
+}
+
 describe("createModel gemini-enterprise surface dispatch", () => {
   let savedProject: string | undefined;
   let savedLocation: string | undefined;
@@ -153,17 +163,21 @@ describe("createModel gemini-enterprise surface dispatch", () => {
 describe("createModel gemini (AI Studio)", () => {
   let savedGeminiKey: string | undefined;
   let savedMaxOutputTokens: string | undefined;
+  let savedReasoningEffort: string | undefined;
 
   beforeEach(() => {
     savedGeminiKey = process.env[GEMINI_KEY];
     savedMaxOutputTokens = process.env[MAX_OUTPUT_TOKENS_KEY];
+    savedReasoningEffort = process.env[REASONING_EFFORT_KEY];
     process.env[GEMINI_KEY] = "test-gemini-key";
     delete process.env[MAX_OUTPUT_TOKENS_KEY];
+    delete process.env[REASONING_EFFORT_KEY];
   });
 
   afterEach(() => {
     restoreEnv(GEMINI_KEY, savedGeminiKey);
     restoreEnv(MAX_OUTPUT_TOKENS_KEY, savedMaxOutputTokens);
+    restoreEnv(REASONING_EFFORT_KEY, savedReasoningEffort);
   });
 
   test("builds a ChatGoogle AI Studio client with v0 output pinned", () => {
@@ -191,6 +205,14 @@ describe("createModel gemini (AI Studio)", () => {
     const model = createModel("gemini", "gemini-3.1-pro", 0) as ChatGoogle;
 
     expect(googleMaxOutputTokens(model)).toBe(12_000);
+  });
+
+  test("maps reasoning effort to Gemini thinkingLevel", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+
+    const model = createModel("gemini", "gemini-3.6-flash", 0) as ChatGoogle;
+
+    expect(googleThinkingLevel(model)).toBe("HIGH");
   });
 });
 
