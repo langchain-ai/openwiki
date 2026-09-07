@@ -95,4 +95,30 @@ describe("synchronizeClaimsVerification", () => {
 
     expect(store.pages.get(page)).toBe(original);
   });
+
+  test("preserves excluded pages while removing unjustified events elsewhere", async () => {
+    const skipped = "/openwiki/skipped.md";
+    const unverified = "/openwiki/unverified.md";
+    const original =
+      "---\ntype: Reference\nverified:\n  - by: openwiki/0.3.3\n    at: 2026-08-20T12:00:00.000Z\n---\n\n# Page\n";
+    const store = new MemoryPageStore(
+      new Map([
+        [skipped, original],
+        [unverified, original],
+      ]),
+    );
+
+    const changes = await synchronizeClaimsVerification(
+      store,
+      new Map(),
+      new Set([skipped]),
+    );
+
+    expect(store.pages.get(skipped)).toBe(original);
+    expect(changes.has(skipped)).toBe(false);
+    expect(
+      parseFrontmatterFields(store.pages.get(unverified)!)?.verified,
+    ).toBeUndefined();
+    expect(changes.get(unverified)).toBe(original);
+  });
 });
