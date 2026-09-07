@@ -1,0 +1,14 @@
+src/agent/utils.ts
+  h_f78d33d4280f3f 875-878
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "01d7e90e4249c10372c0d6d216d8a4ed7f581876",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
