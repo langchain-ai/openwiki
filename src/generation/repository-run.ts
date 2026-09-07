@@ -23,6 +23,7 @@ import {
   prepareClaimsRuntime,
   type ClaimsRuntime,
 } from "../claims/brains/code/runtime.js";
+import { normalizeClaimsToolPagePath } from "../claims/brains/code/paths.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
 import type {
   GroundingIssue,
@@ -46,6 +47,7 @@ import {
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { RepositoryRunError } from "./errors.js";
 import {
+  findUnverifiedRepositoryPages,
   getCurrentRepositoryPageCompletion,
   readRepositoryPageManifest,
   recordRepositoryPageCompletion,
@@ -405,6 +407,10 @@ export async function beginRepositoryRun(
     const hasCompleteBaselineCoverage =
       input.mode !== "update" ||
       initialPages.every((page) => seededManifest?.pages[page] !== undefined);
+    const requiredCoveragePages =
+      input.mode === "update"
+        ? await findUnverifiedRepositoryPages(input.root, initialPages)
+        : [];
 
     // Claims validation precedes update no-op detection. A clean Git status
     // cannot hide stale or unresolved grounding state.
@@ -417,7 +423,8 @@ export async function beginRepositoryRun(
       if (
         preflight.shouldSkip &&
         claimsRuntime.issueCount === 0 &&
-        hasCompleteBaselineCoverage
+        hasCompleteBaselineCoverage &&
+        requiredCoveragePages.length === 0
       ) {
         const source = await createRepositorySourceSnapshot(input.root, ignore);
         await claimsRuntime.finalize(now().toISOString());
@@ -478,6 +485,7 @@ export async function beginRepositoryRun(
       language,
       languageChanged,
       requiredRewritePages,
+      requiredCoveragePages,
       initialPages,
       sourceFingerprint: source.fingerprint,
       ...(source.gitHead ? { targetGitHead: source.gitHead } : {}),
@@ -624,6 +632,13 @@ async function resumeRepositoryRun(
       state.actor.producerActor,
     );
   }
+  if (nextState.mode === "update") {
+    nextState = await reconcileRequiredCoverage(
+      input.root,
+      nextState,
+      sourceChanged,
+    );
+  }
   // A finish-time drift check already stores the replacement fingerprint, so
   // the next begin may see sourceChanged=false. Plan absence is the durable
   // signal that new planning context may replace the prior context.
@@ -658,6 +673,50 @@ async function resumeRepositoryRun(
   return {
     run,
     view: await toActiveBeginView(run, true),
+  };
+}
+
+/**
+ * Adds missing verification jobs to old queues without replacing accepted work.
+ *
+ * The stable required set also keeps duplicate plan submission idempotent after
+ * those jobs complete. Source drift starts a new plan and recomputes that set.
+ */
+async function reconcileRequiredCoverage(
+  root: string,
+  state: RepositoryRunState,
+  sourceChanged: boolean,
+): Promise<RepositoryRunState> {
+  const existing = new Set(await new ClaimsStore(root).discoverPages());
+  const missing = await findUnverifiedRepositoryPages(
+    root,
+    state.initialPages.filter((page) => existing.has(page)),
+  );
+  const requiredCoveragePages = [
+    ...new Set([
+      ...(sourceChanged ? [] : (state.requiredCoveragePages ?? [])),
+      ...missing,
+    ]),
+  ].sort(compareCodeUnits);
+  if (!state.plan) return { ...state, requiredCoveragePages };
+
+  const originalJobs = new Map(
+    state.plan.pages.map((page) => [page.path, page]),
+  );
+  const augmented = createRepositoryPlan(
+    state.mode,
+    state.plan,
+    [],
+    [],
+    requiredCoveragePages,
+  );
+  return {
+    ...state,
+    requiredCoveragePages,
+    plan: {
+      ...state.plan,
+      pages: augmented.pages.map((page) => originalJobs.get(page.path) ?? page),
+    },
   };
 }
 
@@ -892,6 +951,22 @@ export async function submitRepositoryPlan(
       input,
       run.claimsRuntime.issues,
       run.state.requiredRewritePages,
+      run.state.requiredCoveragePages,
+    );
+    // A completed required page may no longer have its original Claim issues.
+    // Keep the accepted semantics of omitted, code-added coverage jobs rather
+    // than comparing newly synthesized purpose/seed text after recovery.
+    const explicitPages = new Set(
+      input.pages.map((page) => normalizeClaimsToolPagePath(page.path)),
+    );
+    const requiredPages = new Set(run.state.requiredCoveragePages);
+    const acceptedJobs = new Map(
+      run.state.plan.pages.map((page) => [page.path, page]),
+    );
+    proposed.pages = proposed.pages.map((page) =>
+      requiredPages.has(page.path) && !explicitPages.has(page.path)
+        ? (acceptedJobs.get(page.path) ?? page)
+        : page,
     );
     if (!samePlanIgnoringJobIds(run.state.plan, proposed)) {
       throw new RepositoryRunError(
@@ -914,6 +989,7 @@ export async function submitRepositoryPlan(
     input,
     run.claimsRuntime.issues,
     run.state.requiredRewritePages,
+    run.state.requiredCoveragePages,
   );
   const nextState: RepositoryRunState = {
     ...run.state,

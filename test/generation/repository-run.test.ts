@@ -122,6 +122,7 @@ import {
 import {
   readRepositoryRunState,
   repositoryRunStatePath,
+  type RepositoryRunState,
 } from "../../src/generation/run-state.ts";
 
 const execFileAsync = promisify(execFile);
@@ -227,6 +228,305 @@ async function createRepository(extraPages: string[] = []): Promise<string> {
   );
   return root;
 }
+
+/** Creates ordinary legacy Markdown input without Claims or run state. */
+async function createLegacyRepository(): Promise<string> {
+  const root = await mkdtemp(path.join(tmpdir(), "openwiki-legacy-coverage-"));
+  temporaryDirectories.push(root);
+  await git(root, ["init", "--quiet"]);
+  await git(root, ["config", "user.email", "test@example.com"]);
+  await git(root, ["config", "user.name", "OpenWiki Test"]);
+  await writeFile(path.join(root, "README.md"), "# Repository\n", "utf8");
+  await writeWikiPage(root, "quickstart.md", validPage("Quickstart"));
+  await writeWikiPage(root, "legacy.md", validPage("Legacy"));
+  await ensureCodeModeRepoSetup(root);
+  await git(root, ["add", "."]);
+  await git(root, ["commit", "--quiet", "-m", "legacy wiki without Claims"]);
+  return root;
+}
+
+describe("legacy page coverage", () => {
+  test.each([false, true])(
+    "adds omitted unverified pages and completes an update (empty plan: %s)",
+    async (emptyPlan) => {
+      const root = await createLegacyRepository();
+      const run = await beginForcedUpdate(root);
+      const proposal = {
+        pages: emptyPlan
+          ? []
+          : [
+              {
+                path: "/openwiki/quickstart.md",
+                title: "Keep this title",
+                purpose: "Keep this purpose.",
+                instructions: ["Keep this instruction."],
+              },
+            ],
+      };
+      await submitRepositoryPlan(run, proposal);
+      expect(run.state.plan?.pages.map(({ path }) => path)).toEqual([
+        "/openwiki/legacy.md",
+        "/openwiki/quickstart.md",
+      ]);
+      if (!emptyPlan) {
+        expect(run.state.plan?.pages[1]).toMatchObject({
+          title: "Keep this title",
+          purpose: "Keep this purpose.",
+          instructions: ["Keep this instruction."],
+        });
+      }
+      await expect(submitRepositoryPlan(run, proposal)).resolves.toMatchObject({
+        totalPages: 2,
+      });
+      await completeCurrentPage(run, "Legacy reviewed");
+      await completeCurrentPage(run, "Quickstart reviewed");
+      await expect(submitRepositoryPlan(run, proposal)).resolves.toMatchObject({
+        totalPages: 2,
+      });
+      const resumed = requireActiveRun(
+        await beginRepositoryRun({ root, mode: "update", actor: ACTOR }),
+      );
+      await expect(
+        submitRepositoryPlan(resumed, proposal),
+      ).resolves.toMatchObject({ totalPages: 2 });
+      await expect(finishRepositoryRun(resumed)).resolves.toEqual({
+        status: "complete",
+      });
+      expect(await readRepositoryRunState(root)).toBeNull();
+    },
+  );
+
+  test("does not add an explicitly deleted legacy page", async () => {
+    const root = await createLegacyRepository();
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, { pages: [], deletePages: ["legacy.md"] });
+    expect(run.state.plan?.pages.map(({ path }) => path)).toEqual([
+      "/openwiki/quickstart.md",
+    ]);
+    await completeCurrentPage(run, "Quickstart reviewed");
+    await finishRepositoryRun(run);
+    expect(await new ClaimsStore(root).discoverPages()).toEqual([
+      "/openwiki/quickstart.md",
+    ]);
+  });
+
+  test("does not requeue verified pages merely because their source checkpoint is older", async () => {
+    const root = await createLegacyRepository();
+    const first = await beginForcedUpdate(root);
+    await submitRepositoryPlan(first, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Review.",
+        },
+        { path: "/openwiki/legacy.md", title: "Legacy", purpose: "Review." },
+      ],
+    });
+    await completeCurrentPage(first, "Legacy reviewed");
+    await completeCurrentPage(first, "Quickstart reviewed");
+    await finishRepositoryRun(first);
+    await writeFile(path.join(root, "unrelated.txt"), "new source\n", "utf8");
+    await git(root, ["add", "."]);
+    await git(root, ["commit", "--quiet", "-m", "add unrelated source"]);
+    const next = await beginForcedUpdate(root);
+    await submitRepositoryPlan(next, { pages: [] });
+    expect(next.state.plan?.pages).toEqual([]);
+    await expect(finishRepositoryRun(next)).resolves.toEqual({
+      status: "complete",
+    });
+  });
+
+  test("recovers an old accepted plan without replacing completed jobs", async () => {
+    const root = await createLegacyRepository();
+    const original = await beginForcedUpdate(root);
+    const proposal = {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Review quickstart.",
+        },
+      ],
+    };
+    await submitRepositoryPlan(original, proposal);
+    // A pre-fix checkpoint could persist this incomplete plan. Exercise the
+    // old format explicitly; Markdown and Claims are still produced by submit.
+    const acceptedPlan = original.state.plan;
+    if (!acceptedPlan) throw new Error("Expected an accepted plan.");
+    original.state = {
+      ...original.state,
+      requiredCoveragePages: [],
+      plan: {
+        ...acceptedPlan,
+        pages: acceptedPlan.pages.filter(
+          ({ path }) => path === "/openwiki/quickstart.md",
+        ),
+      },
+    };
+    await completeCurrentPage(original, "Completed before upgrade");
+    const oldCheckpoint: Partial<RepositoryRunState> = { ...original.state };
+    delete oldCheckpoint.requiredCoveragePages;
+    await writeFile(
+      repositoryRunStatePath(root),
+      `${JSON.stringify(oldCheckpoint, null, 2)}\n`,
+      "utf8",
+    );
+    const completed = original.state.plan?.pages[0];
+    if (!completed) throw new Error("Expected completed legacy work.");
+    const previousCoverage = (await readRepositoryPageManifest(root)).pages[
+      completed.path
+    ];
+    const resumed = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: OTHER_ACTOR }),
+    );
+    expect(
+      resumed.state.plan?.pages.find(({ path }) => path === completed.path),
+    ).toEqual(completed);
+    expect(
+      (await readRepositoryPageManifest(root)).pages[completed.path],
+    ).toEqual(previousCoverage);
+    expect(
+      resumed.state.plan?.pages
+        .filter(({ status }) => status === "pending")
+        .map(({ path }) => path),
+    ).toEqual(["/openwiki/legacy.md"]);
+    const ids = resumed.state.plan?.pages.map(({ id }) => id);
+    const again = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: OTHER_ACTOR }),
+    );
+    expect(again.state.plan?.pages.map(({ id }) => id)).toEqual(ids);
+    await expect(submitRepositoryPlan(again, proposal)).resolves.toMatchObject({
+      totalPages: 2,
+    });
+    await completeCurrentPage(again, "Legacy reviewed after upgrade");
+    await expect(finishRepositoryRun(again)).resolves.toEqual({
+      status: "complete",
+    });
+  });
+
+  test("recomputes coverage requirements when source drift discards the old plan", async () => {
+    const root = await createLegacyRepository();
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, { pages: [] });
+    await completeCurrentPage(run, "Legacy reviewed");
+    await completeCurrentPage(run, "Quickstart reviewed");
+    await writeFile(path.join(root, "unrelated.txt"), "new source\n", "utf8");
+    await git(root, ["add", "."]);
+    await git(root, [
+      "commit",
+      "--quiet",
+      "-m",
+      "source drift after page completion",
+    ]);
+    const resumed = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: ACTOR }),
+    );
+    expect(resumed.state.phase).toBe("planning");
+    await submitRepositoryPlan(resumed, { pages: [] });
+    expect(resumed.state.plan?.pages).toEqual([]);
+    await expect(finishRepositoryRun(resumed)).resolves.toEqual({
+      status: "complete",
+    });
+  });
+  test("keeps duplicate plans idempotent when coverage and stale Claims jobs overlap", async () => {
+    const root = await createLegacyRepository();
+    const first = await beginForcedUpdate(root);
+    await submitRepositoryPlan(first, { pages: [] });
+    await completeCurrentPage(first, "Legacy reviewed");
+    await completeCurrentPage(first, "Quickstart reviewed");
+    await finishRepositoryRun(first);
+    const store = new ClaimsStore(root);
+    const claims = await store.loadPage("/openwiki/legacy.md");
+    if (!claims) throw new Error("Expected persisted Claims.");
+    delete claims.verification;
+    await store.writePage("/openwiki/legacy.md", claims);
+    await writeFile(
+      path.join(root, "README.md"),
+      "# Changed repository\n",
+      "utf8",
+    );
+    await git(root, ["add", "."]);
+    await git(root, ["commit", "--quiet", "-m", "change Claim evidence"]);
+    const run = await beginForcedUpdate(root);
+    const proposal = {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Review quickstart.",
+        },
+      ],
+    };
+    await submitRepositoryPlan(run, proposal);
+    await completeCurrentPage(run, "Legacy reverified");
+    await completeCurrentPage(run, "Quickstart reverified");
+    const resumed = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: ACTOR }),
+    );
+    await expect(
+      submitRepositoryPlan(resumed, proposal),
+    ).resolves.toMatchObject({ totalPages: 2 });
+    await expect(
+      submitRepositoryPlan(resumed, {
+        pages: [
+          ...proposal.pages,
+          {
+            path: "/openwiki/legacy.md",
+            title: "Different title",
+            purpose: "Different purpose.",
+          },
+        ],
+      }),
+    ).rejects.toThrow("different persisted plan");
+    await expect(finishRepositoryRun(resumed)).resolves.toEqual({
+      status: "complete",
+    });
+  });
+
+  test("does not rewrite verified pages solely to create a missing manifest", async () => {
+    const root = await createLegacyRepository();
+    const first = await beginForcedUpdate(root);
+    await submitRepositoryPlan(first, { pages: [] });
+    await completeCurrentPage(first, "Legacy reviewed");
+    await completeCurrentPage(first, "Quickstart reviewed");
+    await finishRepositoryRun(first);
+    await rm(path.join(root, "openwiki/.page-manifest.json"));
+    await rm(path.join(root, "openwiki/.last-update.json"));
+    const next = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: ACTOR }),
+    );
+    await submitRepositoryPlan(next, { pages: [] });
+    expect(next.state.plan?.pages).toEqual([]);
+    await expect(finishRepositoryRun(next)).resolves.toEqual({
+      status: "complete",
+    });
+    expect(
+      Object.keys((await readRepositoryPageManifest(root)).pages),
+    ).toHaveLength(2);
+  });
+
+  test("does not silently no-op over a page whose Markdown no longer matches its Claims", async () => {
+    const root = await createLegacyRepository();
+    const first = await beginForcedUpdate(root);
+    await submitRepositoryPlan(first, { pages: [] });
+    await completeCurrentPage(first, "Legacy reviewed");
+    await completeCurrentPage(first, "Quickstart reviewed");
+    await finishRepositoryRun(first);
+    await writeWikiPage(root, "legacy.md", validPage("Manually edited"));
+    const next = requireActiveRun(
+      await beginRepositoryRun({ root, mode: "update", actor: ACTOR }),
+    );
+    await submitRepositoryPlan(next, { pages: [] });
+    expect(next.state.plan?.pages.map(({ path }) => path)).toEqual([
+      "/openwiki/legacy.md",
+    ]);
+    await completeCurrentPage(next, "Reviewed edit");
+    await expect(finishRepositoryRun(next)).resolves.toEqual({
+      status: "complete",
+    });
+  });
+});
 
 /**
  * Narrows a begin result to an active repository run.
