@@ -872,14 +872,10 @@ async function getGitHead(cwd: string): Promise<string | undefined> {
  */
 async function runGit(cwd: string, args: string[]): Promise<string> {
   try {
-    const { stdout } = await execFileAsync(
-      "git",
-      ["--no-pager", ...args],
-      {
-        cwd,
-        maxBuffer: 1024 * 1024,
-      },
-    );
+    const { stdout } = await execFileAsync("git", ["--no-pager", ...args], {
+      cwd,
+      maxBuffer: 1024 * 1024,
+    });
 
     return stdout.trim();
   } catch (error) {
