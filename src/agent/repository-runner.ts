@@ -6,6 +6,12 @@ import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createMiddleware } from "langchain";
 import { z } from "zod";
 import { RepositoryRunError } from "../generation/errors.js";
+import { PageReconciliationInput } from "../generation/page-input.js";
+import { RepositoryPlanInput } from "../generation/plan-input.js";
+import {
+  PAGE_INSPECTION_DESCRIPTION,
+  PAGE_SUBMISSION_DESCRIPTION,
+} from "../claims/guidance.js";
 import {
   beginRepositoryRun,
   captureRepositoryPageSnapshot,
@@ -34,42 +40,6 @@ import {
   createRepositoryPlannerPrompt,
 } from "./repository-prompts.js";
 import type { OpenWikiRunEvent } from "./types.js";
-
-const PlanPageSchema = z
-  .object({
-    path: z.string().trim().min(1),
-    title: z.string().trim().min(1),
-    purpose: z.string().trim().min(1),
-    seedPaths: z.array(z.string().trim().min(1)).optional(),
-    relatedPages: z.array(z.string().trim().min(1)).optional(),
-    instructions: z.array(z.string().trim().min(1)).optional(),
-  })
-  .strict();
-
-const PlanSchema = z
-  .object({
-    pages: z.array(PlanPageSchema),
-    deletePages: z.array(z.string().trim().min(1)).optional(),
-  })
-  .strict();
-
-const ClaimSchema = z
-  .object({
-    id: z.string().trim().min(1).optional(),
-    statement: z.string().trim().min(1),
-    evidence: z
-      .array(z.object({ resource: z.string().trim().min(1) }).strict())
-      .min(1),
-  })
-  .strict();
-
-const ClaimReconciliationSchema = z
-  .object({
-    confirmedClaimIds: z.array(z.string().trim().min(1)).optional(),
-    claims: z.array(ClaimSchema).optional(),
-    retractedClaimIds: z.array(z.string().trim().min(1)).optional(),
-  })
-  .strict();
 
 const PLANNER_FILESYSTEM_TOOLS = ["read_file", "ls", "glob", "grep"] as const;
 const PAGE_FILESYSTEM_TOOLS = [
@@ -308,7 +278,7 @@ async function runPlanningAgent(
     name: "submit_plan",
     description:
       "Submit the final canonical OpenWiki page plan. This is the only completion action for planning.",
-    schema: PlanSchema,
+    schema: RepositoryPlanInput,
     func: async (input, _runManager, config) => {
       try {
         const result = await submitRepositoryPlan(run, input);
@@ -427,17 +397,15 @@ async function runPageAgent(
   let fatalSubmissionFailure = false;
   const inspectClaimsTool = new DynamicStructuredTool({
     name: "inspect_claims",
-    description:
-      "Return this page's complete current Claim set without opaque evidence versions. Use only before intentionally revising or removing otherwise-current content; stale or unresolved Claims already appear in the assignment.",
+    description: PAGE_INSPECTION_DESCRIPTION,
     schema: z.object({}).strict(),
     func: () =>
       Promise.resolve(JSON.stringify(inspectRepositoryPageClaims(run, job.id))),
   });
   const submitPageTool = new DynamicStructuredTool({
     name: "submit_page",
-    description:
-      "Complete the assigned page after writing it. Submit only sparse Claim decisions: confirmedClaimIds for rechecked issue Claims kept unchanged, claims for revisions/additions, and retractedClaimIds for removals. Other current Claims are retained automatically. Evidence must use repo://<repository-relative-path>, optionally with #Lx-Ly.",
-    schema: ClaimReconciliationSchema,
+    description: PAGE_SUBMISSION_DESCRIPTION,
+    schema: PageReconciliationInput,
     func: async (reconciliation, _runManager, config) => {
       if (submitted) {
         throw new Error("submit_page was already called for this page worker.");
@@ -457,7 +425,7 @@ async function runPageAgent(
           return createSubmissionRejection(
             "submit_page",
             error,
-            "Correct the assigned page or sparse Claim decisions and call submit_page again.",
+            "Correct the assigned page, Claim decisions, sections, bindings, or reflection results and call submit_page again.",
             (config as { toolCall?: { id?: string } } | undefined)?.toolCall
               ?.id,
           );

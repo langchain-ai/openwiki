@@ -1,5 +1,9 @@
 import { RepositoryRunError } from "../../generation/errors.js";
 import {
+  PAGE_INSPECTION_DESCRIPTION,
+  PAGE_SUBMISSION_DESCRIPTION,
+} from "../../claims/guidance.js";
+import {
   beginRepositoryRun,
   finishRepositoryRun,
   inspectRepositoryPageClaims,
@@ -26,6 +30,8 @@ import {
   type SubmitPlanRequest,
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
+import { createRetrievalTools } from "./retrieval-tools.js";
+import { createReflectionTool } from "./reflection-tool.js";
 
 /**
  * Stable host identity and optional deterministic clock for the MCP adapter.
@@ -48,7 +54,7 @@ export interface HostSessionManagerOptions {
 }
 
 /**
- * Thin single-run MCP adapter over the transport-neutral lifecycle core.
+ * MCP tool provider with independent memory reads and one active generation run.
  */
 export class HostSessionManager {
   /**
@@ -161,6 +167,7 @@ export class HostSessionManager {
       return submitRepositoryPlan(run, {
         pages: input.pages,
         deletePages: input.deletePages,
+        discardedReflectionIds: input.discardedReflectionIds,
       });
     });
   }
@@ -178,7 +185,12 @@ export class HostSessionManager {
     });
   }
 
-  /** Returns the current pending page's complete Claims only when requested. */
+  /**
+   * Returns the pending page's complete claims, sections, and bindings on demand.
+   *
+   * @param input - Active run and pending job identifiers.
+   * @returns Detached page metadata for explicit authoring decisions.
+   */
   async inspectPageClaims(input: InspectPageClaimsRequest): Promise<unknown> {
     return this.runOperation(() => {
       const run = this.requireSession(input.runId);
@@ -187,9 +199,9 @@ export class HostSessionManager {
   }
 
   /**
-   * Submits sparse Claim decisions for the active page job.
+   * Submits sparse claim, section, and binding decisions for the active page job.
    *
-   * @param input - Active job identity and sparse Claim decisions.
+   * @param input - Active job identity and sparse page metadata decisions.
    * @returns Completed page and remaining queue size.
    */
   async submitPage(input: SubmitPageRequest): Promise<unknown> {
@@ -215,12 +227,14 @@ export class HostSessionManager {
   }
 
   /**
-   * Returns exactly the six OpenWiki 0.5 lifecycle tools.
+   * Returns independent memory tools followed by the generation lifecycle tools.
    *
    * @returns Ordered transport-neutral tool definitions.
    */
   tools(): readonly ProtocolTool[] {
     return [
+      ...createRetrievalTools(),
+      createReflectionTool(),
       {
         name: "openwiki_begin",
         description:
@@ -231,29 +245,27 @@ export class HostSessionManager {
       {
         name: "openwiki_submit_plan",
         description:
-          "Submit the final canonical page plan. OpenWiki validates it and durably persists the ordered PageJob queue before accepting it.",
+          "Submit the final canonical page plan. Account for every captured reflection by assigning it to one page's reflectionIds or checking and discarding it in discardedReflectionIds. OpenWiki validates the complete plan and persists the ordered queue before accepting it.",
         schema: SubmitPlanInput,
         handle: async (input) => this.submitPlan(SubmitPlanInput.parse(input)),
       },
       {
         name: "openwiki_next_page",
         description:
-          "Return the first pending page job, its Claim count, and only stale or unresolved Claims requiring an explicit decision; current issue-free Claims remain compact unless inspected on demand.",
+          "Return the first pending page job, its pending reflections, its Claim count, and stale or unresolved Claims requiring an explicit decision. Current issue-free Claims remain compact unless inspected on demand.",
         schema: NextPageInput,
         handle: async (input) => this.nextPage(NextPageInput.parse(input)),
       },
       {
         name: "openwiki_inspect_page_claims",
-        description:
-          "Return the current pending page's complete Claim set without opaque evidence versions. Use only before intentionally revising or removing otherwise-current content; focused updates normally need only the issue Claims returned by openwiki_next_page.",
+        description: PAGE_INSPECTION_DESCRIPTION,
         schema: InspectPageClaimsInput,
         handle: async (input) =>
           this.inspectPageClaims(InspectPageClaimsInput.parse(input)),
       },
       {
         name: "openwiki_submit_page",
-        description:
-          "Complete the current page job after its Markdown is written. Submit only sparse decisions: confirmedClaimIds for rechecked issue Claims retained unchanged, claims for revisions or additions, and retractedClaimIds for removals. Other current Claims are retained automatically. The final page and reconciled Claim set must agree.",
+        description: PAGE_SUBMISSION_DESCRIPTION,
         schema: SubmitPageInput,
         handle: async (input) => this.submitPage(SubmitPageInput.parse(input)),
       },

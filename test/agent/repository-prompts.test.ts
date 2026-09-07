@@ -43,6 +43,7 @@ function planningView(
       },
     ],
     completedPages: 0,
+    reflections: [],
     wikiGoal: "Prioritize operator safety.",
     ...overrides,
   };
@@ -85,6 +86,31 @@ function pageJob(
 }
 
 describe("repository worker prompts", () => {
+  test("gives native planners and page authors the captured findings and consolidation contract", () => {
+    const reflection = {
+      id: "reflection-00000000-0000-4000-8000-000000000001",
+      finding: "Token rotation leaves running requests active.",
+      evidence: [{ resource: "repo://src/auth.ts", issue: "changed" as const }],
+    };
+    const planner = createRepositoryPlannerPrompt(
+      planningView({ reflections: [reflection] }),
+    );
+    expect(planner).toContain(reflection.finding);
+    expect(planner).toContain("discardedReflectionIds");
+    expect(planner).toContain("Account for each exactly once");
+    const worker = createRepositoryPagePrompt(
+      pageJob({ reflections: [reflection] }),
+      [],
+      "en",
+    );
+    expect(worker).toContain(reflection.finding);
+    expect(worker).toContain('"issue": "changed"');
+    expect(worker).toContain("reflectionResults");
+    expect(worker).toContain(
+      "Failed or skipped pages leave their findings pending",
+    );
+  });
+
   test("preserves actual user and connector planning context", () => {
     const prompt = createRepositoryPlannerPrompt(
       planningView(),

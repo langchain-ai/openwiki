@@ -573,7 +573,7 @@ describe("runNativeRepositoryGeneration", () => {
       '"message":"Unsupported evidence resource: src/agent/index.ts"',
     );
     expect(rejection.text).toContain(
-      '"retry":"Correct the assigned page or sparse Claim decisions and call submit_page again."',
+      '"retry":"Correct the assigned page, Claim decisions, sections, bindings, or reflection results and call submit_page again."',
     );
     expect(harness.finishCalls).toBe(1);
   });

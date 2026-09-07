@@ -24,6 +24,12 @@ import {
   type ClaimsRuntime,
 } from "../claims/brains/code/runtime.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
+import { assertPageProse } from "../claims/brains/code/prose.js";
+import type {
+  PageProse,
+  PageSection,
+  ProseBinding,
+} from "../claims/brains/code/prose-types.js";
 import type {
   GroundingIssue,
   InspectedClaim,
@@ -45,6 +51,14 @@ import {
 } from "../platform/language.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { RepositoryRunError } from "./errors.js";
+import {
+  inspectReflections,
+  loadPendingReflections,
+  removeProcessedReflections,
+  validateReflectionPlan,
+  validateReflectionResults,
+  type InspectedReflection,
+} from "./reflections.js";
 import {
   getCurrentRepositoryPageCompletion,
   readRepositoryPageManifest,
@@ -246,6 +260,11 @@ export interface ActiveBeginView {
   claimIssues: readonly GroundingIssue[];
 
   /**
+   * Still-pending discoveries captured for this update, with current evidence feedback.
+   */
+  reflections: InspectedReflection[];
+
+  /**
    * Number of durable page jobs already completed.
    */
   completedPages: number;
@@ -352,6 +371,9 @@ export async function beginRepositoryRun(
       getPrimaryLanguageSubtag(context.lastUpdate?.language);
   const ignore = await OpenWikiIgnore.load(input.root);
 
+  const initialReflections =
+    input.mode === "update" ? await loadPendingReflections(input.root) : [];
+
   const replacement =
     input.mode === "init"
       ? await beginRepositoryWikiReplacement(input.root)
@@ -408,7 +430,11 @@ export async function beginRepositoryRun(
 
     // Claims validation precedes update no-op detection. A clean Git status
     // cannot hide stale or unresolved grounding state.
-    if (input.mode === "update" && input.force !== true) {
+    if (
+      input.mode === "update" &&
+      input.force !== true &&
+      initialReflections.length === 0
+    ) {
       const preflight = await getUpdateNoopStatus(
         input.root,
         ignore,
@@ -479,6 +505,9 @@ export async function beginRepositoryRun(
       languageChanged,
       requiredRewritePages,
       initialPages,
+      ...(input.mode === "update"
+        ? { initialReflectionIds: initialReflections.map(({ id }) => id) }
+        : {}),
       sourceFingerprint: source.fingerprint,
       ...(source.gitHead ? { targetGitHead: source.gitHead } : {}),
       ...(input.planningContext
@@ -655,6 +684,7 @@ async function resumeRepositoryRun(
     ignore,
     claimsRuntime,
   };
+  await removePlanDiscards(run);
   return {
     run,
     view: await toActiveBeginView(run, true),
@@ -791,6 +821,11 @@ async function toActiveBeginView(
     changedPaths,
     pageUpdateWindows,
     claimIssues: run.claimsRuntime.issues,
+    reflections: await inspectReflections(
+      run.root,
+      run.ignore,
+      run.state.initialReflectionIds ?? [],
+    ),
     completedPages: pages.filter(({ status }) => status === "complete").length,
     ...(run.state.plan ? { totalPages: pages.length } : {}),
   };
@@ -884,6 +919,10 @@ export async function submitRepositoryPlan(
   run: ActiveRepositoryRun,
   input: ProposedRepositoryPlan,
 ): Promise<{ status: "accepted"; totalPages: number }> {
+  const pending = await loadPendingReflections(
+    run.root,
+    run.state.initialReflectionIds ?? [],
+  );
   if (run.state.plan) {
     // Do not silently replace a persisted plan. A duplicated host tool call is
     // safe only when it describes the same semantic plan.
@@ -899,6 +938,13 @@ export async function submitRepositoryPlan(
         "This OpenWiki run already has a different persisted plan.",
       );
     }
+    validateReflectionPlan(
+      proposed.pages,
+      input.discardedReflectionIds ?? [],
+      run.state.initialReflectionIds ?? [],
+      pending,
+    );
+    await removePlanDiscards(run);
     return { status: "accepted", totalPages: run.state.plan.pages.length };
   }
 
@@ -915,6 +961,12 @@ export async function submitRepositoryPlan(
     run.claimsRuntime.issues,
     run.state.requiredRewritePages,
   );
+  validateReflectionPlan(
+    plan.pages,
+    input.discardedReflectionIds ?? [],
+    run.state.initialReflectionIds ?? [],
+    pending,
+  );
   const nextState: RepositoryRunState = {
     ...run.state,
     phase: "generating",
@@ -922,7 +974,31 @@ export async function submitRepositoryPlan(
   };
   await writeRepositoryRunState(run.root, nextState);
   run.state = nextState;
+  await removePlanDiscards(run);
   return { status: "accepted", totalPages: plan.pages.length };
+}
+
+/**
+ * Removes verified planner discards after their complete page plan is durable.
+ *
+ * Captured IDs absent from page assignments were explicitly discarded when the
+ * plan was accepted. Deriving them here makes cleanup retryable without storing
+ * a second outcome list. Files created after the starting snapshot are excluded.
+ *
+ * @param run - Active run with a validated, durably installed plan.
+ */
+async function removePlanDiscards(run: ActiveRepositoryRun): Promise<void> {
+  if (!run.state.plan) return;
+  const assigned = new Set(
+    run.state.plan.pages.flatMap((page) => page.reflectionIds ?? []),
+  );
+  const ids = (run.state.initialReflectionIds ?? []).filter(
+    (id) => !assigned.has(id),
+  );
+  await removeProcessedReflections(
+    run.root,
+    await loadPendingReflections(run.root, ids),
+  );
 }
 
 /**
@@ -938,13 +1014,22 @@ function samePlanIgnoringJobIds(
 ): boolean {
   const simplify = (plan: NonNullable<RepositoryRunState["plan"]>) => ({
     pages: plan.pages.map(
-      ({ path, title, purpose, seedPaths, relatedPages, instructions }) => ({
+      ({
         path,
         title,
         purpose,
         seedPaths,
         relatedPages,
         instructions,
+        reflectionIds,
+      }) => ({
+        path,
+        title,
+        purpose,
+        seedPaths,
+        relatedPages,
+        instructions,
+        reflectionIds: reflectionIds ?? [],
       }),
     ),
     deletePages: [...plan.deletePages],
@@ -957,15 +1042,54 @@ function samePlanIgnoringJobIds(
  */
 export type NextRepositoryPageResult =
   | {
+      /**
+       * A page remains to be authored or corrected.
+       */
       status: "pending";
+      /**
+       * Assigned page and the context needed for sparse reconciliation.
+       */
       job: PageJob & {
+        /**
+         * Generation mode owning the page job.
+         */
         mode: RepositoryRunMode;
+        /**
+         * Whether the page already has a Markdown file.
+         */
         existing: boolean;
+        /**
+         * Total current claims available through on-demand inspection.
+         */
         existingClaimCount: number;
+        /**
+         * Claims whose changed or missing evidence requires an explicit decision.
+         */
         claimsRequiringAttention: InspectedClaim[];
+        /**
+         * Current sections, including stable IDs and authored descriptions.
+         */
+        sections: PageSection[];
+        /**
+         * Exact passages connected to claims requiring evidence review.
+         */
+        bindingsRequiringAttention: ProseBinding[];
+        /**
+         * Number of existing bindings available through on-demand inspection.
+         */
+        existingBindingCount: number;
+        /**
+         * Pending assigned findings to evaluate alongside this page's claims and prose.
+         */
+        reflections: InspectedReflection[];
       };
     }
-  | { status: "complete" };
+  | {
+      /**
+       * No pending page jobs remain in the queue.
+       */
+      status: "complete";
+    };
 
 /**
  * Returns the first pending job without reserving or mutating it.
@@ -996,6 +1120,10 @@ export async function nextRepositoryPage(
   }
 
   const existingClaims = run.claimsRuntime.session.inspectClaims(job.path);
+  const prose = run.claimsRuntime.session.inspectProse(job.path);
+  const issueIds = new Set(
+    existingClaims.filter(({ issue }) => issue).map(({ id }) => id),
+  );
   return {
     status: "pending",
     job: {
@@ -1004,12 +1132,22 @@ export async function nextRepositoryPage(
       existing,
       existingClaimCount: existingClaims.length,
       claimsRequiringAttention: existingClaims.filter(({ issue }) => issue),
+      sections: prose?.sections ?? [],
+      bindingsRequiringAttention: (prose?.bindings ?? []).filter(
+        ({ claimIds }) => claimIds.some((id) => issueIds.has(id)),
+      ),
+      existingBindingCount: prose?.bindings.length ?? 0,
+      reflections: await inspectReflections(
+        run.root,
+        run.ignore,
+        job.reflectionIds ?? [],
+      ),
     },
   };
 }
 
 /**
- * Returns the complete compact Claim set for the current pending page on demand.
+ * Returns complete claims, sections, and bindings for the pending page on demand.
  *
  * Normal focused updates do not need this payload: current issue-free Claims
  * are retained deterministically. Workers use this only when they intentionally
@@ -1017,12 +1155,12 @@ export async function nextRepositoryPage(
  *
  * @param run - Active run with a durably installed plan.
  * @param jobId - Current pending page job identifier.
- * @returns Complete model-facing Claims without opaque evidence versions.
+ * @returns Complete model-facing claims and prose metadata without evidence versions.
  */
 export function inspectRepositoryPageClaims(
   run: ActiveRepositoryRun,
   jobId: string,
-): { page: string; claims: InspectedClaim[] } {
+): { page: string; claims: InspectedClaim[] } & PageProse {
   const current = run.state.plan?.pages.find(
     ({ status }) => status === "pending",
   );
@@ -1035,6 +1173,10 @@ export function inspectRepositoryPageClaims(
   return {
     page: current.path,
     claims: run.claimsRuntime.session.inspectClaims(current.path),
+    ...(run.claimsRuntime.session.inspectProse(current.path) ?? {
+      sections: [],
+      bindings: [],
+    }),
   };
 }
 
@@ -1177,7 +1319,7 @@ async function restoreRepositoryPageMarkdown(
  * The in-memory checkpoint changes only after the complete next state is durable.
  *
  * @param run - Active generation run owning the ordered queue.
- * @param input - Current job identifier and complete page Claim set.
+ * @param input - Current job identifier and sparse claim, section, and binding decisions.
  * @returns Completed page and remaining queue length.
  */
 export async function submitRepositoryPage(
@@ -1212,6 +1354,11 @@ export async function submitRepositoryPage(
       "Only the current pending OpenWiki page job may be submitted.",
     );
   }
+
+  const pendingReflections = await loadPendingReflections(
+    run.root,
+    current.reflectionIds ?? [],
+  );
 
   let pageReadable = false;
   try {
@@ -1248,7 +1395,21 @@ export async function submitRepositoryPage(
   }
 
   try {
-    await reconcilePageClaims(run.claimsRuntime.session, current.path, input);
+    const markdown = await new ClaimsStore(run.root).readMarkdown(current.path);
+    await reconcilePageClaims(
+      run.claimsRuntime.session,
+      current.path,
+      input,
+      markdown,
+      (claims, prose) =>
+        validateReflectionResults(
+          input.reflectionResults ?? [],
+          current.reflectionIds ?? [],
+          pendingReflections,
+          claims,
+          prose,
+        ),
+    );
     // Persist the page's dirty Claim state before recording job completion.
     // Prove this page is durable before advancing the queue; the strict
     // whole-run proof waits until every PageJob is complete.
@@ -1261,6 +1422,10 @@ export async function submitRepositoryPage(
       error instanceof Error ? error.message : "Claims validation failed.",
     );
   }
+
+  // The page is durable before findings disappear. Deletion precedes its completion
+  // marker, so a manifest-promoted retry can never bypass unfinished consolidation.
+  await removeProcessedReflections(run.root, pendingReflections);
 
   await recordRepositoryPageCompletion(
     run.root,
@@ -1380,6 +1545,25 @@ async function assertPageClaimsDurable(
         `Claims for ${page} were only partially persisted; retry ${retryOperation}.`,
       );
     }
+  }
+  const expectedProse = run.claimsRuntime.session.inspectProse(page);
+  if (expectedProse) {
+    const durableProse = {
+      sections: persisted.sections,
+      bindings: persisted.bindings,
+    };
+    if (JSON.stringify(durableProse) !== JSON.stringify(expectedProse)) {
+      throw new RepositoryRunError(
+        "invalid_input",
+        `Sections or bindings for ${page} were only partially persisted; retry ${retryOperation}.`,
+      );
+    }
+    assertPageProse(
+      page,
+      await store.readMarkdown(page),
+      expectedProse,
+      persisted.claims,
+    );
   }
 }
 
@@ -1518,6 +1702,16 @@ export async function finishRepositoryRun(
     );
   }
   const skippedPages = new Set(skippedJobs.map(({ path }) => path));
+  await removePlanDiscards(run);
+  const reflections = await loadPendingReflections(
+    run.root,
+    run.state.initialReflectionIds ?? [],
+  );
+  if (reflections.length)
+    throw new RepositoryRunError(
+      "invalid_state",
+      `OpenWiki cannot finish while ${reflections.length} captured reflection(s) remain pending. Resume the update and complete their page jobs; skipped or failed pages do not consolidate findings.`,
+    );
   const sourceChangedBeforeFinish = await hasRepositorySourceChanged(run);
   const producerActorsByPage = new Map<string, string>();
   for (const [page, entry] of Object.entries(

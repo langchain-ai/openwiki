@@ -321,11 +321,69 @@ describe("OpenWiki MCP lifecycle smoke test", () => {
         "utf8",
       );
 
+      const rejected = await fixture.client.callTool({
+        name: "openwiki_submit_page",
+        arguments: {
+          runId,
+          jobId: job.id,
+          claims: [
+            {
+              statement: "The repository is introduced by its README.",
+              evidence: [{ resource: "repo://README.md" }],
+            },
+          ],
+          sections: [
+            {
+              location: "quickstart.md#Quickstart",
+              description: "Repository introduction.",
+            },
+          ],
+          bindings: [
+            {
+              section: "quickstart.md#Quickstart",
+              text: "This passage does not exist.",
+              claims: ["The repository is introduced by its README."],
+            },
+          ],
+        },
+      });
+      expect(rejected.isError).toBe(true);
+      expect(JSON.stringify(rejected.content)).toContain("passage is missing");
+      await expect(
+        fixture.client.callTool({
+          name: "openwiki_inspect_page_claims",
+          arguments: { runId, jobId: job.id },
+        }),
+      ).resolves.toMatchObject({
+        structuredContent: { claims: [], sections: [], bindings: [] },
+      });
+      await expect(
+        fixture.client.callTool({
+          name: "openwiki_next_page",
+          arguments: { runId },
+        }),
+      ).resolves.toMatchObject({
+        structuredContent: { status: "pending", job: { id: job.id } },
+      });
+
       const submitted = await fixture.client.callTool({
         name: "openwiki_submit_page",
         arguments: {
           runId,
           jobId: job.id,
+          sections: [
+            {
+              location: "quickstart.md#Quickstart",
+              description: "Repository introduction.",
+            },
+          ],
+          bindings: [
+            {
+              section: "quickstart.md#Quickstart",
+              text: "The repository is introduced by its README.",
+              claims: ["The repository is introduced by its README."],
+            },
+          ],
           claims: [
             {
               statement: "The repository is introduced by its README.",

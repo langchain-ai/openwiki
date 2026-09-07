@@ -133,7 +133,7 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     }
   });
 
-  test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
+  test("advertises all four memory tools independently in both instruction files", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo);
@@ -144,12 +144,43 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     expect(claudeContent).not.toBeNull();
     expect(agentsContent).not.toBeNull();
 
-    // CLAUDE.md should reference AGENTS.md rather than duplicate its instructions.
-    expect(claudeContent).toContain("AGENTS.md");
-    // CLAUDE.md should be shorter than AGENTS.md because it is a pointer, not a copy.
-    expect((claudeContent ?? "").length).toBeLessThan(
-      (agentsContent ?? "").length,
+    expect(claudeContent).toBe(agentsContent);
+    expect(claudeContent).not.toContain("AGENTS.md");
+    for (const tool of ["orient", "outline", "read", "reflect"])
+      expect(claudeContent).toContain(`\`openwiki_${tool}\``);
+    expect(claudeContent).toContain("not a mandatory sequence");
+    expect(claudeContent).toContain("treat reflections as provisional");
+    expect(claudeContent).toContain("openwiki/quickstart.md");
+    expect(claudeContent).not.toContain("root:");
+  });
+
+  test("replaces only an owned cross-file pointer and preserves user instructions and links verbatim", async () => {
+    const repo = await createTempRepo();
+    const prefix =
+      "# Project\r\n\r\nRead [AGENTS.md](AGENTS.md) for our team conventions.  \r\n\r\n";
+    const suffix = "\r\n\r\nKeep these trailing notes.  \r\n";
+    await writeFile(
+      path.join(repo, "CLAUDE.md"),
+      `${prefix}${SNIPPET_START}\n\nSee [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.\n\n${SNIPPET_END}${suffix}`,
     );
+    await ensureCodeModeRepoSetup(repo);
+    const result = (await readIfPresent(path.join(repo, "CLAUDE.md")))!;
+    expect(result.startsWith(prefix)).toBe(true);
+    expect(result.endsWith(suffix)).toBe(true);
+    expect(result).not.toContain("for OpenWiki agent instructions");
+    expect(result.match(/AGENTS\.md/gu)).toHaveLength(2);
+    expect(result).toContain("openwiki_reflect");
+  });
+
+  test("preserves existing bytes when appending guidance without prior managed markers", async () => {
+    const repo = await createTempRepo();
+    const original =
+      "# Team guidance\r\n\r\nPreserve this Markdown hard break.  \r\n  ";
+    await writeFile(path.join(repo, "AGENTS.md"), original);
+    await ensureCodeModeRepoSetup(repo);
+    expect(
+      (await readIfPresent(path.join(repo, "AGENTS.md")))!.startsWith(original),
+    ).toBe(true);
   });
 
   test("refreshes the OpenWiki block in place and preserves surrounding content", async () => {

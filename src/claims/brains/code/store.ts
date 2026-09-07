@@ -24,6 +24,7 @@ import {
   toRepositoryPagePath,
 } from "./paths.js";
 import { CODE_CLAIMS_SCHEMA_VERSION, type PageClaims } from "./types.js";
+import { assertProseReferences } from "./prose.js";
 
 /**
  * Runtime validator for one canonical non-empty persisted string.
@@ -67,6 +68,31 @@ const VerificationSchema = z
   .strict();
 
 /**
+ * Runtime validator for authored section identity, location, and scope.
+ */
+const SectionSchema = z
+  .object({
+    id: CanonicalNonEmptyStringSchema,
+    location: CanonicalNonEmptyStringSchema,
+    description: CanonicalNonEmptyStringSchema,
+  })
+  .strict();
+
+/**
+ * Runtime validator for an exact passage and its stable references.
+ */
+const BindingSchema = z
+  .object({
+    id: CanonicalNonEmptyStringSchema,
+    sectionId: CanonicalNonEmptyStringSchema,
+    text: z
+      .string()
+      .refine((value) => value.trim().length > 0, "Passage must not be empty"),
+    claimIds: z.array(CanonicalNonEmptyStringSchema).min(1),
+  })
+  .strict();
+
+/**
  * Runtime validator for one V1 page sidecar.
  */
 const PageClaimsSchema = z
@@ -74,6 +100,8 @@ const PageClaimsSchema = z
     schemaVersion: z.literal(CODE_CLAIMS_SCHEMA_VERSION),
     pageVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
     claims: z.array(ClaimSchema),
+    sections: z.array(SectionSchema).optional(),
+    bindings: z.array(BindingSchema).optional(),
     verification: VerificationSchema.optional(),
   })
   .strict();
@@ -104,6 +132,11 @@ export class ClaimsStore {
    */
   private readonly claimsDir: string;
 
+  /**
+   * Creates a store scoped to one absolute repository root.
+   *
+   * @param rootDir - Absolute repository directory containing the wiki.
+   */
   constructor(rootDir: string) {
     if (!path.isAbsolute(rootDir)) {
       throw new ClaimsPersistenceError(
@@ -581,6 +614,21 @@ function validatePageClaims(value: unknown, description: string): PageClaims {
     }
   }
 
+  const { sections, bindings, claims } = validation.data;
+  if ((sections === undefined) !== (bindings === undefined)) {
+    throw new ClaimsPersistenceError(
+      `Invalid ${description}: sections and bindings must be present together.`,
+    );
+  }
+  if (sections && bindings) {
+    try {
+      assertProseReferences({ sections, bindings }, claims);
+    } catch (error) {
+      throw new ClaimsPersistenceError(
+        `Invalid ${description}: ${toErrorMessage(error)}`,
+      );
+    }
+  }
   return validation.data;
 }
 

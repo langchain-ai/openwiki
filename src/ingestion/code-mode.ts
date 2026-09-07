@@ -14,16 +14,31 @@ import { createConnectorRegistry } from "../connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "../config/constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
+import { REFLECTION_CAPTURE_GUIDANCE } from "../generation/reflection-guidance.js";
 
+/**
+ * Opening marker delimiting the instructions owned by OpenWiki.
+ */
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
+
+/**
+ * Closing marker delimiting the instructions owned by OpenWiki.
+ */
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
+
+/**
+ * Default daily schedule for a newly created repository update workflow.
+ */
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 
-// Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
-// Each is created when missing and refreshed in place when already present.
+/**
+ * Root instruction files that independently advertise repository memory.
+ */
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 
-/** Controls which parts of the repo OpenWiki sets up for code mode. */
+/**
+ * Controls which parts of the repository OpenWiki sets up for code mode.
+ */
 export interface CodeModeRepoSetupOptions {
   /**
    * Write the scheduled-update workflow file. Only `openwiki code --init`
@@ -32,7 +47,9 @@ export interface CodeModeRepoSetupOptions {
    * never silently overwritten.
    */
   createWorkflow?: boolean;
-  /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
+  /**
+   * Cron expression for a freshly created workflow, defaulting to {@link DEFAULT_CODE_MODE_CRON}.
+   */
   cronExpression?: string;
   /**
    * Environment the generated workflow's provider block is derived from.
@@ -188,21 +205,18 @@ async function readLastUpdatedAt(
   }
 }
 
+/**
+ * Refreshes the same self-contained memory guidance in each supported instruction file.
+ *
+ * @param cwd - Absolute repository root.
+ */
 async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const agentsSnippet = createCodeModeAgentsSnippet();
-  const claudeSnippet = createCodeModeClaudeSnippet();
-  const snippetByFile: Record<string, string> = {
-    "AGENTS.md": agentsSnippet,
-    "CLAUDE.md": claudeSnippet,
-  };
+  const snippet = createCodeModeAgentsSnippet();
   // Prepare and validate both files before writing either one. If one file has
   // malformed markers, setup fails without partially refreshing its sibling.
   const updates = await Promise.all(
     CODE_MODE_AGENT_FILES.map((fileName) =>
-      prepareCodeModeAgentSnippet(
-        path.join(cwd, fileName),
-        snippetByFile[fileName] ?? agentsSnippet,
-      ),
+      prepareCodeModeAgentSnippet(path.join(cwd, fileName), snippet),
     ),
   );
 
@@ -213,6 +227,13 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
   );
 }
 
+/**
+ * Validates marker ownership and prepares an update that preserves user-authored content.
+ *
+ * @param agentsPath - Absolute instruction-file path.
+ * @param snippet - Complete OpenWiki-owned block, including its delimiters.
+ * @returns Prepared contents without performing a write.
+ */
 async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
@@ -232,9 +253,15 @@ async function prepareCodeModeAgentSnippet(
   const hasNoMarkers = startIndex === -1 && endIndex === -1;
 
   if (hasNoMarkers) {
+    const separator =
+      currentContent.length === 0 || currentContent.endsWith("\n\n")
+        ? ""
+        : currentContent.endsWith("\n")
+          ? "\n"
+          : "\n\n";
     return {
       agentsPath,
-      nextContent: `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`,
+      nextContent: `${currentContent}${separator}${snippet}\n`,
     };
   }
 
@@ -402,33 +429,30 @@ jobs:
 `;
 }
 
+/**
+ * Explains when to consult and contribute memory without duplicating the MCP reference.
+ *
+ * @returns Self-contained guidance shared by every managed agent instruction file.
+ */
 function createCodeModeAgentsSnippet(): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
 ## OpenWiki
 
-This repository has a generated \`openwiki/\` evidence index. It is optional just-in-time context, not required startup reading.
+OpenWiki provides repository memory through MCP tools. Consult it when repository context would help your task.
 
-- Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
-- Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
+- \`openwiki_orient\`: understand the repository and find relevant wiki pages.
+- \`openwiki_outline\`: inspect a page's sections and choose what to read.
+- \`openwiki_read\`: retrieve explanations, supporting claims, relevant code changes, and pending reflections.
+- \`openwiki_reflect\`: preserve useful repository knowledge with supporting evidence for future agents.
 
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+Use these tools as needed; they are not a mandatory sequence. Check relevant code and tests before relying on claims, and treat reflections as provisional.
 
-${OPENWIKI_AGENTS_SNIPPET_END}`;
-}
+${REFLECTION_CAPTURE_GUIDANCE}
 
-/**
- * The snippet placed inside CLAUDE.md's managed block. It is intentionally
- * minimal -- a single pointer to AGENTS.md -- so that one file remains the
- * canonical source of agent instructions while Claude Code still has a file
- * it reads at startup.
- */
-function createCodeModeClaudeSnippet(): string {
-  return `${OPENWIKI_AGENTS_SNIPPET_START}
+Include reflection files with a PR when sharing discoveries. OpenWiki updates consolidate pending reflections into maintained knowledge.
 
-## OpenWiki
-
-See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
+If MCP is unavailable, start with [openwiki/quickstart.md](openwiki/quickstart.md) and inspect source directly. Maintain wiki prose and metadata through OpenWiki's update workflow.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
 }

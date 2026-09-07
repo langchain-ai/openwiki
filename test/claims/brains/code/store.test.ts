@@ -142,6 +142,45 @@ describe("ClaimsStore", () => {
     ]);
   });
 
+  test("persists linked sidecars and rejects dangling or partial metadata", async () => {
+    await writeFixture("openwiki/page.md", "# Page\n\nEnabled.\n");
+    const store = new ClaimsStore(rootDir);
+    const page = "/openwiki/page.md";
+    const linked: PageClaims = {
+      ...(await createPageClaims(store, page)),
+      sections: [
+        {
+          id: "section_fixture",
+          location: "page.md#Page",
+          description: "Fixture behavior.",
+        },
+      ],
+      bindings: [
+        {
+          id: "binding_fixture",
+          sectionId: "section_fixture",
+          text: "Enabled.",
+          claimIds: ["claim_fixture"],
+        },
+      ],
+    };
+    await store.writePage(page, linked);
+    await expect(store.loadPage(page)).resolves.toEqual(linked);
+    await expect(
+      store.writePage(page, { ...linked, sections: undefined }),
+    ).rejects.toThrow(/present together/u);
+    await expect(
+      store.writePage(page, {
+        ...linked,
+        bindings: [{ ...linked.bindings![0], sectionId: "missing" }],
+      }),
+    ).rejects.toThrow(/unknown section/u);
+    await expect(
+      store.writePage(page, { ...linked, claims: [] }),
+    ).rejects.toThrow(/unknown or retracted claim/u);
+    await expect(store.loadPage(page)).resolves.toEqual(linked);
+  });
+
   test("deletes sidecars idempotently", async () => {
     await writeFixture("openwiki/page.md", "# Page\n");
     const store = new ClaimsStore(rootDir);

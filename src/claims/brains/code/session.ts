@@ -10,6 +10,12 @@ import { applyClaimOperations, cloneClaims } from "../../core/mutations.js";
 import { cacheEvidenceResolver } from "../../core/resolver-cache.js";
 import type { Claim, EvidenceResolver } from "../../core/types.js";
 import { normalizeWikiPagePath } from "./paths.js";
+import {
+  assertPageProse,
+  clonePageProse,
+  reconcilePageProse,
+} from "./prose.js";
+import type { PageProse } from "./prose-types.js";
 import { ClaimsStore } from "./store.js";
 import {
   CODE_CLAIMS_SCHEMA_VERSION,
@@ -59,6 +65,11 @@ export interface ClaimSessionOptions {
  * Mutable run-scoped state for one generated page.
  */
 interface WorkingPageState {
+  /**
+   * Complete prose metadata, absent until a legacy page is actively reconciled.
+   */
+  prose?: PageProse;
+
   /**
    * Complete current proposition set.
    */
@@ -149,6 +160,14 @@ export class ClaimSession {
       }
       this.pages.set(page, {
         claims: cloneClaims(persisted.claims),
+        ...(persisted.sections && persisted.bindings
+          ? {
+              prose: clonePageProse({
+                sections: persisted.sections,
+                bindings: persisted.bindings,
+              }),
+            }
+          : {}),
         ...(persisted.verification
           ? { verification: { ...persisted.verification } }
           : {}),
@@ -192,8 +211,19 @@ export class ClaimSession {
         createClaimId: () => this.allocateClaimId(),
       });
       this.assertClaimOwnershipAvailable(page, nextClaims);
+      const nextProse = input.prose
+        ? reconcilePageProse(
+            page,
+            input.prose.markdown,
+            state.prose,
+            nextClaims,
+            input.prose.decisions,
+          )
+        : state.prose;
+      input.validate?.(nextClaims, nextProse);
       this.replaceClaimOwnership(page, previousClaims, nextClaims);
       state.claims = nextClaims;
+      state.prose = nextProse;
       const allocatedIds = nextClaims
         .map(({ id }) => id)
         .filter((id) => !existingIds.has(id));
@@ -230,6 +260,19 @@ export class ClaimSession {
       return [];
     }
     return state.claims.map((claim) => toInspectedClaim(claim, state.issues));
+  }
+
+  /**
+   * Returns detached section and binding metadata without creating work.
+   *
+   * @param pageInput - Virtual generated-page path.
+   * @returns Complete metadata, or undefined for a legacy or deleted page.
+   */
+  inspectProse(pageInput: string): PageProse | undefined {
+    const state = this.pages.get(normalizeWikiPagePath(pageInput));
+    return state?.prose && !state.deleted
+      ? clonePageProse(state.prose)
+      : undefined;
   }
 
   /**
@@ -329,6 +372,14 @@ export class ClaimSession {
           );
         }
         await this.assertEvidenceStillCurrent(page, state.claims, resolver);
+        if (state.prose) {
+          assertPageProse(
+            page,
+            await store.readMarkdown(page),
+            state.prose,
+            state.claims,
+          );
+        }
         ready.push({ page, state, hash: await store.hashPage(page) });
       } catch (error) {
         if (!isRecoverableFinalizationError(error)) {
@@ -388,6 +439,7 @@ export class ClaimSession {
           schemaVersion: CODE_CLAIMS_SCHEMA_VERSION,
           pageVersion: hash,
           claims: cloneClaims(state.claims),
+          ...(state.prose ? clonePageProse(state.prose) : {}),
           ...(nextVerification ? { verification: nextVerification } : {}),
         });
         state.verification = nextVerification;
@@ -447,6 +499,7 @@ export class ClaimSession {
           schemaVersion: CODE_CLAIMS_SCHEMA_VERSION,
           pageVersion: await store.hashPage(page),
           claims: cloneClaims(state.claims),
+          ...(state.prose ? clonePageProse(state.prose) : {}),
           ...(state.verification
             ? { verification: { ...state.verification } }
             : {}),

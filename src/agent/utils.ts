@@ -16,6 +16,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { ReflectionStore } from "../memory/reflections.js";
 import {
   OPEN_WIKI_DIR,
   PAGE_MANIFEST_PATH,
@@ -128,6 +129,12 @@ export async function getUpdateNoopStatus(
   openWikiIgnore = new OpenWikiIgnore([]),
   requestedLanguage?: string | null,
 ): Promise<UpdateNoopStatus> {
+  const reflections = await new ReflectionStore(cwd).list();
+  if (reflections.reflections.length || reflections.unavailable)
+    return {
+      shouldSkip: false,
+      reason: "pending reflections require consolidation",
+    };
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
   if (!lastUpdate?.gitHead) {
@@ -708,7 +715,14 @@ function compareFingerprintStrings(left: string, right: string): number {
 /**
  * Reads prior run metadata if it exists and is structurally valid.
  */
-async function readLastUpdate(
+/**
+ * Reads the existing update checkpoint without starting or changing a run.
+ *
+ * @param cwd - Absolute wiki owner root.
+ * @param outputMode - Storage layout containing the metadata.
+ * @returns Validated update metadata, or null when absent or malformed.
+ */
+export async function readLastUpdate(
   cwd: string,
   outputMode: OpenWikiOutputMode,
 ): Promise<UpdateMetadata | null> {
@@ -858,7 +872,7 @@ async function getGitHead(cwd: string): Promise<string | undefined> {
  */
 async function runGit(cwd: string, args: string[]): Promise<string> {
   try {
-    const { stdout, stderr } = await execFileAsync(
+    const { stdout } = await execFileAsync(
       "git",
       ["--no-pager", ...args],
       {
@@ -867,13 +881,10 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
       },
     );
 
-    return [stdout.trim(), stderr.trim()].filter(Boolean).join("\n").trim();
+    return stdout.trim();
   } catch (error) {
     if (isExecError(error)) {
-      return [error.stdout?.trim(), error.stderr?.trim()]
-        .filter(Boolean)
-        .join("\n")
-        .trim();
+      return error.stdout?.trim() ?? "";
     }
 
     throw error;

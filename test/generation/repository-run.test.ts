@@ -98,8 +98,10 @@ vi.mock("../../src/generation/run-state.js", async (importOriginal) => {
 import { ensureCodeModeRepoSetup } from "../../src/ingestion/code-mode.ts";
 import { ClaimsPersistenceError } from "../../src/claims/core/errors.ts";
 import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
+import { ReflectionStore } from "../../src/memory/reflections.ts";
 import {
   parseFrontmatterFields,
+  splitFrontmatter,
   validateOkfFrontmatter,
 } from "../../src/okf/frontmatter.ts";
 import { OPENWIKI_PRODUCER_ACTOR } from "../../src/version.ts";
@@ -155,7 +157,45 @@ async function git(root: string, args: string[]): Promise<string> {
  * @returns Complete valid OKF Markdown.
  */
 function validPage(title: string): string {
-  return `---\ntype: Guide\ntitle: ${title}\n---\n\n# ${title}\n`;
+  return `---\ntype: Guide\ntitle: ${title}\n---\n\n# ${title}\n\nThe repository has a README.\n`;
+}
+
+/**
+ * Supplies explicit authoring metadata for a one-section lifecycle fixture.
+ *
+ * @param run - Run whose existing section and binding identities are retained.
+ * @param page - Canonical page being submitted.
+ * @param title - Heading written by the fixture.
+ * @param text - Exact fixture passage.
+ * @param statement - Claim expressed by the passage.
+ * @returns Sparse section and binding decisions for the fixture.
+ */
+function fixtureProse(
+  run: ActiveRepositoryRun,
+  page: string,
+  title: string,
+  text = "The repository has a README.",
+  statement = "The repository has a README.",
+) {
+  const previous = run.claimsRuntime.session.inspectProse(page);
+  const location = `${page.slice("/openwiki/".length)}#${encodeURIComponent(title.replace(/\s+/gu, ""))}`;
+  return {
+    sections: [
+      {
+        id: previous?.sections[0]?.id,
+        location,
+        description: "Repository introduction.",
+      },
+    ],
+    bindings: [
+      {
+        id: previous?.bindings[0]?.id,
+        section: location,
+        text,
+        claims: [statement],
+      },
+    ],
+  };
 }
 
 /**
@@ -290,6 +330,7 @@ async function completeCurrentPage(
   if (write.error) throw new Error(write.error);
   await submitRepositoryPage(run, {
     jobId: next.job.id,
+    ...fixtureProse(run, next.job.path, title),
     claims: [
       {
         statement: "The repository has a README.",
@@ -298,6 +339,151 @@ async function completeCurrentPage(
     ],
   });
 }
+
+test("keeps reflections before plan durability and safely resumes after their completed page loses its queue checkpoint", async () => {
+  const root = await createRepository();
+  const store = new ReflectionStore(root);
+  const finding = await store.create({
+    finding: "The README introduces the repository.",
+    evidence: [{ resource: "repo://README.md" }],
+  });
+  const discarded = await store.create({
+    finding: "An unsupported interpretation.",
+    evidence: [{ resource: "repo://README.md" }],
+  });
+  const run = await beginForcedUpdate(root);
+  const plan = {
+    pages: [
+      {
+        path: "/openwiki/quickstart.md",
+        title: "Quickstart",
+        purpose: "Introduce the repository.",
+        reflectionIds: [finding.id],
+      },
+    ],
+    discardedReflectionIds: [discarded.id],
+  };
+  failureHarness.stateWrites = 1;
+  await expect(submitRepositoryPlan(run, plan)).rejects.toThrow(
+    "injected run-state write failure",
+  );
+  expect(run.state.phase).toBe("planning");
+  expect((await store.list()).reflections).toHaveLength(2);
+  await submitRepositoryPlan(run, plan);
+  expect((await store.list()).reflections.map(({ id }) => id)).toEqual([
+    finding.id,
+  ]);
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected reflection page.");
+  await writeWikiPage(root, "quickstart.md", validPage("Quickstart"));
+  failureHarness.stateWrites = 1;
+  await expect(
+    submitRepositoryPage(run, {
+      jobId: next.job.id,
+      ...fixtureProse(run, next.job.path, "Quickstart"),
+      claims: [
+        {
+          statement: "The repository has a README.",
+          evidence: [{ resource: "repo://README.md" }],
+        },
+      ],
+      reflectionResults: [
+        { id: finding.id, claims: ["The repository has a README."] },
+      ],
+    }),
+  ).rejects.toThrow("injected run-state write failure");
+  expect((await store.list()).reflections).toEqual([]);
+  expect(run.state.plan!.pages[0].status).toBe("pending");
+  const resumed = await beginForcedUpdate(root);
+  expect(resumed.state.plan!.pages[0].status).toBe("complete");
+  await expect(finishRepositoryRun(resumed)).resolves.toEqual({
+    status: "complete",
+  });
+});
+
+test("reconciles stale claims with bound prose and preserves a completed neighboring page", async () => {
+  const root = await createRepository(["second.md"]);
+  const firstRun = await beginForcedUpdate(root);
+  await submitRepositoryPlan(firstRun, {
+    pages: [
+      {
+        path: "/openwiki/second.md",
+        title: "Second",
+        purpose: "Describe the repository.",
+      },
+      {
+        path: "/openwiki/quickstart.md",
+        title: "Quickstart",
+        purpose: "Introduce the repository.",
+      },
+    ],
+  });
+  await completeCurrentPage(firstRun, "Second");
+  await completeCurrentPage(firstRun, "Quickstart");
+  await finishRepositoryRun(firstRun);
+  const store = new ClaimsStore(root);
+  const previous = (await store.loadPage("/openwiki/quickstart.md"))!;
+  await writeFile(
+    path.join(root, "README.md"),
+    "# Repository\n\nUpdated introduction.\n",
+  );
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, { pages: [] });
+  await completeCurrentPage(run, "Second");
+  const completedNeighbor = await store.readMarkdown("/openwiki/second.md");
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected quickstart review.");
+  expect(next.job.sections).toEqual(previous.sections);
+  expect(next.job.bindingsRequiringAttention).toEqual(previous.bindings);
+  expect(next.job.claimsRequiringAttention[0].id).toBe(previous.claims[0].id);
+  const beforeRejectedSubmission = await store.loadPage(next.job.path);
+
+  const revised = "The README introduces the repository.";
+  await run.backend.write(
+    next.job.path,
+    validPage("Quickstart").replace("The repository has a README.", revised),
+  );
+  const claimDecision = {
+    id: previous.claims[0].id,
+    statement: revised,
+    evidence: [{ resource: "repo://README.md" }],
+  };
+  await expect(
+    submitRepositoryPage(run, { jobId: next.job.id, claims: [claimDecision] }),
+  ).rejects.toThrow(/passage is missing/u);
+  expect((await nextRepositoryPage(run)).status).toBe("pending");
+  await expect(store.loadPage(next.job.path)).resolves.toEqual(
+    beforeRejectedSubmission,
+  );
+  await expect(store.readMarkdown("/openwiki/second.md")).resolves.toBe(
+    completedNeighbor,
+  );
+  const correction = {
+    id: previous.bindings![0].id,
+    section: previous.sections![0].id,
+    text: revised,
+    claims: [previous.claims[0].id],
+  };
+  await submitRepositoryPage(run, {
+    jobId: next.job.id,
+    claims: [claimDecision],
+    bindings: [correction],
+  });
+  await finishRepositoryRun(run);
+  const persisted = (await store.loadPage(next.job.path))!;
+  expect(persisted.sections).toEqual(previous.sections);
+  expect(persisted.bindings).toEqual([
+    { ...previous.bindings![0], text: revised },
+  ]);
+  expect(persisted.claims[0]).toMatchObject({
+    id: previous.claims[0].id,
+    statement: revised,
+  });
+  expect(persisted.pageVersion).toBe(await store.hashPage(next.job.path));
+  expect(
+    splitFrontmatter(await store.readMarkdown("/openwiki/second.md")).body,
+  ).toBe(splitFrontmatter(completedNeighbor).body);
+});
 
 test("restores the exact pending Markdown and Claims snapshot", async () => {
   const root = await createRepository(["testing.md"]);
@@ -1206,6 +1392,7 @@ describe("repository page queue", () => {
     await expect(
       submitRepositoryPage(run, {
         jobId: next.job.id,
+        ...fixtureProse(run, next.job.path, "Quickstart"),
         claims: [
           {
             statement: "The repository has a README.",
@@ -1222,6 +1409,7 @@ describe("repository page queue", () => {
     await expect(
       submitRepositoryPage(run, {
         jobId: next.job.id,
+        ...fixtureProse(run, next.job.path, "Quickstart"),
         claims: [
           {
             statement: "The repository has a README.",
@@ -1271,6 +1459,7 @@ describe("repository page queue", () => {
     await expect(
       submitRepositoryPage(run, {
         jobId: next.job.id,
+        ...fixtureProse(run, next.job.path, "Quickstart"),
         claims: [
           {
             statement: "The repository has a README.",
@@ -1313,7 +1502,11 @@ describe("repository page queue", () => {
     failureHarness.stateWrites = 1;
 
     await expect(
-      submitRepositoryPage(run, { jobId: next.job.id, claims }),
+      submitRepositoryPage(run, {
+        jobId: next.job.id,
+        claims,
+        ...fixtureProse(run, next.job.path, "Quickstart"),
+      }),
     ).rejects.toThrow("injected run-state write failure");
     expect(run.state.plan?.pages[0]?.status).toBe("pending");
     expect((await readRepositoryRunState(root))?.plan?.pages[0]?.status).toBe(
@@ -1452,10 +1645,14 @@ describe("repository page queue", () => {
       submitRepositoryPage(run, { jobId: jobs[1].id, claims: [] }),
     ).rejects.toThrow("Only the current pending");
 
-    await run.backend.write(jobs[0].path, "# Missing frontmatter\n");
+    await run.backend.write(
+      jobs[0].path,
+      "# Missing frontmatter\n\nThe repository has a README.\n",
+    );
     await expect(
       submitRepositoryPage(run, {
         jobId: jobs[0].id,
+        ...fixtureProse(run, jobs[0].path, "Missing frontmatter"),
         claims: [
           {
             statement: "The repository has a README.",
@@ -1615,6 +1812,7 @@ describe("finishRepositoryRun", () => {
     );
     await submitRepositoryPage(run, {
       jobId: next.job.id,
+      ...fixtureProse(run, next.job.path, "Quickstart", "Updated."),
       claims: [
         {
           statement: "The repository has a README.",
@@ -1657,6 +1855,7 @@ describe("finishRepositoryRun", () => {
     );
     await submitRepositoryPage(run, {
       jobId: next.job.id,
+      ...fixtureProse(run, next.job.path, "Quickstart", "Updated."),
       claims: [
         {
           statement: "The repository has a README.",
@@ -1987,9 +2186,22 @@ describe("update hardening", () => {
       existing: false,
       seedPaths: ["src/new-feature.ts"],
     });
-    await run.backend.write(next.job.path, validPage("New Feature"));
+    await run.backend.write(
+      next.job.path,
+      validPage("New Feature").replace(
+        "The repository has a README.",
+        "The repository exports a new feature flag.",
+      ),
+    );
     await submitRepositoryPage(run, {
       jobId: next.job.id,
+      ...fixtureProse(
+        run,
+        next.job.path,
+        "New Feature",
+        "The repository exports a new feature flag.",
+        "The repository exports a new feature flag.",
+      ),
       claims: [
         {
           statement: "The repository exports a new feature flag.",

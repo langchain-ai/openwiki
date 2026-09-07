@@ -8,9 +8,12 @@ import type { ClaimSession } from "../claims/brains/code/session.js";
 import type {
   GroundingIssue,
   InspectedClaim,
+  ResolveClaimsInput,
 } from "../claims/brains/code/types.js";
 import type { ClaimOperation } from "../claims/core/types.js";
+import type { ProposedPageProse } from "../claims/brains/code/prose-types.js";
 import { RepositoryRunError } from "./errors.js";
+import type { ReflectionResult } from "./reflections.js";
 import type {
   PageJob,
   RepositoryRunMode,
@@ -50,6 +53,11 @@ export interface ProposedPlanPage {
    * Relevant global constraints that the page worker must follow.
    */
   instructions?: string[];
+
+  /**
+   * Captured discoveries to evaluate through this page's ordinary reconciliation.
+   */
+  reflectionIds?: string[];
 }
 
 /**
@@ -84,15 +92,26 @@ export interface ProposedPageClaim {
  * deterministically. Claims with a stale or unresolved issue must be named by
  * one of the explicit fields so required grounding work cannot be skipped.
  */
-export interface ProposedPageClaimReconciliation {
-  /** Existing Claims explicitly rechecked and retained without content edits. */
+export interface ProposedPageClaimReconciliation extends ProposedPageProse {
+  /**
+   * Existing Claims explicitly rechecked and retained without content edits.
+   */
   confirmedClaimIds?: string[];
 
-  /** Revised existing Claims (with id) and genuinely new Claims (without id). */
+  /**
+   * Revised existing Claims (with id) and genuinely new Claims (without id).
+   */
   claims?: ProposedPageClaim[];
 
-  /** Existing Claims explicitly removed from the completed page. */
+  /**
+   * Existing Claims explicitly removed from the completed page.
+   */
   retractedClaimIds?: string[];
+
+  /**
+   * Temporary outcomes for assigned findings; validated and consumed without persistence.
+   */
+  reflectionResults?: ReflectionResult[];
 }
 
 /**
@@ -108,6 +127,11 @@ export interface ProposedRepositoryPlan {
    * Existing generated pages explicitly selected for deletion.
    */
   deletePages?: string[];
+
+  /**
+   * Captured findings verified as unsupported, obsolete, or incorrect during planning.
+   */
+  discardedReflectionIds?: string[];
 }
 
 /**
@@ -221,6 +245,9 @@ function normalizePlanPage(page: ProposedPlanPage): PageJob {
         .filter(Boolean),
     ),
     status: "pending",
+    ...(page.reflectionIds?.length
+      ? { reflectionIds: [...page.reflectionIds].sort(compareCodeUnits) }
+      : {}),
   };
 }
 
@@ -398,11 +425,15 @@ function uniqueSorted(values: string[]): string[] {
  * @param session - Active process-local Claims session.
  * @param pageInput - Page owning the proposed Claim reconciliation.
  * @param proposedInput - Sparse explicit Claim decisions for the page.
+ * @param markdown - Finished Markdown; supplied by page submission to validate prose.
+ * @param validate - Optional check against prospective claims and prose before mutation.
  */
 export async function reconcilePageClaims(
   session: ClaimSession,
   pageInput: string,
   proposedInput: ProposedPageClaimReconciliation,
+  markdown?: string,
+  validate?: ResolveClaimsInput["validate"],
 ): Promise<void> {
   const page = normalizeWikiPagePath(pageInput);
   const existing = session.inspectClaims(page);
@@ -515,7 +546,14 @@ export async function reconcilePageClaims(
     );
   }
 
-  await session.resolveClaims({ page, operations });
+  await session.resolveClaims({
+    page,
+    operations,
+    ...(validate ? { validate } : {}),
+    ...(markdown === undefined
+      ? {}
+      : { prose: { markdown, decisions: proposedInput } }),
+  });
 }
 
 /**

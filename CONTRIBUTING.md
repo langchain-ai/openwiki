@@ -52,15 +52,41 @@ User-scope destinations match each host's own conventions: Codex writes under
 `~/.config/opencode` (OpenCode's global configuration directory on every
 supported platform), and Cursor under `~/.cursor`.
 
+The [repository memory walkthrough](docs/agent-workflow.md) follows an ordinary
+coding task through retrieval, sharing a discovery, and consolidation. Its
+integration check installs into a temporary repository and runs two independent
+MCP clients against the built CLI:
+
+```sh
+pnpm run build
+pnpm exec vitest run test/integrations/memory-workflow.test.ts
+```
+
+This check verifies the installed transport and memory lifecycle with scripted
+authoring decisions. Use a real host session to assess model behavior and the
+usefulness of its investigation; the test does not measure time or token savings.
+
 ## Adding a coding-agent integration
 
-OpenWiki host integrations share one canonical skill and five MCP tools:
+OpenWiki host integrations share one canonical skill and transport-neutral MCP
+tools. Repository memory uses `openwiki_orient`, `openwiki_outline`, and
+`openwiki_read`, independently of generation runs. `openwiki_reflect` captures
+pending discoveries with versioned evidence for those retrieval tools. Generation uses
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, and `openwiki_finish`. Add host-specific behavior to the
-registry and config boundary rather than copying the skill or adding
-host-specific tools. The host model researches and authors only the current
-OpenWiki PageJob; OpenWiki owns durable run state, Claims reconciliation,
-finalization, metadata, provenance, and managed setup files.
+`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`.
+Add host-specific behavior to the registry and config boundary rather than
+copying the skill or adding host-specific tools. During generation, the host model
+researches and authors only the current OpenWiki PageJob; OpenWiki owns durable
+run state, Claims reconciliation, finalization, metadata, provenance, and managed
+setup files.
+
+Native and MCP authors share planning and page-submission schemas under
+`src/generation/`. Updates capture reflection IDs once, require every pending
+finding to be assigned or discarded, and validate page results before applying
+claim state. Delete incorporated findings only after the page's durability proof
+and before recording page completion. The existing run checkpoint retains input
+scope and page assignments for resume; reflection results and claim links are
+never persisted as an outcome registry.
 
 1. Confirm the host discovers repository skills and local stdio MCP servers.
    Document the supported user and project paths; use `null` for an unsupported

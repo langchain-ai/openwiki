@@ -1,6 +1,18 @@
 import { z } from "zod";
+import { PageReconciliationInput } from "../../generation/page-input.js";
+import { RepositoryPlanInput } from "../../generation/plan-input.js";
+export { PlanPageInput } from "../../generation/plan-input.js";
+import { ReflectionProposalSchema } from "../../memory/reflection-types.js";
+export { ProposedPageClaimInput } from "../../generation/page-input.js";
 
+/**
+ * Bounded host identifier suitable for persisted provenance.
+ */
 const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
+
+/**
+ * Non-empty protocol text with incidental surrounding whitespace removed.
+ */
 const CanonicalString = z.string().trim().min(1);
 
 /**
@@ -9,15 +21,59 @@ const CanonicalString = z.string().trim().min(1);
 export type HostRunMode = "init" | "update";
 
 /**
- * The complete 0.5 repository-generation MCP tool set.
+ * Supported repository memory and generation MCP tool names.
  */
 export type ProtocolToolName =
+  | "openwiki_orient"
+  | "openwiki_outline"
+  | "openwiki_read"
+  | "openwiki_reflect"
   | "openwiki_begin"
   | "openwiki_submit_plan"
   | "openwiki_next_page"
   | "openwiki_inspect_page_claims"
   | "openwiki_submit_page"
   | "openwiki_finish";
+
+/**
+ * Fixed repository-wide orientation request, independent of generation runs.
+ */
+export const OrientInput = z
+  .object({
+    root: CanonicalString.describe(
+      "Absolute Git repository root containing openwiki/.",
+    ),
+  })
+  .strict();
+
+/**
+ * Page navigation request using the wiki-relative path returned by orient.
+ */
+export const OutlineInput = OrientInput.extend({
+  page: CanonicalString.describe(
+    "Wiki-relative Markdown path, for example concepts/retries.md.",
+  ),
+}).strict();
+
+/**
+ * Selective reading request; omitted selectors mean the complete page.
+ */
+export const ReadInput = OutlineInput.extend({
+  sections: z
+    .array(CanonicalString)
+    .min(1)
+    .describe(
+      "Stable section IDs from outline. Parents include descendants; omit to read the whole page.",
+    )
+    .optional(),
+}).strict();
+
+/**
+ * Creates one pending repository discovery with OpenWiki-owned evidence versions.
+ */
+export const ReflectInput = OrientInput.extend(
+  ReflectionProposalSchema.shape,
+).strict();
 
 /**
  * Validated host request to start or resume a repository run.
@@ -82,31 +138,11 @@ export const RunInput: z.ZodType<RunRequest> = z
   .strict();
 
 /**
- * Strict model/host proposal for one final factual page.
- */
-export const PlanPageInput = z
-  .object({
-    path: CanonicalString,
-    title: CanonicalString,
-    purpose: CanonicalString,
-    seedPaths: z.array(CanonicalString).optional(),
-    relatedPages: z.array(CanonicalString).optional(),
-    instructions: z.array(CanonicalString).optional(),
-  })
-  .strict();
-
-/**
  * Strict MCP schema for `openwiki_submit_plan`.
  */
-export const SubmitPlanInput = z
-  .object({
-    runId: z.string().uuid(),
-    // Empty is valid for an update that has no documentation page work or only
-    // planned deletions. Init validation still requires quickstart downstream.
-    pages: z.array(PlanPageInput),
-    deletePages: z.array(CanonicalString).optional(),
-  })
-  .strict();
+export const SubmitPlanInput = RepositoryPlanInput.extend({
+  runId: z.string().uuid(),
+}).strict();
 
 /**
  * Strict MCP schema for `openwiki_next_page`.
@@ -124,28 +160,12 @@ export const InspectPageClaimsInput = z
   .strict();
 
 /**
- * Strict proposed material Claim with code-owned version omitted.
- */
-export const ProposedPageClaimInput = z
-  .object({
-    id: CanonicalString.optional(),
-    statement: CanonicalString,
-    evidence: z.array(z.object({ resource: CanonicalString }).strict()).min(1),
-  })
-  .strict();
-
-/**
  * Strict MCP schema for `openwiki_submit_page`.
  */
-export const SubmitPageInput = z
-  .object({
-    runId: z.string().uuid(),
-    jobId: z.string().uuid(),
-    confirmedClaimIds: z.array(CanonicalString).optional(),
-    claims: z.array(ProposedPageClaimInput).optional(),
-    retractedClaimIds: z.array(CanonicalString).optional(),
-  })
-  .strict();
+export const SubmitPageInput = PageReconciliationInput.extend({
+  runId: z.string().uuid(),
+  jobId: z.string().uuid(),
+}).strict();
 
 /**
  * Validated plan submission payload.
@@ -157,7 +177,9 @@ export type SubmitPlanRequest = z.infer<typeof SubmitPlanInput>;
  */
 export type NextPageRequest = z.infer<typeof NextPageInput>;
 
-/** Validated request for the current pending page's complete Claims. */
+/**
+ * Validated request for the current pending page's complete Claims and prose metadata.
+ */
 export type InspectPageClaimsRequest = z.infer<typeof InspectPageClaimsInput>;
 
 /**
@@ -176,16 +198,16 @@ export function isValidHostId(value: string): boolean {
 }
 
 /**
- * One of the complete five MCP tools exposed by OpenWiki 0.4.
+ * Transport-neutral definition of one OpenWiki operation.
  */
 export interface ProtocolTool {
   /**
-   * Canonical MCP lifecycle tool name.
+   * Canonical MCP tool name.
    */
   name: ProtocolToolName;
 
   /**
-   * Model-facing description of the lifecycle operation.
+   * Model-facing description of the operation.
    */
   description: string;
 
@@ -195,10 +217,10 @@ export interface ProtocolTool {
   schema: z.ZodType;
 
   /**
-   * Validates and executes one lifecycle operation.
+   * Validates and executes one operation.
    *
    * @param input - Untrusted transport input.
-   * @returns The structured lifecycle result.
+   * @returns The structured operation result.
    */
   handle(input: unknown): Promise<unknown>;
 }

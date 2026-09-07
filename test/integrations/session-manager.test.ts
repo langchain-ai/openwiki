@@ -125,6 +125,19 @@ async function completePlannedInit(
   await manager.submitPage({
     runId: view.runId,
     jobId: page.job.id,
+    sections: [
+      {
+        location: "quickstart.md#Quickstart",
+        description: "Repository introduction.",
+      },
+    ],
+    bindings: [
+      {
+        section: "quickstart.md#Quickstart",
+        text: "The repository is introduced by its README.",
+        claims: ["The repository is introduced by its README."],
+      },
+    ],
     claims: [
       {
         statement: "The repository is introduced by its README.",
@@ -185,6 +198,19 @@ describe("HostSessionManager", () => {
     await codex.submitPage({
       runId: started.runId,
       jobId: first.job.id,
+      sections: [
+        {
+          location: "architecture.md#Architecture",
+          description: "Repository introduction.",
+        },
+      ],
+      bindings: [
+        {
+          section: "architecture.md#Architecture",
+          text: "The repository is introduced by its README.",
+          claims: ["The repository is introduced by its README."],
+        },
+      ],
       claims: [
         {
           statement: "The repository is introduced by its README.",
@@ -212,12 +238,16 @@ describe("HostSessionManager", () => {
     });
   });
 
-  test("exposes the ordered six-tool lifecycle with on-demand Claim inspection", () => {
+  test("exposes independent memory tools and the six-tool generation lifecycle", () => {
     expect(
       createManager()
         .tools()
         .map(({ name }) => name),
     ).toEqual([
+      "openwiki_orient",
+      "openwiki_outline",
+      "openwiki_read",
+      "openwiki_reflect",
       "openwiki_begin",
       "openwiki_submit_plan",
       "openwiki_next_page",

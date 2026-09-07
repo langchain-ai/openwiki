@@ -1,4 +1,5 @@
 import type { Claim, ClaimOperation } from "../../core/types.js";
+import type { PageProse, ProposedPageProse } from "./prose-types.js";
 
 /**
  * Current persisted code-brain sidecar schema version.
@@ -42,6 +43,16 @@ export interface PageClaims {
   claims: Claim[];
 
   /**
+   * Authored sections, absent together with bindings in legacy sidecars.
+   */
+  sections?: PageProse["sections"];
+
+  /**
+   * Passage-to-claim connections established during page submission.
+   */
+  bindings?: PageProse["bindings"];
+
+  /**
    * Last successful complete Claims reconciliation for this page.
    *
    * Older schema-v1 sidecars omit this optional field and remain unverified
@@ -55,6 +66,12 @@ export interface PageClaims {
  */
 export interface ResolveClaimsInput {
   /**
+   * Optional synchronous validation of prospective page state before mutations are applied.
+   * The callback must treat both arguments as read-only and throw to reject the batch.
+   */
+  validate?: (claims: readonly Claim[], prose?: PageProse) => void;
+
+  /**
    * Virtual generated-page path below `/openwiki`.
    */
   page: string;
@@ -63,6 +80,22 @@ export interface ResolveClaimsInput {
    * Atomic page-local mutations to validate and apply in order.
    */
   operations: ClaimOperation[];
+
+  /**
+   * Finished Markdown and sparse prose decisions validated before claims change.
+   * Low-level claim-only callers omit this; page submissions always supply it.
+   */
+  prose?: {
+    /**
+     * Complete finished Markdown for the owning page.
+     */
+    markdown: string;
+
+    /**
+     * Section and binding additions, revisions, and removals.
+     */
+    decisions: ProposedPageProse;
+  };
 }
 
 /**

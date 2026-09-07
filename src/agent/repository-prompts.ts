@@ -1,13 +1,23 @@
 import type { InspectedClaim } from "../claims/brains/code/types.js";
+import type {
+  PageSection,
+  ProseBinding,
+} from "../claims/brains/code/prose-types.js";
 import {
   CLAIMS_RECONCILIATION_GUIDANCE,
   CLAIMS_SUBSTANCE_GUIDANCE,
+  PROSE_RECONCILIATION_GUIDANCE,
 } from "../claims/guidance.js";
 import type {
   ActiveBeginView,
   RepositoryPageUpdateWindow,
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
+import type { InspectedReflection } from "../generation/reflections.js";
+import {
+  REFLECTION_PLANNING_GUIDANCE,
+  REFLECTION_PAGE_GUIDANCE,
+} from "../generation/reflection-guidance.js";
 
 /**
  * Builds the bounded planner prompt from the complete active run context.
@@ -26,7 +36,7 @@ export function createRepositoryPlannerPrompt(
 For update, evaluate each existing page inside its own committed update window.
 A page already advanced by a merged partial update must not be regenerated for
 changes at or before its baseline. Schedule it only when changes after that
-baseline, current Claims issues, language rewriting, navigation changes, or
+baseline, pending reflections, current Claims issues, language rewriting, navigation changes, or
 cross-page consistency require work.
 
 Committed per-page update windows:
@@ -79,6 +89,11 @@ starting points, not research boundaries. Copy only relevant global constraints
 from the user/connector context into that page's instructions array; do not copy
 unrelated context into every job.${semanticContext}${updateContext}
 
+${REFLECTION_PLANNING_GUIDANCE}
+
+Pending reflections captured for this run:
+${JSON.stringify(view.reflections ?? [], null, 2)}
+
 ${view.wikiGoal ? `Repository OpenWiki instructions:\n${view.wikiGoal}\n` : ""}`;
 }
 
@@ -96,11 +111,35 @@ export type RepositoryPageWorkerJob = PageJob & {
    */
   existing: boolean;
 
-  /** Number of persisted Claims currently owned by the assigned page. */
+  /**
+   * Number of persisted Claims currently owned by the assigned page.
+   */
   existingClaimCount: number;
 
-  /** Stale or unresolved Claims that require an explicit worker decision. */
+  /**
+   * Stale or unresolved Claims that require an explicit worker decision.
+   */
   claimsRequiringAttention: InspectedClaim[];
+
+  /**
+   * Current sections and descriptions, empty for an unlinked page.
+   */
+  sections?: PageSection[];
+
+  /**
+   * Passages expressing the claims flagged for review.
+   */
+  bindingsRequiringAttention?: ProseBinding[];
+
+  /**
+   * Number of bindings available through full page inspection.
+   */
+  existingBindingCount?: number;
+
+  /**
+   * Pending assigned discoveries, with current evidence feedback and no opaque versions.
+   */
+  reflections?: InspectedReflection[];
 };
 
 /**
@@ -138,6 +177,10 @@ description: <one or two sentence retrieval-oriented summary>
 tags: [<stable English tag>, ...]
 ---
 Do not author generated, verified, sources, timestamp, or OpenWiki control fields; OpenWiki owns those. On update preserve unknown producer-defined frontmatter fields unless they are factually wrong.
+Future agents use the title and description returned by openwiki_orient and
+openwiki_outline to choose pages. Name the subject clearly and describe the
+scope and questions answered, distinguishing this page from its neighbors.
+Keep both fields aligned with the page's actual scope during updates.
 
 Research deeply enough to explain the important responsibilities, entrypoints,
 mechanisms/control flow, relationships, state/lifecycle, invariants/failures,
@@ -151,8 +194,8 @@ writing it, call submit_page with only the sparse Claim decisions required by
 your edits: confirmedClaimIds for rechecked issue Claims that remain unchanged,
 claims for revised or new propositions, and retractedClaimIds for removed
 propositions. OpenWiki automatically retains the other current Claims. Call
-inspect_claims before intentionally revising or removing otherwise-current page
-content when you need its Claim ids; ordinary focused updates should not call it.
+inspect_claims when you need IDs for otherwise-current edits or to establish
+missing prose links on a legacy page; ordinary focused updates need not call it.
 Every evidence resource MUST be a canonical repository URI such as
 repo://src/agent/index.ts or repo://src/agent/index.ts#L40-L82; a bare path such
 as src/agent/index.ts is invalid. If submission validation fails, read the tool
@@ -163,8 +206,18 @@ ${CLAIMS_SUBSTANCE_GUIDANCE}
 
 ${CLAIMS_RECONCILIATION_GUIDANCE}
 
+${PROSE_RECONCILIATION_GUIDANCE}
+
+${REFLECTION_PAGE_GUIDANCE}
+
+Pending reflections assigned to this page:
+${JSON.stringify(job.reflections ?? [], null, 2)}
+
 This page currently owns ${job.existingClaimCount} Claim(s). Claims requiring an
 explicit decision in this job:\n${JSON.stringify(job.claimsRequiringAttention, null, 2)}
+
+Current sections:\n${JSON.stringify(job.sections ?? [], null, 2)}
+This page has ${job.existingBindingCount ?? 0} binding(s). Passages requiring review:\n${JSON.stringify(job.bindingsRequiringAttention ?? [], null, 2)}
 
 ${
   job.path === "/openwiki/quickstart.md"
@@ -172,7 +225,13 @@ ${
         allPages.map(({ path, title, purpose }) => ({ path, title, purpose })),
         null,
         2,
-      )}\nUse it to produce a compact task-routing map and link to the major domains.`
+      )}\nUse it to produce a compact task-routing map and link to the major domains.
+Immediately below the opening page heading, write a short standalone summary
+of what the repository does, its major parts, and how they fit together.
+openwiki_orient returns this direct introductory prose, stopping at the next
+heading. Put the task-routing map and other details under subsequent headings.
+Maintain this repository summary during updates; it describes the repository,
+not the purpose of the quickstart document.`
     : ""
 }`;
 }

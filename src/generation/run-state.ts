@@ -7,6 +7,7 @@ import type { UpdateMetadata } from "../agent/types.js";
 import { OPEN_WIKI_DIR } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { RepositoryRunError } from "./errors.js";
+import { ReflectionIdInput } from "./plan-input.js";
 
 /**
  * Basename of the one durable repository-generation checkpoint.
@@ -88,6 +89,11 @@ export interface PageJob {
   instructions: string[];
 
   /**
+   * Captured discoveries assigned to this page; pending files remain the source of work.
+   */
+  reflectionIds?: string[];
+
+  /**
    * Durable completion state for this queue entry.
    */
   status: PageJobStatus;
@@ -163,6 +169,12 @@ export interface RepositoryRunState {
    * Factual pages present before this run began semantic generation.
    */
   initialPages: string[];
+
+  /**
+   * Reflection identities captured at update start, excluding later arrivals on resume.
+   * This is the run's input scope, not an outcome or claim-link registry.
+   */
+  initialReflectionIds?: string[];
 
   /**
    * SHA-256 identity of the source input for the active plan.
@@ -257,6 +269,7 @@ const PageJobSchema = z
     seedPaths: z.array(z.string()),
     relatedPages: z.array(z.string()),
     instructions: z.array(z.string().trim().min(1)),
+    reflectionIds: z.array(ReflectionIdInput).optional(),
     status: z.enum(["pending", "skipped", "complete"]),
     completedBy: z.string().trim().min(1).optional(),
   })
@@ -273,6 +286,7 @@ const RepositoryRunStateSchema = z
     languageChanged: z.boolean(),
     requiredRewritePages: z.array(z.string().min(1)),
     initialPages: z.array(z.string().min(1)),
+    initialReflectionIds: z.array(ReflectionIdInput).optional(),
     sourceFingerprint: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
     targetGitHead: z.string().min(1).optional(),
     planningContext: z.string().min(1).optional(),

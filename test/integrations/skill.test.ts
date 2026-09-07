@@ -75,7 +75,15 @@ describe("canonical OpenWiki host skill", () => {
         ),
       ),
     ].sort();
-    expect(toolNames).toEqual([...calls].sort());
+    expect(toolNames).toEqual(
+      [
+        ...calls,
+        "openwiki_orient",
+        "openwiki_outline",
+        "openwiki_read",
+        "openwiki_reflect",
+      ].sort(),
+    );
     expect(skill).not.toContain("openwiki_resolve_claims");
   });
 
