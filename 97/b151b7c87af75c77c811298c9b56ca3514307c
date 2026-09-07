@@ -1,0 +1,142 @@
+test/integrations/mcp-server.test.ts
+  s_ec8b8a8b886583::t_c4d1eaec46b498 324-368,374-386
+test/integrations/session-manager.test.ts
+  s_ec8b8a8b886583::t_b92008354f1cc7 128-140,201-213,241,247-250
+src/claims/brains/code/prose.ts
+  s_ec8b8a8b886583::t_3e354ac28a5f0d 1-293
+src/memory/reflection-retrieval.ts
+  s_ec8b8a8b886583::t_172a2b1ae30ce1 1-261
+test/memory/changes.test.ts
+  s_ec8b8a8b886583::t_c89bb5e575f986 1-696
+src/integrations/core/retrieval-tools.ts
+  s_ec8b8a8b886583::t_6a598a216419d3 1-121
+src/generation/repository-run.ts
+  s_2dfebe0ca8f3c9::t_d4d46f7c653581 54
+  s_ec8b8a8b886583::t_c169595c145d14 27-32,55-61,262-265,374-376,433-437,508-510,687,824-828,922-925,941-947,964-969,977,981-1003,1017-1025,1032,1045-1047,1049-1051,1053-1055,1057-1059,1061-1063,1065-1067,1069-1084,1087-1092,1123-1126,1135-1144,1150,1158,1163,1176-1179,1322,1358-1361,1403-1412,1426-1429,1549-1567,1705-1714
+  s_2dfebe0ca8f3c9::t_bcfed952031106 266
+  s_2dfebe0ca8f3c9::t_f6e6c4724071fd 1399
+  s_ec8b8a8b886583::t_4afd79ef7896fe 1362
+  s_2dfebe0ca8f3c9::t_d9aafacdf1896b 1398
+  s_ec8b8a8b886583::t_685c758d93246a 1400-1402
+src/generation/reflection-guidance.ts
+  s_ec8b8a8b886583::t_c741dddd7ce166 1-36
+src/memory/git.ts
+  s_ec8b8a8b886583::t_3ad881179f672f 1-468
+src/generation/run-state.ts
+  s_ec8b8a8b886583::t_78bdff8cf2a633 10,91-95,173-178,272,289
+test/generation/reflections.test.ts
+  s_ec8b8a8b886583::t_587a0a6cb6a0de 1-775
+docs/retrieval.md
+  s_ec8b8a8b886583::t_aca09cec1d17e5 1-359
+src/generation/reflections.ts
+  s_ec8b8a8b886583::t_8de4950007b7c0 1-244
+src/integrations/core/reflection-tool.ts
+  s_ec8b8a8b886583::t_3955d24a6f3eca 1-37
+test/integrations/protocol.test.ts
+  s_ec8b8a8b886583::t_53143f51976558 2-3,7-8,12-13,23-153,270-319
+test/agent/repository-prompts.test.ts
+  s_ec8b8a8b886583::t_11bccc8b3096de 46,89-113
+src/claims/brains/code/prose-types.ts
+  s_ec8b8a8b886583::t_c01c89ab473248 1-119
+src/generation/page-jobs.ts
+  s_ec8b8a8b886583::t_3569550a548cca 11,14,16,56-60,95-98,101-103,106-108,110-114,130-134,248-250,428-429,435-436,549-556
+src/integrations/mcp/server.ts
+  s_ec8b8a8b886583::t_76a9bb1e833da8 3-6,8-12,19-56,64-65,67-68,72,80,84,92,94,118,120
+integrations/openwiki/SKILL.md
+  s_ec8b8a8b886583::t_063535a62d20b3 3,8-96,127-133,150,156-164,173-180,198-201,215-225,238-248,282-320,327-328
+CONTRIBUTING.md
+  s_ec8b8a8b886583::t_7bab26641b1ab4 55-68,71-74,76-89
+src/memory/reflection-types.ts
+  s_ec8b8a8b886583::t_433ea8f7455eb5 1-217
+src/agent/repository-runner.ts
+  s_ec8b8a8b886583::t_606f33fd38fc3d 9-14,281,400,407-408,428
+README.md
+  s_ec8b8a8b886583::t_9bcf0908b6d392 7,19-31,35-37,49,64-66,75,92-95,110-118,124,127,138-142,146-234,247-248,251-258,362,365
+src/generation/page-input.ts
+  s_ec8b8a8b886583::t_be73ec246af419 1-78
+src/claims/brains/code/session.ts
+  s_ec8b8a8b886583::t_98c44321de5b14 13-18,68-72,163-170,214-223,226,265-277,375-382,442,502
+src/ingestion/code-mode.ts
+  s_ec8b8a8b886583::t_89d363eaa23ae1 17,19-21,23-26,28-31,34-36,39-41,50-52,208-212,214,219,230-236,256-261,264,432-436,442,444-447,449,451,453,455
+src/integrations/core/protocol.ts
+  s_ec8b8a8b886583::t_d1e1ff0bda6c34 2-6,8-10,12-15,24,27-30,38-77,143-145,165-168,180-182,201,205,210,220,223
+test/agent/repository-runner.test.ts
+  s_ec8b8a8b886583::t_4ef562be4072e4 576
+src/memory/retrieval.ts
+  s_ec8b8a8b886583::t_a56c9f67050edd 1-269
+src/claims/brains/code/types.ts
+  s_ec8b8a8b886583::t_637bd5d9cff4b4 2,45-54,68-73,83-98
+test/generation/repository-run.test.ts
+  s_ec8b8a8b886583::t_759853e1c67a44 101,104,160-198,333,343-487,1395,1412,1462,1505-1509,1648-1651,1655,1815,1858,2189-2195,2198-2204
+src/generation/plan-input.ts
+  s_ec8b8a8b886583::t_98f07aa21bc00e 1-38
+src/memory/changes.ts
+  s_ec8b8a8b886583::t_1694690831417b 1-493
+test/claims/brains/code/store.test.ts
+  s_ec8b8a8b886583::t_0cb9a19d66cc0c 145-183
+src/memory/reflections.ts
+  s_ec8b8a8b886583::t_73c0d31382d23c 1-293
+src/memory/types.ts
+  s_ec8b8a8b886583::t_dcfc0df5664130 1-230
+docs/agent-workflow.md
+  s_ec8b8a8b886583::t_b6a5b989cf7656 1-261
+test/claims/brains/code/prose.test.ts
+  s_ec8b8a8b886583::t_ab8d3eafd19db1 1-367
+test/memory/reflections.test.ts
+  s_ec8b8a8b886583::t_bbe5672991d29f 1-643
+src/claims/brains/code/sections.ts
+  s_ec8b8a8b886583::t_6b93b0b6476342 1-116
+src/agent/repository-prompts.ts
+  s_ec8b8a8b886583::t_35c65580a2947f 2-5,9,16-20,39,92-96,114-116,119-121,123-142,180-183,197-198,209-215,219-221,228-234
+test/ingestion/code-mode.test.ts
+  s_ec8b8a8b886583::t_fc5dc59b5bdf15 136,147-164,166-183
+test/integrations/memory-workflow.test.ts
+  s_ec8b8a8b886583::t_caff514885b0dd 1-338,340-544
+  s_ec8b8a8b886583::t_7afd98a93a4fe2 339
+src/claims/guidance.ts
+  s_ec8b8a8b886583::t_0b960750dd46a5 10-12,27-54
+docs/page-authoring.md
+  s_ec8b8a8b886583::t_daec6def67a3d5 1-152
+test/memory/retrieval.test.ts
+  s_ec8b8a8b886583::t_3a71c391b7097f 1-501
+docs/reflections.md
+  s_ec8b8a8b886583::t_5adc3e41046ca6 1-201
+OPENWIKI_MEMORY_PLAN.md
+  s_ec8b8a8b886583::t_098bbc31492f9c 1-1348
+src/claims/brains/code/store.ts
+  s_ec8b8a8b886583::t_973c4b824679de 27,70-94,103-104,135-139,617-631
+test/integrations/skill.test.ts
+  s_ec8b8a8b886583::t_f2c4370a4ef80f 79-85
+  s_ec8b8a8b886583::t_964f9e9fe7b316 78
+  s_ec8b8a8b886583::t_cfa104ff6dea5c 86
+src/agent/utils.ts
+  s_ec8b8a8b886583::t_a96912017d17a7 19,132-137,718-725
+  s_ec8b8a8b886583::t_7afd98a93a4fe2 875,884,887
+src/integrations/core/session-manager.ts
+  s_ec8b8a8b886583::t_c6dcf53aaca180 3-5,33-34,57,170,188-193,202,204,230,236-237,248,255,261,268
+  s_ec8b8a8b886583::t_79da2e090c95da 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "97b151b7c87af75c77c811298c9b56ca3514307c",
+  "prompts": {},
+  "sessions": {
+    "s_2dfebe0ca8f3c9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06d6b-dbcc-7d90-b39d-8d011c799d05",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_ec8b8a8b886583": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a89-5090-7233-ac19-fceecbd5ba6c",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
