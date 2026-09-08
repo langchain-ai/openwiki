@@ -1,5 +1,7 @@
+import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 import {
   getProviderAuthMethod,
   getProviderConfig,
@@ -15,13 +17,33 @@ import { UPDATE_METADATA_PATH } from "../config/constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
 
+const execFileAsync = promisify(execFile);
+
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 
+// Host detection is a nicety, not a dependency: a hung git must not stall setup.
+const GIT_TIMEOUT_MS = 10_000;
+
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
 // Each is created when missing and refreshed in place when already present.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
+
+/**
+ * The git host OpenWiki tailors its generated code-mode artifacts to. Only
+ * `github` has a workflow OpenWiki can commit (GitHub Actions); the other hosts
+ * ship as `examples/` the operator wires up, so all OpenWiki owes them is
+ * managed-snippet wording that names the right thing. `none` opts out of both.
+ */
+export type CodeModeCiProvider = "github" | "gitlab" | "bitbucket" | "none";
+
+/**
+ * Overrides host detection. Needed for a self-hosted instance whose hostname
+ * does not advertise its provider, and for opting out entirely
+ * (`OPENWIKI_CI_PROVIDER=none`) in a pipeline that manages its own pull requests.
+ */
+export const CI_PROVIDER_ENV_KEY = "OPENWIKI_CI_PROVIDER";
 
 /** Controls which parts of the repo OpenWiki sets up for code mode. */
 export interface CodeModeRepoSetupOptions {
@@ -35,30 +57,158 @@ export interface CodeModeRepoSetupOptions {
   /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
   cronExpression?: string;
   /**
-   * Environment the generated workflow's provider block is derived from.
-   * Defaults to `process.env`, which by this point holds the credentials setup
-   * resolved for this run.
+   * Environment the generated workflow's provider block and the
+   * {@link CI_PROVIDER_ENV_KEY} override are read from. Defaults to
+   * `process.env`, which by this point holds the credentials setup resolved for
+   * this run.
    */
   env?: NodeJS.ProcessEnv;
 }
 
 /**
  * Ensure the repo is set up for code mode: refresh the managed agent-instruction
- * snippets, and, when `options.createWorkflow` is set, create the scheduled-update
- * workflow if it does not already exist.
+ * snippets, and, when `options.createWorkflow` is set and the repository is
+ * hosted on GitHub, create the scheduled-update workflow if it does not already
+ * exist.
+ *
+ * Both halves are host-aware. A GitLab or Bitbucket repository has no use for a
+ * GitHub Actions workflow, and telling its agents that "the scheduled OpenWiki
+ * GitHub Actions workflow refreshes the repository wiki" states something the
+ * repo cannot do -- a correction that never sticks, because the managed block is
+ * rewritten on the next run.
  */
 export async function ensureCodeModeRepoSetup(
   cwd: string,
   options: CodeModeRepoSetupOptions = {},
 ): Promise<void> {
-  if (options.createWorkflow) {
+  const env = options.env ?? process.env;
+  const provider = await detectCiProvider(cwd, env);
+
+  if (options.createWorkflow && provider === "github") {
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
-      options.env ?? process.env,
+      env,
     );
   }
-  await writeCodeModeAgentSnippets(cwd);
+  await writeCodeModeAgentSnippets(cwd, provider);
+}
+
+/**
+ * Resolves the host OpenWiki generates for: the {@link CI_PROVIDER_ENV_KEY}
+ * override when it names a known one, otherwise the repository remote's host.
+ */
+async function detectCiProvider(
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+): Promise<CodeModeCiProvider> {
+  return (
+    normalizeCiProvider(env[CI_PROVIDER_ENV_KEY]) ??
+    classifyRemoteHost(await readGitRemoteUrl(cwd))
+  );
+}
+
+/** The named provider, or null when the value is absent or unrecognized. */
+function normalizeCiProvider(
+  value: string | undefined,
+): CodeModeCiProvider | null {
+  switch (value?.trim().toLowerCase()) {
+    case "github":
+      return "github";
+    case "gitlab":
+      return "gitlab";
+    case "bitbucket":
+      return "bitbucket";
+    case "none":
+      return "none";
+    default:
+      // An unrecognized value falls through to detection rather than failing
+      // setup: a typo in a pipeline variable must not break the docs run.
+      return null;
+  }
+}
+
+/**
+ * The repository's remote URL, preferring `origin` and falling back to whichever
+ * remote exists. Null when this is not a git repository or has no remote.
+ */
+async function readGitRemoteUrl(cwd: string): Promise<string | null> {
+  const originUrl = await runGitQuietly(cwd, ["remote", "get-url", "origin"]);
+  if (originUrl) {
+    return originUrl;
+  }
+
+  const firstRemote = (await runGitQuietly(cwd, ["remote"]))
+    ?.split(/\r?\n/u)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  return firstRemote
+    ? runGitQuietly(cwd, ["remote", "get-url", firstRemote])
+    : null;
+}
+
+/** Git stdout, or null for any failure -- an undetectable host, never a throw. */
+async function runGitQuietly(
+  cwd: string,
+  args: string[],
+): Promise<string | null> {
+  try {
+    const { stdout } = await execFileAsync("git", args, {
+      cwd,
+      maxBuffer: 1024 * 1024,
+      timeout: GIT_TIMEOUT_MS,
+    });
+    return stdout.trim() || null;
+  } catch {
+    // No git binary, not a repository, or no such remote.
+    return null;
+  }
+}
+
+/**
+ * Classifies a remote by its **hostname only**. Matching the whole URL would
+ * misread a repository path -- `git@github.com:acme/gitlab-importer.git` is a
+ * GitHub repo -- while a hostname substring still catches the self-hosted
+ * instances that keep the product name in their host (`gitlab.acme.com`).
+ *
+ * An unrecognized host falls back to `github`, preserving the behavior every
+ * existing repo was set up under; {@link CI_PROVIDER_ENV_KEY} covers the rest.
+ */
+function classifyRemoteHost(remoteUrl: string | null): CodeModeCiProvider {
+  const host = remoteUrl === null ? null : parseRemoteHost(remoteUrl);
+  if (host === null) {
+    return "github";
+  }
+  if (host.includes("gitlab")) {
+    return "gitlab";
+  }
+  if (host.includes("bitbucket")) {
+    return "bitbucket";
+  }
+  return "github";
+}
+
+/**
+ * The lowercased hostname of a git remote URL, covering both the URL form
+ * (`https://host/owner/repo.git`, `ssh://git@host:22/owner/repo`) and the
+ * scp-like form (`git@host:owner/repo.git`), which is not a parseable URL.
+ * Null for a local path or anything else with no host to read.
+ */
+function parseRemoteHost(remoteUrl: string): string | null {
+  const trimmed = remoteUrl.trim();
+
+  // scp-like: an optional user, a host, then a colon that is not a port.
+  const scpLike = /^(?:[^@/]+@)?([^/:]+):(?!\/)/u.exec(trimmed);
+  if (scpLike?.[1] !== undefined) {
+    return scpLike[1].toLowerCase();
+  }
+
+  try {
+    return new URL(trimmed).hostname.toLowerCase() || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -188,8 +338,11 @@ async function readLastUpdatedAt(
   }
 }
 
-async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const agentsSnippet = createCodeModeAgentsSnippet();
+async function writeCodeModeAgentSnippets(
+  cwd: string,
+  provider: CodeModeCiProvider,
+): Promise<void> {
+  const agentsSnippet = createCodeModeAgentsSnippet(provider);
   const claudeSnippet = createCodeModeClaudeSnippet();
   const snippetByFile: Record<string, string> = {
     "AGENTS.md": agentsSnippet,
@@ -402,7 +555,7 @@ jobs:
 `;
 }
 
-function createCodeModeAgentsSnippet(): string {
+function createCodeModeAgentsSnippet(provider: CodeModeCiProvider): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
 ## OpenWiki
@@ -412,9 +565,29 @@ This repository has a generated \`openwiki/\` evidence index. It is optional jus
 - Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+The ${describeCodeModeUpdateJob(provider)} refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
+}
+
+/**
+ * Names the recurring job in the managed block after the detected host, so the
+ * sentence is true on GitLab and Bitbucket instead of asserting a GitHub Actions
+ * run the repository has no way to perform.
+ */
+function describeCodeModeUpdateJob(provider: CodeModeCiProvider): string {
+  switch (provider) {
+    case "gitlab":
+      return "scheduled OpenWiki GitLab pipeline";
+    case "bitbucket":
+      return "scheduled OpenWiki Bitbucket pipeline";
+    case "github":
+      return "scheduled OpenWiki GitHub Actions workflow";
+    default:
+      // `none`, and any provider added later without a phrasing of its own: say
+      // only what holds for every host rather than naming the wrong one.
+      return "scheduled OpenWiki update job";
+  }
 }
 
 /**

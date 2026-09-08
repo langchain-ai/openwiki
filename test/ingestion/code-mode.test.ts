@@ -1,6 +1,8 @@
+import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { afterEach, describe, expect, test } from "vitest";
 import { parse } from "yaml";
 import {
@@ -8,6 +10,8 @@ import {
   runCodeModeConnectors,
 } from "../../src/ingestion/code-mode.ts";
 import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
+
+const execFileAsync = promisify(execFile);
 
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -550,5 +554,146 @@ describe("runCodeModeConnectors", () => {
     );
 
     expect(await runCodeModeConnectors(repo, "keep me")).toBe("keep me");
+  });
+});
+
+describe("ensureCodeModeRepoSetup host awareness", () => {
+  const WORKFLOW_RELATIVE_PATH = path.join(
+    ".github",
+    "workflows",
+    "openwiki-update.yml",
+  );
+
+  async function createTempRepoWithRemote(remoteUrl: string): Promise<string> {
+    const repo = await createTempRepo();
+    await execFileAsync("git", ["init", "--quiet"], { cwd: repo });
+    await execFileAsync("git", ["remote", "add", "origin", remoteUrl], {
+      cwd: repo,
+    });
+    return repo;
+  }
+
+  test.each([
+    { host: "gitlab", job: "scheduled OpenWiki GitLab pipeline" },
+    { host: "bitbucket", job: "scheduled OpenWiki Bitbucket pipeline" },
+    { host: "none", job: "scheduled OpenWiki update job" },
+  ])(
+    "skips the GitHub workflow and names the $host job in AGENTS.md",
+    async ({ host, job }) => {
+      const repo = await createTempRepo();
+
+      await ensureCodeModeRepoSetup(repo, {
+        createWorkflow: true,
+        env: { OPENWIKI_CI_PROVIDER: host },
+      });
+
+      // A GitHub Actions workflow this host cannot run is committed noise that
+      // the repo's own pipeline then has to scrub on every update.
+      expect(
+        await readIfPresent(path.join(repo, WORKFLOW_RELATIVE_PATH)),
+      ).toBeNull();
+      const agents = await readIfPresent(path.join(repo, "AGENTS.md"));
+      expect(agents).toContain(`The ${job} refreshes the repository wiki.`);
+      expect(agents).not.toContain("GitHub Actions");
+    },
+  );
+
+  test("detects the host from the repository remote", async () => {
+    const repo = await createTempRepoWithRemote(
+      "git@bitbucket.org:acme/widgets.git",
+    );
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true, env: {} });
+
+    expect(
+      await readIfPresent(path.join(repo, WORKFLOW_RELATIVE_PATH)),
+    ).toBeNull();
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      "scheduled OpenWiki Bitbucket pipeline",
+    );
+  });
+
+  test("reads the host, not the repository path, from the remote", async () => {
+    // `gitlab` in the project name says nothing about where the repo is hosted;
+    // matching the whole remote URL would mistake this GitHub repo for GitLab.
+    const repo = await createTempRepoWithRemote(
+      "git@github.com:acme/gitlab-importer.git",
+    );
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true, env: {} });
+
+    expect(
+      await readIfPresent(path.join(repo, WORKFLOW_RELATIVE_PATH)),
+    ).not.toBeNull();
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      "scheduled OpenWiki GitHub Actions workflow",
+    );
+  });
+
+  test("detects a self-hosted instance from its hostname", async () => {
+    const repo = await createTempRepoWithRemote(
+      "https://gitlab.acme.example/platform/widgets.git",
+    );
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true, env: {} });
+
+    expect(
+      await readIfPresent(path.join(repo, WORKFLOW_RELATIVE_PATH)),
+    ).toBeNull();
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      "scheduled OpenWiki GitLab pipeline",
+    );
+  });
+
+  test("prefers the environment override over the detected host", async () => {
+    const repo = await createTempRepoWithRemote(
+      "git@github.com:acme/widgets.git",
+    );
+
+    await ensureCodeModeRepoSetup(repo, {
+      createWorkflow: true,
+      env: { OPENWIKI_CI_PROVIDER: "none" },
+    });
+
+    expect(
+      await readIfPresent(path.join(repo, WORKFLOW_RELATIVE_PATH)),
+    ).toBeNull();
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      "scheduled OpenWiki update job",
+    );
+  });
+
+  test("falls back to GitHub when the host cannot be detected", async () => {
+    // The historical default: an unrecognized or absent remote keeps generating
+    // exactly what every repo set up before host detection already had.
+    const repo = await createTempRepoWithRemote(
+      "https://git.acme.example/platform/widgets.git",
+    );
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true, env: {} });
+
+    expect(
+      await readIfPresent(path.join(repo, WORKFLOW_RELATIVE_PATH)),
+    ).not.toBeNull();
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      "scheduled OpenWiki GitHub Actions workflow",
+    );
+  });
+
+  test("ignores an unrecognized override and detects instead", async () => {
+    const repo = await createTempRepoWithRemote(
+      "git@bitbucket.org:acme/widgets.git",
+    );
+
+    // A typo in a pipeline variable must not fail setup, nor silently pin the
+    // wording to the wrong host.
+    await ensureCodeModeRepoSetup(repo, {
+      createWorkflow: true,
+      env: { OPENWIKI_CI_PROVIDER: "bitbuckets" },
+    });
+
+    expect(await readIfPresent(path.join(repo, "AGENTS.md"))).toContain(
+      "scheduled OpenWiki Bitbucket pipeline",
+    );
   });
 });

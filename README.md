@@ -66,6 +66,8 @@ Keep it current automatically by adding a scheduled CI job that opens a docs PR 
 - **GitLab CI:** copy [`openwiki-update.gitlab-ci.yml`](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your pipeline.
 - **Bitbucket Pipelines:** copy [`openwiki-update.bitbucket-pipelines.yml`](./examples/openwiki-update.bitbucket-pipelines.yml) into `bitbucket-pipelines.yml`, then schedule the `openwiki-update` pipeline.
 
+`openwiki --init` writes the GitHub Actions workflow for you when the repository's remote is a GitHub host, and leaves a GitLab or Bitbucket repository to the examples above. The managed `AGENTS.md` block names the job for the detected host, so it never tells your agents about a GitHub Actions run the repository cannot perform. Set `OPENWIKI_CI_PROVIDER=github|gitlab|bitbucket|none` to override detection on a self-hosted instance whose hostname does not name its provider, or to `none` to keep OpenWiki from writing any workflow.
+
 > [!NOTE]
 > On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
 
@@ -234,7 +236,7 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 Your wiki stays in the repository as plain Markdown you own, with OpenWiki-managed grounding and run metadata versioned alongside it.
 
-- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
+- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched, and names the scheduled update job after your detected Git host.
 - **Grounding stays with the wiki.** Versioned claim sidecars under `openwiki/.claims/` travel with the Markdown, so the evidence needed to maintain factual pages is inspectable and reviewable.
 - **You set the brief.** Repository-specific instructions live in `openwiki/INSTRUCTIONS.md`, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
 - **No-op runs do not churn docs.** A clean update skips model work and leaves wiki content untouched while refreshing `.last-update.json` to record that the check ran.
