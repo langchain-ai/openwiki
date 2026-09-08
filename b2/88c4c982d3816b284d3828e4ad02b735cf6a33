@@ -1,0 +1,19 @@
+.changeset/fix-visualizer-csp-google-fonts.md
+  s_bc1684824c7071::t_312f69dff71167 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b288c4c982d3816b284d3828e4ad02b735cf6a33",
+  "prompts": {},
+  "sessions": {
+    "s_bc1684824c7071": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08217-cd3f-7341-b842-3af798071068",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
