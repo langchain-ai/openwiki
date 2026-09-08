@@ -22,6 +22,7 @@ const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
 // Each is created when missing and refreshed in place when already present.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
+const CLAUDE_AGENTS_IMPORT = "@AGENTS.md";
 
 /** Controls which parts of the repo OpenWiki sets up for code mode. */
 export interface CodeModeRepoSetupOptions {
@@ -208,7 +209,9 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
 
   await Promise.all(
     updates.map(({ agentsPath, nextContent }) =>
-      writeFile(agentsPath, nextContent, "utf8"),
+      nextContent === undefined
+        ? Promise.resolve()
+        : writeFile(agentsPath, nextContent, "utf8"),
     ),
   );
 }
@@ -216,7 +219,7 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
 async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
-): Promise<{ agentsPath: string; nextContent: string }> {
+): Promise<{ agentsPath: string; nextContent: string | undefined }> {
   let currentContent = "";
 
   try {
@@ -230,6 +233,13 @@ async function prepareCodeModeAgentSnippet(
   const startIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
   const endIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
   const hasNoMarkers = startIndex === -1 && endIndex === -1;
+
+  if (
+    path.basename(agentsPath) === "CLAUDE.md" &&
+    currentContent.trim() === CLAUDE_AGENTS_IMPORT
+  ) {
+    return { agentsPath, nextContent: undefined };
+  }
 
   if (hasNoMarkers) {
     return {
