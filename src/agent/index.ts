@@ -1439,6 +1439,10 @@ export function parseAgentStreamChunk(chunk: unknown): OpenWikiRunEvent | null {
     return parseToolStreamEvent(payload);
   }
 
+  if (mode === "updates") {
+    return parseUpdatesChunk(namespace, payload);
+  }
+
   const text = extractMessageText(payload);
 
   return text.length > 0
@@ -1489,14 +1493,43 @@ function isProtocolStreamEvent(value: unknown): value is ProtocolEvent {
 
 function isAgentStreamChunk(
   value: unknown,
-): value is [string[], "messages" | "tools", unknown] {
+): value is [string[], "messages" | "tools" | "updates", unknown] {
   return (
     Array.isArray(value) &&
     value.length === 3 &&
     Array.isArray(value[0]) &&
     value[0].every((part) => typeof part === "string") &&
-    (value[1] === "messages" || value[1] === "tools")
+    (value[1] === "messages" || value[1] === "tools" || value[1] === "updates")
   );
+}
+
+/**
+ * Extracts the last assistant text from an "updates" mode state-delta chunk.
+ * LangGraph "updates" chunks carry the per-node state diff rather than raw
+ * message tokens, so the payload is { nodeName: { messages: [...] }, ... }.
+ * We iterate the node outputs and return the first non-empty assistant text.
+ */
+function parseUpdatesChunk(
+  namespace: string[],
+  payload: unknown,
+): OpenWikiRunEvent | null {
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  for (const nodeOutput of Object.values(payload)) {
+    const text = extractMessageText(nodeOutput);
+
+    if (text.length > 0) {
+      return {
+        source: getStreamSource(namespace),
+        type: "text",
+        text,
+      };
+    }
+  }
+
+  return null;
 }
 
 function extractMessageText(payload: unknown): string {

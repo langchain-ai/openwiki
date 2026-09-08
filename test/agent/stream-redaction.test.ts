@@ -130,4 +130,76 @@ describe("parseAgentStreamChunk", () => {
       parseAgentStreamChunk([["namespace"], ["not a message"]]),
     ).toBeNull();
   });
+
+  // "updates" mode is the default stream mode for the openai-compatible
+  // provider. The payload is a per-node state diff rather than raw message
+  // tokens, so the shape is { nodeName: { messages: [...] } }. Without
+  // handling this mode, plain-text replies from openai-compatible endpoints
+  // are silently dropped and the TUI shows "No assistant output captured".
+  test("extracts assistant text from an updates-mode state diff", () => {
+    const chunk = [
+      [],
+      "updates",
+      {
+        agent: {
+          messages: [
+            {
+              role: "assistant",
+              content: "Who am I? I am OpenWiki.",
+            },
+          ],
+        },
+      },
+    ];
+
+    const event = parseAgentStreamChunk(chunk);
+
+    expect(event).not.toBeNull();
+    expect(event?.type).toBe("text");
+    expect((event as { text: string }).text).toBe("Who am I? I am OpenWiki.");
+    expect((event as { source: string }).source).toBe("main");
+  });
+
+  test("tags updates from a subgraph namespace as subgraph source", () => {
+    const chunk = [
+      ["task"],
+      "updates",
+      { agent: { messages: [{ role: "assistant", content: "sub answer" }] } },
+    ];
+
+    const event = parseAgentStreamChunk(chunk);
+
+    expect(event).toMatchObject({ source: "subgraph", type: "text" });
+  });
+
+  test("returns null for an updates chunk with no node outputs", () => {
+    // An empty state diff carries no messages to display.
+    expect(parseAgentStreamChunk([[], "updates", {}])).toBeNull();
+  });
+
+  test("returns null for an updates chunk with a non-record payload", () => {
+    expect(parseAgentStreamChunk([[], "updates", "not-a-record"])).toBeNull();
+    expect(parseAgentStreamChunk([[], "updates", null])).toBeNull();
+  });
+
+  test("skips tool-call messages in updates chunks, surfaces adjacent text", () => {
+    const chunk = [
+      [],
+      "updates",
+      {
+        agent: {
+          messages: [
+            {
+              role: "assistant",
+              content: "",
+              tool_calls: [{ name: "read_file", args: {} }],
+            },
+          ],
+        },
+      },
+    ];
+
+    // A message that carries only tool calls has no renderable text.
+    expect(parseAgentStreamChunk(chunk)).toBeNull();
+  });
 });
