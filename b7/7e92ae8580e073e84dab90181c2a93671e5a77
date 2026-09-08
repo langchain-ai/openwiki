@@ -1,0 +1,19 @@
+.changeset/fix-env-backslash-escape-order.md
+  s_2b9156b2229bc3::t_56acee2cead1c4 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "b77e92ae8580e073e84dab90181c2a93671e5a77",
+  "prompts": {},
+  "sessions": {
+    "s_2b9156b2229bc3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08224-0c20-7f21-a3c9-f77c68eab9e9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
