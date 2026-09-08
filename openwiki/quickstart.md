@@ -3,6 +3,9 @@ type: orientation-guide
 title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-04T08:13:11.978Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -30,10 +33,7 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-02T08:09:44.873Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-02T08:09:44.873Z
+generated: { by: "openwiki/0.5.0", at: "2026-09-04T08:13:11.978Z" }
 ---
 
 # OpenWiki Quickstart
@@ -151,6 +151,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                  | Read                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------ |
 | Run OpenWiki inside Codex, Claude Code, OpenCode, or Cursor                 | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
+| Explore the interactive graph visualizer (live server and static export)    | [Interactive Visualizer](/openwiki/integrations/visualizer.md) |
 
 ### Test your changes
 

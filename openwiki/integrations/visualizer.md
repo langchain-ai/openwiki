@@ -36,10 +36,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-04T08:13:11.978Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.5.0
+    at: 2026-09-04T08:13:11.978Z
 ---
 
 # Interactive Visualizer
@@ -171,6 +171,32 @@ stray click on blank canvas never clears the selection or the reader. This is th
 issue #670 regression fix — the former background-click handler wiped the page the
 user was reading.
 
+Graph labels are contextual, not ambient — the "declutter visualizer graph labels"
+feature. By default no node labels are painted on the canvas: the sidebar index is
+the always-visible page list, so the graph stays readable at any size. `paintNode`
+consults the pure `shouldShowNodeLabel` helper (from `client-lib.ts`) with the
+current selection, hover, and neighbourhood state to decide, per node, whether to
+draw its title. When nothing is selected, only the hovered node's label shows;
+when a node is selected, that node plus its directly connected neighbours show
+labels; unrelated nodes never show labels. Hovering is suspended while a page is
+selected — `hoverHighlight` returns early when a selection is active, so the
+selected neighbourhood's labels hold until the selection changes.
+
+```mermaid
+flowchart TD
+  Start["paintNode considers node n"] --> Q{"is a node selected?"}
+  Q -- "yes (selectedId set)" --> Q2{"n is the selected node<br/>or in its neighbourhood?"}
+  Q2 -- "yes" --> Show["paint n's label"]
+  Q2 -- "no" --> Hide["no label for n"]
+  Q -- "no (selectedId null)" --> Q3{"n is the hovered node?"}
+  Q3 -- "yes" --> Show
+  Q3 -- "no" --> Hide
+```
+
+`shouldShowNodeLabel` decision logic: selection wins over hover, and only the
+selected node plus its immediate neighbours — or the single hovered node when
+nothing is selected — ever paint a canvas label.
+
 The reader renders the page body as Markdown. Because `marked` passes raw HTML
 through, the output is sanitized with DOMPurify before assignment to `innerHTML`,
 which is defense in depth on top of the server's CSP; all scalar wiki fields
@@ -193,8 +219,13 @@ and subscribes to `/events`.
 
 The pure, DOM-independent helpers used by the client — `escapeHtml`,
 `colorsForTypes`, `nodeRadius`, `signature`, `matchesFilter`, `normalize`,
-`stripFrontmatter`, and `hexA` — live in `src/visualize/client-lib.ts` so they can
-be unit-tested directly without a browser.
+`stripFrontmatter`, `hexA`, and `shouldShowNodeLabel` (with its
+`NodeLabelContext` interface) — live in `src/visualize/client-lib.ts` so they can
+be unit-tested directly without a browser. `shouldShowNodeLabel` decides whether
+a node label should be painted on the canvas based on interaction context: when
+nothing is selected, only the hovered node's label shows; when a node is
+selected, the selected node plus its immediate neighbours show labels; unrelated
+nodes never show labels.
 
 ## Static export
 
