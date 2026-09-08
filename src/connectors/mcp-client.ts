@@ -900,7 +900,10 @@ function resolveEnvReference(value: string): string {
   validateEnvKey(envKey);
   const envValue = process.env[envKey];
 
-  if (!envValue) {
+  // An env var explicitly set to "" is present, not missing. Only a truly
+  // unset variable (undefined) is a missing required credential; mirror the
+  // `typeof value === "string"` check buildChildEnv uses for base vars.
+  if (envValue === undefined) {
     throw new Error(`${envKey} is required for MCP connector ingestion.`);
   }
 

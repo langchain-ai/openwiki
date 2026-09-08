@@ -32,6 +32,7 @@ describe("buildChildEnv", () => {
       "APPDATA",
       "LOCALAPPDATA",
       "MCP_SERVER_TOKEN",
+      "MCP_EMPTY",
     ]) {
       saved[key] = process.env[key];
     }
@@ -60,9 +61,9 @@ describe("buildChildEnv", () => {
       expect(childEnv).not.toHaveProperty(key);
     }
     // A random full-process.env secret must never leak by value either.
-    expect(Object.values(childEnv)).not.toContain(
-      "secret-value-for-ANTHROPIC_API_KEY",
-    );
+    for (const key of SECRET_KEYS) {
+      expect(Object.values(childEnv)).not.toContain(`secret-value-for-${key}`);
+    }
   });
 
   test("passes through allow-listed base variables like PATH", () => {
@@ -87,6 +88,12 @@ describe("buildChildEnv", () => {
     expect(() => buildChildEnv({ MCP_TOKEN: "${DOES_NOT_EXIST}" })).toThrow(
       /DOES_NOT_EXIST is required/u,
     );
+  });
+
+  test("accepts a declared env var set to an empty string", () => {
+    process.env.MCP_EMPTY = "";
+    const childEnv = buildChildEnv({ MCP_TOKEN: "${MCP_EMPTY}" });
+    expect(childEnv.MCP_TOKEN).toBe("");
   });
 
   test("rejects invalid child env key names", () => {
