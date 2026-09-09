@@ -33,7 +33,7 @@ import {
   createRepositoryPagePrompt,
   createRepositoryPlannerPrompt,
 } from "./repository-prompts.js";
-import type { OpenWikiRunEvent } from "./types.js";
+import type { OpenWikiRunEvent, RecursionRole } from "./types.js";
 
 const PlanPageSchema = z
   .object({
@@ -176,6 +176,24 @@ export interface NativeRepositoryGenerationOptions {
    * Optional lifecycle and bounded worker-tool event consumer.
    */
   onEvent?: (event: OpenWikiRunEvent) => void;
+
+  /**
+   * Recursion role for a monorepo pass. Injects scope guidance into the planner
+   * and page prompts; undefined for ordinary single-repo runs.
+   */
+  recursionRole?: RecursionRole;
+
+  /**
+   * Optional wiki goal that overrides the run root's openwiki/INSTRUCTIONS.md.
+   * Used by the recursive orchestrator for manifest-supplied per-run briefs.
+   */
+  wikiGoalOverride?: string;
+
+  /**
+   * Skip per-run code-mode repo setup (the recursive orchestrator owns it once
+   * at the root, so subproject runs must not scaffold a dead nested workflow).
+   */
+  skipRepoSetup?: boolean;
 }
 
 /**
@@ -224,6 +242,7 @@ export async function runNativeRepositoryGeneration(
       options.model,
       run.state.planningContext,
       options.onEvent,
+      options.recursionRole,
     );
   }
 
@@ -232,6 +251,7 @@ export async function runNativeRepositoryGeneration(
     options.model,
     options.onEvent,
     view,
+    options.recursionRole,
   );
   options.onEvent?.({
     type: "repository_progress",
@@ -268,6 +288,9 @@ async function beginNativeRepositoryRun(
     language: options.language ?? undefined,
     force: options.force,
     planningContext: options.planningContext ?? undefined,
+    wikiGoalOverride: options.wikiGoalOverride,
+    recursionRole: options.recursionRole,
+    skipRepoSetup: options.skipRepoSetup,
     actor: {
       producerActor: OPENWIKI_PRODUCER_ACTOR,
       metadataModel: options.modelId,
@@ -290,6 +313,7 @@ async function runPlanningAgent(
   model: BaseChatModel,
   planningContext?: string,
   onEvent?: (event: OpenWikiRunEvent) => void,
+  recursionRole?: RecursionRole,
 ): Promise<void> {
   const ignore = await OpenWikiIgnore.load(run.root);
   const wikiBackend = new OpenWikiLocalShellBackend({
@@ -348,7 +372,11 @@ async function runPlanningAgent(
     skills: ["/skills/"],
     subagents: [],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
-    systemPrompt: createRepositoryPlannerPrompt(view, planningContext),
+    systemPrompt: createRepositoryPlannerPrompt(
+      view,
+      planningContext,
+      recursionRole,
+    ),
   });
 
   await streamWorkerTools(
@@ -375,6 +403,7 @@ async function runPendingPageAgents(
   model: BaseChatModel,
   onEvent: ((event: OpenWikiRunEvent) => void) | undefined,
   view: ActiveBeginView,
+  recursionRole?: RecursionRole,
 ): Promise<RepositoryPageSnapshot[]> {
   const skipped: RepositoryPageSnapshot[] = [];
   while (true) {
@@ -391,7 +420,13 @@ async function runPendingPageAgents(
       pageIndex,
       pageCount: pages.length,
     });
-    const skippedSnapshot = await runPageAgent(run, next.job, model, onEvent);
+    const skippedSnapshot = await runPageAgent(
+      run,
+      next.job,
+      model,
+      onEvent,
+      recursionRole,
+    );
     if (skippedSnapshot) skipped.push(skippedSnapshot);
   }
 }
@@ -409,6 +444,7 @@ async function runPageAgent(
   job: PendingPageJob,
   model: BaseChatModel,
   onEvent?: (event: OpenWikiRunEvent) => void,
+  recursionRole?: RecursionRole,
 ): Promise<RepositoryPageSnapshot | null> {
   const snapshot = await captureRepositoryPageSnapshot(run, job.id);
   const ignore = await OpenWikiIgnore.load(run.root);
@@ -488,6 +524,7 @@ async function runPageAgent(
       job,
       run.state.plan?.pages ?? [],
       run.state.language,
+      recursionRole,
     ),
   });
 

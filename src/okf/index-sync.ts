@@ -13,7 +13,14 @@ import {
 
 const INDEX_FILE = "index.md";
 const LOG_FILE = "log.md";
-const EXCLUDED_FILES = new Set([INDEX_FILE, LOG_FILE, "INSTRUCTIONS.md"]);
+const EXCLUDED_FILES = new Set([
+  INDEX_FILE,
+  LOG_FILE,
+  "INSTRUCTIONS.md",
+  // Monorepo recursion state files — internal bookkeeping, never indexed.
+  "workspaces.json",
+  ".workspaces-state.json",
+]);
 
 /**
  * A wiki directory paired with the entries it directly contains.

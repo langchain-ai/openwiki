@@ -208,6 +208,9 @@ export async function runOpenWikiAgent(
             modelId: config.modelId,
             model,
             onEvent: options.onEvent,
+            recursionRole: options.recursionRole,
+            wikiGoalOverride: options.wikiGoalOverride,
+            skipRepoSetup: options.skipRepoSetup,
           }),
         { errorClass: "agent_error" },
       );

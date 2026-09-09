@@ -34,6 +34,8 @@ import {
   ensureCodeModeRepoSetup,
   runCodeModeConnectors,
 } from "../../ingestion/code-mode.js";
+import { runRecursiveOpenWiki } from "../../monorepo/orchestrator.js";
+import { resolveRecursionActivation } from "../../monorepo/workspaces.js";
 import { runOpenWikiIngestion } from "../../ingestion/ingestion.js";
 import { getErrorMessage } from "../../platform/diagnostics.js";
 import { InitSetup, needsCredentialSetup } from "../../setup/credentials.js";
@@ -576,6 +578,31 @@ export function App({ command }: AppProps) {
       runOptions,
       telemetryContext,
       async () => {
+        // Recursive monorepo docs only applies to code-mode init/update runs. The
+        // orchestrator scaffolds repo setup once and runs each subproject then the
+        // root sequentially, emitting per-run boundary text so the Ink log shows
+        // coherent progress. Chat and personal runs always take the single path.
+        const activation =
+          runMode === "code" && resolvedCommand !== "chat"
+            ? await resolveRecursionActivation(
+                runtimeCwd,
+                command.recursive,
+                (message) =>
+                  handleRunEvent({ type: "text", text: `\n${message}\n` }),
+              )
+            : ({ kind: "plain", reason: "not a code init/update run" } as const);
+
+        if (activation.kind === "recurse") {
+          const recursiveResult = await runRecursiveOpenWiki(
+            resolvedCommand,
+            runtimeCwd,
+            runOptions,
+            activation.manifest,
+            telemetryContext,
+          );
+          return recursiveResult.rootResult;
+        }
+
         if (runMode === "code") {
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
@@ -587,6 +614,8 @@ export function App({ command }: AppProps) {
         // Code-mode connectors pull their evidence and augment the agent message
         // before the run, matching the --print path exactly. They emit progress
         // into the same run log so the pull is visible rather than a silent gap.
+        // Plain (non-recurse) path only; the recurse branch returns early via the
+        // orchestrator, which does not pull connectors.
         const userMessage =
           runMode === "code" && resolvedCommand !== "chat"
             ? await runCodeModeConnectors(

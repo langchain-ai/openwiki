@@ -1,0 +1,10 @@
+{
+  "contextHash": "2787abd91c056212",
+  "prompt": "I'm working on openwiki using TypeScript and JavaScript. We wire up langchain, langgraph-checkpoint-sqlite, and deepagents to orchestrate agents. The core stack pulls in anthropic, openai, openrouter, google, google-auth-library, vertex-sdk, and client-bedrock-runtime from aws for the models. I validate schemas with zod, and zod keeps our JSON payloads clean over HTTP. We parse schedules with cron-parser and cronstrue, then render results in ink and react, plus marked and tavily for content. For testing I run vitest with coverage-v8, and vitest reports to stdout and stderr. I lint using eslint, typescript-eslint, and prettier, and run tsx scripts from the CLI. Our npm commands cover build, clean, dev, start, format, lint, and typecheck, wired through GitHub Actions. I check the API, the URL, and SQL queries, then open a PR in Git after every commit.",
+  "tokenCount": 203,
+  "usedLlm": true,
+  "signalCount": 57,
+  "projectName": "openwiki",
+  "summary": "Languages: JavaScript, TypeScript │ Deps: anthropic, aws, client-bedrock-runtime, core, coverage-v8, cron-parser, cronstrue, deepagents, eslint, google +19 more │ Tools: ESLint, GitHub Actions, TypeScript │ Custom terms: client-bedrock-runtime, coverage-v8, cron-parser, google-auth-library, langgraph-checkpoint-sqlite, typescript-eslint, vertex-sdk, vitest, zod │ Prompt: LLM-generated",
+  "generatedAt": "2026-07-16T14:25:12.481Z"
+}

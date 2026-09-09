@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
-import type { RunContext } from "../agent/types.js";
-import type { UpdateNoopStatus } from "../agent/utils.js";
+import type { RecursionRole, RunContext } from "../agent/types.js";
+import type { GitScope, UpdateNoopStatus } from "../agent/utils.js";
 import {
   createOpenWikiContentSnapshot,
   createRepositorySourceSnapshot,
@@ -99,6 +99,29 @@ export interface BeginRepositoryRunInput {
   planningContext?: string;
 
   /**
+   * Optional wiki goal that takes precedence over the run root's
+   * openwiki/INSTRUCTIONS.md. Used by the recursive orchestrator to apply a
+   * manifest-supplied per-subproject (or root) brief; falls back to
+   * INSTRUCTIONS.md when undefined.
+   */
+  wikiGoalOverride?: string;
+
+  /**
+   * Recursion role for a monorepo pass. Scopes the git no-op check and planner
+   * evidence to the relevant subtree (git commands are repo-wide regardless of
+   * cwd, so a subproject run MUST scope with a pathspec). Undefined for ordinary
+   * single-repo runs.
+   */
+  recursionRole?: RecursionRole;
+
+  /**
+   * Skip the per-run code-mode repo setup (workflow + AGENTS.md/CLAUDE.md
+   * snippets). The recursive orchestrator owns repo setup once at the root, so
+   * per-subproject runs must not scaffold their own (dead) nested workflow.
+   */
+  skipRepoSetup?: boolean;
+
+  /**
    * Producer and metadata identities for the current session.
    */
   actor: RepositoryRunActor;
@@ -137,6 +160,12 @@ export interface ActiveRepositoryRun {
    * Strict process-local Claims runtime rebuilt from durable state.
    */
   claimsRuntime: ClaimsRuntime;
+
+  /**
+   * Recursion role for a monorepo pass, carried on the runtime run so planner
+   * evidence can be scoped to the run's subtree. Undefined for single-repo runs.
+   */
+  recursionRole?: RecursionRole;
 }
 
 /**
@@ -331,9 +360,17 @@ export async function beginRepositoryRun(
   const requestedLanguage =
     resolvedRequest.kind === "resolved" ? resolvedRequest.language : undefined;
 
-  await ensureCodeModeRepoSetup(input.root, {
-    createWorkflow: input.mode === "init",
-  });
+  // The recursive orchestrator owns code-mode repo setup once at the root; each
+  // per-subproject run skips it so it never scaffolds a dead nested workflow.
+  if (!input.skipRepoSetup) {
+    await ensureCodeModeRepoSetup(input.root, {
+      createWorkflow: input.mode === "init",
+    });
+  }
+  // A subproject run must scope its git evidence to its own subtree; the root run
+  // and single-repo runs stay repo-wide so the root regenerates on every run.
+  const noopScope: GitScope | undefined =
+    input.recursionRole === "subproject" ? { mode: "subproject" } : undefined;
 
   const persisted = await readRepositoryRunState(input.root);
   if (persisted) {
@@ -345,6 +382,9 @@ export async function beginRepositoryRun(
     "repository",
     input.language,
   );
+  // A manifest-supplied brief (recursive orchestrator) takes precedence over the
+  // run root's own openwiki/INSTRUCTIONS.md; otherwise fall back to it.
+  const wikiGoal = input.wikiGoalOverride ?? context.wikiGoal;
   const language = context.language ?? "en";
   const languageChanged =
     requestedLanguage !== undefined &&
@@ -375,7 +415,11 @@ export async function beginRepositoryRun(
 
     const claimsStore = new ClaimsStore(input.root);
     const initialPages = await claimsStore.discoverPages();
-    const source = await createRepositorySourceSnapshot(input.root, ignore);
+    const source = await createRepositorySourceSnapshot(
+      input.root,
+      ignore,
+      noopScope,
+    );
     if (
       input.mode === "update" &&
       context.lastUpdate?.gitHead &&
@@ -396,6 +440,7 @@ export async function beginRepositoryRun(
           sourceFingerprint: source.fingerprint,
           ...(source.gitHead ? { gitHead: source.gitHead } : {}),
         },
+        plannerEvidenceScope(input.recursionRole),
       );
     }
     const seededManifest =
@@ -413,17 +458,23 @@ export async function beginRepositoryRun(
         input.root,
         ignore,
         input.language,
+        noopScope,
       );
       if (
         preflight.shouldSkip &&
         claimsRuntime.issueCount === 0 &&
         hasCompleteBaselineCoverage
       ) {
-        const source = await createRepositorySourceSnapshot(input.root, ignore);
+        const source = await createRepositorySourceSnapshot(
+          input.root,
+          ignore,
+          noopScope,
+        );
         await claimsRuntime.finalize(now().toISOString());
         const stableSource = await createRepositorySourceSnapshot(
           input.root,
           ignore,
+          noopScope,
         );
         if (stableSource.fingerprint === source.fingerprint) {
           await replaceRepositoryPageManifest(input.root, initialPages, {
@@ -433,6 +484,7 @@ export async function beginRepositoryRun(
           const publishedSource = await createRepositorySourceSnapshot(
             input.root,
             ignore,
+            noopScope,
           );
           if (publishedSource.fingerprint === source.fingerprint) {
             await writeLastUpdateMetadata(
@@ -489,7 +541,7 @@ export async function beginRepositoryRun(
       ...(context.lastUpdate?.gitHead
         ? { baseGitHead: context.lastUpdate.gitHead }
         : {}),
-      ...(context.wikiGoal ? { wikiGoal: context.wikiGoal } : {}),
+      ...(wikiGoal ? { wikiGoal } : {}),
       beforeContentSnapshot,
       preparedWiki: serializePreparedWikiState(preparedWiki),
     };
@@ -521,6 +573,7 @@ export async function beginRepositoryRun(
       backend,
       ignore,
       claimsRuntime,
+      recursionRole: input.recursionRole,
     };
     return {
       run,
@@ -585,6 +638,7 @@ async function resumeRepositoryRun(
   const currentSource = await createRepositorySourceSnapshot(
     input.root,
     ignore,
+    fingerprintScope(input.recursionRole),
   );
   const sourceChanged = currentSource.fingerprint !== state.sourceFingerprint;
   const resetSkippedPages =
@@ -654,6 +708,7 @@ async function resumeRepositoryRun(
     backend,
     ignore,
     claimsRuntime,
+    recursionRole: input.recursionRole,
   };
   return {
     run,
@@ -755,6 +810,35 @@ function createRepositoryBackend(
 }
 
 /**
+ * Maps a monorepo recursion role to the Git pathspec scope used for planner
+ * evidence and page-coverage fast-forwarding. Git status/diff are repo-wide
+ * regardless of cwd, so a recursive run MUST scope with a pathspec: a subproject
+ * sees only its own subtree; the root drops nested sub-wiki churn so it is not
+ * fed generated sub-wikis as source. Single-repo runs (undefined role) stay
+ * repo-wide, matching upstream behavior exactly.
+ *
+ * @param role - Recursion role of the active run, if any.
+ * @returns Git scope for evidence, or undefined for ordinary single-repo runs.
+ */
+function plannerEvidenceScope(role?: RecursionRole): GitScope | undefined {
+  if (role === "subproject") return { mode: "subproject" };
+  if (role === "root") return { mode: "root-excluding-nested" };
+  return undefined;
+}
+
+/**
+ * Git scope for the source fingerprint. Unlike planner evidence, this scopes
+ * ONLY subproject runs: the root run's fingerprint stays repo-wide so the
+ * aggregator still re-plans when a sub-wiki changes (scoping root correctly is
+ * a separate follow-up). Single-repo and root runs therefore stay byte-
+ * identical to the non-recursive fingerprint. Mirrors `noopScope` in
+ * `beginRepositoryRun`.
+ */
+function fingerprintScope(role?: RecursionRole): GitScope | undefined {
+  return role === "subproject" ? { mode: "subproject" } : undefined;
+}
+
+/**
  * Projects process-local run state into the host/model-facing begin response.
  *
  * @param run - Active process-local repository run.
@@ -772,6 +856,7 @@ async function toActiveBeginView(
           run.root,
           run.ignore,
           run.state.initialPages,
+          plannerEvidenceScope(run.recursionRole),
         )
       : [];
   const changedPaths = [
@@ -802,12 +887,14 @@ async function toActiveBeginView(
  * @param root - Absolute repository root.
  * @param ignore - Active repository read boundary.
  * @param pages - Factual pages present when the run began.
+ * @param scope - Recursive git scope for changed-path evidence, if any.
  * @returns Stable baseline cohorts with their visible changed paths.
  */
 async function getRepositoryPageUpdateWindows(
   root: string,
   ignore: OpenWikiIgnore,
   pages: readonly string[],
+  scope?: GitScope,
 ): Promise<RepositoryPageUpdateWindow[]> {
   const manifest = await readRepositoryPageManifest(root);
   const pagesByBaseline = new Map<string, string[]>();
@@ -828,6 +915,7 @@ async function getRepositoryPageUpdateWindows(
         root,
         ignore,
         baseline || undefined,
+        scope,
       ),
       fullReview: baseline.length === 0,
     });
@@ -842,12 +930,14 @@ async function getRepositoryPageUpdateWindows(
  * @param ignore - Active repository read boundary.
  * @param pages - Factual pages present when the run began.
  * @param source - Current source checkpoint to fast-forward to.
+ * @param scope - Recursive git scope for changed-path evidence, if any.
  */
 async function fastForwardUnchangedRepositoryPageCoverage(
   root: string,
   ignore: OpenWikiIgnore,
   pages: readonly string[],
   source: RepositorySourceCheckpoint,
+  scope?: GitScope,
 ): Promise<void> {
   if (!source.gitHead) return;
 
@@ -856,10 +946,15 @@ async function fastForwardUnchangedRepositoryPageCoverage(
     const entry = manifest.pages[page];
     if (!entry?.gitHead || entry.gitHead === source.gitHead) continue;
 
+    // Scope the baseline-window diff to this run's subtree so a sibling commit
+    // (or, for the root, nested sub-wiki churn) does not block the fast-forward
+    // and force a needless regeneration — the cross-subproject cascade the
+    // recursive feature is built to avoid.
     const changedPaths = await getRepositoryChangedPaths(
       root,
       ignore,
       entry.gitHead,
+      scope,
     );
     if (changedPaths.length > 0) continue;
 
@@ -1598,7 +1693,11 @@ export async function finishRepositoryRun(
 async function hasRepositorySourceChanged(
   run: ActiveRepositoryRun,
 ): Promise<boolean> {
-  const current = await createRepositorySourceSnapshot(run.root, run.ignore);
+  const current = await createRepositorySourceSnapshot(
+    run.root,
+    run.ignore,
+    fingerprintScope(run.recursionRole),
+  );
   return current.fingerprint !== run.state.sourceFingerprint;
 }
 

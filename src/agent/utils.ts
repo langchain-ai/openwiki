@@ -45,6 +45,57 @@ import type {
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
 const REPOSITORY_RUN_STATE_BASENAME = ".run.json";
+// Recursive-monorepo generator state persisted at openwiki/.workspaces-state.json.
+// It is OpenWiki bookkeeping, not wiki content, so it must be excluded from the
+// content snapshot or a recursive update's per-subproject state write would read
+// as a spurious wiki change and defeat the no-op check.
+const WORKSPACES_STATE_BASENAME = ".workspaces-state.json";
+
+/**
+ * Restricts the git evidence / no-op commands to a subtree of the repository.
+ *
+ * `git status`/`git diff`/`git ls-files` are REPO-WIDE regardless of the process
+ * cwd, so rooting a run at a subproject directory does NOT scope its git
+ * evidence — only a pathspec does. Recursive monorepo runs need that scoping so a
+ * subproject's no-op check and planner context see only its own subtree.
+ *
+ * - `subproject`: cwd is the subproject directory; commands add a `-- .` pathspec
+ *   (plus `--relative` on diff) so output paths are subproject-relative
+ *   (`openwiki/x.md`, `src/code.ts`) and sibling/parent changes are invisible.
+ * - `root-excluding-nested`: cwd is the repository root; commands keep the root
+ *   `openwiki/` but exclude nested `**` + `/openwiki/` subtrees so freshly
+ *   generated sub-wikis are not presented to the root planner as source churn.
+ *
+ * When `scope` is undefined the git commands are byte-identical to the
+ * non-recursive behavior (no pathspec, no `--relative`).
+ */
+export type GitScope =
+  | { mode: "subproject" }
+  | { mode: "root-excluding-nested" };
+
+/**
+ * Builds the `--relative` flag and trailing pathspec args for a scoped git
+ * command. `useRelative` is only honored for the subproject scope (status stays
+ * cwd-relative and does not take `--relative`).
+ */
+function gitScopeArgs(
+  scope: GitScope | undefined,
+  useRelative: boolean,
+): { relative: string[]; pathspec: string[] } {
+  if (!scope) {
+    return { relative: [], pathspec: [] };
+  }
+
+  if (scope.mode === "subproject") {
+    return {
+      relative: useRelative ? ["--relative"] : [],
+      pathspec: ["--", "."],
+    };
+  }
+
+  // Root scope: keep the root wiki but drop any nested openwiki subtrees.
+  return { relative: [], pathspec: ["--", ".", ":(exclude)**/openwiki/**"] };
+}
 
 export type OpenWikiContentSnapshot = string;
 
@@ -127,6 +178,7 @@ export async function getUpdateNoopStatus(
   cwd: string,
   openWikiIgnore = new OpenWikiIgnore([]),
   requestedLanguage?: string | null,
+  scope?: GitScope,
 ): Promise<UpdateNoopStatus> {
   const lastUpdate = await readLastUpdate(cwd, "repository");
 
@@ -153,10 +205,12 @@ export async function getUpdateNoopStatus(
     return { shouldSkip: false, reason: "missing current git head" };
   }
 
+  const { pathspec: statusPathspec } = gitScopeArgs(scope, false);
   const status = await runGit(cwd, [
     "status",
     "--short",
     "--untracked-files=all",
+    ...statusPathspec,
   ]);
   const meaningfulStatus = status
     .split("\n")
@@ -173,15 +227,21 @@ export async function getUpdateNoopStatus(
     const committedPaths = await getChangedPathsSinceLastUpdate(
       cwd,
       lastUpdate.gitHead,
+      scope,
+    );
+    const hasMeaningfulCommit = committedPaths.some(
+      (changedPath) =>
+        !isOpenWikiPath(changedPath) && !openWikiIgnore.ignores(changedPath),
     );
 
-    if (
-      committedPaths.length === 0 ||
-      committedPaths.some(
-        (changedPath) =>
-          !isOpenWikiPath(changedPath) && !openWikiIgnore.ignores(changedPath),
-      )
-    ) {
+    // An unscoped run conservatively regenerates when the head moved but no
+    // changed paths resolved. A SUBPROJECT-scoped run with an empty in-subtree
+    // diff is a legitimate skip — a sibling's commit moved the shared HEAD but
+    // changed nothing under this subproject — so only a meaningful in-scope
+    // change forces regeneration. This is what makes the per-subproject "no
+    // dependency cascade" update model hold; git status/diff are repo-wide, so
+    // without the scope every sibling commit would regenerate every subproject.
+    if ((scope === undefined && committedPaths.length === 0) || hasMeaningfulCommit) {
       return { shouldSkip: false, reason: "git head changed" };
     }
   }
@@ -324,21 +384,40 @@ export interface RepositorySourceSnapshot {
  * Generated OpenWiki state and ignored paths are excluded. Git, stat, symlink,
  * and file-read failures reject because the fingerprint is a correctness gate.
  *
- * @param cwd - Absolute Git repository root.
+ * When `scope` is `{ mode: "subproject" }` the fingerprint is confined to the
+ * subtree at `cwd`: the dirty-status query gains a `-- .` pathspec (and its
+ * repo-root-relative paths are re-based to the subtree so `openwiki/` and
+ * ignore filters match), and the HEAD contribution becomes the subtree's
+ * last-touching commit rather than the global HEAD. This is what keeps a
+ * subproject's fingerprint stable across a sibling's commit or working-tree
+ * change. When `scope` is undefined the output is byte-identical to the
+ * non-recursive behavior (global HEAD, no pathspec, no path re-basing).
+ *
+ * @param cwd - Absolute Git repository root (the subtree root when scoped).
  * @param openWikiIgnore - Ignore rules loaded for this run.
+ * @param scope - Optional recursive git scope. Only the subproject scope alters
+ *   output; any other value is treated as unscoped for the fingerprint.
  * @returns Paired source fingerprint and Git HEAD.
  */
 export async function createRepositorySourceSnapshot(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
+  scope?: GitScope,
 ): Promise<RepositorySourceSnapshot> {
   if (!path.isAbsolute(cwd)) {
     throw new Error("Repository source fingerprint requires an absolute root.");
   }
 
-  const [head, trackedOutput, untrackedOutput, statusOutput] =
+  // Only the subproject scope changes fingerprint semantics; the root scope
+  // deliberately stays repo-wide here (root is the aggregator), so collapse
+  // anything other than a subproject scope to the unscoped path.
+  const subprojectScope =
+    scope?.mode === "subproject" ? scope : undefined;
+  const { pathspec: statusPathspec } = gitScopeArgs(subprojectScope, false);
+
+  const [head, trackedOutput, untrackedOutput, statusOutput, statusPrefix] =
     await Promise.all([
-      readFingerprintHead(cwd),
+      readFingerprintHead(cwd, subprojectScope),
       runFingerprintGit(cwd, ["ls-files", "--cached", "-z"]),
       runFingerprintGit(cwd, [
         "ls-files",
@@ -352,7 +431,15 @@ export async function createRepositorySourceSnapshot(
         "--untracked-files=all",
         "--no-renames",
         "-z",
+        ...statusPathspec,
       ]),
+      // `git status` reports repo-root-relative paths even with a `-- .`
+      // pathspec, so a subproject run must strip the subtree prefix before the
+      // openwiki/ignore filters (which expect subtree-relative paths) see them.
+      // At the repository root the prefix is empty, so stripping is inert.
+      subprojectScope
+        ? readFingerprintStatusPrefix(cwd)
+        : Promise.resolve(""),
     ]);
 
   const trackedPaths = new Set(
@@ -369,7 +456,7 @@ export async function createRepositorySourceSnapshot(
   const visiblePaths = [...candidatePaths]
     .filter((candidate) => isFingerprintSourcePath(candidate, openWikiIgnore))
     .sort(compareFingerprintStrings);
-  const statusEntries = parseFingerprintStatus(statusOutput)
+  const statusEntries = parseFingerprintStatus(statusOutput, statusPrefix)
     .filter(({ path: candidate }) =>
       isFingerprintSourcePath(candidate, openWikiIgnore),
     )
@@ -408,20 +495,35 @@ export async function createRepositorySourceSnapshot(
  *
  * @param cwd - Absolute Git repository root.
  * @param openWikiIgnore - Ignore rules loaded for this run.
+ * @param scope - Optional recursive git scope (see createRepositorySourceSnapshot).
  * @returns A versioned `sha256:` fingerprint.
  */
 export async function createRepositorySourceFingerprint(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
+  scope?: GitScope,
 ): Promise<string> {
-  return (await createRepositorySourceSnapshot(cwd, openWikiIgnore))
+  return (await createRepositorySourceSnapshot(cwd, openWikiIgnore, scope))
     .fingerprint;
 }
 
 /**
  * Resolves the current commit identity, including a stable unborn-branch form.
+ *
+ * For a subproject scope the identity is the subtree's last-touching commit
+ * (`git log -1 -- .`), not the global HEAD, so a sibling commit that advances
+ * the shared HEAD leaves this value — and therefore the fingerprint — unchanged.
+ * That commit is also a real, reachable ancestor, so it remains a valid
+ * `git diff <base>..HEAD -- .` baseline when it flows into the page manifest as
+ * `entry.gitHead`.
  */
-async function readFingerprintHead(cwd: string): Promise<string> {
+async function readFingerprintHead(
+  cwd: string,
+  scope?: GitScope,
+): Promise<string> {
+  if (scope?.mode === "subproject") {
+    return readSubtreeFingerprintHead(cwd);
+  }
   try {
     const head = (
       await runFingerprintGit(cwd, ["rev-parse", "--verify", "HEAD"])
@@ -441,6 +543,66 @@ async function readFingerprintHead(cwd: string): Promise<string> {
       cause: headError,
     });
   }
+}
+
+/**
+ * Resolves the last commit that touched the subtree at `cwd`.
+ *
+ * Empty output (exit 0) means the branch is born but no commit has touched this
+ * subtree yet (e.g. an untracked-only new subproject) → `unborn:subtree`. A
+ * `git log` failure only legitimately means the branch itself is unborn; we
+ * confirm that with `rev-parse --verify HEAD` (which resolves a ref to a SHA
+ * without loading commit objects, unlike `git log`) before returning an
+ * `unborn:<ref>` sentinel — otherwise a `git log` failure on a *born* branch
+ * (e.g. a corrupt object DB with an intact HEAD symref) would be masked as
+ * unborn instead of propagating as the correctness error it is. Both sentinels
+ * make the caller omit `gitHead` exactly as it does for a whole-repo unborn
+ * branch, while still contributing a stable value to the hash.
+ */
+async function readSubtreeFingerprintHead(cwd: string): Promise<string> {
+  try {
+    const head = (
+      await runFingerprintGit(cwd, ["log", "-1", "--format=%H", "--", "."])
+    ).trimEnd();
+    if (head) return head;
+    return "unborn:subtree";
+  } catch (headError) {
+    // Only a HEAD that does not resolve to a commit is genuinely unborn; on a
+    // born branch a git-log failure is real and must propagate.
+    let headResolves = false;
+    try {
+      headResolves =
+        (
+          await runFingerprintGit(cwd, ["rev-parse", "--verify", "HEAD"])
+        ).trimEnd().length > 0;
+    } catch {
+      // HEAD does not resolve — the branch is genuinely unborn.
+    }
+    if (!headResolves) {
+      try {
+        const symbolicHead = (
+          await runFingerprintGit(cwd, ["symbolic-ref", "-q", "HEAD"])
+        ).trimEnd();
+        if (symbolicHead) return `unborn:${symbolicHead}`;
+      } catch {
+        // Fall through to the generic correctness error below.
+      }
+    }
+    throw new Error("Unable to resolve repository HEAD for fingerprinting.", {
+      cause: headError,
+    });
+  }
+}
+
+/**
+ * Resolves the subtree prefix (`pkg/`) reported by `git rev-parse
+ * --show-prefix`, used to re-base repo-root-relative status paths onto the
+ * subtree. The prefix is empty at the repository root.
+ */
+async function readFingerprintStatusPrefix(cwd: string): Promise<string> {
+  return (
+    await runFingerprintGit(cwd, ["rev-parse", "--show-prefix"])
+  ).trimEnd();
 }
 
 /**
@@ -478,17 +640,39 @@ function splitFingerprintNul(output: string): string[] {
 
 /**
  * Parses no-rename porcelain records into validated status/path pairs.
+ *
+ * `git status` reports repo-root-relative paths even when scoped with a `-- .`
+ * pathspec, so `prefix` (the subtree prefix from `git rev-parse --show-prefix`)
+ * is stripped to re-base each path onto the subtree before the openwiki/ignore
+ * filters see it. `prefix` is empty for unscoped runs, leaving paths untouched.
  */
-function parseFingerprintStatus(output: string): SourceStatusEntry[] {
+function parseFingerprintStatus(
+  output: string,
+  prefix = "",
+): SourceStatusEntry[] {
   return splitFingerprintNul(output).map((record) => {
     if (record.length < 4 || record[2] !== " ") {
       throw new Error("Git returned malformed porcelain status output.");
     }
     return {
       code: record.slice(0, 2),
-      path: assertFingerprintGitPath(record.slice(3)),
+      path: assertFingerprintGitPath(
+        stripFingerprintPrefix(record.slice(3), prefix),
+      ),
     };
   });
+}
+
+/**
+ * Re-bases a repo-root-relative status path onto the subtree by removing its
+ * prefix. A path outside the prefix (not expected under a `-- .` pathspec) is
+ * returned unchanged rather than silently corrupted.
+ */
+function stripFingerprintPrefix(value: string, prefix: string): string {
+  if (prefix && value.startsWith(prefix)) {
+    return value.slice(prefix.length);
+  }
+  return value;
 }
 
 /**
@@ -828,7 +1012,8 @@ function isIgnoredSnapshotPath(relativePath: string): boolean {
   return (
     relativePath === path.basename(UPDATE_METADATA_PATH) ||
     relativePath === LOCAL_WIKI_METADATA_PATH ||
-    relativePath === REPOSITORY_RUN_STATE_BASENAME
+    relativePath === REPOSITORY_RUN_STATE_BASENAME ||
+    relativePath === WORKSPACES_STATE_BASENAME
   );
 }
 
@@ -909,14 +1094,18 @@ export async function getRepositoryChangedPaths(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
   baseGitHead?: string,
+  scope?: GitScope,
 ): Promise<string[]> {
   const paths = new Set<string>();
+  const { relative, pathspec } = gitScopeArgs(scope, true);
 
   if (baseGitHead) {
     for (const candidate of await runGitLines(cwd, [
       "diff",
       "--name-only",
+      ...relative,
       `${baseGitHead}..HEAD`,
+      ...pathspec,
     ])) {
       paths.add(normalizeGitPath(candidate));
     }
@@ -926,16 +1115,20 @@ export async function getRepositoryChangedPaths(
   for (const candidate of await runGitLines(cwd, [
     "diff",
     "--name-only",
+    ...relative,
     "HEAD",
+    ...pathspec,
   ])) {
     paths.add(normalizeGitPath(candidate));
   }
 
-  // Untracked files.
+  // Untracked files (ls-files output is already cwd-relative; the pathspec keeps
+  // it scoped and, for the root, drops nested openwiki subtrees).
   for (const candidate of await runGitLines(cwd, [
     "ls-files",
     "--others",
     "--exclude-standard",
+    ...pathspec,
   ])) {
     paths.add(normalizeGitPath(candidate));
   }
@@ -970,8 +1163,16 @@ async function runGitLines(cwd: string, args: string[]): Promise<string[]> {
 async function getChangedPathsSinceLastUpdate(
   cwd: string,
   gitHead: string,
+  scope?: GitScope,
 ): Promise<string[]> {
-  const diff = await runGit(cwd, ["diff", "--name-only", `${gitHead}..HEAD`]);
+  const { relative, pathspec } = gitScopeArgs(scope, true);
+  const diff = await runGit(cwd, [
+    "diff",
+    "--name-only",
+    ...relative,
+    `${gitHead}..HEAD`,
+    ...pathspec,
+  ]);
 
   return diff
     .split("\n")

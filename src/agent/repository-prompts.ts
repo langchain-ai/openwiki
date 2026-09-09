@@ -8,6 +8,40 @@ import type {
   RepositoryPageUpdateWindow,
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
+import type { RecursionRole } from "./types.js";
+
+/**
+ * Extra scope guidance injected into repository planner/page prompts for one
+ * recursion role in a monorepo pass. Empty for ordinary single-repo runs.
+ *
+ * In the recursive monorepo lifecycle each subproject run is rooted at its own
+ * directory (so `/` is that subproject) and the root run documents cross-cutting
+ * concerns while linking down to the generated sub-wikis.
+ */
+export function recursionRoleGuidance(
+  recursionRole: RecursionRole | undefined,
+): string {
+  if (recursionRole === "subproject") {
+    return `
+Monorepo subproject scope:
+- This run is scoped to ONE subproject of a larger monorepo. The virtual root / is THIS subproject's directory, and /openwiki is this subproject's own sub-wiki.
+- Document only this subproject's subtree. Do not document, read into, or write to sibling subprojects or the repository root.
+- Assume the monorepo root wiki links DOWN to this sub-wiki. Write a self-contained sub-wiki for this subproject; you do not need to re-explain repository-wide concerns that belong in the root wiki.`.trim();
+  }
+
+  if (recursionRole === "root") {
+    return `
+Monorepo root scope:
+- This is the monorepo ROOT run. Each subproject listed in openwiki/workspaces.json has its OWN detailed sub-wiki under <subproject>/openwiki/.
+- Do NOT deep-document the subprojects' internals here. Instead, link DOWN to each subproject's sub-wiki entrypoint (its openwiki/quickstart.md) and describe repository-wide concerns: the overall architecture, how subprojects fit together, shared tooling, and cross-cutting workflows.
+- DEFAULT to the per-subproject descriptions aggregated in the generated openwiki/workspaces.md as your bounded reference for each subproject's scope, naming, and terminology. That digest distills every sub-wiki into one line per subproject, so consult it first and align the repo-wide overview with how each subproject describes itself — do not read every sub-wiki in full.
+- ON DEMAND, open a SPECIFIC subproject's full openwiki/quickstart.md only when its one-line description in openwiki/workspaces.md is insufficient for that subproject. This is read-only reference material: do not copy, quote, or restate sub-wiki content into the root wiki, and do not treat consulting it as a substitute for the repository-wide synthesis above.
+- PRIORITIZE any such deep reads on the subprojects the run's planning context reports as updated this run; rely on the openwiki/workspaces.md digest for the subprojects it reports as unchanged.
+- The file openwiki/workspaces.md is generated deterministically to aggregate links to the sub-wikis and their distilled descriptions. Treat it as generated: link to it from openwiki/quickstart.md, but do not hand-maintain its per-subproject list.`.trim();
+  }
+
+  return "";
+}
 
 /**
  * Builds the bounded planner prompt from the complete active run context.
@@ -19,6 +53,7 @@ import type { PageJob } from "../generation/run-state.js";
 export function createRepositoryPlannerPrompt(
   view: ActiveBeginView,
   planningContext?: string,
+  recursionRole?: RecursionRole,
 ): string {
   const updateContext =
     view.mode === "update"
@@ -40,7 +75,10 @@ ${formatIssues(view.claimIssues)}`
     ? `\nUser and connector planning context:\n${planningContext}\n`
     : "";
 
-  return `You are planning an OpenWiki code wiki for this repository.
+  const recursionGuidance = recursionRoleGuidance(recursionRole);
+  const recursionSection = recursionGuidance ? `\n${recursionGuidance}\n` : "";
+
+  return `You are planning an OpenWiki code wiki for this repository.${recursionSection}
 
 Your only output action is submit_plan. Do not write documentation and do not
 delegate work.
@@ -115,8 +153,12 @@ export function createRepositoryPagePrompt(
   job: RepositoryPageWorkerJob,
   allPages: readonly PageJob[],
   language: string,
+  recursionRole?: RecursionRole,
 ): string {
-  return `You own exactly ${job.path}.
+  const recursionGuidance = recursionRoleGuidance(recursionRole);
+  const recursionSection = recursionGuidance ? `\n${recursionGuidance}\n` : "";
+
+  return `You own exactly ${job.path}.${recursionSection}
 
 Title: ${job.title}
 Purpose: ${job.purpose}
