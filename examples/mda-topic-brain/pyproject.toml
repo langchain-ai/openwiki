@@ -1,0 +1,8 @@
+[project]
+name = "openwiki-topic-brain"
+version = "0.0.0"
+description = "A topic-focused OpenWiki brain deployed on Managed Deep Agents."
+requires-python = ">=3.11"
+dependencies = [
+    "managed-deepagents==0.6.1",
+]

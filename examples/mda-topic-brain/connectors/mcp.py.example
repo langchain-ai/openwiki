@@ -1,0 +1,24 @@
+import os
+
+from managed_deepagents import connectors
+
+connector = connectors.mcp(
+    mcp_servers={
+        "slack": {
+            "transport": "http",
+            "url": "https://your-read-only-slack-mcp.example.com/mcp",
+            "headers": {
+                "Authorization": f"Bearer {os.environ['SLACK_MCP_TOKEN']}"
+            },
+            "include_tools": ["search", "fetch_thread"],
+        },
+        "notion": {
+            "transport": "http",
+            "url": "https://your-read-only-notion-mcp.example.com/mcp",
+            "headers": {
+                "Authorization": f"Bearer {os.environ['NOTION_MCP_TOKEN']}"
+            },
+            "include_tools": ["search", "fetch"],
+        },
+    },
+)
