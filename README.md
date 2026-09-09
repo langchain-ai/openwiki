@@ -63,8 +63,27 @@ openwiki --update
 Keep it current automatically by adding a scheduled CI job that opens a docs PR whenever the wiki changes:
 
 - **GitHub Actions:** copy [`openwiki-update.yml`](./examples/openwiki-update.yml) into `.github/workflows/openwiki-update.yml`.
+- **GitHub Actions with auto-merge:** copy [`openwiki-update-auto-merge.yml`](./examples/openwiki-update-auto-merge.yml) instead, then follow the setup details below.
 - **GitLab CI:** copy [`openwiki-update.gitlab-ci.yml`](./examples/openwiki-update.gitlab-ci.yml) into `.gitlab-ci.yml` or include it from your pipeline.
 - **Bitbucket Pipelines:** copy [`openwiki-update.bitbucket-pipelines.yml`](./examples/openwiki-update.bitbucket-pipelines.yml) into `bitbucket-pipelines.yml`, then schedule the `openwiki-update` pipeline.
+
+<details>
+<summary><b>Auto-merge OpenWiki PRs</b></summary>
+
+<br>
+
+Auto-merge is repository infrastructure rather than an OpenWiki runtime feature. The GitHub Actions example creates a docs-only PR and enables GitHub auto-merge only after OpenWiki finishes successfully; required branch checks and reviews still control when the PR merges. Failed runs can preserve partial documentation in the PR and explicitly disable any pending auto-merge.
+
+Before using the example:
+
+1. Enable **Allow auto-merge** in the repository's pull request settings.
+2. Add branch protection or a ruleset for the default branch. Require the checks that should gate generated docs, and decide whether OpenWiki PRs still require human review.
+3. Create a fine-grained personal access token or GitHub App token with access only to the target repository and permissions for **Contents: read and write** and **Pull requests: read and write**. Save it as the `OPENWIKI_PR_TOKEN` Actions secret.
+4. Copy the example to `.github/workflows/openwiki-update.yml`, choose a pinned OpenWiki version and provider, and add the provider secret.
+
+The dedicated token is intentional: pull requests created with the default `GITHUB_TOKEN` do not start most `pull_request` workflows, so required PR checks may never run. Organization policies may require a GitHub App token instead of a personal access token. Keep the workflow's `add-paths` restricted to generated documentation, pin every action and package version, and do not auto-merge changes to executable workflow files.
+
+</details>
 
 > [!NOTE]
 > On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
