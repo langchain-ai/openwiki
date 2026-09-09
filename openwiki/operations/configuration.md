@@ -25,10 +25,10 @@ sources:
     resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+  - by: openwiki/0.5.0
+    at: 2026-09-09T08:09:59.193Z
 ---
 
 # Configuration and Environment
@@ -142,11 +142,27 @@ in-process update never masks a shell variable that wins at runtime.
 ### File format
 
 `formatEnv` writes managed keys first, in `MANAGED_ENV_KEYS` order, followed by
-any other keys sorted alphabetically. Values are always double-quoted with
-backslash, quote, newline, and carriage-return escaping. `parseEnv` reads the
-file back: it ignores blank lines and `#` comments, accepts an optional
-`export ` prefix, requires shell-style `UPPER_SNAKE_CASE` keys, and unescapes
-double-quoted values.
+any other keys sorted alphabetically. Values are always double-quoted and
+escaped by `formatEnvValue`, which replaces in a fixed order — backslash first,
+then double-quote, then newline, then carriage-return — so the reverse read can
+always undo each escape without ambiguity. `parseEnv` reads the file back: it
+ignores blank lines and `#` comments, accepts an optional `export ` prefix,
+requires shell-style `UPPER_SNAKE_CASE` keys, and unescapes double-quoted
+values through `parseEnvValue`.
+
+`parseEnvValue` performs unescaping as a **single atomic left-to-right pass**.
+It strips the surrounding quotes and replaces each `\\` + character escape with
+a single `replace` over `/\\(.)/gsu`, switching on the escaped character
+(`n` → newline, `r` → carriage return, `"` → quote, `\` → backslash) and leaving
+any other escaped pair intact. This replaced the earlier sequential independent
+`replace()` calls, which were unsafe: unescaping `\\n` (an escaped backslash
+followed by `n`) back into a raw `\` first and only then scanning for `\n` could
+let a later pass re-read that raw backslash plus the next character as a brand
+new escape pair. The concrete failure was a Windows path such as
+`C:\name\creds.json` — its `\\` + `name` segment would be misread as `\n` +
+`ame`, corrupting the value with a real newline. Consuming each backslash
+escape as one atomic unit in a single pass closes that window, because no
+unescaped output is ever re-scanned.
 
 ## Key environment variables
 
