@@ -3,9 +3,6 @@ type: integration-guide
 title: Source Connectors
 description: How OpenWiki's built-in source connectors (Custom MCP, Notion, Slack, Gmail/Google, X, Web Search, Hacker News, LangSmith, git-repo) are defined, run under the ConnectorRuntime contract, exposed as agent tools, and how to add a new one.
 tags: [connectors, mcp, ingestion, personal-wiki, integrations, security]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-09-01T08:10:26.687Z
 sources:
   - id: openwiki-source-8db5c5b61ad96006091c727e
     resource: repo://skills/write-connector/SKILL.md
@@ -45,13 +42,18 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
     resource: repo://src/connectors/types.ts
+  - id: openwiki-source-3644b45ff9c47926aa74026e
+    resource: repo://test/connectors/mcp-client.test.ts
   - id: openwiki-source-a0cec66bd3bed0c13c668ff0
     resource: repo://test/git-repo-connector.test.ts
   - id: openwiki-source-caa199fea0a0f4f89151a0c8
     resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-09-01T08:10:26.687Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-09T08:09:59.193Z
 ---
 
 # Source Connectors
@@ -202,7 +204,12 @@ or HTTP. Key safeguards:
 - HTTP URLs must be `https`, except `http` to localhost.
 - HTTP headers must reference credentials as `${ENV_VAR}` and never carry a
   literal secret; template refs resolve from `process.env` or, for OAuth
-  access-token env keys, through the OAuth token layer.
+  access-token env keys, through the OAuth token layer. Resolution treats an env
+  var explicitly set to an empty string (`""`) as **present**, not missing —
+  only a truly undefined variable (`typeof undefined`) throws the
+  `… is required for MCP connector ingestion.` error. This empty-string-is-present
+  rule mirrors `buildChildEnv`'s `typeof value === "string"` check for base env
+  vars, so an explicitly-blank credential is passed through rather than rejected.
 - `tools/list` is fully paginated but bounded twice (a repeated cursor and a
   100-page cap) so a misbehaving server cannot hang discovery.
 - stdio commands and args are validated against control characters, requests

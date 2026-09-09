@@ -5,7 +5,7 @@ description: Entry-point orientation for a coding agent working on the OpenWiki 
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-04T08:13:11.978Z
+    at: 2026-09-09T08:09:59.193Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -33,7 +33,7 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-04T08:13:11.978Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
 ---
 
 # OpenWiki Quickstart
@@ -144,6 +144,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                                   | Read                                                         |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Look up CLI commands and flags (init/update, mode, print, integrations, visualize, schedule) | [CLI Reference](/openwiki/operations/cli-reference.md)        |
+| Understand environment loading, the `~/.openwiki` state directory, provider/token/reasoning settings, and secret sanitization | [Configuration and Environment](/openwiki/operations/configuration.md) |
 | Set up scheduled self-update in CI and the docs-PR workflow                                  | [CI Scheduling and Self-Update](/openwiki/operations/ci-scheduling.md) |
 
 ### Integrate with other tools
@@ -151,6 +152,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                  | Read                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------ |
 | Run OpenWiki inside Codex, Claude Code, OpenCode, or Cursor                 | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
+| Understand the built-in source connectors, the ConnectorRuntime contract, and how to add a new one | [Source Connectors](/openwiki/integrations/connectors.md) |
 | Explore the interactive graph visualizer (live server and static export)    | [Interactive Visualizer](/openwiki/integrations/visualizer.md) |
 
 ### Test your changes

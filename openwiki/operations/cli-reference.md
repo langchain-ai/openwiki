@@ -10,6 +10,8 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-9472f4eef69027c6849ac706
+    resource: repo://src/cli/diagnostics/error-diagnostics.ts
   - id: openwiki-source-ada18c62d92003b613355e30
     resource: repo://src/cli/integrations.ts
   - id: openwiki-source-8d81ffb5996861d05633851c
@@ -20,12 +22,16 @@ sources:
     resource: repo://src/cli/schedule-format.ts
   - id: openwiki-source-d80f123259efa4712b198b63
     resource: repo://src/cli/startup.ts
+  - id: openwiki-source-04a008dbe4969919f7141a55
+    resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+  - id: openwiki-source-f5f9f9512cc2874a9127f6e1
+    resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+  - by: openwiki/0.5.0
+    at: 2026-09-09T08:09:59.193Z
 ---
 
 # CLI Commands and Flags
@@ -131,6 +137,23 @@ cron, pipes). In that case the entrypoint calls `runPrintCommand`, which streams
 events into a buffer, prints to stdout, and reports failures on stderr with auth
 "how to fix" and error diagnostics (`writePrintAuthFix`,
 `writePrintErrorDiagnostics`). Otherwise the entrypoint renders the Ink `App`.
+
+`writePrintErrorDiagnostics` renders the `ErrorDiagnostic` list that
+`getErrorDiagnostics` (in `src/cli/diagnostics/error-diagnostics.ts`) extracts
+from the error. It always surfaces OpenRouter metadata (`provider_name`,
+`is_byok`, `finish_reason`, the `raw` body, and a `previous_errors` list capped
+at five) and any attached `openRouterDebug` payload — these are read regardless
+of debug mode. When `OPENWIKI_DEBUG` is set and the error is an `Error`
+instance, the panel additionally includes the error `name`, a sanitized
+`message`, an inline HTTP status extracted from the message
+(`httpStatusFromMessage`, the first 4xx/5xx value), and a `stack` diagnostic.
+The stack is sanitized via `sanitizeDiagnosticText` — which redacts the live
+values of secret-bearing environment variables and bearer-token / known provider
+key patterns such as `sk-or-v1-…` — and truncated to 2,000 characters with a
+trailing `...` so a long trace cannot flood the terminal. Debug mode also widens
+the walk to nested `cause`/`error`/`response` objects and other allowlisted
+fields; the final list is deduped by `label:value`.
+
 Interactive chat with no message still requires a TTY: `resolveStartupCommand`
 converts such a run into an error telling the user to pass a message or use
 `--init`/`--update`. `resolveStartupCommand` also fails non-interactive runs when
