@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:71af366a9bce21906854f4b73c92143bf2fb8608f8c45ed74d18076c477cafe9",
+  "pageVersion": "sha256:5081c3233f3d81ff54d497443fd769e3b707906af3a4d559f5a7e323934288be",
   "claims": [
     {
       "id": "claim_f6ee1be411cc44af8ce963e1af7842d1",
@@ -140,11 +140,15 @@
     },
     {
       "id": "claim_4b58a4ef74f54cd7afcf902d35431eb9",
-      "statement": "formatEnv writes managed keys first in MANAGED_ENV_KEYS order followed by other keys sorted alphabetically, always double-quoting and escaping values; parseEnv reads them back, ignoring blanks and # comments, accepting an optional export prefix, requiring UPPER_SNAKE_CASE keys, and unescaping quoted values.",
+      "statement": "formatEnv writes managed keys first in MANAGED_ENV_KEYS order followed by other keys sorted alphabetically, always double-quoting and escaping values via formatEnvValue (which replaces backslash first, then quote, then newline, then carriage-return, in that order for the reverse direction). parseEnv reads them back: it ignores blanks and # comments, accepts an optional export prefix, requires UPPER_SNAKE_CASE keys, and unescapes double-quoted values through parseEnvValue, which performs a single atomic left-to-right pass over /\\\\(.)/gsu (switch on n/r/quote/backslash, other escaped pairs left intact) rather than sequential replace() calls, preventing a corruption bug where a raw backslash produced by unescaping \\\\n could be re-read with the next character as a new escape pair (e.g. a Windows path C:\\name\\creds.json getting its backslash + name read as a newline + ame).",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L633-L698",
-          "version": "repo-lines-v1:sha256:4b6407d1354987b31d2e7b3593751ebfe6e77e2e8975d9b4daf2f0c062988c76:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YTMzMjIxNDI0ZmQzOThiZTU3Y2YwNDc3YWNiM2NhZGI0MTJhZWY5MzNiYWQ1YWMwYjI2ZTgxMzYyZmQyZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/config/env.ts#L668-L694",
+          "version": "repo-lines-v1:sha256:6cdcb9fe409cc8429b912f27c1d527f155fa9b8723821b65ecfac7daa657cb5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzU3YjNmYjk2OGZhZjUxMGQ3MzQzMjkxMzE1YWI5NmFlODQ4NzQ1YTAxODM1MmRlN2MwYjBhYzJmNDZmZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2NDdmNWZhMWJiZWJjMDYzNDJjNDM0ZDQzYzYwMTIwMDg2Mjk1ZWU0YWVhODYwYTlkZTM4YjJmNjU5YWIxZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwMTgzNTBhMTIwMWFmZjhiNmRmM2QzYjM5NjNkMjM0ZjhiYzIwYzY3NDM3ZjI2ZDFjNzkwMTZiNDg2NGEyM2QifQ"
+        },
+        {
+          "resource": "repo://src/config/env.ts#L696-L713",
+          "version": "repo-lines-v1:sha256:df5d56a07080156742bbefdf8881efdfb4dbd116dc7870b79efa593d3a6dd7d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNDhlNWUyM2Y5YjhkZWU2YzMzMzJiMjRjNGEzYjRkOWZhMzA5MTUwNjlmOWU2YzhhYmU0OGZkZWU1ZDdiZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxODg3MGE4MDQwOWY4YzRjOTk0ODA3YWY4MjU5Y2MwNGJkMGM1Y2EyZTlmMWMzYjEzZGVmMTBiMTYyNzg2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -314,7 +318,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-29T08:08:01.897Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-09T08:09:59.193Z"
   }
 }
