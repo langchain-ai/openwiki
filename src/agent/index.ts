@@ -1838,12 +1838,23 @@ function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {
   return null;
 }
 
+const MODEL_REQUEST_NAMESPACE_PREFIX = "model_request:";
+
 /**
- * Classifies a stream namespace. LangGraph reserves the empty namespace for
- * the root graph; even a single namespace segment therefore belongs to a
- * subgraph.
+ * Classifies a stream namespace. DeepAgents wraps the primary model call in a
+ * single model_request namespace, while deeper namespaces still represent
+ * subgraphs whose prose should stay hidden from the main transcript.
  */
 function getStreamSource(namespace: unknown): "main" | "subgraph" {
+  if (
+    Array.isArray(namespace) &&
+    namespace.length === 1 &&
+    typeof namespace[0] === "string" &&
+    namespace[0].startsWith(MODEL_REQUEST_NAMESPACE_PREFIX)
+  ) {
+    return "main";
+  }
+
   return Array.isArray(namespace) && namespace.length > 0 ? "subgraph" : "main";
 }
 
