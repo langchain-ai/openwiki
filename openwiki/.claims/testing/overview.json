@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7efd74f3cb9705a3deb5f0853935ee9886520e0acc45be0d640b6b3f298557ae",
+  "pageVersion": "sha256:d6541950ee80aee532534e185cd1e0202f18d84d1fd8b2a421ea865141dbafd7",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -180,7 +180,7 @@
         },
         {
           "resource": "repo://test/connectors/mcp-client.test.ts",
-          "version": "repo-file-v1:sha256:91a53f68b39e56ff27179359c5f8cec23016d3c3c52496c2b1552a0d94944735"
+          "version": "repo-file-v1:sha256:627f5e638eda3b234192fc232ab622e08f4e85d1b57521b701e613fc99db198e"
         },
         {
           "resource": "repo://test/connectors/sources/slack.test.ts#L1-L12",
@@ -330,15 +330,19 @@
     },
     {
       "id": "claim_4e093236c91b43af9cb27e55efc86c17",
-      "statement": "test/visualize/page.test.ts pins the exact CDN script versions the visualizer loads (force-graph, marked, dompurify, mermaid) and requires each script tag to carry an SRI integrity plus crossorigin=anonymous attribute, so a version bump is forced through this test with a fresh hash review; it also guards the issue #670 overlay-layout regression that the hint and legend live inside #graph with a height-capped, scrollable legend.",
+      "statement": "test/visualize/page.test.ts pins the exact CDN script versions the visualizer loads (force-graph, marked, dompurify, mermaid) and requires each script tag to carry an SRI integrity plus crossorigin=anonymous attribute, so a version bump is forced through this test with a fresh hash review; it also guards the issue #670 overlay-layout regression that the hint and legend live inside #graph with a height-capped, scrollable legend, and a CSP Google Fonts regression test asserts the page's Content Security Policy allows the origins the page itself requests (style-src allows fonts.googleapis.com, the stylesheet the <link> tag loads, and font-src allows fonts.gstatic.com, the font files that stylesheet references).",
       "evidence": [
         {
           "resource": "repo://test/visualize/page.test.ts#L1-L69",
-          "version": "repo-lines-v1:sha256:d6950321ebd509758cc4551e9c92fe3c7c3502e3e3d685a4cb9dba2f3d63e877:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYWE1NjY3MWY4Y2M0NDIzZThmN2U0NDJiMDk2YmVlNmQwOThlYjc5YTdhOWI1OTAwMmM5M2JlMWQ2ODA0NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NjUwNjI4N2M0Mzk4Njc5NzI4MDEyNDJiODQzOTVhZmI4M2ExM2U4OGMyNDRjZjY5ZDc0ZTI5M2UwMDk1MmYifQ"
+          "version": "repo-lines-v1:sha256:37c17a1eb4ce9337d066dd07755cfce3f67518a6fce38cee6e678e76d004426d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYWE1NjY3MWY4Y2M0NDIzZThmN2U0NDJiMDk2YmVlNmQwOThlYjc5YTdhOWI1OTAwMmM5M2JlMWQ2ODA0NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NjUwNjI4N2M0Mzk4Njc5NzI4MDEyNDJiODQzOTVhZmI4M2ExM2U4OGMyNDRjZjY5ZDc0ZTI5M2UwMDk1MmYifQ"
         },
         {
-          "resource": "repo://test/visualize/page.test.ts#L71-L117",
-          "version": "repo-lines-v1:sha256:8793d737f9a955020a2f85f2542c82b35af055f143aa5a1f499b67a3dbd8e6bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMjA3MDE2Y2ZmMWI1M2U4NTU5ZDVhNTM2MmY1NGY5MTZlOGVkZDZmYjQ1ZDI3ZDUzNDU0Mzk5MmQ5NmRhZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMjU3N2VmNzRiMTBjN2E5MDhjNzM4OTdmNTE1NTY4ZDA3ZTU2YWJjMzUwYmM1Nzc4ZWM0OGNjZmNhMmE5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+          "resource": "repo://test/visualize/page.test.ts#L76-L97",
+          "version": "repo-lines-v1:sha256:f66b57a2a6cacd84d55496e74c90983d15626d2b84d33df11d3ad80a74782c3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODc4NGE1NzI2OTZmMzY3Y2I0MGZhOWI0ZGExZDFiYmMzNjljZGEzOThlZGUwZjJhOTVkZGJkZmFmMmZmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxZDM1ZTBjNzcyMjkzNmUxMTlmZDRmYTZjNDMyODE2Yjc3OTNmODM4ODQ0NmY3NmVjMTNjYWFjNGI0ZDIyNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwZmNmYmJlNWFiNjk3ZTRjN2E1OGMxN2VhY2Q2YzllM2EwYzU2MDRmZTE4MDRjN2JiOTJhYWZlNjczMDhhNjkifQ"
+        },
+        {
+          "resource": "repo://test/visualize/page.test.ts#L99-L124",
+          "version": "repo-lines-v1:sha256:2bcbaf8fb5561ff0ba43ad41460933be708948cd8b34f140eb67acaf8295a222:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNzQ2NTI0YzBjMDBjODY4ZGI1ZDAzMjNmM2E3ZmI5Zjk3NDgxMjJmZTM2NTliZWZiYjFlNTk1MzIzNWQ3ZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzNjQxMzA5M2UyMjY5YjY0OTczZjg0YzkzZjFiNzcxMWJmYWY1YTc2MzZhOWMxNGQ0ZjBlNDVmZmYwYWNiZWIifQ"
         }
       ]
     },
@@ -595,10 +599,70 @@
           "version": "repo-lines-v1:sha256:c686ba4185a5e822ec182eadcd3bb0246e505c93ce2cd1bc929409df3955a351:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYTExZDk4YzVhNjczMDA1ZDMwOTMwZjkwOGQ2YzgyMjBmNzEzODViZmNhZmZjMzExMjE2NGZkODU3M2MzNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMzc3OGU4MTU1MzM1N2MwM2U0Mjc5YmQyZmNjOGRkZTZkNWI1MTBjMTYyMTg5ZWViOTVmMzUyMzY4Y2ZhOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNzg3YTk1OTlmY2YwNGMxNWMxZTE4Yzg1NzdlMTU0ZmM4MjFlOTFhZmZlOGFkMzBlMDYxNDk3NDQzMTQ4MWEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b5aa125581b64e689e612f5b5750e530",
+      "statement": "test/agent/stream-redaction.test.ts pins parseAgentStreamChunk's suppression of file, image, input_file, and image_url content blocks that carry base64 blobs (which must never reach the terminal) while allowing adjacent text blocks in the same chunk to stream through normally; it also covers plain-text streaming, nested task (subgraph) output, tool lifecycle normalization (on_tool_start/on_tool_end/on_tool_error), the updates-mode state-diff extraction default for openai-compatible providers (tagged main or subgraph by namespace), and rejection of malformed stream chunks.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L134-L205",
+          "version": "repo-lines-v1:sha256:3c99813fdbe3cae024a57c2edef2a58ae083a7a6dcfcca040b4440eb9ed1d8c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Y2E1YTVjYzE2MjU5MGMxYWZkYTkxYjk3YTQ5ZDc5MDg5NjdkYzcyOTA1NDJmMTUxY2EwYWIwYTM4MTM2MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YmQ5ZDdkYTJkOGI1ODllZDlhZGQyNmMyNTNmNzFjNzUyNzgxZTA2YzA5N2M1NGQ1NjgwZTkyYmU5MWE2ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L19-L70",
+          "version": "repo-lines-v1:sha256:a9a2d64ccd7951c5418e406cc75c5aecf33aee58ba091242a71299dac5a571e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViM2U4YmQ5NmM2ZWM3MTcwNzgwMWMxZGZhZmE2MzczZTY4N2E5ZGQxOTAxNWJmYzlhNWE0NDJmNTIzZmFjM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0N2E0YzNlZDU0MmEzNTkzYmNiNTg3ZWIzMzIxNzBiNGQwYWQ1MGVhMTY2YWZmZWQ1OThiMzhjMzdlZDgzOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlODNlOTA5MWJmOTgxNTRmMTJiODk0YWUzYWNhOWU4OWU3ZjVhNDA3NjFkZjdkNDRhODc4Yzc4YjRjNjMxMDkifQ"
+        },
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L72-L125",
+          "version": "repo-lines-v1:sha256:cdd15fce16b707f7f88de3c99783db29721ecfe65870f1cef0e36f5e726f6a38:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMTI3NGRkZjkxYzA0ODBlZGY2ZTYzNGUzODQ0NTQ5Y2JhYzNhNzY5ZTQwNzBlZWZmOGNjNjIxMmM0MDljYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZjJkZmFkY2RiODM1MWZmYWYzMmRhMjQ4Nzc3N2JjODA0NzZjYTM3MGU4MWE3NThhYzJhOWNlOWQ0NDBlNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzNzgyYTQ3MGI5ZmQxMzFkYmQ3OTY5ZGZjOTNmZjM0Y2E2MzYwMTQxMmFlN2MyNGQyZTY2MjRjMmZkMjM1ZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_900858a4a9974ae0bbe30a72b809e1c9",
+      "statement": "test/cli/diagnostics/error-diagnostics.test.ts exercises getErrorDiagnostics, the helper behind the --debug diagnostic surface: a plain Error returns nothing with debug off, debug mode extracts name, message, and an inline HTTP status parsed from the message; the stack is included only when OPENWIKI_DEBUG is set and is then sanitized (secret-like patterns such as a bearer sk-or-v1-... token are replaced with a [REDACTED:OPENROUTER_API_KEY] placeholder) and truncated to exactly 2000 characters with a trailing '...'; it also covers HTTP status and case-insensitive header extraction, OpenRouter metadata extraction (metadata.provider_name) that happens even with debug off, redaction of secret-like keys inside stringified metadata, previous_errors capping at five with a metadata.previous_errors.more note for the remainder, and nested response fields surfaced under a dotted prefix.",
+      "evidence": [
+        {
+          "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L32-L65",
+          "version": "repo-lines-v1:sha256:5f551406dde22ceb9c898be29c3c9a2972b7da50bfb60fa36a6bf3fe307ff8c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYWI0YzZiZjIxYTkwMzE1NDcwODYzMzAwNGM0ZjI0MDQ5NzZhZjdjN2UzZGM0YWNlZDNhNTdjM2NmMzcxNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZDYyZTJiNTE1ODI5ZjgxNjBjMDkzYjEzYjE0ZTgwMjgwYTYzYjViYzg4NDBjMzhjZWJhNDEwODU0ZDQzNDQifQ"
+        },
+        {
+          "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L67-L97",
+          "version": "repo-lines-v1:sha256:83dc4fba0bdac97f39ac025efa668be436efdf5f02ab1a4bbd05b6744b1ad20e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlYThhYzFjMDg5Yzc4ZDViNjgxNjRlM2FmYmU1NWM4ZGEwZmI4NGQxNDY3MDBmOTI4ZjQ5MmRkOTNkNDMxYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1ZWI5YTJiNjhkYTc3MjcwODhlMGQ1YzcxN2I2YmZhMjIyZTNlMDc4OTM1NjdmMjNjMjAyNGUyOTJmODU1YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNTljMTAwYmNlNWI3NTdkZDRhNDVjNjE3ZWMwNmZlZGNmMWYxMDk3MTg1ZmYyMTM0YTUxMDgyNDRlZWE0MGMifQ"
+        },
+        {
+          "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L99-L129",
+          "version": "repo-lines-v1:sha256:08aa7d62529d4f08223e16d627d707bdf86cea0cc232abf3edf0ba6cee35b840:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2MWFmYjJkMjE3YWM5OWI1ZmRhYjFjODMwNTVkMzAwYWU1YjE0ODYwNGRlZjkxMmRlY2ZlZWZjZGY2MTcwNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MDQxMDAyZDM3NWVmMjU5ODQxMzAyYTQ3YzA1YTQ4NmNjMWVhZmQxNTI4ZmUxN2YxZDhjN2U3YTk4ZDc1NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d23d16ba9550440da987639a4c649198",
+      "statement": "test/config/env.test.ts exercises parseEnv/formatEnv: parseEnv does atomic single-pass unescaping of backslash escapes in double-quoted values, including carriage return (\\r) handling and the Windows-path corruption regression where a raw backslash escaped to \\\\ immediately before a path segment starting with n or r (e.g. C:\\name\\creds.json) must not be misread as the \\n/\\r escape sequence on parse; the parseEnv <-> formatEnv round-trip suite confirms values, carriage returns, and the Windows path regression survive a format -> parse round-trip.",
+      "evidence": [
+        {
+          "resource": "repo://test/config/env.test.ts#L161-L192",
+          "version": "repo-lines-v1:sha256:9926d150187eefa4452bc2d246fed8a28c662f4d65561e95e8b15e7c91fbf554:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NGVmOTA0MjZkYzM4OWEyZDYwOTk4ODNjZGRhOTU2ZTM5YzNlMjk1ZDViZjBiNjg2ZGZmMWFjMTVhNDk2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/config/env.test.ts#L27-L52",
+          "version": "repo-lines-v1:sha256:c651c2d012bc8d17906c79ccc94b044ed6c2fdc12c4c58e3da99f1486821ac61:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNTkwMGJhOTNmNTkyYzIxY2NlMGY2YjY3MjFhM2ZlYTNiNjZkNTAwNzdjNGZiN2MwYzJmNTYxYWJiMDgwYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNjQ4YmMyYWEyODlkNmM2YzcwZmQ2ZjIxMmY1OGQwMDU5YmYzMjUzMWU0YTQ1M2RlNzc2NjMyOTZmZDE1MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MTNkMTUxY2MyNWRhYTc4NTM3ZGFlMmQ1YjJlMjA2OTgyZWI1OGE5MWJhMGRjMmQ4NjA0OWEwYTJlZmQwZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5716f8937554b2382a645753af503e5",
+      "statement": "test/connectors/mcp-client.test.ts buildChildEnv suite now pins the mcp-empty-env-var fix: a declared env var set to an empty string (MCP_EMPTY set to \"\") is treated as present and resolves to \"\", not as missing, so empty-string env vars survive the child-environment boundary rather than being dropped.",
+      "evidence": [
+        {
+          "resource": "repo://test/connectors/mcp-client.test.ts#L93-L97",
+          "version": "repo-lines-v1:sha256:974cc812a84213ceb180722ed6b9fce7f346f4bbc58a107158cbc0bca512aeb1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjEzYWIyMDIwNzlkN2ZiZjExZDE1YjJhNzFhZTlhNjQ3YWE0MWJhOTc3NzFkNjNjMTUyYTc5MDI2ZTk4YTlhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkMzkyNDM2N2EzNTFiNTk4ZTk2YmJlNmQ4YTk0OWNjMTY0ZmQ2ZTc0MWI4Yjg0OTNlOTNjYTA5YmJkZTk4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAwMTg5MDdjYzA3M2NlOTI4NDc5OTNiNWI0MzQ1N2EzZWE2MTIzMzRhY2JiMGRjZTM5MGI5MDNmNWRlNDkzMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-04T08:13:11.978Z"
+    "at": "2026-09-09T08:09:59.193Z"
   }
 }

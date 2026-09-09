@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1fa6bf605db890fd16c1611dc278acc629d2da7c17d8e279bf855dd322f56c70",
+  "pageVersion": "sha256:c2934968022c50c517b3c898c473abec77befd5699049fa5124950df7b732c16",
   "claims": [
     {
       "id": "claim_b3bcf02b8ac0428c909611ba967f994a",
@@ -32,15 +32,23 @@
     },
     {
       "id": "claim_00120937dee24431b0b9ec28b5c5d663",
-      "statement": "src/agent/index.ts manages the LangGraph checkpoint thread and history (createOpenWikiThreadId, pruneCheckpointHistory, resolveCheckpointTarget) and parses streamed agent output into OpenWikiRunEvents (parseStreamEvent, parseAgentStreamChunk).",
+      "statement": "src/agent/index.ts manages the LangGraph checkpoint thread and history (createOpenWikiThreadId, pruneCheckpointHistory, resolveCheckpointTarget) and parses streamed agent output into OpenWikiRunEvents (parseStreamEvent, parseAgentStreamChunk, and the parseUpdatesChunk helper that handles 'updates'-mode LangGraph state-delta chunks by extracting the first non-empty assistant text from per-node output objects). parseAgentStreamChunk also suppresses content blocks whose type includes 'file' or 'image' (file, input_file, image_url base64 blobs) so they never reach the terminal, a behavior pinned by test/agent/stream-redaction.test.ts.",
       "evidence": [
         {
           "resource": "repo://src/agent/index.ts#L1431-L1456",
-          "version": "repo-lines-v1:sha256:5816dc3f4da7418deb8b2ef32c57cccd16e6d44c318ad7b3b3d981147220e6d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNzRkMzM4NDI1OWRmMWM4MzY0Mjg4NGJiMjc1NzkzMTZjZmE1MjI4NDE2YjI4YjU4ZDVjYTU4NzJjZDdhODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZWUxZTI2MTVlYmNmNzBjMDZhNDdmMTFlN2E4NmNmM2NkZDBlZmQ4YmNhOWNhNmU3NWE3NTViN2E2OTY0NjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMmYwNzI0MTc5YjVkOWMxNDM0Yzc2NmI2MjczOWU4OTE3NWQzMTQwNWU4ZjQxZmIzNmI0ZDJmNjcxOWJmYzAifQ"
+          "version": "repo-lines-v1:sha256:3d2b6409379acf0caf5456cc3399c9d496deb42ae78172a5439dbf1c06a0d870:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNzRkMzM4NDI1OWRmMWM4MzY0Mjg4NGJiMjc1NzkzMTZjZmE1MjI4NDE2YjI4YjU4ZDVjYTU4NzJjZDdhODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYjUyNWNkMWNiYzU4ZTY4Y2NjYTAyYzYyMTIxZDkyYjQ0NDE1MTRlMzYyNjI0NDU1N2NhYzFjYWRhMzFhZTMifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L843-L927",
-          "version": "repo-lines-v1:sha256:016b1920d0bacf8fcca20a1c05eeabd6de58cfa80134f0b978411d0f6be1b493:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNGI3M2ExNjE4Y2VkMmJlZDg3MTEwZDljNzg1Yjk0NDkzOTY3ZDBlYjFlNTUxYmEwYmUwNmU1Mzk1YWYzYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYTFmOWE4YWEyOTg0Mjk5MjNmYWI2NDM2NTUwMTVmZWRhMTY5MGE2YzRlYWY5Yjk1YzdkYmFjMjA5MDgwMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5OTI0YTRiZjBlZjZhOWIxZmFlNTc5YzBlNGI2OTgzMDFmNWUzOWM5N2E1ODhhYjY0ZWI4YWU3NGE0NzFmZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyMGMyYTBhNGU5NjNiYzcwNjc4NTQwMGI0YWVhZjU5NWYzYTllY2JhOWUwYzU0NmI3OGFjODMzNzljYjA1NjcifQ"
+          "resource": "repo://src/agent/index.ts#L1506-L1533",
+          "version": "repo-lines-v1:sha256:155fff9faa238e94aa1f6cd30953b58139a0d545cd5bb50a16711b46a0960a86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ODA4ZTlkYTFlYjJkNWRiODE4N2UzZjUxY2FlNWU5ZTA2M2Y0NzhkZmZmMjIzNDkyYWYzYzg4ZWQ4MGM5ZjIifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L1697-L1715",
+          "version": "repo-lines-v1:sha256:8f2a6684b4b28a73ea9db60257044b416bf0d75442e4625742c5e7c51586638a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNGY0MmMyMDM5NDQ2MTgwMTY2OTE0NDFlMTY5Mjg1M2EwZjZhNWM3MTMwOTg0ZGJkOTFhMDg4MjZiODYxZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZTQxYTY4NTZkMTgwMWRhOWExNmRkMmI1MTExMzRhOTEwMTVlMmQ2MzU1ZTFlNzRjYjZlZDAyOTlmYjcyOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwMmJlYjg3NjMzMjhmMjc3YTk4MTNhYWYyYTFkY2FhZTc0Zjk5YThkZGU0YjdjNjg2OGY0YTYzYzhkZWJhMTIifQ"
+        },
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L29-L70",
+          "version": "repo-lines-v1:sha256:fb5f51f5757469ec25508b7372b4bc61c873337ee2a75a627c477fab6f17d0e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ODZhMmYwZWQ4ZTdkNjU1NzlmNzA3NWMzN2IwYjJkODYzNTNjNTU5OWUxMWY2NjQ4ZDJmMTg5ZTkwNTg4YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0NzFjM2I2NzhmZDE2YTg1NmNmN2FmM2ZiYWM0ODM4OTJmMWY2NjUxYzA2NjA5MjIxMDJhNThlYzVlZjg1YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlODNlOTA5MWJmOTgxNTRmMTJiODk0YWUzYWNhOWU4OWU3ZjVhNDA3NjFkZjdkNDRhODc4Yzc4YjRjNjMxMDkifQ"
         }
       ]
     },
@@ -448,7 +456,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T10:21:48.925Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-09T08:09:59.193Z"
   }
 }
