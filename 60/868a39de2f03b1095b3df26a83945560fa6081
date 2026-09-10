@@ -1,0 +1,19 @@
+.changeset/openai-compatible-reasoning-effort.md
+  s_326526e1ca384a::t_f511731178fcdb 2,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "60868a39de2f03b1095b3df26a83945560fa6081",
+  "prompts": {},
+  "sessions": {
+    "s_326526e1ca384a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08bf3-1123-7041-9081-11e1ac5353fc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
