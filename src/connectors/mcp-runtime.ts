@@ -1,9 +1,8 @@
 import {
   createRunId,
   readConnectorConfig,
-  readConnectorState,
+  updateConnectorState,
   updateStateWithRun,
-  writeConnectorState,
   writeRawJson,
 } from "./io.js";
 import {
@@ -48,7 +47,6 @@ export async function discoverMcpConnectorTools(
   connectorId: McpConnectorId,
 ): Promise<McpToolDiscoveryResult> {
   const runId = createRunId();
-  const state = await readConnectorState(connectorId);
   const config = await readMcpConnectorConfig(connectorId);
   const discovery = await listMcpTools(config);
   const rawFile = await writeRawJson(connectorId, runId, "mcp-tools.json", {
@@ -59,7 +57,7 @@ export async function discoverMcpConnectorTools(
     transport: sanitizeMcpTransport(config.transport),
   });
 
-  await recordMcpRun(connectorId, state, {
+  await recordMcpRun(connectorId, {
     rawFiles: [rawFile],
     runId,
     status: "success",
@@ -80,7 +78,6 @@ export async function callMcpConnectorTool(
   args: Record<string, unknown>,
 ): Promise<McpToolCallResult> {
   const runId = createRunId();
-  const state = await readConnectorState(connectorId);
   const config = await readMcpConnectorConfig(connectorId);
   const discovery = await listMcpTools(config);
   const tool = discovery.tools.find((candidate) => candidate.name === toolName);
@@ -112,7 +109,7 @@ export async function callMcpConnectorTool(
     },
   );
 
-  await recordMcpRun(connectorId, state, {
+  await recordMcpRun(connectorId, {
     rawFiles: [rawFile],
     runId,
     status: "success",
@@ -174,7 +171,6 @@ async function readMcpConnectorConfig(
 
 async function recordMcpRun(
   connectorId: McpConnectorId,
-  state: Awaited<ReturnType<typeof readConnectorState>>,
   run: {
     rawFiles: string[];
     runId: string;
@@ -182,8 +178,7 @@ async function recordMcpRun(
     warnings: string[];
   },
 ): Promise<void> {
-  await writeConnectorState(
-    connectorId,
+  await updateConnectorState(connectorId, (state) =>
     updateStateWithRun(state, {
       at: new Date().toISOString(),
       rawFiles: run.rawFiles,
