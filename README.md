@@ -40,7 +40,7 @@ OpenWiki is a CLI that writes and maintains a wiki for your codebase or your per
 
 ## Quick start
 
-Install the CLI (Node.js 22 or newer):
+Install the CLI (Node.js 22.22.0 or newer):
 
 ```sh
 npm install -g openwiki
