@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f87c48af17afcb1c1cbada9db8ab5defce475ffcb30d6a28a024dc292e04b0e1",
+  "pageVersion": "sha256:759bf39112f2d5930c96da1fc9ea45308480bca145cda62b1ff6a923670b4673",
   "claims": [
     {
       "id": "claim_877c98c88bd841fdb1bcd9de28cb0448",
@@ -226,15 +226,23 @@
     },
     {
       "id": "claim_035d3d82f95d435286e601a1fb600faa",
-      "statement": "HTTP MCP URLs must use https except for http to localhost, and HTTP MCP headers must reference credentials as ${ENV_VAR} (never a literal secret); env references resolve from process.env or, for OAuth access-token env keys, through the OAuth token layer.",
+      "statement": "HTTP MCP URLs must use https except for http to localhost, and HTTP MCP headers must reference credentials as ${ENV_VAR} (never a literal secret); env references resolve from process.env or, for OAuth access-token env keys, through the OAuth token layer. resolveEnvReference treats an env var explicitly set to an empty string (\"\") as present, not missing — only a truly undefined variable (typeof undefined) throws the 'required for MCP connector ingestion' error, mirroring buildChildEnv's typeof value === \"string\" check for base env vars.",
       "evidence": [
         {
-          "resource": "repo://src/connectors/mcp-client.ts#L855-L908",
-          "version": "repo-lines-v1:sha256:3aba67d7b14b3bf38a364b5cd61099249ca6519b2155bd1d637e14be5d823ebc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NmVlZjFkMTUyMmQ1NmM5ZTMxZTE1ZjU5MjQ2NDM2ZmQ4NWM4OTdhYjJjZDViMWQ0MmRjMjY1MWE2ZmUwZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNzcxMDkzYWFkMGZlMTAwNjgyMGFiMWM1M2VmZDNhYWY4YjY2ZWQ0MmE3NTEwMjg3MDkwYzQ4YWFmMmEwZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYWUxM2UxYTViY2I5ZjJiZjY0YWQyYzE5OGQ1YmIwYzgxOTI0ZDhkODM5NWU5ZmM3NTI3N2U0Y2JmN2Q0MzkifQ"
+          "resource": "repo://src/connectors/mcp-client.ts#L824-L838",
+          "version": "repo-lines-v1:sha256:e36076e9f222d6819d246817da428b5270ff484f6dc270197a5da311df292113:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1YmY1NGU3MTQwZTliYzNlNmJlZDM5ZDk0OGRlNWJmNTI2OTI4ZGU2ODNlMTRiNDA4NzYzNDY4MzE0OWE3YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxNzU0OGI3MzMyOWRjZjQwYzQzMmJkMDA1MGJlYzlkOGZhOGU3MWM5NTE2MzQzYTQzZjJlMzlhMTViODQzNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyMGM2ODEzM2RhYWY2ZjNmOGUzYWEwNDQxNDI5OTEyMWExNDQyYTBmNThlZDBmYzlmZDk0YzIyYjczNDc3M2UifQ"
+        },
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L896-L911",
+          "version": "repo-lines-v1:sha256:9b5db70ceaaa5e64a33b069616a600101825144584312a55931a224dcfdcfa58:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZGI0NmU4M2ZmZmJmZDUzZWFjYzg4YjE0NzA1NzFiN2ZkMzZlOTY3NzkzMDM5YjJkYTg4ZTgyNjFlMmUwNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlNzk3MTRhZTlhMDVlZmU4ZDY2MjA4OTI2NDNhN2FmYzRmMWFjZDYxOGRjMTFjMDgxM2M5NWJjNDg2MmYzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYWUxM2UxYTViY2I5ZjJiZjY0YWQyYzE5OGQ1YmIwYzgxOTI0ZDhkODM5NWU5ZmM3NTI3N2U0Y2JmN2Q0MzkifQ"
         },
         {
           "resource": "repo://src/connectors/mcp-client.ts#L958-L970",
-          "version": "repo-lines-v1:sha256:7a0071f852a31b876943f403482bc546d9a638e9d83bdad16904c2dcfa2384de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMjZiMWI5OWI0MGE1MDA3MDBkMGFkZTMzZDBiOWI1YWE5MjY3ODQ2ZDc5Yzc5ZWNkODg1YTU1ZTYxYzQwZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3N2M5NmFlYTI3ZjIxYTAyZTE4NzQwNTk1ZmRjNTFhYmYzODRiMjhkNTg3ZTNlNDkzN2NlZjI1ODUwYWNjMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:0903caf7f793501e0d4b21734fbc1b032bc6424d8cd45800fb035f76854561fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyOWMwMjEwOTAzNzBiMzBlOTYxMTRjZDNmMTNjMzJjN2Q4Yzc4ZGFmMzFmN2RhZTQ2ZjU5ZmVmODM0NmJhNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5YWRlNGE3YmYxNDljZmE4OTBjZTc0MGVlNTc2NWI5ZDA5NzJmZjk5ZTBhZTg4NzIyZGFlMDA3ODUzODhjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNGY2ZGZiOTA0MjNkNzBiZDRkMzcyYmIwZTRmYzQ1OGI5NDk1NmQ4MWE0OWUzYTNlNmExODJkNWI2MzgzNGUifQ"
+        },
+        {
+          "resource": "repo://test/connectors/mcp-client.test.ts#L93-L97",
+          "version": "repo-lines-v1:sha256:974cc812a84213ceb180722ed6b9fce7f346f4bbc58a107158cbc0bca512aeb1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjEzYWIyMDIwNzlkN2ZiZjExZDE1YjJhNzFhZTlhNjQ3YWE0MWJhOTc3NzFkNjNjMTUyYTc5MDI2ZTk4YTlhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkMzkyNDM2N2EzNTFiNTk4ZTk2YmJlNmQ4YTk0OWNjMTY0ZmQ2ZTc0MWI4Yjg0OTNlOTNjYTA5YmJkZTk4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAwMTg5MDdjYzA3M2NlOTI4NDc5OTNiNWI0MzQ1N2EzZWE2MTIzMzRhY2JiMGRjZTM5MGI5MDNmNWRlNDkzMCJ9"
         }
       ]
     },
@@ -456,7 +464,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-09-01T08:10:26.687Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-09T08:09:59.193Z"
   }
 }

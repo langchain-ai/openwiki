@@ -152,6 +152,16 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     );
   });
 
+  test("preserves CLAUDE.md when it only imports AGENTS.md", async () => {
+    const repo = await createTempRepo();
+    const existing = "  @AGENTS.md\n";
+    await writeFile(path.join(repo, "CLAUDE.md"), existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBe(existing);
+  });
+
   test("refreshes the OpenWiki block in place and preserves surrounding content", async () => {
     const repo = await createTempRepo();
     const existing = `# My Project

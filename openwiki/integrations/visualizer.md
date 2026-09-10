@@ -36,10 +36,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T22:32:29.466Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
 verified:
-  - by: openwiki/0.4.0
-    at: 2026-08-26T22:32:29.466Z
+  - by: openwiki/0.5.0
+    at: 2026-09-09T08:09:59.193Z
 ---
 
 # Interactive Visualizer
@@ -123,6 +123,26 @@ receives the graph through a getter rather than a captured value, because the
 server reassigns the graph on each rebuild and every request must serve the latest
 one.
 
+The page's Content-Security-Policy is a single shared `CSP` constant in
+`src/visualize/page.ts` that both the live server (as the `content-security-policy`
+HTTP response header on `/` and `/index.html`) and a static export (as a
+`<meta http-equiv="Content-Security-Policy">` tag in the HTML) enforce, so the
+anti-XSS/supply-chain boundary cannot drift between modes. It pins scripts to
+`'self'` and the jsdelivr CDN (`script-src 'self' https://cdn.jsdelivr.net`) with
+no inline scripts — the CDN `<script>` tags carry Subresource Integrity hashes —
+while inline styles remain allowed (`style-src 'self' 'unsafe-inline'`) so the
+client can theme the graph. The page itself requests the Inter typeface from
+Google Fonts: a `<link>` to a `fonts.googleapis.com` stylesheet whose CSS in turn
+references font files on `fonts.gstatic.com`. The CSP therefore allows the
+stylesheet origin in `style-src` (`'self' 'unsafe-inline'
+https://fonts.googleapis.com`) and the font-file origin in `font-src` (`'self'
+https://fonts.gstatic.com`); before these origins were added both directives were
+`'self'` only, and every CSP-enforcing browser silently blocked the font request
+so the visualizer never actually rendered in the Inter typeface it ships. The
+remaining directives (`default-src 'none'`, `img-src 'self' data:`,
+`connect-src 'self'`, `base-uri 'none'`, `form-action 'none'`) keep the reader
+locked down while rendering arbitrary wiki Markdown.
+
 Live reload is driven by the filesystem watch. A change under the wiki triggers a
 debounced (150 ms) rebuild; on success the server broadcasts an SSE `reload` event
 to every open `/events` subscriber, and the browser refetches `/api/graph`. A
@@ -171,6 +191,32 @@ stray click on blank canvas never clears the selection or the reader. This is th
 issue #670 regression fix — the former background-click handler wiped the page the
 user was reading.
 
+Graph labels are contextual, not ambient — the "declutter visualizer graph labels"
+feature. By default no node labels are painted on the canvas: the sidebar index is
+the always-visible page list, so the graph stays readable at any size. `paintNode`
+consults the pure `shouldShowNodeLabel` helper (from `client-lib.ts`) with the
+current selection, hover, and neighbourhood state to decide, per node, whether to
+draw its title. When nothing is selected, only the hovered node's label shows;
+when a node is selected, that node plus its directly connected neighbours show
+labels; unrelated nodes never show labels. Hovering is suspended while a page is
+selected — `hoverHighlight` returns early when a selection is active, so the
+selected neighbourhood's labels hold until the selection changes.
+
+```mermaid
+flowchart TD
+  Start["paintNode considers node n"] --> Q{"is a node selected?"}
+  Q -- "yes (selectedId set)" --> Q2{"n is the selected node<br/>or in its neighbourhood?"}
+  Q2 -- "yes" --> Show["paint n's label"]
+  Q2 -- "no" --> Hide["no label for n"]
+  Q -- "no (selectedId null)" --> Q3{"n is the hovered node?"}
+  Q3 -- "yes" --> Show
+  Q3 -- "no" --> Hide
+```
+
+`shouldShowNodeLabel` decision logic: selection wins over hover, and only the
+selected node plus its immediate neighbours — or the single hovered node when
+nothing is selected — ever paint a canvas label.
+
 The reader renders the page body as Markdown. Because `marked` passes raw HTML
 through, the output is sanitized with DOMPurify before assignment to `innerHTML`,
 which is defense in depth on top of the server's CSP; all scalar wiki fields
@@ -193,8 +239,13 @@ and subscribes to `/events`.
 
 The pure, DOM-independent helpers used by the client — `escapeHtml`,
 `colorsForTypes`, `nodeRadius`, `signature`, `matchesFilter`, `normalize`,
-`stripFrontmatter`, and `hexA` — live in `src/visualize/client-lib.ts` so they can
-be unit-tested directly without a browser.
+`stripFrontmatter`, `hexA`, and `shouldShowNodeLabel` (with its
+`NodeLabelContext` interface) — live in `src/visualize/client-lib.ts` so they can
+be unit-tested directly without a browser. `shouldShowNodeLabel` decides whether
+a node label should be painted on the canvas based on interaction context: when
+nothing is selected, only the hovered node's label shows; when a node is
+selected, the selected node plus its immediate neighbours show labels; unrelated
+nodes never show labels.
 
 ## Static export
 
@@ -213,8 +264,10 @@ mechanism, and the live indicator — including the shared DOM layout, where the
 hint-plus-legend overlay lives inside the `#graph` panel rather than as a sibling of
 it. The three browser libraries (force-graph, marked, DOMPurify) plus mermaid load
 from `cdn.jsdelivr.net` at pinned exact versions with Subresource Integrity hashes,
-and the CSP forbids inline scripts, so the reader stays locked down even while
-rendering arbitrary wiki Markdown.
+the page also `<link>`s the Inter typeface from Google Fonts, and the shared CSP
+forbids inline scripts while allowing the Google Fonts stylesheet and font-file
+origins, so the reader stays locked down even while rendering arbitrary wiki
+Markdown and rendering in its shipped typeface.
 
 ## Build pipeline and assets
 

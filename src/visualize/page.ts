@@ -6,12 +6,14 @@
  * cdn.jsdelivr.net at pinned exact versions with SRI hashes.
  */
 const CDN = "https://cdn.jsdelivr.net";
+const GOOGLE_FONTS_STYLESHEET_ORIGIN = "https://fonts.googleapis.com";
+const GOOGLE_FONTS_FILE_ORIGIN = "https://fonts.gstatic.com";
 export const CSP = [
   "default-src 'none'",
   `script-src 'self' ${CDN}`,
-  "style-src 'self' 'unsafe-inline'",
+  `style-src 'self' 'unsafe-inline' ${GOOGLE_FONTS_STYLESHEET_ORIGIN}`,
   "img-src 'self' data:",
-  "font-src 'self'",
+  `font-src 'self' ${GOOGLE_FONTS_FILE_ORIGIN}`,
   "connect-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",

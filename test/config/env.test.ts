@@ -156,6 +156,12 @@ describe("MANAGED_ENV_KEYS", () => {
   test("manages the reasoning effort setting", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_REASONING_EFFORT");
   });
+
+  test("manages the OpenAI-compatible reasoning effort opt-in", () => {
+    expect(MANAGED_ENV_KEYS).toContain(
+      "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED",
+    );
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
@@ -173,6 +179,18 @@ describe("parseEnv <-> formatEnv round-trip", () => {
     const original = {
       OPENAI_API_KEY: "value with\r carriage return",
       ANTHROPIC_BASE_URL: "value with\r\n crlf pair",
+    };
+
+    expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
+
+  test("Windows paths with a backslash immediately before 'n' or 'r' survive a format -> parse round-trip", () => {
+    // Regression test: a raw backslash escaped to "\\" followed by a path
+    // segment starting with "n" or "r" (e.g. "\name", "\repos") must not be
+    // misread as the "\n"/"\r" escape sequence on parse.
+    const original = {
+      GOOGLE_APPLICATION_CREDENTIALS: "C:\\name\\creds.json",
+      OPENAI_API_KEY: "C:\\repos\\secrets\\key.json",
     };
 
     expect(parseEnv(formatEnv(original))).toEqual(original);

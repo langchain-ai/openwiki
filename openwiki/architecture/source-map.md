@@ -60,10 +60,12 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+  - id: openwiki-source-d485c898eb60ebb173072eab
+    resource: repo://test/agent/stream-redaction.test.ts
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.0
+    at: 2026-09-09T08:09:59.193Z
 ---
 
 # Source Map
@@ -90,7 +92,13 @@ before anything else.
   checkpoint thread and its history (`createOpenWikiThreadId`,
   `pruneCheckpointHistory`, `resolveCheckpointTarget`), and parses streamed
   agent events into `OpenWikiRunEvent`s (`parseStreamEvent`,
-  `parseAgentStreamChunk`).
+  `parseAgentStreamChunk`, and the `parseUpdatesChunk` helper it dispatches to
+  for `'updates'`-mode LangGraph state-delta chunks, which extracts the first
+  non-empty assistant text from the per-node output objects). While streaming,
+  `parseAgentStreamChunk` suppresses content blocks whose `type` includes
+  `file` or `image` (notably `file`, `input_file`, and `image_url` base64
+  blobs) so they never reach the terminal — behavior pinned by
+  `test/agent/stream-redaction.test.ts`.
 - **`src/config/constants.ts`** is the single large registry of stable strings:
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported

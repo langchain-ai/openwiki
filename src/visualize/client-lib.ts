@@ -98,6 +98,41 @@ export function nodeRadius(size: number, isAnchor: boolean): number {
 }
 
 /**
+ * Interaction context used to decide whether a node label should be painted on
+ * the graph canvas.
+ */
+export interface NodeLabelContext {
+  /**
+   * The selected page id, or null when the user has not selected a graph node.
+   */
+  selectedId: string | null;
+
+  /**
+   * The hovered page id, or null when no graph node is under the pointer.
+   */
+  hoveredId: string | null;
+
+  /**
+   * Whether this node is part of the selected node's immediate neighbourhood.
+   */
+  isInSelectedNeighborhood: boolean;
+}
+
+/**
+ * Keep graph labels contextual: hover reveals only the hovered node, while a
+ * selected node reveals itself plus its immediate neighbours.
+ */
+export function shouldShowNodeLabel(
+  node: Pick<FilterableNode, "id">,
+  context: NodeLabelContext,
+): boolean {
+  if (context.selectedId) {
+    return node.id === context.selectedId || context.isInSelectedNeighborhood;
+  }
+  return node.id === context.hoveredId;
+}
+
+/**
  * Whether a node survives the active search text and type filter. An empty query
  * or empty type matches everything.
  */

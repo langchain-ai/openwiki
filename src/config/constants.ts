@@ -19,6 +19,8 @@ export const OPENAI_COMPATIBLE_STREAMING_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_STREAMING";
 export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
+export const OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED";
 export const OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
@@ -468,9 +470,10 @@ export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
 export function providerUsesResponsesApi(
   provider: OpenWikiProvider,
   modelId: string,
+  env: NodeJS.ProcessEnv = process.env,
 ): boolean {
   if (provider === "openai-compatible") {
-    return resolveOpenAiCompatibleUseResponsesApi();
+    return resolveOpenAiCompatibleUseResponsesApi(env);
   }
 
   const setting = getProviderConfig(provider).responsesApi;
@@ -1023,6 +1026,16 @@ export function resolveOpenAiCompatibleUseResponsesApi(
   return (
     env[OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY]?.trim().toLowerCase() ===
     TRUE_ENV_VALUE
+  );
+}
+
+export function resolveOpenAiCompatibleReasoningEffortSupported(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[
+      OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
+    ]?.trim().toLowerCase() === TRUE_ENV_VALUE
   );
 }
 

@@ -1,5 +1,7 @@
 import {
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
+  providerUsesResponsesApi,
+  resolveOpenAiCompatibleReasoningEffortSupported,
   type OpenWikiProvider,
 } from "./constants.js";
 
@@ -27,6 +29,10 @@ export type ReasoningCapability = {
 export type ResolvedReasoningConfig = {
   effort: ReasoningEffort;
   transport: ReasoningTransport;
+};
+
+export type ResolveReasoningConfigOptions = {
+  useResponsesApi?: boolean;
 };
 
 const OPENAI_GPT_56_REASONING_CAPABILITY = {
@@ -66,7 +72,12 @@ const REASONING_CAPABILITIES: Partial<
 export function getReasoningCapability(
   provider: OpenWikiProvider,
   modelId: string,
+  env: NodeJS.ProcessEnv = process.env,
 ): ReasoningCapability | undefined {
+  if (provider === "openai-compatible") {
+    return getOpenAiCompatibleReasoningCapability(modelId, env);
+  }
+
   return REASONING_CAPABILITIES[provider]?.[modelId];
 }
 
@@ -78,6 +89,7 @@ export function resolveReasoningConfig(
   provider: OpenWikiProvider,
   modelId: string,
   env: NodeJS.ProcessEnv = process.env,
+  options: ResolveReasoningConfigOptions = {},
 ): ResolvedReasoningConfig | undefined {
   const rawEffort = env[OPENWIKI_REASONING_EFFORT_ENV_KEY];
 
@@ -93,7 +105,14 @@ export function resolveReasoningConfig(
     );
   }
 
-  const capability = getReasoningCapability(provider, modelId);
+  const capability =
+    provider === "openai-compatible"
+      ? getOpenAiCompatibleReasoningCapability(
+          modelId,
+          env,
+          options.useResponsesApi,
+        )
+      : getReasoningCapability(provider, modelId, env);
 
   if (capability === undefined) {
     throw new Error(
@@ -108,4 +127,21 @@ export function resolveReasoningConfig(
   }
 
   return { effort, transport: capability.transport };
+}
+
+function getOpenAiCompatibleReasoningCapability(
+  modelId: string,
+  env: NodeJS.ProcessEnv,
+  useResponsesApi = providerUsesResponsesApi("openai-compatible", modelId, env),
+): ReasoningCapability | undefined {
+  if (!resolveOpenAiCompatibleReasoningEffortSupported(env)) {
+    return undefined;
+  }
+
+  return {
+    transport: useResponsesApi
+      ? "responses-reasoning"
+      : "chat-completions-reasoning-effort",
+    values: REASONING_EFFORT_VALUES,
+  };
 }
