@@ -1,0 +1,19 @@
+.github/workflows/release.yml
+  s_704a026a305c6f::t_ddd83183b9cc5e 59-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6d5f436ec8b8b78ee3d70e621a9827bc16fc636b",
+  "prompts": {},
+  "sessions": {
+    "s_704a026a305c6f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0882a-2803-7d32-a82a-674d759530d6",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
