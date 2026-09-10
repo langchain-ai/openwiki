@@ -21,6 +21,7 @@ import { App } from "./app/app.js";
 import {
   runAuthCommand,
   runCronCommand,
+  runDoctorCommand,
   runIngestCommand,
   runNgrokCommand,
   runPrintCommand,
@@ -87,6 +88,8 @@ async function runStandardCommand(
     await runIngestCommand(command);
   } else if (command.kind === "visualize") {
     await runVisualizeCommand(command);
+  } else if (command.kind === "doctor") {
+    await runDoctorCommand();
   } else if (shouldPrintStartupError(argv, parsedCommand, command)) {
     process.stderr.write(`${command.message}\n`);
     process.exitCode = command.exitCode;

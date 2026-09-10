@@ -139,6 +139,7 @@ describe("finalizeWikiArtifacts", () => {
       "mermaid",
       "index_sync",
       "link_validation",
+      "source_citation_validation",
       "generated_provenance",
     ]);
   });
