@@ -56,10 +56,10 @@ jobs:
         id: changesets
         uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          version: pnpm run changeset:version
-          publish: pnpm release
-          title: "chore: version packages"
-          commit: "chore: version packages"
+          version-script: pnpm run changeset:version
+          publish-script: pnpm release
+          pr-title: "chore: version packages"
+          commit-message: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
