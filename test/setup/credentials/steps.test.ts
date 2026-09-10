@@ -109,6 +109,7 @@ const SPINE_BY_PROVIDER: Record<string, string[]> = {
   baseten: ["provider", "api-key", "model", "langsmith"],
   nebius: ["provider", "api-key", "model", "langsmith"],
   nvidia: ["provider", "api-key", "model", "langsmith"],
+  mistral: ["provider", "api-key", "model", "langsmith"],
 };
 
 /** Every environment key any test in this file reads or writes. */

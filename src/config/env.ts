@@ -15,6 +15,8 @@ import {
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderBaseUrlWarnings,
+  MISTRAL_API_KEY_ENV_KEY,
+  MISTRAL_BASE_URL_ENV_KEY,
   GEMINI_API_KEY_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
@@ -105,6 +107,8 @@ export const MANAGED_ENV_KEYS = [
   COPILOT_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
+  MISTRAL_API_KEY_ENV_KEY,
+  MISTRAL_BASE_URL_ENV_KEY,
   NEBIUS_API_KEY_ENV_KEY,
   NVIDIA_API_KEY_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
@@ -463,6 +467,10 @@ function getBaseUrlDiagnosticWarnings(
     return getProviderBaseUrlWarnings("nvidia", value);
   }
 
+  if (key === MISTRAL_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("mistral", value);
+  }
+
   if (key === OPENAI_BASE_URL_ENV_KEY) {
     return getProviderBaseUrlWarnings("openai", value);
   }
@@ -491,6 +499,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
