@@ -12,18 +12,20 @@ import { ANTHROPIC_API_KEY_ENV_KEY } from "../config/constants.js";
  * - `anthropic`: Claude over `rawPredict`/`streamRawPredict`, Anthropic's own
  *   wire protocol, reached via the Anthropic Vertex SDK.
  * - `openai-maas`: partner/open-weight models (Llama, Mistral, DeepSeek, Qwen,
- *   …) over the OpenAI-compatible `/endpoints/openapi/chat/completions` surface.
+ *   Grok, …) over the OpenAI-compatible `/endpoints/openapi/chat/completions`
+ *   surface.
  */
 export type VertexSurface = "anthropic" | "gemini" | "openai-maas";
 
 // These two patterns are the maintenance point when Vertex adds publishers:
-// extend the relevant alternation. `meta`/`llama` are both listed intentionally
-// so IDs are tolerated whether given as the publisher (`meta/…`) or the model
-// family (`llama-…`). `codellama` is listed separately because the `(^|\/)`
-// boundary means the `llama` token would not match the bare `codellama-…` form.
+// extend the relevant alternation. `meta`/`llama` and `xai`/`grok` are both
+// listed intentionally so IDs are tolerated whether given as the publisher
+// (`meta/…`, `xai/…`) or the model family (`llama-…`, `grok-…`). `codellama` is
+// listed separately because the `(^|\/)` boundary means the `llama` token would
+// not match the bare `codellama-…` form.
 const ANTHROPIC_MODEL_PATTERN = /(^|\/)(anthropic|claude)/u;
 const OPENAI_MAAS_MODEL_PATTERN =
-  /(^|\/)(ai21|codellama|codestral|deepseek|jamba|llama|meta|mistral|qwen)/u;
+  /(^|\/)(ai21|codellama|codestral|deepseek|grok|jamba|llama|meta|mistral|qwen|xai)/u;
 
 /**
  * Classifies a Vertex model ID into the API surface used to serve it. Tolerant
