@@ -17,6 +17,8 @@ tags:
 sources:
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-aef084bf3022fb942ad29b90
+    resource: repo://examples/openwiki-update-auto-merge.yml
   - id: openwiki-source-0f426585cfb8a1150869ea30
     resource: repo://examples/openwiki-update.bitbucket-pipelines.yml
   - id: openwiki-source-d9da31b32fa9d32e1fa4564b
@@ -33,10 +35,10 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-28T03:39:43.412Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+  - by: openwiki/0.5.1
+    at: 2026-09-10T08:09:53.024Z
+generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
 ---
 
 # CI Scheduling and Self-Update
@@ -169,14 +171,22 @@ macOS-only.
 
 The recommended way to keep a committed repository wiki fresh is a scheduled CI
 job that runs `openwiki code --update`. Example configurations ship for the three
-supported CI systems:
+supported CI systems, plus a GitHub Actions variant that auto-merges successful
+update PRs:
 
-- `examples/openwiki-update.yml` — GitHub Actions
-- `examples/openwiki-update.gitlab-ci.yml` — GitLab CI
-- `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines
+- `examples/openwiki-update.yml` — GitHub Actions (canonical example).
+- `examples/openwiki-update-auto-merge.yml` — GitHub Actions variant that
+  enables auto-merge for the update PR.
+- `examples/openwiki-update.gitlab-ci.yml` — GitLab CI.
+- `examples/openwiki-update.bitbucket-pipelines.yml` — Bitbucket Pipelines.
 
 The live workflow the OpenWiki repository itself runs is
-`.github/workflows/openwiki-update.yml`.
+`.github/workflows/openwiki-update.yml`, which builds from the checked-out
+source to dogfood unreleased changes rather than installing the published
+package. The OpenWiki repository also runs its own release pipeline in
+`.github/workflows/release.yml`, the npm trusted-publishing pipeline; the
+examples above are what an external repository should copy, and the live repo
+runs both workflows separately.
 
 ### What the scheduled job does
 
@@ -218,6 +228,42 @@ Both the example and the live workflow delete the transient `openwiki/.run.json`
 run-state file before creating the PR, so the partial progress that survives is
 the committed wiki, not leftover in-process state.
 
+#### Auto-merge variant
+
+`examples/openwiki-update-auto-merge.yml` extends the canonical GitHub Actions
+example with two extra steps that manage the PR's auto-merge state through the
+`gh` CLI after the PR is created:
+
+- **Enable auto-merge after a successful update** runs `gh pr merge --auto
+  --squash` when `steps.openwiki.outcome == 'success'` and a PR was created
+  (`steps.create-pr.outputs.pull-request-number` is non-empty).
+- **Disable auto-merge after a failed update** runs `gh pr merge --disable-auto`
+  when the outcome is `failure` and a PR was created, so the partial-progress PR
+  opened on a failed run is not silently auto-merged; a reviewer must still
+  review and merge it manually.
+
+The `Propagate OpenWiki failure` step still runs after both, so a failed run
+fails the job and the next scheduled run starts fresh.
+
+The auto-merge variant differs from the canonical `examples/openwiki-update.yml`
+in three ways beyond the auto-merge steps:
+
+1. **PR token.** It authenticates both `peter-evans/create-pull-request` and `gh`
+   with a dedicated `OPENWIKI_PR_TOKEN` secret (the canonical example relies on
+   the default `GITHUB_TOKEN`). The token needs `pull-requests: write` to enable
+   auto-merge.
+2. **Workflow file excluded from the PR.** `code --update` regenerates the
+   workflow file from an internal template, which would otherwise drop the
+   fork guard on the live repo. The variant restores the protected file with
+   `git checkout -- .github/workflows/openwiki-update.yml` before the PR step
+   (`if: ${{ !cancelled() }}`) and omits it from `add-paths`, so only
+   `openwiki`, `AGENTS.md`, and `CLAUDE.md` are committed.
+3. **Concurrency control.** It adds a `concurrency` group
+   (`openwiki-update`, `cancel-in-progress: false`) so overlapping scheduled and
+   manual runs queue rather than clobber each other, and pins
+   `peter-evans/create-pull-request` to the v8.1.1 commit SHA
+   (`5f6978faf089d4d20b00c7766989d076bb2fc7f1`).
+
 ### Scheduling and gating
 
 - **GitHub Actions** triggers on `schedule` (`cron: "0 8 * * *"`, interpreted in
@@ -234,17 +280,18 @@ the committed wiki, not leftover in-process state.
 
 The live GitHub workflow also builds OpenWiki from the checked-out source and
 runs `node dist/cli/cli.js code --update` rather than the published package, so
-the daily run dogfoods unreleased changes. This is the key difference between the
-two GitHub workflows: `examples/openwiki-update.yml` installs the published
+the daily run dogfoods unreleased changes. This is the key difference between
+the three GitHub workflows: `examples/openwiki-update.yml` installs the published
 `openwiki` package globally (`npm install --global openwiki …`) and is what an
-external repository should copy, whereas `.github/workflows/openwiki-update.yml`
-runs `pnpm install --frozen-lockfile && pnpm build` against the checked-out
-OpenWiki source to dogfood main. The live workflow additionally restores the
-protected workflow file with `git checkout -- .github/workflows/openwiki-update.yml`
-after the run because `code --update` regenerates that file from an internal
-template and would otherwise drop the fork guard; the discard runs
-`if: ${{ !cancelled() }}` so the guard survives whether the run succeeded or
-failed.
+external repository should copy; `examples/openwiki-update-auto-merge.yml` does
+the same but adds the auto-merge/disable-auto-merge pattern; whereas
+`.github/workflows/openwiki-update.yml` runs `pnpm install --frozen-lockfile &&
+pnpm build` against the checked-out OpenWiki source to dogfood main. The live
+workflow additionally restores the protected workflow file with `git checkout --
+.github/workflows/openwiki-update.yml` after the run because `code --update`
+regenerates that file from an internal template and would otherwise drop the
+fork guard; the discard runs `if: ${{ !cancelled() }}` so the guard survives
+whether the run succeeded or failed.
 
 ### Ephemeral-runner resume caveat
 

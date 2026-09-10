@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d6541950ee80aee532534e185cd1e0202f18d84d1fd8b2a421ea865141dbafd7",
+  "pageVersion": "sha256:a13354521873dc2a8458227f46e12037d1414b8b273fe4ae821487339c3fce3e",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -602,19 +602,19 @@
     },
     {
       "id": "claim_b5aa125581b64e689e612f5b5750e530",
-      "statement": "test/agent/stream-redaction.test.ts pins parseAgentStreamChunk's suppression of file, image, input_file, and image_url content blocks that carry base64 blobs (which must never reach the terminal) while allowing adjacent text blocks in the same chunk to stream through normally; it also covers plain-text streaming, nested task (subgraph) output, tool lifecycle normalization (on_tool_start/on_tool_end/on_tool_error), the updates-mode state-diff extraction default for openai-compatible providers (tagged main or subgraph by namespace), and rejection of malformed stream chunks.",
+      "statement": "test/agent/stream-redaction.test.ts pins parseAgentStreamChunk's suppression of file, image, input_file, and image_url content blocks that carry base64 blobs (which must never reach the terminal) while allowing adjacent text blocks in the same chunk to stream through normally; it also covers plain-text streaming, nested task (subgraph) output, model_request namespace classification (a top-level model_request:* namespace is tagged main while a task + model_request:* namespace is tagged subgraph), tool lifecycle normalization (on_tool_start/on_tool_end/on_tool_error), the updates-mode state-diff extraction default for openai-compatible providers (tagged main or subgraph by namespace), tool-call-only messages in updates chunks returning null (a message carrying only tool_calls has no renderable text), and rejection of malformed stream chunks.",
       "evidence": [
         {
-          "resource": "repo://test/agent/stream-redaction.test.ts#L134-L205",
-          "version": "repo-lines-v1:sha256:3c99813fdbe3cae024a57c2edef2a58ae083a7a6dcfcca040b4440eb9ed1d8c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Y2E1YTVjYzE2MjU5MGMxYWZkYTkxYjk3YTQ5ZDc5MDg5NjdkYzcyOTA1NDJmMTUxY2EwYWIwYTM4MTM2MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YmQ5ZDdkYTJkOGI1ODllZDlhZGQyNmMyNTNmNzFjNzUyNzgxZTA2YzA5N2M1NGQ1NjgwZTkyYmU5MWE2ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://test/agent/stream-redaction.test.ts#L160-L237",
+          "version": "repo-lines-v1:sha256:c3f5a2198c892bff26b169ba3bab6e7310b38d91e84d46b80dd44f9a2a8a8ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYjdmM2Y1YTdkOTFiZjBlOGNmMzYxMmQ4MjZlNjQ5NDU3MDllNTJlZTY1N2MxOGYxYTIzYzI5MTgxODQxOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNjQ4YmMyYWEyODlkNmM2YzcwZmQ2ZjIxMmY1OGQwMDU5YmYzMjUzMWU0YTQ1M2RlNzc2NjMyOTZmZDE1MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         },
         {
-          "resource": "repo://test/agent/stream-redaction.test.ts#L19-L70",
-          "version": "repo-lines-v1:sha256:a9a2d64ccd7951c5418e406cc75c5aecf33aee58ba091242a71299dac5a571e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViM2U4YmQ5NmM2ZWM3MTcwNzgwMWMxZGZhZmE2MzczZTY4N2E5ZGQxOTAxNWJmYzlhNWE0NDJmNTIzZmFjM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0N2E0YzNlZDU0MmEzNTkzYmNiNTg3ZWIzMzIxNzBiNGQwYWQ1MGVhMTY2YWZmZWQ1OThiMzhjMzdlZDgzOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlODNlOTA5MWJmOTgxNTRmMTJiODk0YWUzYWNhOWU4OWU3ZjVhNDA3NjFkZjdkNDRhODc4Yzc4YjRjNjMxMDkifQ"
+          "resource": "repo://test/agent/stream-redaction.test.ts#L19-L74",
+          "version": "repo-lines-v1:sha256:3b8fe8a81a61d79d2cd29b31cc5c912103e3c1118ede30f8d4413e1a98b618e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYzgzZTk5ZmQwMGI3ZWY1OTkyMmUxODhjNDNjMzViMWJmN2FhYjY5YjI3NmVjYmI4ODE4M2FjZjM2YmRiZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlODNlOTA5MWJmOTgxNTRmMTJiODk0YWUzYWNhOWU4OWU3ZjVhNDA3NjFkZjdkNDRhODc4Yzc4YjRjNjMxMDkifQ"
         },
         {
-          "resource": "repo://test/agent/stream-redaction.test.ts#L72-L125",
-          "version": "repo-lines-v1:sha256:cdd15fce16b707f7f88de3c99783db29721ecfe65870f1cef0e36f5e726f6a38:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMTI3NGRkZjkxYzA0ODBlZGY2ZTYzNGUzODQ0NTQ5Y2JhYzNhNzY5ZTQwNzBlZWZmOGNjNjIxMmM0MDljYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZjJkZmFkY2RiODM1MWZmYWYzMmRhMjQ4Nzc3N2JjODA0NzZjYTM3MGU4MWE3NThhYzJhOWNlOWQ0NDBlNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzNzgyYTQ3MGI5ZmQxMzFkYmQ3OTY5ZGZjOTNmZjM0Y2E2MzYwMTQxMmFlN2MyNGQyZTY2MjRjMmZkMjM1ZWQifQ"
+          "resource": "repo://test/agent/stream-redaction.test.ts#L88-L115",
+          "version": "repo-lines-v1:sha256:28546c959194dfa3e45574a882de6119b1c6b607d7be273523c5c48457cb993a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMDU4NTRiYzc4MzlmN2Y4NmM3ODRlOTAyYTRjMTJiMzNjZWE3MzdkMDVhZDc4ZDVlMTZhNWYzNGY1NWMyODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNjQ4YmMyYWEyODlkNmM2YzcwZmQ2ZjIxMmY1OGQwMDU5YmYzMjUzMWU0YTQ1M2RlNzc2NjMyOTZmZDE1MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMDE3MmY0NmYzZjBhYTg1N2IzM2YyNzFiMzVmMmE3ZmU4MjZkNWQ2YTBhOGQ4NjkzMzEwMGFjYTlhYmM3MzgifQ"
         }
       ]
     },
@@ -659,10 +659,20 @@
           "version": "repo-lines-v1:sha256:974cc812a84213ceb180722ed6b9fce7f346f4bbc58a107158cbc0bca512aeb1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjEzYWIyMDIwNzlkN2ZiZjExZDE1YjJhNzFhZTlhNjQ3YWE0MWJhOTc3NzFkNjNjMTUyYTc5MDI2ZTk4YTlhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkMzkyNDM2N2EzNTFiNTk4ZTk2YmJlNmQ4YTk0OWNjMTY0ZmQ2ZTc0MWI4Yjg0OTNlOTNjYTA5YmJkZTk4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAwMTg5MDdjYzA3M2NlOTI4NDc5OTNiNWI0MzQ1N2EzZWE2MTIzMzRhY2JiMGRjZTM5MGI5MDNmNWRlNDkzMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_dc94c4699b8b48f481ff8b334a2896c9",
+      "statement": "test/ingestion/code-mode.test.ts pins that CLAUDE.md is a lightweight reference to AGENTS.md (not a full copy) and that a pre-existing CLAUDE.md that only imports AGENTS.md (e.g. @AGENTS.md) is preserved unchanged by ensureCodeModeRepoSetup rather than being overwritten, so an import-only CLAUDE.md survives a re-setup.",
+      "evidence": [
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L136-L163",
+          "version": "repo-lines-v1:sha256:8349ae2b4e5133d363584c5d55c736e70d52594b5d5ef5b91fb97c829ff62bce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-10T08:09:53.024Z"
   }
 }

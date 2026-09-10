@@ -3,9 +3,6 @@ type: orientation-guide
 title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -34,6 +31,9 @@ sources:
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
 generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+verified:
+  - by: openwiki/0.5.1
+    at: 2026-09-10T08:09:53.024Z
 ---
 
 # OpenWiki Quickstart

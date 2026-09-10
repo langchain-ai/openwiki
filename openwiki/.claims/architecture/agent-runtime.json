@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4bff825abb721e269eb29ffe443ab79eb39da996a6d69751f5b17fe97fc592c2",
+  "pageVersion": "sha256:e14718c58723055850240d67e0db1f882796852238a544c82d0e06ec4e12ce16",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -473,10 +473,92 @@
           "version": "repo-lines-v1:sha256:c7f45863ea0de8f42caf11a1d9c56adea07275d9ac7292e21331282b07a86a64:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZDUzYjAxMjFiYTVmZWQ1ZTQ3YTg4ZWJhY2Y3ZjdjNDQxYjA3ZjZjNzE2NjYwODYzMzEzNWNhNzE5MjQzZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhM2NlYTUxMjU4OWUwMmY2NmUzZGRkMzcxZjQyYjNiNTZkMDJlN2MzYjA1ZDJmMWNjNzFmMzQyZWY1NTQxNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3MzM1NjM0ODFjOWMzZjdmNjdiZGVkZDMwYzRmMzcxNjcwOWMzMDhjNmVmZTFkNzAzYmY5ODFjZTU1ZWRiODkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5d0c210fc3ad428ea08af82e92b8c215",
+      "statement": "parseAgentStreamChunk is the single entry point that reduces each raw agent.stream chunk to an OpenWikiRunEvent (forwarded to onEvent) or null; it validates the chunk is a [namespace, mode, payload] tuple with mode in messages/tools/updates, then dispatches on mode — tools to parseToolStreamEvent (normalizing on_tool_start/end/error into tool_start and tool_end events with sanitized call text and finished/error status), updates to parseUpdatesChunk, and messages to direct extractMessageText — and null chunks are debug-logged (capped at three samples) so a noisy provider cannot flood the log.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1431-L1455",
+          "version": "repo-lines-v1:sha256:55b7d41772b14ad70e3412faf320bba53e00ad68d425a14e983772a5c554607a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNzRkMzM4NDI1OWRmMWM4MzY0Mjg4NGJiMjc1NzkzMTZjZmE1MjI4NDE2YjI4YjU4ZDVjYTU4NzJjZDdhODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhOTMxYWIxNmNhODBkNmRlMzUxYjAzOTc4ZmE2Y2M2MTI0MjgyOWUxYTE4OWZmOTIxNGMwNGFjNzMwMzVhN2IifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L1808-L1839",
+          "version": "repo-lines-v1:sha256:b5189609f6d6738210cbb64f7cfbbd807eb864a2cc704bff2a27075ad9d778a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhN2E5ODEyMWUzYTI1ZTQ3NzZjNGRlMjg0MDI0MDhkZGIwMzcwNzZjMzIxOWZmYWYwZGJiNTRkMTIxODFjZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiMjE3NzVlMmFkNjdmMWUxNGE2NjhkNTEyZDkyZjFjMjVmYWJiN2MxMDRhOGU1YjdiZjYzOTg5OGQ5YTgwNTYifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L664-L682",
+          "version": "repo-lines-v1:sha256:a5266559e96084259e4c1100c72876e35ed1b70ec39a68971407414a4c9c7e0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZDNlYWZiNDI3ZTYzNzlkN2NiODQ1Yjc0MDZkMTc1ZjgzMmRiZGQzMmU4M2JiMWFkZjZmZGUxMWY5MmRiZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjZDBjNDM1ODIxZGJkZTg3NzIxYzdhNTU4YzZlMzQ5NmIzZTVhZDk3MjliMDQ2OWU0YjJkZWZhZTNjMmRiNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzNzYyMTQzNTg5ZTk3MDlhNWE0ZTAxZGE2NjU0NDkyZDlkZTI0NzU1MDI0OWMzZGM2OWZiZDIzNzkwYzRhMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a346bf487b2847b3ac483b64a6a31a87",
+      "statement": "parseUpdatesChunk handles the updates stream mode that is the default for the openai-compatible provider: a LangGraph updates chunk carries a per-node state diff { nodeName: { messages: [...] } } rather than raw message tokens, so it iterates the node outputs and returns the first non-empty assistant text from any node via extractMessageText; without this handler plain-text replies from openai-compatible endpoints are silently dropped.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1442-L1444",
+          "version": "repo-lines-v1:sha256:073e986eecf63a0a59d42c519d95f60ce35cb36b439c3827cf71a32c4109c2bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDUyMjQ2MjJmODRmMDg0OTliMzM0YTQ0OTk4MDc1YTQyNmI5NjIyMTAzYTJjOWExYTE0NWJhYWUwYmNlNjcwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1OTgxYTE5N2U2ZGFlZjJlYmYxYThkZDBjNzkxZjY0N2U3OGQ4M2Q5MTRlNWY1YTIzZjBlYWE0MmQ3NTQ3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZkYThiZmJmNWIzMjg5YTgxZTk5NDZmZDE4NTU0NTBlZmNjMWQ5YTU1NjZiNDY3YjE3YzcxOGU0MTRhMDM3ZiJ9"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L1506-L1533",
+          "version": "repo-lines-v1:sha256:155fff9faa238e94aa1f6cd30953b58139a0d545cd5bb50a16711b46a0960a86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ODA4ZTlkYTFlYjJkNWRiODE4N2UzZjUxY2FlNWU5ZTA2M2Y0NzhkZmZmMjIzNDkyYWYzYzg4ZWQ4MGM5ZjIifQ"
+        },
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L167-L194",
+          "version": "repo-lines-v1:sha256:5ceab8cd911bc95751bdfd266191689cf5ee309b1fa698a901b057bb17724d81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Y2E1YTVjYzE2MjU5MGMxYWZkYTkxYjk3YTQ5ZDc5MDg5NjdkYzcyOTA1NDJmMTUxY2EwYWIwYTM4MTM2MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YmQ5ZDdkYTJkOGI1ODllZDlhZGQyNmMyNTNmNzFjNzUyNzgxZTA2YzA5N2M1NGQ1NjgwZTkyYmU5MWE2ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MmU3ZDk5ZWIyOWI0MTE4YjJlYjdmMjhmNmY2NDVhNWY0YzM1MjI1YzU4NGQ2NDI4ZTc0OGMwZDU0OGRhMTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_078e083ee3574520a1e0462074b0eddf",
+      "statement": "getStreamSource classifies a stream namespace as main or subgraph: a single-element namespace starting with model_request: (the top-level wrapper DeepAgents puts around the primary model call) is tagged main (assistant output for the transcript), a deeper namespace such as a nested task/subgraph is tagged subgraph (hidden from the main transcript), and an empty namespace falls back to main; both messages and updates paths stamp this source on text events.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1448-L1454",
+          "version": "repo-lines-v1:sha256:b611a90287d273987780fbc1fdb8ba0dd58e01c13cd5a6463256cbb9837f3a93:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwOTExNWJhZmM0NmZkYzZiYjcyZjIzNGU0OTVkMTQxZmRjZmYwZWFiODk1Y2I1ZTZmMTVjNjUwOGZjZjM1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdmZDhlZDg5MGE4ZGZmMWRkOTNhNWI5MzM0OWNmNzY3MzExNmViMjJhZjBmYzU5YjQwZmRlZjY2ZDgzMmUxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzZkYThiZmJmNWIzMjg5YTgxZTk5NDZmZDE4NTU0NTBlZmNjMWQ5YTU1NjZiNDY3YjE3YzcxOGU0MTRhMDM3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L1841-L1859",
+          "version": "repo-lines-v1:sha256:84fd7011cb04d642cc9f9d9858b3e1ac305666a319bd384436a2e8c1f20c2d72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNmQzMTVmNzczNDExYjVlZDEwZGViMzZiYjk0ZDI5NWUyNTFmNDljMmQyMmU4ZTUzMTRkNzQwNzI2OGU3OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZTA1NThlNDZkYTg2MjVjMzY0ZGVmZTMxNzBjOTE5NDhmMjFmOTA2ZGI3NWIxZTJiZTVhN2M4MDI3YzU3MjkifQ"
+        },
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L76-L115",
+          "version": "repo-lines-v1:sha256:f17f6e7fbe9f9054c34a402a254bdab23b7c833ed53d360ab84283537b74a562:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMTI3NGRkZjkxYzA0ODBlZGY2ZTYzNGUzODQ0NTQ5Y2JhYzNhNzY5ZTQwNzBlZWZmOGNjNjIxMmM0MDljYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZjJkZmFkY2RiODM1MWZmYWYzMmRhMjQ4Nzc3N2JjODA0NzZjYTM3MGU4MWE3NThhYzJhOWNlOWQ0NDBlNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMDE3MmY0NmYzZjBhYTg1N2IzM2YyNzFiMzVmMmE3ZmU4MjZkNWQ2YTBhOGQ4NjkzMzEwMGFjYTlhYmM3MzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a90c3419597a4a69987d5b238feb41e5",
+      "statement": "extractContentBlockText suppresses any content block whose type string includes tool, reasoning, file, or image by returning an empty string, so base64 file, input_file, image, and image_url payloads never reach the terminal, while adjacent text blocks in the same chunk stream through normally; surviving blocks yield text from their text/content/output_text field and recurse into fields (block deltas) and delta (text-delta and block-delta content deltas).",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1697-L1734",
+          "version": "repo-lines-v1:sha256:d8fe9892c3a02a309177ad0f2d9b0804c9947aae578c67290a6188838f84ccde:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNGY0MmMyMDM5NDQ2MTgwMTY2OTE0NDFlMTY5Mjg1M2EwZjZhNWM3MTMwOTg0ZGJkOTFhMDg4MjZiODYxZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZTQxYTY4NTZkMTgwMWRhOWExNmRkMmI1MTExMzRhOTEwMTVlMmQ2MzU1ZTFlNzRjYjZlZDAyOTlmYjcyOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiN2E0OWJlM2I0YTU5OGJkNjY2NzUzODU0YTFlOGQ1NjYxYTU5NDIwMTRlNzUyZjdlYzgzZmNmMTg5ZWMyYjUifQ"
+        },
+        {
+          "resource": "repo://test/agent/stream-redaction.test.ts#L33-L74",
+          "version": "repo-lines-v1:sha256:fb5f51f5757469ec25508b7372b4bc61c873337ee2a75a627c477fab6f17d0e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ODZhMmYwZWQ4ZTdkNjU1NzlmNzA3NWMzN2IwYjJkODYzNTNjNTU5OWUxMWY2NjQ4ZDJmMTg5ZTkwNTg4YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0NzFjM2I2NzhmZDE2YTg1NmNmN2FmM2ZiYWM0ODM4OTJmMWY2NjUxYzA2NjA5MjIxMDJhNThlYzVlZjg1YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlODNlOTA5MWJmOTgxNTRmMTJiODk0YWUzYWNhOWU4OWU3ZjVhNDA3NjFkZjdkNDRhODc4Yzc4YjRjNjMxMDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10e06253cb9c4015874ebcc24dfe67fb",
+      "statement": "extractMessageText is a recursive cycle-guarded walker over the many shapes LangChain/LangGraph payloads take (message tuples, chunk/message wrappers, serialized kwargs/lc_kwargs/generations records, content arrays) and only reads records whose role is ai/assistant or untyped, skipping human/system/tool messages so user input and tool results are never echoed as assistant text.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1535-L1608",
+          "version": "repo-lines-v1:sha256:9ad8a44bb9e6155440ac926e6e312274c8bc83ae276379112252d2c84d5913a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZmUwZmFmMmRjYzc5OTk0ODJmZTIzMmY4NjcxMmExOTJmNTNiOTFmODU3MjA5ZjUwZTc2NzllZjZhYWY4NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhM2VlMzg1M2FkMTQxNTZkNGQ0NTlhNTExMDcwN2NiMjVmOGE1OWJiNzRjODc3YzNlMzk2ZjZmMzFiYmNkMDMifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L1736-L1778",
+          "version": "repo-lines-v1:sha256:3be1d5293cf2440fbbe2dd24c65476e380681fec65136f02b830fc8ba216452a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2RhYWZkZWQ1Y2VmMjFmMDM1Y2QyMTQzYzU4YTgyMjVmMmM5MDlmNTdlZGQwOGNhMzQ1N2ZjY2RiODQ4NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZTQxYTY4NTZkMTgwMWRhOWExNmRkMmI1MTExMzRhOTEwMTVlMmQ2MzU1ZTFlNzRjYjZlZDAyOTlmYjcyOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5OTZkYThmYjZiMTE4NzU5NzZmYzE1MWFlODM4ODk3ZmVjODhhNjc0MTNlMzc0MDMzMGZhMWNiY2FjODYwM2EifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-29T08:08:01.897Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-10T08:09:53.024Z"
   }
 }

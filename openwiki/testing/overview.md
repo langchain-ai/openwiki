@@ -86,10 +86,10 @@ sources:
     resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.1
+    at: 2026-09-10T08:09:53.024Z
 ---
 
 # Testing Guide
@@ -268,10 +268,15 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   content blocks that carry base64 blobs (which must never reach the terminal)
   while allowing adjacent text blocks in the same chunk to stream through
   normally. It also covers plain-text streaming, nested task (`subgraph`)
-  output, tool lifecycle normalization (`on_tool_start`/`on_tool_end`/
-  `on_tool_error`), the `updates`-mode state-diff extraction (default for
-  openai-compatible providers, tagged `main` or `subgraph` by namespace), and
-  rejection of malformed stream chunks.
+  output, `model_request` namespace classification (a top-level
+  `model_request:*` namespace is tagged `main` while a `task` +
+  `model_request:*` namespace is tagged `subgraph`), tool lifecycle
+  normalization (`on_tool_start`/`on_tool_end`/`on_tool_error`), the
+  `updates`-mode state-diff extraction (default for openai-compatible
+  providers, tagged `main` or `subgraph` by namespace), tool-call-only
+  messages in `updates` chunks returning `null` (a message carrying only
+  `tool_calls` has no renderable text), and rejection of malformed stream
+  chunks.
 
 ### Claims: nested layout
 
@@ -407,7 +412,11 @@ concern, mirroring `src/generation/`:
 exercises `ensureCodeModeRepoSetup` and `runCodeModeConnectors` against temp
 repositories: it parses the generated GitHub Actions workflow YAML, pins the
 agent files and workflow/provider blocks, and asserts the OpenWiki
-`<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` snippet contract. Sibling files
+`<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` snippet contract. It also pins
+that `CLAUDE.md` is a lightweight reference to `AGENTS.md` (not a full copy) and
+that a pre-existing `CLAUDE.md` that only imports `AGENTS.md` (e.g.
+`@AGENTS.md`) is preserved unchanged rather than overwritten — so an
+import-only `CLAUDE.md` survives a re-setup. Sibling files
 (`test/ingestion/ingestion-run.test.ts`, `test/ingestion/ingestion.test.ts`,
 `test/ingestion/langsmith-modes.test.ts`) cover the ingestion run,
 `parseIngestionTarget`/`createConnectorSynthesisGuidance`, and connector modes.
@@ -654,7 +663,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
 - **Code-mode ingestion setup:** `pnpm exec vitest run test/ingestion/code-mode.test.ts`.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
-- **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file base64 blocks).
+- **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
 - **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression).
 
