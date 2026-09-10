@@ -1,0 +1,85 @@
+src/agent/repository-prompts.ts
+  s_c8d8c7b77154f8::t_72ad7bd4fb2172 36-45,112-114,189-197
+  s_c8d8c7b77154f8::t_40f3681fa1ff68 198
+test/generation/repository-run.test.ts
+  s_c8d8c7b77154f8::t_f7096e4b0ac6c0 99,377-419,421-424
+  s_c8d8c7b77154f8::t_f28e932e23d947 420
+  s_c8d8c7b77154f8::t_29ff6828040e3f 425-426
+README.md
+  s_c8d8c7b77154f8::t_b6b8f41195a16e 20-26
+src/generation/repository-run.ts
+  s_c8d8c7b77154f8::t_407dd758ba5e17 1578-1586,1633
+  s_c8d8c7b77154f8::t_0309b7e2f82ab8 1308-1320
+  s_c8d8c7b77154f8::t_808c004ca9b19b 259-261
+  s_c8d8c7b77154f8::t_8315e0487e1645 2-5,53-58
+  s_c8d8c7b77154f8::t_29ba11b958ca97 393-396,439-440,502-505
+  s_c8d8c7b77154f8::t_9bb4af95e29903 807
+  s_c8d8c7b77154f8::t_5dc4eca6d67a03 917,933-937,954-958,982-990,997,1001
+  s_c8d8c7b77154f8::t_0fd1165a35bccd 1017,1051-1055,1064
+  s_c8d8c7b77154f8::t_9af881373ffbae 804-806,808,823
+src/generation/run-state.ts
+  s_c8d8c7b77154f8::t_0a4b2775d878bd 90-92,119-121,173-175,269,286-295
+  s_c8d8c7b77154f8::t_2a045d83aaee8c 314
+src/generation/reflections.ts
+  s_c8d8c7b77154f8::t_7469cab0a2d1a3 1-18,20-21,39-159
+  s_c8d8c7b77154f8::t_9bb4af95e29903 19,22-33,37-38
+  s_c8d8c7b77154f8::t_f28e932e23d947 34-36
+src/generation/page-jobs.ts
+  s_c8d8c7b77154f8::t_66d7ef97f49656 53-55,99-101,117-119,178-182,216-223
+src/brain/tools.ts
+  s_c8d8c7b77154f8::t_f4784c7150f259 5,41
+src/integrations/core/session-manager.ts
+  s_c8d8c7b77154f8::t_18fa8ffca74cd5 229
+  s_c8d8c7b77154f8::t_b52612a17b4c6f 239,246,253,268,275
+  s_c8d8c7b77154f8::t_7dad6da7dbb224 174
+DESIGN.md
+  s_c8d8c7b77154f8::t_79a129016f0504 5-8,10,14-16,19-22,24,26-30,32-35,37-39,41,43-44,46-49,51-55,57,59,61,63-64,66-70,74-77,79-83,85-86,88,90,92-97,99-101,103,105-108,110-111
+src/brain/reflections.ts
+  s_c8d8c7b77154f8::t_72439e11534ed9 2,7,24,30-31,35,37,41-47,49,51,64,68-73,78-82,92,96-102,105-109,111-112,117,124-126,135,137,139,145-157,159,161,165-169,175-176
+  s_c8d8c7b77154f8::t_f28e932e23d947 65-67,75
+VALIDATION.md
+  s_c8d8c7b77154f8::t_dfb48905504cc4 22
+  s_c8d8c7b77154f8::t_2fc8e481fc02cb 1-21,23,27-49
+  s_c8d8c7b77154f8::t_98cadd732867da 24-26
+test/generation/run-state.test.ts
+  s_c8d8c7b77154f8::t_e328bac44ac94c 37,82
+src/agent/repository-runner.ts
+  s_c8d8c7b77154f8::t_68528c097141eb 46,54,73-82,451
+src/integrations/mcp/server.ts
+  s_c8d8c7b77154f8::t_2dff8314303e4d 14,17,23-25,29-31
+test/integrations/skill.test.ts
+  s_c8d8c7b77154f8::t_f28e932e23d947 79
+test/integrations/mcp-server.test.ts
+  s_c8d8c7b77154f8::t_18fa8ffca74cd5 98,133,139
+test/brain/memory.test.ts
+  s_c8d8c7b77154f8::t_dbf5245870a568 64-101,324,388-392,397-447,451-468
+  s_c8d8c7b77154f8::t_f28e932e23d947 330-333,336-338,393-395
+  s_c8d8c7b77154f8::t_17cfa6e4865d68 184,207,226,276
+  s_c8d8c7b77154f8::t_e4607fe387c3b8 448-450
+  s_c8d8c7b77154f8::t_18fa8ffca74cd5 16
+  s_c8d8c7b77154f8::t_57e0dca1c9641f 320,325-329,334-335,339-340,347-348,356,363,370,379-382
+src/integrations/core/protocol.ts
+  s_c8d8c7b77154f8::t_3aff1763e09771 97,111,151-160
+IMPLEMENTATION.md
+  s_c8d8c7b77154f8::t_657805f8f8f647 3,5,7-10,12-14,16,18-20,22-25,27,29-31,33-37,39-41,43,45-47,51-53
+test/ingestion/code-mode.test.ts
+  s_c8d8c7b77154f8::t_e328bac44ac94c 177
+integrations/openwiki/SKILL.md
+  s_c8d8c7b77154f8::t_2f2693ca5c035c 27-39,67-72,93-98,199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3f2feeea469327eb31eea0dacf96270c416a507b",
+  "prompts": {},
+  "sessions": {
+    "s_c8d8c7b77154f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08ca1-2759-7491-9b6b-a48dc9f877ed",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
