@@ -1,0 +1,326 @@
+evals/deepswe/tests/test_run.py
+  s_0677f197884615::t_dfb53cb6a14abc 118-122
+  s_0677f197884615::t_5a2d3077498dc3 8-9,22-37
+src/generation/reflection-guidance.ts
+  s_cdf691d9bfd12e::t_25530ab1c9b6ed 7-9
+  s_cdf691d9bfd12e::t_494e2056fe437a 10-14
+evals/sweqapro/install_codex_host.mjs
+  s_ec8b8a8b886583::t_7867d490b83e00 1-2,6-10,15,19-23
+  s_ec8b8a8b886583::t_39c16cd0b11b65 5,16-18
+  s_ec8b8a8b886583::t_177fabfc2becf6 3-4,11-14
+evals/sweqapro/tests/test_memory_quality_audit.py
+  s_0677f197884615::t_da5938deac0c58 1-48
+README.md
+  s_cdf691d9bfd12e::t_d138aa41639eef 197-199
+  s_cdf691d9bfd12e::t_25c92c2faff195 191-192,200-202
+  s_cdf691d9bfd12e::t_486918d4848c96 153
+evals/sweqapro/openwiki_bridge.mjs
+  s_ec8b8a8b886583::t_b33075680ba344 22-28,33-38
+  s_5293367835d846::t_296b5e4bea4c25 4
+  s_ec8b8a8b886583::t_153afe063f55ab 6,29-32
+  s_5293367835d846::t_64ee4388663895 58-60,73-75
+  s_5293367835d846::t_08737eb045d17a 5
+  s_5293367835d846::t_186464dff4e7c3 43-46
+  s_5293367835d846::t_ffa8a127186f13 1-3,7-13,19-21,39-42,61-63,67,69-72,76-77
+  s_ec8b8a8b886583::t_ee38ca7219366a 14-18,47-57,64-66,68
+src/memory/reflection-types.ts
+  s_cdf691d9bfd12e::t_b9fa96efc7c028 46-52,54,82-83,136
+  s_cdf691d9bfd12e::t_75c454fe97bf28 53
+  s_cdf691d9bfd12e::t_1d470d522f16bc 81
+evals/deepswe/check_openwiki.mjs
+  s_0677f197884615::t_f4898686d767d1 1-30
+evals/sweqapro/judge_reader_ablation.py
+  s_cdf691d9bfd12e::t_ef7f31598956bc 1-104
+evals/sweqapro/judge_learning_pilot.py
+  s_cdf691d9bfd12e::t_ab29e036762537 11,27-28,35-38,79
+  s_cdf691d9bfd12e::t_864c9b58cc4760 1-10,12-26,29-34,39-52,55,58,72-76,78,80-81,84-93
+  s_cdf691d9bfd12e::t_dfea73e92f6f7b 53,59-62,82-83
+  s_cdf691d9bfd12e::t_1210eac9021322 54,56-57,63-71,77
+evals/sweqapro/tests/test_learning_pilot.py
+  s_cdf691d9bfd12e::t_912eddf3c688ca 23,56,59-61,66
+  s_cdf691d9bfd12e::t_ee042c6f0c5f68 1-3,6-12,36-55,58,62-65,68-78,80-83
+  s_cdf691d9bfd12e::t_db68d395ee2ae8 24,34,79
+  s_cdf691d9bfd12e::t_75c454fe97bf28 57,67
+  s_cdf691d9bfd12e::t_3051a6e938919d 4-5,13-22,25-33,35
+src/integrations/core/retrieval-tools.ts
+  s_cdf691d9bfd12e::t_25530ab1c9b6ed 13
+src/memory/search-input.ts
+  s_cdf691d9bfd12e::t_30da953e3ef8b6 58
+src/memory/search.ts
+  s_cdf691d9bfd12e::t_b9fa96efc7c028 118-125,352-353
+  s_cdf691d9bfd12e::t_486918d4848c96 339-341
+  s_cdf691d9bfd12e::t_4eaa0dfcdb79b1 338,344
+  s_cdf691d9bfd12e::t_1d470d522f16bc 100-101,105,107-108,110,362-364
+  s_cdf691d9bfd12e::t_e8f188603e8a55 367-370
+  s_cdf691d9bfd12e::t_4e78d1815e5150 55,59-66,365-366,371-384
+  s_cdf691d9bfd12e::t_56f92cf7e658ca 385
+src/integrations/core/reflection-tool.ts
+  s_cdf691d9bfd12e::t_25530ab1c9b6ed 19-21
+  s_cdf691d9bfd12e::t_75c454fe97bf28 17-18
+src/memory/reflections.ts
+  s_cdf691d9bfd12e::t_b9fa96efc7c028 128
+evals/sweqapro/tests/test_run.py
+  s_ec8b8a8b886583::t_f406d74f559c99 19,109-110,113-120,122-127
+  s_ec8b8a8b886583::t_6ca71ebe2f7c57 111-112,121
+  s_ec8b8a8b886583::t_f0261a4856258f 16,83-108
+  s_ec8b8a8b886583::t_80e5c871b04789 1,12-13,15,17-18,20-21,24,26-82
+evals/sweqapro/tests/test_run_manifest.py
+  s_ec8b8a8b886583::t_5de3a617bcd59c 1-74
+integrations/openwiki/SKILL.md
+  s_0677f197884615::t_8a6a36137c184b 3
+  s_0677f197884615::t_b6dae830f3f658 145-152
+evals/deepswe/run.py
+  s_0677f197884615::t_5a2d3077498dc3 766,768
+evals/sweqapro/capture_reflections.mjs
+  s_cdf691d9bfd12e::t_eb27d4761f483b 13-21,26-29
+  s_cdf691d9bfd12e::t_fcac46c55bab8e 1-12,22-25,30-36
+evals/sweqapro/tests/test_summary.py
+  s_0677f197884615::t_a744ce2d4a6ddf 13,24-35
+  s_5293367835d846::t_89772a26c69c35 1-12,14-23,36-51,53-61,63-70,72-76,78,85-103,115-118
+  s_ec8b8a8b886583::t_6ca71ebe2f7c57 52,62,71
+  s_0677f197884615::t_3c02c29b2559f3 77,79-84,107,109-114
+  s_5293367835d846::t_5d4ff0cfe8a971 105-106,108
+  s_0677f197884615::t_489b4287b97664 104
+evals/deepswe/README.md
+  s_0677f197884615::t_66b5894769609f 173-180
+evals/sweqapro/learning_pilot.py
+  s_cdf691d9bfd12e::t_75c454fe97bf28 36,38,79,237-238
+  s_cdf691d9bfd12e::t_db68d395ee2ae8 37,111
+  s_cdf691d9bfd12e::t_fcac46c55bab8e 1-35,39-78,80-109,113-236,239-267
+  s_cdf691d9bfd12e::t_912eddf3c688ca 110,112
+evals/sweqapro/audit_codex_mcp.mjs
+  s_0677f197884615::t_730567d50a401a 19,21
+  s_ec8b8a8b886583::t_576398651aa617 1-18,20,22-25
+src/memory/ranking.ts
+  s_cdf691d9bfd12e::t_4ce81eb7cee986 68-69,139-148
+src/ingestion/code-mode.ts
+  s_cdf691d9bfd12e::t_25530ab1c9b6ed 447
+evals/sweqapro/baseline_agent.py
+  s_ec8b8a8b886583::t_dcb6ef945a03ca 2
+  s_5293367835d846::t_ffa8a127186f13 1,3-37
+evals/sweqapro/README.md
+  s_ec8b8a8b886583::t_73f3159b4d2a55 106,111,113-117,138-139
+  s_cdf691d9bfd12e::t_c278b58f29b411 48-62
+  s_ec8b8a8b886583::t_112f39f3f02a4f 1-2,187-190,196-348
+  s_cdf691d9bfd12e::t_87eed9dd459b84 3-47
+  s_ec8b8a8b886583::t_03b14114b35007 63-71,75-77,79-105,108-109,118-125,130-131,136-137,141-144,150-162,164,166-177,179-186
+  s_0677f197884615::t_7eb99c5c35c839 126-127,132-133,163,165
+  s_ec8b8a8b886583::t_17237621001268 140
+  s_ec8b8a8b886583::t_563e0fc48b26ad 191-195
+  s_0677f197884615::t_66b5894769609f 72-74,78,107,110,112,178
+  s_0677f197884615::t_b79c0baee99fe1 128-129
+  s_0677f197884615::t_489b4287b97664 134-135,145-149
+src/claims/guidance.ts
+  s_0677f197884615::t_b6dae830f3f658 10
+evals/sweqapro/codex_host.py
+  s_0677f197884615::t_730567d50a401a 34-35,106-107,234-235,241,243-244,316,318-319,330
+  s_ec8b8a8b886583::t_ede0150ae86fd7 71
+  s_0677f197884615::t_d14c84bf6e3be8 13,346-347,351,353,355,359-370,372-376,469-470,480,515-516,530,544-550
+  s_ec8b8a8b886583::t_7410480190ccea 78,101-105,108,157,230,236-240,242,245-250,254
+  s_ec8b8a8b886583::t_1fa6f040382d39 154
+  s_ec8b8a8b886583::t_b0e87d887d4237 70,100
+  s_ec8b8a8b886583::t_4934ee96ec95d8 5-6,79-80,97-99,175
+  s_ec8b8a8b886583::t_177fabfc2becf6 131-136,306,322
+  s_cdf691d9bfd12e::t_30da953e3ef8b6 388,398
+  s_ec8b8a8b886583::t_17237621001268 19,60-68,300-301,446,452-453,482-483
+  s_ec8b8a8b886583::t_2f04db81a260b0 93-94,155
+  s_ec8b8a8b886583::t_9bda6ad9adb691 69,72,95
+  s_ec8b8a8b886583::t_628984f0a8ce6e 507-510,552,554-555
+  s_0677f197884615::t_0de0a55f111cdc 26,447,481,513-514,541
+  s_ec8b8a8b886583::t_6a6ee87b7b5ff5 18,162-167,171,178-229,231-233,251-253,255-263,323-327,329,399-410
+  s_ec8b8a8b886583::t_85f32d22073bf6 22,269-270,272-294,467,484-491
+  s_ec8b8a8b886583::t_dd8d04c94bfab7 28,88-91,271,302,304-305,307-315,317,320-321,328,390,525,527-529,531-533,551,553
+  s_ec8b8a8b886583::t_7867d490b83e00 1-4,7-12,14-17,20-21,23-25,27,29-33,36-59,73-77,81-85,87,92,96,109-130,137-153,156,158-161,168-170,172-174,176-177,264-268,295-299,303,331-345,348-350,352,354,356-358,371,377-387,391-397,411-445,448-451,454-466,468,471-479,492-506,511-512,517-524,526,534-540,542-543,556-560
+  s_ec8b8a8b886583::t_ff94999e100aa4 86
+  s_ec8b8a8b886583::t_1cc37454e5f318 389
+src/integrations/mcp/server.ts
+  s_cdf691d9bfd12e::t_25530ab1c9b6ed 11
+  s_cdf691d9bfd12e::t_41e16bd1d49c31 12-16
+  s_cdf691d9bfd12e::t_30da953e3ef8b6 10
+test/integrations/mcp-server.test.ts
+  s_cdf691d9bfd12e::t_36d8ebc026acc5 156
+  s_0677f197884615::t_37e578a81e8a36 153,157,159-161
+  s_cdf691d9bfd12e::t_41e863474804b2 155
+  s_0677f197884615::t_1debeca915e383 154,158
+evals/sweqapro/compare_memory_snapshots.py
+  s_cdf691d9bfd12e::t_1c09ac8c93f3a3 1-95
+test/integrations/protocol.test.ts
+  s_cdf691d9bfd12e::t_41e863474804b2 73,83,87,94
+  s_cdf691d9bfd12e::t_98d76175d6fecf 80-82,84-86,88
+test/memory/ranking.test.ts
+  s_cdf691d9bfd12e::t_56935c4f0bf4ed 82-102
+evals/sweqapro/reader_ablation.py
+  s_cdf691d9bfd12e::t_c0f22e7701070b 1-18,20-61,65,67-116,118-164,168-173,177-226
+  s_cdf691d9bfd12e::t_8ab20c914e446f 19,62-64,66,117,165-167,174-176
+evals/sweqapro/tests/test_codex_host.py
+  s_ec8b8a8b886583::t_39c16cd0b11b65 136
+  s_ec8b8a8b886583::t_73f3159b4d2a55 75-82,85
+  s_0677f197884615::t_3c02c29b2559f3 57-58,62-73
+  s_ec8b8a8b886583::t_978dd0344530bb 87-95,98-101,107
+  s_ec8b8a8b886583::t_17237621001268 96-97,103-106
+  s_ec8b8a8b886583::t_628984f0a8ce6e 5-6,9,13-14,16-26,28-44,46,48-53,55-56,59-60,108-125
+  s_ec8b8a8b886583::t_b12269fe9cd760 2-4,8,15,126-134,137-138,142-174
+  s_0677f197884615::t_730567d50a401a 47,54,83-84
+  s_ec8b8a8b886583::t_f79c7902682f38 139-141
+evals/sweqapro/tests/test_runner_overrides.py
+  s_ec8b8a8b886583::t_6ca71ebe2f7c57 1-24
+evals/deepswe/openwiki_codex.py
+  s_0677f197884615::t_5b4022b8bcd461 381,396
+  s_0677f197884615::t_dfb53cb6a14abc 315-333,354-355,560,578,585-589
+  s_0677f197884615::t_f76663064a5183 196,198
+  s_0677f197884615::t_f4898686d767d1 420-421,426-428,430
+  s_0677f197884615::t_23eb170905e3a1 190-195,197,199-202,210,231,393
+  s_0677f197884615::t_3122c119fc133b 590-592
+evals/sweqapro/audit_memory_quality.py
+  s_0677f197884615::t_45de9f521486f1 2,7,12-13,15,17,20-21,23-24,26-31,33-36,38,45-46,48-49,51-66,136,138-153,155-205,207-221,223-240,243,245-250,252-282,286-289,296,299-318
+  s_0677f197884615::t_3fb8971c86043e 39-43
+  s_0677f197884615::t_21e8af0f84fced 67-135,137,283-285,290-295,297-298
+docs/reflections.md
+  s_cdf691d9bfd12e::t_162421237018ea 32-33,48,79-80,84-87,93-95
+  s_cdf691d9bfd12e::t_d138aa41639eef 44-47
+  s_cdf691d9bfd12e::t_96c8f356ac7c98 99-127
+evals/README.md
+  s_0677f197884615::t_66b5894769609f 1-40,42-56,63-79
+  s_0677f197884615::t_7eb99c5c35c839 41
+  s_0677f197884615::t_f76663064a5183 57-62
+test/memory/reflections.test.ts
+  s_cdf691d9bfd12e::t_41e863474804b2 240-241,245,250,299
+  s_cdf691d9bfd12e::t_98d76175d6fecf 242-244,246-249,251-253,296-298
+  s_cdf691d9bfd12e::t_b33560eb52703b 564
+  s_cdf691d9bfd12e::t_78dc7458960e81 300
+test/memory/retrieval.test.ts
+  s_cdf691d9bfd12e::t_41e863474804b2 384,393,398-399,413-414
+  s_cdf691d9bfd12e::t_486918d4848c96 370-371
+  s_cdf691d9bfd12e::t_4eaa0dfcdb79b1 403-405
+  s_cdf691d9bfd12e::t_98d76175d6fecf 385-392,394-397,400-402,406-412,415-419
+  s_cdf691d9bfd12e::t_25c92c2faff195 431
+  s_cdf691d9bfd12e::t_4e78d1815e5150 438-463
+evals/sweqapro/tests/test_agent_runtime.py
+  s_ec8b8a8b886583::t_6ca71ebe2f7c57 1-123
+test/integrations/memory-workflow.test.ts
+  s_0677f197884615::t_10815b6865bf59 209-211
+  s_cdf691d9bfd12e::t_ad07d8f55a0ea6 367-369
+  s_0677f197884615::t_3ce2559b756e76 178
+test/ingestion/code-mode.test.ts
+  s_cdf691d9bfd12e::t_b33560eb52703b 157
+  s_cdf691d9bfd12e::t_486918d4848c96 158
+  s_cdf691d9bfd12e::t_41e863474804b2 156
+  s_cdf691d9bfd12e::t_864c9b58cc4760 154
+  s_0677f197884615::t_1debeca915e383 152,155
+src/memory/search-types.ts
+  s_cdf691d9bfd12e::t_1d470d522f16bc 12-14
+  s_cdf691d9bfd12e::t_b9fa96efc7c028 10-11,28,30-31
+evals/sweqapro/run_manifest.py
+  s_ec8b8a8b886583::t_2861f909c8b218 1-110,112-119,126-131,133-144
+  s_ec8b8a8b886583::t_ece52c271f988f 111,120-125,132
+evals/sweqapro/openwiki_tools_agent.py
+  s_ec8b8a8b886583::t_f506903672e420 125-141,143-156
+  s_5293367835d846::t_5d4ff0cfe8a971 88-103,105-109,214,233-238,240-241,245-246
+  s_ec8b8a8b886583::t_153afe063f55ab 27,43-44,49,52,54,68-72,80-82,84-85
+  s_ec8b8a8b886583::t_b33075680ba344 23,26,28-42,45-48,50-51,53,55-67,73-75,197-198,201-208,225-230
+  s_5293367835d846::t_ffa8a127186f13 1-2,6-7,11-12,14,16-22,24-25,76-79,83,86-87,113-124,142,157-169,171-189,196,209-213,215-224,231-232,239,242-244,247-276,278-284
+  s_5293367835d846::t_08737eb045d17a 191-195
+  s_ec8b8a8b886583::t_718d18eba85f1a 190,199-200,277
+evals/sweqapro/run.py
+  s_ec8b8a8b886583::t_80e5c871b04789 9,38-42,197-270,317-319,499-502
+  s_ec8b8a8b886583::t_f406d74f559c99 168-170,402-404,406,479,503-517
+  s_ec8b8a8b886583::t_f0261a4856258f 387,394-398
+  s_ec8b8a8b886583::t_ece52c271f988f 21,372-373,426-429,460-463,472
+  s_5293367835d846::t_d729eb9e2a0cad 1-8,10-20,22-37,43-167,171-196,271-316,320-369,374-385,388-393,399-401,413-419,430-454,464-469,473-478,480-496,518-624,626-627
+  s_ec8b8a8b886583::t_03b14114b35007 470-471
+  s_ec8b8a8b886583::t_5d5fd6e6497af8 497-498,625
+  s_ec8b8a8b886583::t_2861f909c8b218 370-371,405,407-412,420-425,455-459
+  s_ec8b8a8b886583::t_b33075680ba344 386
+evals/sweqapro/source_tools.py
+  s_ec8b8a8b886583::t_dcb6ef945a03ca 40-44
+  s_ec8b8a8b886583::t_ae890231ee545f 1-39,45-133
+evals/deepswe/analyze_openwiki_usage.py
+  s_0677f197884615::t_dfb53cb6a14abc 21,198,206
+evals/deepswe/tests/test_analyze_openwiki_usage.py
+  s_0677f197884615::t_5a2d3077498dc3 14-28
+evals/sweqapro/agent_runtime.py
+  s_ec8b8a8b886583::t_5de3a617bcd59c 63,72,115
+  s_ec8b8a8b886583::t_ae890231ee545f 1-62,64-71,73-114,116-117
+evals/sweqapro/tests/test_runner_integration.py
+  s_ec8b8a8b886583::t_4163e8ff27a825 1-3,5-26,28-70
+  s_ec8b8a8b886583::t_dcb6ef945a03ca 4,27
+evals/sweqapro/tests/test_reader_ablation.py
+  s_cdf691d9bfd12e::t_8ab20c914e446f 36
+  s_cdf691d9bfd12e::t_c0f22e7701070b 1-35,37-43
+evals/sweqapro/runner_overrides.py
+  s_ec8b8a8b886583::t_718d18eba85f1a 1-15,35-46
+  s_ec8b8a8b886583::t_ece52c271f988f 24-34
+  s_ec8b8a8b886583::t_2861f909c8b218 16-23
+evals/sweqapro/summary.py
+  s_ec8b8a8b886583::t_5de3a617bcd59c 191-192,209-212,263-265
+  s_ec8b8a8b886583::t_89a0b9e299d45c 7,55-83,92-104,135-142,144-155,187-190,205-208,215-216,256,259-262
+  s_5293367835d846::t_5d4ff0cfe8a971 184-185,194-196,217-220,277,279-280,289-293
+  s_5293367835d846::t_d729eb9e2a0cad 1-6,8-54,84-91,105-134,143,156-178,193,197-204,213-214,221-225,253-255,266-276,278,281-282,294
+  s_ec8b8a8b886583::t_ece52c271f988f 247-248,250,288
+  s_0677f197884615::t_2862a74f40368c 186,249,251-252,257-258
+  s_0677f197884615::t_3c02c29b2559f3 179-183,226-246,283-287
+test/integrations/skill.test.ts
+  s_0677f197884615::t_37e578a81e8a36 78,82-91
+  s_0677f197884615::t_b6dae830f3f658 129
+  s_0677f197884615::t_1db1f4abf3031a 92-93
+evals/sweqapro/tests/test_openwiki_tools_agent.py
+  s_ec8b8a8b886583::t_95f61ff2300e54 115,117,120-121
+  s_ec8b8a8b886583::t_153afe063f55ab 22,73-76,353-356
+  s_ec8b8a8b886583::t_f506903672e420 11,24-25,136-183,185-189
+  s_ec8b8a8b886583::t_a824772c02781a 184
+  s_ec8b8a8b886583::t_f0261a4856258f 18,20-21,47-50,67-72,77-86,101-102,104-107,122-135,338-352,357
+  s_ec8b8a8b886583::t_4f08eea3c81f08 5
+  s_ec8b8a8b886583::t_12db696abe7be6 3-4,6,8,23,30-32,190-337
+  s_5293367835d846::t_5d4ff0cfe8a971 40-42,44-46,51-52,57-58,99-100,103,108-109
+  s_5293367835d846::t_89772a26c69c35 1-2,7,9-10,12-17,19,26-29,33-39,43,53-56,59-66,87-98,110-114,116,118-119,358-361
+openwiki/.reflections/reflection-d19f9309-50f4-4178-b66c-ff8f655e6842.json
+  s_31783750768e24::t_a3f562bf4e81a4 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "906fd833820cb67df2e3d824aa31fbd64344ecfa",
+  "prompts": {},
+  "sessions": {
+    "s_0677f197884615": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08293-cf9e-7653-83ab-f216ed81a090",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_31783750768e24": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0827b-5562-7a30-8ec6-92e545179de6",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_5293367835d846": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06e5d-8233-7560-9ad7-c3f346a31e49",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_cdf691d9bfd12e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a086b9-1acc-7d22-a8d7-2879dc638922",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_ec8b8a8b886583": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a89-5090-7233-ac19-fceecbd5ba6c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
