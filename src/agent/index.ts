@@ -184,6 +184,7 @@ export async function runOpenWikiAgent(
       const config = await resolveRunConfig(options, (resolved) => {
         telemetryContext.provider = resolved;
       });
+      debugFetchCapture.setRetryAttempts(config.providerRetryAttempts);
       const model = inStageSync(
         "build",
         () =>
@@ -248,6 +249,7 @@ export async function runOpenWikiAgent(
     const config = await resolveRunConfig(options, (resolved) => {
       telemetryContext.provider = resolved;
     });
+    debugFetchCapture.setRetryAttempts(config.providerRetryAttempts);
 
     return await runOpenWikiAgentCore(
       command,
@@ -1957,6 +1959,11 @@ type OpenRouterFetchCapture = {
   clearLastFailure: () => void;
   getLastFailure: () => OpenRouterFetchFailure | null;
   restore: () => void;
+  setRetryAttempts: (retryAttempts: number) => void;
+};
+
+type OpenRouterFetchOptions = {
+  sleep?: (ms: number) => Promise<void>;
 };
 
 type OpenRouterFetchFailure = {
@@ -1998,10 +2005,14 @@ const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
 type OpenRouterFetchSink = {
   lastFailure: OpenRouterFetchFailure | null;
   options: OpenWikiRunOptions;
+  retryAttempts: number;
+  sleep: (ms: number) => Promise<void>;
 };
 
 const activeOpenRouterSinks = new Set<OpenRouterFetchSink>();
 let openRouterOriginalFetch: typeof fetch | null = null;
+const OPENROUTER_PROVIDER_ERROR_RETRY_BASE_DELAY_MS = 1_000;
+const OPENROUTER_PROVIDER_ERROR_RETRY_MAX_DELAY_MS = 30_000;
 
 function openRouterDebugFetch(
   input: Parameters<typeof fetch>[0],
@@ -2024,31 +2035,55 @@ function openRouterDebugFetch(
   };
 
   return (async () => {
+    let attempt = 0;
+
     try {
-      const response = await baseFetch(input, init);
+      while (true) {
+        const response = await baseFetch(input, init);
 
-      if (!response.ok) {
-        const failure: OpenRouterFetchFailure = {
-          request,
-          response: {
-            bodyPreview: await readResponseBodyPreview(response),
-            headers: getSafeResponseHeaders(response.headers),
-            status: response.status,
-            statusText: response.statusText,
-          },
-        };
-        recordFailure(failure);
-        for (const sink of activeOpenRouterSinks) {
-          emitDebug(
-            sink.options,
-            `openrouter.http status=${response.status} statusText=${JSON.stringify(
-              response.statusText,
-            )}`,
-          );
+        if (!response.ok) {
+          const body = await readResponseBody(response);
+          const failure: OpenRouterFetchFailure = {
+            request,
+            response: {
+              bodyPreview: body.preview,
+              headers: getSafeResponseHeaders(response.headers),
+              status: response.status,
+              statusText: response.statusText,
+            },
+          };
+          recordFailure(failure);
+          for (const sink of activeOpenRouterSinks) {
+            emitDebug(
+              sink.options,
+              `openrouter.http status=${response.status} statusText=${JSON.stringify(
+                response.statusText,
+              )}`,
+            );
+          }
+
+          const retry = getOpenRouterProviderErrorRetry();
+          if (
+            attempt < retry.maxRetries &&
+            isOpenRouterRequestResendable(input, init) &&
+            isTransientOpenRouterProvider404(response, body.raw)
+          ) {
+            attempt += 1;
+            const delayMs = getOpenRouterProviderErrorRetryDelayMs(attempt);
+            for (const sink of activeOpenRouterSinks) {
+              emitDebug(
+                sink.options,
+                `openrouter.retry status=404 attempt=${attempt}/${retry.maxRetries} delayMs=${delayMs}`,
+              );
+            }
+            await response.body?.cancel().catch(() => undefined);
+            await retry.sleep(delayMs);
+            continue;
+          }
         }
-      }
 
-      return response;
+        return response;
+      }
     } catch (error) {
       recordFailure({
         fetchError: error instanceof Error ? error.message : String(error),
@@ -2067,8 +2102,15 @@ function openRouterDebugFetch(
  */
 export function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
+  retryAttempts = 0,
+  fetchOptions: OpenRouterFetchOptions = {},
 ): OpenRouterFetchCapture {
-  const sink: OpenRouterFetchSink = { lastFailure: null, options };
+  const sink: OpenRouterFetchSink = {
+    lastFailure: null,
+    options,
+    retryAttempts,
+    sleep: fetchOptions.sleep ?? sleep,
+  };
 
   // Install the wrapper once, capturing the genuine original fetch. Concurrent
   // runs share the single wrapper and each detach their own sink; the global
@@ -2095,7 +2137,76 @@ export function installOpenRouterDebugFetch(
         openRouterOriginalFetch = null;
       }
     },
+    setRetryAttempts: (updatedRetryAttempts) => {
+      sink.retryAttempts = updatedRetryAttempts;
+    },
   };
+}
+
+function getOpenRouterProviderErrorRetry(): {
+  maxRetries: number;
+  sleep: (ms: number) => Promise<void>;
+} {
+  let maxRetries = 0;
+  let retrySleep = sleep;
+
+  // The OpenRouter wrapper is process-global, so retry follows the same
+  // best-effort active-run fan-out contract used for debug capture.
+  for (const sink of activeOpenRouterSinks) {
+    if (sink.retryAttempts > maxRetries) {
+      maxRetries = sink.retryAttempts;
+      retrySleep = sink.sleep;
+    }
+  }
+
+  return { maxRetries, sleep: retrySleep };
+}
+
+function getOpenRouterProviderErrorRetryDelayMs(attempt: number): number {
+  return Math.min(
+    OPENROUTER_PROVIDER_ERROR_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1),
+    OPENROUTER_PROVIDER_ERROR_RETRY_MAX_DELAY_MS,
+  );
+}
+
+function isOpenRouterRequestResendable(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+): boolean {
+  if (input instanceof Request && input.body !== null) {
+    return false;
+  }
+
+  return (
+    init?.body === undefined ||
+    init.body === null ||
+    typeof init.body === "string"
+  );
+}
+
+function isTransientOpenRouterProvider404(
+  response: Response,
+  rawBody: string | null,
+): boolean {
+  if (response.status !== 404 || rawBody === null) {
+    return false;
+  }
+
+  const parsedBody = parseJsonRecord(rawBody);
+  if (parsedBody === null) {
+    return false;
+  }
+
+  const error = isRecord(parsedBody?.error) ? parsedBody.error : parsedBody;
+  const message = getStringRecordValue(error, "message");
+  const metadata = isRecord(error?.metadata) ? error.metadata : null;
+
+  return (
+    metadata !== null &&
+    message === "Provider returned error" &&
+    metadata.raw === "" &&
+    typeof metadata.provider_name === "string"
+  );
 }
 
 function attachOpenRouterDebugInfo(
@@ -2224,19 +2335,32 @@ function countMessageContentChars(content: unknown): number {
   }, 0);
 }
 
-async function readResponseBodyPreview(response: Response): Promise<string> {
+async function readResponseBody(
+  response: Response,
+): Promise<{ preview: string; raw: string | null }> {
   try {
     const body = await response.clone().text();
     const sanitizedBody = sanitizeOpenRouterResponseBody(body);
 
-    return sanitizedBody.length <= OPENROUTER_DEBUG_BODY_LIMIT
-      ? sanitizedBody
-      : `${sanitizedBody.slice(0, OPENROUTER_DEBUG_BODY_LIMIT - 3)}...`;
+    return {
+      preview:
+        sanitizedBody.length <= OPENROUTER_DEBUG_BODY_LIMIT
+          ? sanitizedBody
+          : `${sanitizedBody.slice(0, OPENROUTER_DEBUG_BODY_LIMIT - 3)}...`,
+      raw: body,
+    };
   } catch (error) {
-    return `Unable to read response body: ${
-      error instanceof Error ? error.message : String(error)
-    }`;
+    return {
+      preview: `Unable to read response body: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      raw: null,
+    };
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function sanitizeOpenRouterResponseBody(body: string): string {
