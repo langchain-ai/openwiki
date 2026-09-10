@@ -419,6 +419,86 @@ describe("createModel reasoning configuration", () => {
     expect(model.modelKwargs).toMatchObject({ reasoning_effort: "high" });
   });
 
+  test("maps OpenRouter effort to the normalized reasoning body field", () => {
+    const savedOpenRouterKey = process.env.OPENROUTER_API_KEY;
+    process.env[REASONING_EFFORT_KEY] = "max";
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+
+    try {
+      const model = createModel("openrouter", "openai/gpt-5.6-luna", 0) as {
+        modelKwargs?: Record<string, unknown>;
+      };
+
+      expect(model.modelKwargs).toMatchObject({
+        reasoning: { effort: "max" },
+      });
+    } finally {
+      restoreEnv("OPENROUTER_API_KEY", savedOpenRouterKey);
+    }
+  });
+
+  test("applies OpenRouter effort to any model the gateway routes", () => {
+    const savedOpenRouterKey = process.env.OPENROUTER_API_KEY;
+    process.env[REASONING_EFFORT_KEY] = "low";
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+
+    try {
+      const model = createModel("openrouter", "z-ai/glm-5.2", 0) as {
+        modelKwargs?: Record<string, unknown>;
+      };
+
+      expect(model.modelKwargs).toMatchObject({
+        reasoning: { effort: "low" },
+      });
+    } finally {
+      restoreEnv("OPENROUTER_API_KEY", savedOpenRouterKey);
+    }
+  });
+
+  test("serializes OpenRouter effort in the Chat Completions request", async () => {
+    const savedOpenRouterKey = process.env.OPENROUTER_API_KEY;
+    process.env[REASONING_EFFORT_KEY] = "xhigh";
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "gen-test",
+            object: "chat.completion",
+            model: "openai/gpt-5.6-luna",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "ok" },
+                finish_reason: "stop",
+              },
+            ],
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("openrouter", "openai/gpt-5.6-luna", 0);
+
+      await model.invoke("hello");
+
+      const [url, init] = fetchMock.mock.calls[0] as [
+        string | URL,
+        { body: string },
+      ];
+      expect(String(url)).toBe("https://openrouter.ai/api/v1/chat/completions");
+      expect(JSON.parse(init.body)).toMatchObject({
+        model: "openai/gpt-5.6-luna",
+        reasoning: { effort: "xhigh" },
+      });
+    } finally {
+      restoreEnv("OPENROUTER_API_KEY", savedOpenRouterKey);
+    }
+  });
+
   test("serializes NVIDIA NIM effort in the Chat Completions request", async () => {
     const savedNvidiaKey = process.env.NVIDIA_API_KEY;
     process.env[REASONING_EFFORT_KEY] = "high";
