@@ -1241,14 +1241,21 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  const configuration =
+    provider === "openai-compatible" && !chatOpenAiUsesResponsesApi
+      ? {
+          ...(baseURL ? { baseURL } : {}),
+          fetch: createOpenAiCompatibleFetch(),
+        }
+      : baseURL
+        ? {
+            baseURL,
+          }
+        : undefined;
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    configuration,
     model: modelId,
     useResponsesApi: chatOpenAiUsesResponsesApi,
     ...maxTokensOptions,
@@ -1261,6 +1268,114 @@ export function createModel(
     ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
     ...retryOptions,
   });
+}
+
+function createOpenAiCompatibleFetch(): typeof fetch {
+  return (input, init) =>
+    globalThis.fetch(
+      input,
+      normalizeOpenAiCompatibleChatCompletionsInit(input, init) ?? init,
+    );
+}
+
+function normalizeOpenAiCompatibleChatCompletionsInit(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+): Parameters<typeof fetch>[1] | null {
+  if (!isOpenAiCompatibleChatCompletionsRequest(input, init)) {
+    return null;
+  }
+
+  const body = typeof init?.body === "string" ? init.body : null;
+  const parsedBody = parseJsonRecord(body);
+  const normalizedBody =
+    parsedBody === null
+      ? null
+      : normalizeOpenAiCompatibleChatCompletionsBody(parsedBody);
+
+  return normalizedBody === null
+    ? null
+    : {
+        ...init,
+        body: JSON.stringify(normalizedBody),
+      };
+}
+
+function isOpenAiCompatibleChatCompletionsRequest(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+): boolean {
+  const method = init?.method;
+
+  if (method !== undefined && method.toUpperCase() !== "POST") {
+    return false;
+  }
+
+  const url = getFetchInputUrl(input);
+
+  if (url === null) {
+    return false;
+  }
+
+  try {
+    return new URL(url).pathname.endsWith("/chat/completions");
+  } catch {
+    return url.includes("/chat/completions");
+  }
+}
+
+function normalizeOpenAiCompatibleChatCompletionsBody(
+  body: Record<string, unknown>,
+): Record<string, unknown> | null {
+  const messages = body.messages;
+
+  if (!Array.isArray(messages)) {
+    return null;
+  }
+
+  let changed = false;
+  const normalizedMessages = (messages as unknown[]).map((message) => {
+    if (!isRecord(message)) {
+      return message;
+    }
+
+    const content = normalizeOpenAiCompatibleTextContent(message.content);
+
+    if (content === null) {
+      return message;
+    }
+
+    changed = true;
+    return { ...message, content };
+  });
+
+  return changed ? { ...body, messages: normalizedMessages } : null;
+}
+
+function normalizeOpenAiCompatibleTextContent(
+  content: unknown,
+): Record<string, unknown>[] | null {
+  if (!Array.isArray(content) || content.length !== 1) {
+    return null;
+  }
+
+  const [nestedContent] = content as unknown[];
+
+  if (!Array.isArray(nestedContent) || nestedContent.length === 0) {
+    return null;
+  }
+
+  return nestedContent.every(isOpenAiCompatibleTextContentBlock)
+    ? nestedContent
+    : null;
+}
+
+function isOpenAiCompatibleTextContentBlock(
+  block: unknown,
+): block is Record<string, unknown> {
+  return (
+    isRecord(block) && block.type === "text" && typeof block.text === "string"
+  );
 }
 
 const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =
