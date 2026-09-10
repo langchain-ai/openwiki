@@ -275,6 +275,167 @@ ${SNIPPET_END}
   }
 });
 
+describe("ensureCodeModeRepoSetup scheduled-workflow claim", () => {
+  const SCHEDULED_CLAIM =
+    "The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki.";
+  const HAND_EDIT_GUIDANCE = "Do not hand-edit generated OpenWiki pages";
+  const CODE_MODE_WORKFLOW_SEGMENTS = [
+    ".github",
+    "workflows",
+    "openwiki-update.yml",
+  ] as const;
+
+  function workflowPath(repo: string): string {
+    return path.join(repo, ...CODE_MODE_WORKFLOW_SEGMENTS);
+  }
+
+  const SCHEDULED_WORKFLOW = `name: Update OpenWiki
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"
+`;
+  const MANUAL_ONLY_WORKFLOW = `name: Update OpenWiki
+on:
+  workflow_dispatch:
+`;
+
+  async function writeWorkflow(repo: string, body: string): Promise<void> {
+    await mkdir(path.dirname(workflowPath(repo)), { recursive: true });
+    await writeFile(workflowPath(repo), body, "utf8");
+  }
+
+  async function readAgents(repo: string): Promise<string> {
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+    if (content === null) {
+      throw new Error("expected AGENTS.md to exist");
+    }
+    return content;
+  }
+
+  test("does not claim a scheduled workflow when the repo has none", async () => {
+    const repo = await createTempRepo();
+
+    // The `--update` and MCP-host paths never create the workflow, so a repo
+    // without one must not be told a schedule refreshes its wiki.
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    // The sentence is dropped, not swapped for a different recurrence claim,
+    // and the rest of the managed guidance is untouched.
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+    expect(content).toContain(SNIPPET_START);
+    expect(content).toContain(SNIPPET_END);
+  });
+
+  test("stops claiming a scheduled workflow once the workflow is deleted", async () => {
+    const repo = await createTempRepo();
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+    expect(await readAgents(repo)).toContain(SCHEDULED_CLAIM);
+
+    await rm(workflowPath(repo));
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+  });
+
+  test("makes no recurrence claim for a repo scheduled outside GitHub Actions", async () => {
+    const repo = await createTempRepo();
+    // The README also documents GitLab CI and Bitbucket Pipelines schedules,
+    // neither of which leaves a .github/workflows file. OpenWiki cannot see
+    // those, so it must not assert that such a repo is refreshed on demand.
+    await writeFile(
+      path.join(repo, ".gitlab-ci.yml"),
+      "openwiki-update:\n  script: openwiki code --update\n",
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    expect(content).not.toMatch(/refreshed when OpenWiki is run/u);
+    expect(content).not.toMatch(/on[- ]demand/iu);
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+  });
+
+  test("makes no recurrence claim when the workflow path cannot be read", async () => {
+    const repo = await createTempRepo();
+    // A directory where the workflow file belongs is not a workflow. Setup must
+    // still write the agent files -- the update path never read this path
+    // before, so an odd .github must not turn a docs refresh into a failed run.
+    await mkdir(workflowPath(repo), { recursive: true });
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+  });
+
+  test("makes no recurrence claim when the workflow is manual-only", async () => {
+    const repo = await createTempRepo();
+    // OpenWiki stopped overwriting this file so operators can customize it. One
+    // whose `schedule` trigger was removed runs only when someone asks, so the
+    // file existing is not proof of a schedule.
+    await writeWorkflow(repo, MANUAL_ONLY_WORKFLOW);
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+  });
+
+  test("makes no recurrence claim when the workflow declares no triggers", async () => {
+    const repo = await createTempRepo();
+    // A comments-only workflow parses to null rather than a mapping, so there
+    // is no `on` block to read a schedule out of.
+    await writeWorkflow(repo, "# no triggers here\n");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+  });
+
+  test("makes no recurrence claim when the workflow cannot be parsed", async () => {
+    const repo = await createTempRepo();
+    await writeWorkflow(repo, "name: [unterminated\n  on: {{{\n");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).not.toContain(SCHEDULED_CLAIM);
+    expect(content).toContain(HAND_EDIT_GUIDANCE);
+  });
+
+  test("claims the scheduled workflow that init just created", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+    const content = await readAgents(repo);
+    expect(content).toContain(SCHEDULED_CLAIM);
+  });
+
+  test("claims a pre-existing scheduled workflow on an update run", async () => {
+    const repo = await createTempRepo();
+    await writeWorkflow(repo, SCHEDULED_WORKFLOW);
+
+    // `--update` leaves the operator's workflow alone, but the snippet must
+    // still reflect that the repo has one.
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readAgents(repo);
+    expect(content).toContain(SCHEDULED_CLAIM);
+  });
+});
+
 describe("ensureCodeModeRepoSetup workflow", () => {
   test("generated PR includes agent files and the workflow in add-paths", async () => {
     const repo = await createTempRepo();
