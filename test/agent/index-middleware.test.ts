@@ -244,6 +244,32 @@ describe("synchronizeWikiIndexes", () => {
     expect(repaired).not.toContain("INSTRUCTIONS.md");
   });
 
+  test("ignores README aliases when building indexes", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/specifications/page.md",
+      document("Spec", "Specification page."),
+    );
+    await backend.write(
+      "/openwiki/specifications/README.md",
+      "# Specifications\n\nGitHub displays this alias.\n",
+    );
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const index = await readFile(
+      path.join(rootDir, "openwiki/specifications/index.md"),
+      "utf8",
+    );
+    const readme = await readFile(
+      path.join(rootDir, "openwiki/specifications/README.md"),
+      "utf8",
+    );
+    expect(index).toContain("- [Spec](page.md) - Specification page.");
+    expect(index).not.toContain("README.md");
+    expect(readme).toBe("# Specifications\n\nGitHub displays this alias.\n");
+  });
+
   test("does not index the reserved OKF log document", async () => {
     const { backend, rootDir } = await setup();
     await backend.write(
@@ -427,6 +453,8 @@ describe("migrateWikiToOkf", () => {
       "index.md",
       "log.md",
       "INSTRUCTIONS.md",
+      "README.md",
+      "readme.md",
       ".secret.md",
     ]) {
       await writeFile(path.join(dir, name), "# No front matter\n\nBody.\n");
@@ -440,9 +468,11 @@ describe("migrateWikiToOkf", () => {
     await migrateWikiToOkf(backend, "repository");
 
     expect(edit).not.toHaveBeenCalled();
-    await expect(
-      readFile(path.join(dir, "INSTRUCTIONS.md"), "utf8"),
-    ).resolves.not.toContain("openwiki_generated");
+    for (const name of ["INSTRUCTIONS.md", "README.md", "readme.md"]) {
+      await expect(
+        readFile(path.join(dir, name), "utf8"),
+      ).resolves.not.toContain("openwiki_generated");
+    }
   });
 
   test("migrates from the local-wiki root", async () => {

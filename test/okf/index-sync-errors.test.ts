@@ -84,6 +84,29 @@ describe("readText error handling", () => {
       /is not a text file/u,
     );
   });
+
+  test("does not read README aliases during index synchronization", async () => {
+    const readRaw = vi.fn((filePath: string) =>
+      filePath === "/openwiki/page.md"
+        ? textData("---\ntype: Reference\ntitle: Page\n---\n")
+        : { error: "too many symbolic links" },
+    );
+    const backend = stubBackend({
+      ls: () => ({
+        files: [
+          { path: "/openwiki/page.md", is_dir: false },
+          { path: "/openwiki/README.md", is_dir: false },
+        ],
+      }),
+      readRaw,
+    });
+
+    await expect(
+      synchronizeWikiIndexes(backend, "repository"),
+    ).resolves.toBeUndefined();
+    expect(readRaw).toHaveBeenCalledWith("/openwiki/page.md");
+    expect(readRaw).not.toHaveBeenCalledWith("/openwiki/README.md");
+  });
 });
 
 describe("write error handling", () => {
