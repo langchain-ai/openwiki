@@ -8,6 +8,8 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-69abc6f0f641147820a274bc
+    resource: repo://src/agent/utils.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -86,10 +88,10 @@ sources:
     resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
+    at: 2026-09-11T08:09:37.996Z
 ---
 
 # Testing Guide
@@ -257,12 +259,15 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   sidecars/run metadata, and two failure-mode races injected by wrapping
   `node:fs/promises` with `vi.mock`: a TOCTOU race where an inspected file
   becomes a symlink before opening (the fingerprinter fails closed rather than
-  following the swapped target), and a Windows stat-identity drift tolerance
-  test (`does not reject Windows file handles solely because dev and ino
-  differ`) that stubs `process.platform` to `win32` and injects a
-  stat-identity mismatch (`dev`/`ino += 1n`) via the mocked `open`, asserting
-  the fingerprinter still resolves rather than rejecting on Windows where
-  file handles can report inconsistent `dev`/`ino` values.
+  following the swapped target), and a set of Windows stat-identity drift tests.
+  On non-Windows the same-file guard keys on `dev`/`ino`; on Windows it falls
+  back to `size`/`mtimeNs`/`birthtimeNs` and excludes `ctimeNs` (which can
+  change for the same file between `lstat` and `FileHandle.stat`). The tests
+  stub `process.platform` to `win32` and inject stat mutations via the mocked
+  `open`: a `dev`/`ino` drift and a `ctimeNs`-only drift both still resolve, a
+  `size`/`mtimeNs`/`birthtimeNs` change rejects with
+  `Source path changed while fingerprinting`, and on other platforms a
+  `dev`/`ino` change rejects.
 - `test/agent/stream-redaction.test.ts` exercises `parseAgentStreamChunk`,
   pinning its suppression of `file`, `image`, `input_file`, and `image_url`
   content blocks that carry base64 blobs (which must never reach the terminal)
@@ -413,10 +418,14 @@ exercises `ensureCodeModeRepoSetup` and `runCodeModeConnectors` against temp
 repositories: it parses the generated GitHub Actions workflow YAML, pins the
 agent files and workflow/provider blocks, and asserts the OpenWiki
 `<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` snippet contract. It also pins
-that `CLAUDE.md` is a lightweight reference to `AGENTS.md` (not a full copy) and
-that a pre-existing `CLAUDE.md` that only imports `AGENTS.md` (e.g.
-`@AGENTS.md`) is preserved unchanged rather than overwritten — so an
-import-only `CLAUDE.md` survives a re-setup. Sibling files
+`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when both agent files are
+absent it creates `CLAUDE.md` as a simple `@AGENTS.md` reference rather than a
+copy of `AGENTS.md`'s content (it contains `@AGENTS.md`, not an inert Markdown
+link, and is shorter than `AGENTS.md`); when `CLAUDE.md` is a symlink to
+`AGENTS.md` it inlines the instructions instead of emitting an `@AGENTS.md`
+import (which would point the file at itself); and a pre-existing `CLAUDE.md`
+that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved unchanged rather
+than overwritten — so an import-only `CLAUDE.md` survives a re-setup. Sibling files
 (`test/ingestion/ingestion-run.test.ts`, `test/ingestion/ingestion.test.ts`,
 `test/ingestion/langsmith-modes.test.ts`) cover the ingestion run,
 `parseIngestionTarget`/`createConnectorSynthesisGuidance`, and connector modes.

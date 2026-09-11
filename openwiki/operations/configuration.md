@@ -13,6 +13,8 @@ tags:
     operations,
   ]
 sources:
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
   - id: openwiki-source-c2770ac037a7f4b0116a0dc5
@@ -25,10 +27,14 @@ sources:
     resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+  - id: openwiki-source-5fc87e9739dab52c4e447110
+    resource: repo://test/config/constants.test.ts
+  - id: openwiki-source-3782823f29993efcdedd20ac
+    resource: repo://test/config/env-behavior.test.ts
+generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.1
+    at: 2026-09-11T08:09:37.996Z
 ---
 
 # Configuration and Environment
@@ -206,8 +212,8 @@ Bedrock default) > unset.
 
 ### Streaming and Responses API toggles
 
-For the `openai-compatible` provider, two independent boolean toggles control
-transport, each true only when the value trims to `"true"`:
+For the `openai-compatible` provider, three independent boolean toggles control
+transport and capability, each true only when the value trims to `"true"`:
 
 - `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`
   (`resolveOpenAiCompatibleUseResponsesApi`) routes generation through the OpenAI
@@ -215,6 +221,10 @@ transport, each true only when the value trims to `"true"`:
 - `OPENWIKI_OPENAI_COMPATIBLE_STREAMING` (`resolveOpenAiCompatibleStreaming`)
   forces the SSE streaming HTTP transport for every generation, for gateways that
   only serve streaming and otherwise fail silently with blank output.
+- `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`
+  (`resolveOpenAiCompatibleReasoningEffortSupported`) is the opt-in that gates
+  whether the `openai-compatible` provider supports reasoning effort at all; see
+  [Reasoning effort](#reasoning-effort) below.
 
 A separate, distinct axis is `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`
 (`resolveOpenAiCompatibleStreamMessages`), which controls how LangGraph surfaces
@@ -236,8 +246,42 @@ retry attempts, defaulting to `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3).
 throws when it is set to an invalid value, when the selected provider/model has
 no reasoning capability, or when the value is outside the values that
 capability supports. Reasoning capability is declared per provider and model in
-`REASONING_CAPABILITIES`, and each capability also carries the transport
-(`responses-reasoning` or `chat-completions-reasoning-effort`) used to send it.
+`REASONING_CAPABILITIES`, and each capability also carries the transport used to
+send it.
+
+`REASONING_CAPABILITIES` declares three transports, each sent differently by
+the agent's model constructor:
+
+- **`responses-reasoning`** — OpenAI GPT-5.6 models on the `openai` and
+  `openai-chatgpt` providers (and `openai-compatible` when the Responses-API
+  opt-in is also set). Effort is sent as the Responses `reasoning.effort` payload.
+- **`chat-completions-reasoning-effort`** — NVIDIA NIM, and `openai-compatible`
+  when reasoning effort is opted in but the Responses API is not in use. Effort
+  is sent as the chat-completions `reasoning_effort` kwarg.
+- **`gemini-thinking-level`** — `gemini-3.6-flash` on the `gemini` provider.
+  Effort is sent as the Gemini `thinkingLevel` option.
+
+```mermaid
+flowchart TD
+  E["OPENWIKI_REASONING_EFFORT set"] --> R["resolveReasoningConfig"]
+  R --> C{"getReasoningCapability"}
+  C -- "openai / openai-chatgpt GPT-5.6" --> RR["responses-reasoning\nreasoning.effort"]
+  C -- "nvidia NIM, openai-compatible (no Responses)" --> CC["chat-completions-reasoning-effort\nreasoning_effort kwarg"]
+  C -- "gemini-3.6-flash" --> GT["gemini-thinking-level\nthinkingLevel"]
+  C -- "openai-compatible, opt-in unset" --> U["unsupported → throws"]
+```
+
+For the `openai-compatible` provider specifically, reasoning effort is disabled
+unless `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED` is set to `true`.
+`getOpenAiCompatibleReasoningCapability` returns `undefined` when that opt-in is
+absent (so `resolveReasoningConfig` throws "not supported"), and otherwise picks
+the transport from the Responses-API toggle: `responses-reasoning` when
+`OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API` is set, otherwise
+`chat-completions-reasoning-effort`. It supports the full
+`REASONING_EFFORT_VALUES` set regardless of transport. The Gemini capability
+(`gemini-3.6-flash`) supports only `low`/`medium`/`high`, and the NVIDIA NIM
+capability supports only `none`/`low`/`high`, so a value like `max` is rejected
+for those models even though it is valid for OpenAI GPT-5.6.
 
 ## Credential diagnostics
 
@@ -246,7 +290,8 @@ capability supports. Reasoning capability is declared per provider and model in
 `process.env` value. Each entry reports its source — `process.env`, the env file
 path, "process.env over <file>" when both are set, or `unset` — and a
 masked preview. Non-secret settings (provider, model, token limits, base URLs,
-region, Google project/location, and the boolean toggles) are shown verbatim;
+region, Google project/location, and the boolean toggles, including
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
 values).
 
@@ -255,7 +300,12 @@ invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
 effort, invalid retry attempts, invalid stream idle timeout, base-URL provider
 mismatches, credential whitespace/newline/quote issues, and a warning that the
-Bedrock stream watchdog is disabled when the idle timeout is `0`.
+Bedrock stream watchdog is disabled when the idle timeout is `0`. The boolean
+validator `getBooleanWarnings` covers all three `openai-compatible` toggles —
+`OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`,
+`OPENWIKI_OPENAI_COMPATIBLE_STREAMING`, and
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED` — reporting "invalid
+boolean" for any value that does not trim to `true` or `false`.
 
 `OPENWIKI_BEDROCK_MAX_TOKENS` is treated as a **non-secret diagnostic key**: its
 value is shown verbatim in the panel and validated by its own

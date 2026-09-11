@@ -24,6 +24,10 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
+  - id: openwiki-source-c2770ac037a7f4b0116a0dc5
+    resource: repo://src/config/env.ts
+  - id: openwiki-source-f1dd0edb129e50f253618ff4
+    resource: repo://src/config/reasoning.ts
   - id: openwiki-source-3632bcf6292cc01fef69c5b7
     resource: repo://src/connectors/registry.ts
   - id: openwiki-source-1197594de038075f3570340c
@@ -62,10 +66,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.1
+    at: 2026-09-11T08:09:37.996Z
 ---
 
 # Source Map
@@ -103,14 +107,21 @@ before anything else.
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
-  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, and the
-  connector OAuth keys) and the `OpenWikiProvider` union. It also owns the
-  output-token ceilings: `resolveConfiguredMaxOutputTokens` picks the right
-  provider-specific setting (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS`
-  first, then `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls
-  back to `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default
-  does not truncate long pages. Nearly every subsystem imports its identifiers
-  from here.
+  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the
+  `openai-compatible` keys, and the connector OAuth keys) and the
+  `OpenWikiProvider` union. It also owns the output-token ceilings:
+  `resolveConfiguredMaxOutputTokens` picks the right provider-specific setting
+  (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
+  `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls back to
+  `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default does not
+  truncate long pages. It additionally gates reasoning effort for
+  `openai-compatible` providers: it exports
+  `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` and
+  `resolveOpenAiCompatibleReasoningEffortSupported`, which `reasoning.ts` consults
+  to decide whether an `openai-compatible` model advertises a reasoning
+  capability, and `providerUsesResponsesApi`, which selects the
+  `responses-reasoning` vs `chat-completions-reasoning-effort` transport.
+  Nearly every subsystem imports its identifiers from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow across a six-operation
   surface: `beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
@@ -262,15 +273,26 @@ Owns credential acquisition and storage. Principal entries: `src/auth/oauth.ts`
 `oauth-discovery.ts`, `providers.ts`, `configure.ts`, `external-cli-auth.ts`, and
 `ngrok.ts` for discovery, provider selection, and tunneling.
 
-### config — environment, home directory, and constants
+### config — environment, home directory, reasoning, and constants
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
-registry (path constants, provider env keys, the `OpenWikiProvider` union, and
-defaults), and also owns the output-token resolution helpers
+registry (path constants, provider env keys — including
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` and the
+`openai-compatible` streaming/responses-API gates — the `OpenWikiProvider`
+union, and defaults), and also owns the output-token resolution helpers
 (`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
-`BEDROCK_DEFAULT_MAX_TOKENS`); `env.ts` loads and saves the OpenWiki `.env`;
+`BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`
+and `providerUsesResponsesApi`, which gate reasoning effort for
+`openai-compatible` providers; `env.ts` loads and saves the OpenWiki `.env` and
+is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
+now including `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), from
+which the credential-diagnostic and debug key lists derive;
 `openwiki-home.ts` resolves the home/wiki directories; `reasoning.ts` resolves
-reasoning settings.
+reasoning settings, owning the three reasoning transports
+(`responses-reasoning`, `chat-completions-reasoning-effort`,
+`gemini-thinking-level`) and the `openai-compatible` capability resolution that
+consults `resolveOpenAiCompatibleReasoningEffortSupported` and
+`providerUsesResponsesApi` from `constants.ts`.
 
 ### integrations — host-tool integration and MCP server surface
 

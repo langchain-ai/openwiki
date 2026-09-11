@@ -12,7 +12,7 @@ tags:
   - langchain
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
+    at: 2026-09-11T08:09:37.996Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -36,9 +36,11 @@ sources:
     resource: repo://src/config/reasoning.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
+  - id: openwiki-source-21fe6d4741a8225393c37599
+    resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -88,7 +90,7 @@ After model resolution, `resolveRunConfig` resolves three provider-neutral opera
 Each branch constructs a purpose-built client:
 
 - **Anthropic** builds `ChatAnthropic`, applying a modern-Claude default output-token limit (raised above LangChain's 4,096 fallback only for known Claude 4/5 families) unless an explicit provider-neutral limit is set.
-- **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns.
+- **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns; when `gemini-3.6-flash` declares a reasoning capability, the resolved effort is passed as `ChatGoogle`'s `thinkingLevel` option.
 - **Gemini Enterprise (Vertex)** delegates to `createGeminiEnterpriseModel`, which picks the client from the model family: Claude via the Anthropic Vertex SDK, partner/open-weight models over Vertex's OpenAI-compatible MaaS surface, and Gemini/Gemma over native `generateContent`. Auth is uniform ADC + project + region; only the transport differs.
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
@@ -98,7 +100,19 @@ Each branch constructs a purpose-built client:
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 
-`createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is sent either as a Responses-API `reasoning.effort` payload or as a chat-completions `reasoning_effort` kwarg depending on the model's declared transport; an unsupported provider/model or an invalid effort value throws.
+`createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is dispatched by the model's declared transport — a Responses-API `reasoning.effort` payload for `responses-reasoning`, a chat-completions `reasoning_effort` kwarg for `chat-completions-reasoning-effort`, and `ChatGoogle`'s `thinkingLevel` for `gemini-thinking-level`; an unsupported provider/model or an invalid effort value throws.
+
+### Reasoning capability table and transports
+
+`resolveReasoningConfig` returns a `ResolvedReasoningConfig` whose `transport` is one of three values, each mapped to the SDK field the model's provider accepts. The `REASONING_CAPABILITIES` table declares which (provider, model id) pairs expose a capability and which effort values each accepts:
+
+| Provider | Model id | Transport | Accepted effort values |
+| --- | --- | --- | --- |
+| `openai` / `openai-chatgpt` | `gpt-5.6-terra` / `gpt-5.6-luna` / `gpt-5.6-sol` | `responses-reasoning` | `none` / `low` / `medium` / `high` / `xhigh` / `max` |
+| `nvidia` | `nvidia/nemotron-3-super-120b-a12b` | `chat-completions-reasoning-effort` | `none` / `low` / `high` |
+| `gemini` | `gemini-3.6-flash` | `gemini-thinking-level` | `low` / `medium` / `high` |
+
+The `openai-compatible` provider has no static entry: its capability is gated by `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`. When that opt-in is set, `getOpenAiCompatibleReasoningCapability` returns a capability whose transport depends on `useResponsesApi` — `responses-reasoning` when the provider is configured to use the Responses API, `chat-completions-reasoning-effort` otherwise — and accepts the full effort range including `max`. Without the opt-in the capability is `undefined`, so any `OPENWIKI_REASONING_EFFORT` value throws "not supported" for `openai-compatible` (mirroring the behavior for any other provider/model pair that declares no capability).
 
 ### Vertex surface routing
 

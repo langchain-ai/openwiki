@@ -14,6 +14,6 @@ When working in this repository, read the OpenWiki quickstart first, then follow
 
 ## OpenWiki
 
-See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
+@AGENTS.md
 
 <!-- OPENWIKI:END -->

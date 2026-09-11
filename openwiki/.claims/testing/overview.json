@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a13354521873dc2a8458227f46e12037d1414b8b273fe4ae821487339c3fce3e",
+  "pageVersion": "sha256:6d194ff1b8dd0335aaa92c28f2a99adaf7bf72bf1c527eef3a79714c84fdca18",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -388,19 +388,19 @@
     },
     {
       "id": "claim_cd76ff3e81e64efab8da81f70e2b85b6",
-      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a committed Git repository in mkdtemp: it pins fingerprint stability and sensitivity (tracked/staged/unstaged content, deletions, untracked files, executable-bit, symlink-target changes, .openwikiignore rules), the exclusion of generated pages/Claims sidecars/run metadata, and two failure-mode races injected by wrapping node:fs/promises with vi.mock — a TOCTOU race where an inspected file becomes a symlink before opening (the fingerprinter fails closed rather than following the swapped target), and a Windows stat-identity drift tolerance test that stubs process.platform to win32 and injects a stat-identity mismatch (dev/ino += 1n) via the mocked open, asserting the fingerprinter still resolves rather than rejecting on Windows where file handles can report inconsistent dev/ino values.",
+      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a committed Git repository in mkdtemp: it pins fingerprint stability and sensitivity (tracked/staged/unstaged content, deletions, untracked files, executable-bit, symlink-target changes, .openwikiignore rules), the exclusion of generated pages/Claims sidecars/run metadata, and failure-mode races injected by wrapping node:fs/promises with vi.mock — a TOCTOU race where an inspected file becomes a symlink before opening (the fingerprinter fails closed rather than following the swapped target), plus Windows stat-identity drift tests. On non-Windows the same-file guard keys on dev/ino; on Windows it falls back to size/mtimeNs/birthtimeNs and excludes ctimeNs (which can change for the same file between lstat and FileHandle.stat). The tests stub process.platform to win32 and inject stat mutations via the mocked open: a dev/ino drift and a ctimeNs-only drift both still resolve, while a size/mtimeNs/birthtimeNs change rejects with 'Source path changed while fingerprinting'.",
       "evidence": [
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L22-L64",
-          "version": "repo-lines-v1:sha256:57edec939cc768b8ea0625a9b3d3c8bf79dff38bec01170dbcc23a9e5feb728e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMGM3ZjRiMmU2MDVjZWY4NjZmMjZjMmE5MTg4NGM4ZWM2MzU0MGU0ZDBhNWQ1ZDc0Yjc4YmYwNzFmZmFmNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhMDVkMmZhZjZlMzczNDM3NTE3ZDc3MDBjZjBkYmFkNWI0NmE5ZWRjOTM5YWEwZjU3MDU0MWRlNzQzNjY3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YzJhNjAzMjZkODcwN2ViZWE1ZWVkZWRmMTg4ZTY2MGZjMjljMWEwNzg0ODRlY2JkOTIxZGQ4YjQ0M2M5OGUifQ"
+          "resource": "repo://src/agent/utils.ts#L645-L670",
+          "version": "repo-lines-v1:sha256:5d788eb0c26e5a1070159c57f94ca777865366cba766b43aeef4b111d81efa8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YWMyNTg1ZGE4ZjZkMzA1NjkxMTUwNTUxNGM5NmM2ZTU2YTE4YTIyZjE2MTNmMzRmZThjYjdkM2E4ZGUzNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0N2Y5N2Q3MjkxN2Y5ZmIyNTdkZjIxOWJiYjVlZTI4OGE3NDQxMmFjNDE4MzRmMDA4OWJkM2I1ZjE4OTY1NjAifQ"
         },
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L254-L286",
-          "version": "repo-lines-v1:sha256:721166ad9aedb2012012667cc72ea57f17d58afde42856a4d32aa22217050e13:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MWJjZTcyYmQ4Y2I1YjQ3NzViMWNlNWIzMDU5MjI1ZDRjYzRiYzQxMjQwYzA4ZTY1NTNkNGQyMDMwZmU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGEzZmZiZmQyNWVkYzNiNjBiZTMyNTVjNjljNmQ4ODM1MDc0ZjUwY2YwZDUyYjBiNzU0ZjhmOWEyYzg3ZTYifQ"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L22-L72",
+          "version": "repo-lines-v1:sha256:9d997c169336167097fc834e707e5c59c82197d9200502c0a9bbd792fe71c005:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMGM3ZjRiMmU2MDVjZWY4NjZmMjZjMmE5MTg4NGM4ZWM2MzU0MGU0ZDBhNWQ1ZDc0Yjc4YmYwNzFmZmFmNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhMDVkMmZhZjZlMzczNDM3NTE3ZDc3MDBjZjBkYmFkNWI0NmE5ZWRjOTM5YWEwZjU3MDU0MWRlNzQzNjY3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YzJhNjAzMjZkODcwN2ViZWE1ZWVkZWRmMTg4ZTY2MGZjMjljMWEwNzg0ODRlY2JkOTIxZGQ4YjQ0M2M5OGUifQ"
         },
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L306-L357",
-          "version": "repo-lines-v1:sha256:a7490e9b2d9ac53cbd0b59f0df806e770e5010a648cf3bfbc20d95ec4407adb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGE5ZTVkMmMxNTRjMjIyMDUyZjNiYjcyMzg4ODgwNzllZGM2Mzc1ZDJhNjcxYTM4YTk4NTFiMWVmNDY0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MmRkNDliMDJjODJlMmJmYTFkNDgyMDljNmY3ZjhhNzllOTJhYjkwZjk2ZDAzZmI2MjhhZjdkNGZmYzJlZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMDQ0ZmFkMGFhYTVmYjBmYTgzNjM2NmY2OGQzM2Y3ZWQzZTkwNTQzOGFiYzIxZjRmNmM2ODk3NTY5MWY5MGIifQ"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L287-L354",
+          "version": "repo-lines-v1:sha256:225b9fa523754284b34c3487c3c7c1533d3a861b4b6a243baac4cc87bfa170f0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MWJjZTcyYmQ4Y2I1YjQ3NzViMWNlNWIzMDU5MjI1ZDRjYzRiYzQxMjQwYzA4ZTY1NTNkNGQyMDMwZmU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGEzZmZiZmQyNWVkYzNiNjBiZTMyNTVjNjljNmQ4ODM1MDc0ZjUwY2YwZDUyYjBiNzU0ZjhmOWEyYzg3ZTYifQ"
         }
       ]
     },
@@ -456,11 +456,19 @@
       "evidence": [
         {
           "resource": "repo://test/ingestion/code-mode.test.ts#L1-L60",
-          "version": "repo-lines-v1:sha256:148609b4d21e5426446152b9be66197ce4d57930fe4ac502a025b3e97e2d5238:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZWYzZWE0NGNhMWQ5YWQ2OThlNzY5MTk0ZDRlNzgyNDU5YjA3YWI3NGIzZDVjMDBjMzY3ZDgyZGQ2ZTE1MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYmM1Y2RiNzAyY2NkNzM3MGQzMjEyNTBlOTIxYzQyOTNlYTU0M2MyMmVjM2QwNzBiZjFkNmQzZmNkZTQzOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0Y2E0ODlmZjdiOGU5NWNhM2NlYWEzMGQ2OGQ5NDRkNGRiNGRkMzg0ZTI0ZTY2MTgzZWEyNDVmMzVmZTI3YjMifQ"
+          "version": "repo-lines-v1:sha256:5bb557c51540c5e83f9064ee51b62f6af665948dc2701f3046079e884c8442f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYjI3MTZkN2MzNGEzMmFiZDJiMGFlZmE0M2Y3Mzk3M2JhMDQ1NzlkMDdhZjRmOTUxZmEzNTZlZGIyZDhkMWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZTVmODg4NjFiOGE2ZWRmY2YzYjQ5YzVhNWE0MmI3NjAzMGU2MDNkODM2NThkYTA0NDdhZWEwMDhiOTIzMWEifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L121-L130",
-          "version": "repo-lines-v1:sha256:b6f4e3098098d9ee2dc7d1dd6c9730780687303d6ad24ab89206b24c5a52e8a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMDE5MDRmNWU1OTAwYzkwYzA4Y2ZhZTMxNjYxNjAyZjMyYjAxNGU5YTA3NzE5ZjlkODNmMGE4NTBlMWI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMzg3ODU5ZTQ4MzkwMTdiZGRhOTg3MjM0Yzk1ZGQzYzg4ZDEzMjA3ZTVlMzA3YmFmN2I0ZWYwYmM3ZDk1ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxM2Y0OWI4ZDYzOGNkYzgwMjA1NDIyODI0NWI1Yjc5MWUxZDhjZmUzMWFlYjNlYWYzYzdjZmVmN2UyNTk5ZGYifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L128-L141",
+          "version": "repo-lines-v1:sha256:090a7f0b65374d3fa8eb4766c77238b10913614ec3f4b29cdc2b826608e7b0b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMDE5MDRmNWU1OTAwYzkwYzA4Y2ZhZTMxNjYxNjAyZjMyYjAxNGU5YTA3NzE5ZjlkODNmMGE4NTBlMWI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjgzMTE2OGJmNzQ5MTU0YWU4YmJkZWJhZTEyMTNmMWJjODdjZDNmMDZmY2Q4YTNkMzc5MmE0MzcwZGNmZDMifQ"
+        },
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L303-L322",
+          "version": "repo-lines-v1:sha256:5902fb28f1b7b83b46a6a34715bf4b36f63f47e879326a7886bf4f8a6a716e40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NmU3YmRkNTQ3ZmE0YzA0YjU4ZDkyNDM2OTY2ZDBiOWFhZjAwNjdlMWMxZjBlNzk0M2Q4Y2VkNDQ0MmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OWE5ZDZlYmViNmMwM2Y1ODA1Mjg3Zjg5Njk0ZjJkN2ZlN2I4ZmMxNjc1NDg1MTgxNDRkM2QxMmY1Y2Q4ZTUifQ"
+        },
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L435-L462",
+          "version": "repo-lines-v1:sha256:6d42d1163930e372047857dc3303e3c96f2b4894e77532bae3552fa485d3a811:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2E5MDZlZjQ4ZDJiOTg0ZjdjYzgyYTkwMGMzZmNjZWY1MmM4NjAwMWVmNTIwNzlkMTE5NmQzMTllMjNlZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0MmNjODE2YWE0NjQ0MjZlNmM1YjQ5NDdkMDVmOTNiYTcyZWNlZmE4MTE4YmI0ZWIzY2E2MjJjYzE5YTkxYjQifQ"
         }
       ]
     },
@@ -662,17 +670,17 @@
     },
     {
       "id": "claim_dc94c4699b8b48f481ff8b334a2896c9",
-      "statement": "test/ingestion/code-mode.test.ts pins that CLAUDE.md is a lightweight reference to AGENTS.md (not a full copy) and that a pre-existing CLAUDE.md that only imports AGENTS.md (e.g. @AGENTS.md) is preserved unchanged by ensureCodeModeRepoSetup rather than being overwritten, so an import-only CLAUDE.md survives a re-setup.",
+      "statement": "test/ingestion/code-mode.test.ts pins CLAUDE.md handling in ensureCodeModeRepoSetup: when both agent files are absent it creates CLAUDE.md as a simple @AGENTS.md reference rather than a copy of AGENTS.md's content (containing @AGENTS.md, not an inert Markdown link, and shorter than AGENTS.md); when CLAUDE.md is a symlink to AGENTS.md it inlines the instructions instead of emitting an @AGENTS.md import that would point the file at itself (resolvesToSameFile); and a pre-existing CLAUDE.md that only imports AGENTS.md (e.g. @AGENTS.md) is preserved unchanged rather than overwritten, so an import-only CLAUDE.md survives a re-setup.",
       "evidence": [
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L136-L163",
-          "version": "repo-lines-v1:sha256:8349ae2b4e5133d363584c5d55c736e70d52594b5d5ef5b91fb97c829ff62bce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L143-L188",
+          "version": "repo-lines-v1:sha256:314fe17badd46270abb57348d4d599e8b16529a9addeb5a47b2fbed93782319d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-10T08:09:53.024Z"
+    "at": "2026-09-11T08:09:37.996Z"
   }
 }
