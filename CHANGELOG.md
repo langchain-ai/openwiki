@@ -1,5 +1,17 @@
 # openwiki
 
+## 0.5.2
+
+### Patch Changes
+
+- [#801](https://github.com/langchain-ai/openwiki/pull/801) [`2c90e13`](https://github.com/langchain-ai/openwiki/commit/2c90e13718534c924673bfc1e3c3358f39284969) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - feat: map gemini reasoning effort to thinking level
+
+- [#777](https://github.com/langchain-ai/openwiki/pull/777) [`cf0700f`](https://github.com/langchain-ai/openwiki/commit/cf0700f93c7348acf96cea4ad5fcf182a5fd12cb) Thanks [@danielsogl](https://github.com/danielsogl)! - fix: import AGENTS.md into the managed CLAUDE.md block
+
+- [#788](https://github.com/langchain-ai/openwiki/pull/788) [`4cd2e5f`](https://github.com/langchain-ai/openwiki/commit/4cd2e5f82a3c34ce44b1c0f60bbc61d543a5d8f4) Thanks [@HwangJohn](https://github.com/HwangJohn)! - feat: let openai-compatible opt into reasoning effort
+
+- [#859](https://github.com/langchain-ai/openwiki/pull/859) [`1b84ea8`](https://github.com/langchain-ai/openwiki/commit/1b84ea88e9ffab44c31939687798a43c05eed2ba) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: ignore windows ctime drift while fingerprinting
+
 ## 0.5.1
 
 ### Patch Changes
