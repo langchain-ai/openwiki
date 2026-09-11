@@ -1,0 +1,94 @@
+integrations/openwiki/SKILL.md
+  s_c8d8c7b77154f8::t_19dd46f3cb3881 219-220
+  s_c8d8c7b77154f8::t_ea4461ddaff825 98,103,107,110-115
+test/integrations/protocol.test.ts
+  s_c8d8c7b77154f8::t_aba76348a3ca24 8,93,106,113,124-129
+  s_c8d8c7b77154f8::t_62f618b753328e 130
+test/integrations/mcp-server.test.ts
+  s_c8d8c7b77154f8::t_641b075f0d6676 415
+  s_c8d8c7b77154f8::t_970b8224d12351 210-214,238,247,250,399-414,416,436
+  s_c8d8c7b77154f8::t_a9ce4c05279fe5 343
+  s_c8d8c7b77154f8::t_61d2c5139a6db8 209
+test/integrations/skill.test.ts
+  s_c8d8c7b77154f8::t_aba76348a3ca24 62
+src/integrations/core/session-manager.ts
+  s_c8d8c7b77154f8::t_e73c3baec6eab9 8,20,29,211-214,241,277-284,288
+  s_c8d8c7b77154f8::t_a9ce4c05279fe5 203
+  s_c8d8c7b77154f8::t_a644e3e5be9272 207
+  s_c8d8c7b77154f8::t_a66952aaeae288 215-221
+  s_c8d8c7b77154f8::t_94a4fe7a47e462 208-210
+evals/swe-qa-pro/retrieval-lab.ts
+  s_c8d8c7b77154f8::t_ae7d5bbe5a7fbd 241-242
+src/config/constants.ts
+  s_c8d8c7b77154f8::t_cd19039ca227d0 495
+CONTRIBUTING.md
+  s_c8d8c7b77154f8::t_cd19039ca227d0 59
+src/agent/repository-runner.ts
+  s_c8d8c7b77154f8::t_641b075f0d6676 458-460,497-499
+  s_c8d8c7b77154f8::t_a6e26797adf097 500,525-539,552
+  s_c8d8c7b77154f8::t_81e68d90362dba 16,69,97,128,441,451-457,461-486,490-492,496,515,544,571-572
+src/claims/guidance.ts
+  s_c8d8c7b77154f8::t_9d22c458fd860c 8,15
+src/generation/page-jobs.ts
+  s_c8d8c7b77154f8::t_f3af317a25696e 15,91
+src/integrations/core/protocol.ts
+  s_c8d8c7b77154f8::t_e73c3baec6eab9 22,144,146,166-173,187-188
+  s_c8d8c7b77154f8::t_74836b3aa96926 189
+src/generation/repository-run.ts
+  s_c8d8c7b77154f8::t_c7c8d1d0bdb289 1380-1381,1384-1385
+  s_c8d8c7b77154f8::t_a9ce4c05279fe5 1417
+  s_c8d8c7b77154f8::t_a66952aaeae288 1156-1160,1382-1383
+  s_c8d8c7b77154f8::t_f3af317a25696e 151-153,551,685
+  s_c8d8c7b77154f8::t_df9a6fcfab681b 1143-1155,1161-1164
+  s_c8d8c7b77154f8::t_604898273d84a5 1023-1024,1072-1075,1080-1110,1112-1142,1165-1170,1204-1245,1364,1422,1453-1459
+  s_c8d8c7b77154f8::t_2f9df80007aebb 1111,1171-1203
+  s_c8d8c7b77154f8::t_6c354401cde955 1460
+src/generation/run-state.ts
+  s_c8d8c7b77154f8::t_f3af317a25696e 36-47,105-107,285-316
+  s_c8d8c7b77154f8::t_a9ce4c05279fe5 68
+README.md
+  s_c8d8c7b77154f8::t_19dd46f3cb3881 62,159
+src/integrations/mcp/server.ts
+  s_c8d8c7b77154f8::t_ea4461ddaff825 29-35
+test/generation/repository-run.test.ts
+  s_c8d8c7b77154f8::t_641b075f0d6676 1199-1204
+  s_c8d8c7b77154f8::t_0d134016cc64e5 1444-1445,1449
+  s_c8d8c7b77154f8::t_bc04e04ebf63a5 431,1339,1355,1404,1585-1588,1593,1753,1795,2137
+  s_c8d8c7b77154f8::t_38b60028b9ae02 114,287-295,307-313
+  s_c8d8c7b77154f8::t_cc610ff723e313 1171-1198,1205-1226
+  s_c8d8c7b77154f8::t_39b195b038e976 1381
+  s_c8d8c7b77154f8::t_76760d4b06036f 314-315
+test/integrations/session-manager.test.ts
+  s_c8d8c7b77154f8::t_aba76348a3ca24 120,130-135,181,191-196,230,320
+DESIGN.md
+  s_c8d8c7b77154f8::t_cd19039ca227d0 67-69
+test/agent/repository-prompts.test.ts
+  s_c8d8c7b77154f8::t_dac6cbedf0655a 83-85,145,149-150,170-179
+  s_c8d8c7b77154f8::t_641b075f0d6676 146-148
+  s_c8d8c7b77154f8::t_619b39b418fae3 180-181
+test/brain/memory.test.ts
+  s_c8d8c7b77154f8::t_323869af78fc78 92,99-103,510-515,523,604-611
+test/agent/repository-runner.test.ts
+  s_c8d8c7b77154f8::t_aa8d1b4f915db3 13,110-112,177-182,231,237-249,431-433,439-442,453-462,561,603,605,607,612
+src/agent/repository-prompts.ts
+  s_c8d8c7b77154f8::t_39b195b038e976 154
+  s_c8d8c7b77154f8::t_a23819ba26d11e 115-120
+  s_c8d8c7b77154f8::t_641b075f0d6676 150-153,161-162,211-213,221-223
+  s_c8d8c7b77154f8::t_2d4936e3b42775 142,148-149,155-160,163-169,181,196-198,201-202,209-210,214-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3d71f0625699d0dd5385d921b45a07bee1732679",
+  "prompts": {},
+  "sessions": {
+    "s_c8d8c7b77154f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08ca1-2759-7491-9b6b-a48dc9f877ed",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
