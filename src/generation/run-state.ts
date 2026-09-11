@@ -160,6 +160,13 @@ export interface RepositoryRunState {
   requiredRewritePages: string[];
 
   /**
+   * Stable required-page set for establishing missing Markdown/Claims proof.
+   *
+   * @default [] when reading checkpoints written before coverage jobs existed.
+   */
+  requiredCoveragePages: string[];
+
+  /**
    * Factual pages present before this run began semantic generation.
    */
   initialPages: string[];
@@ -272,6 +279,7 @@ const RepositoryRunStateSchema = z
     language: z.string().min(1),
     languageChanged: z.boolean(),
     requiredRewritePages: z.array(z.string().min(1)),
+    requiredCoveragePages: z.array(z.string().min(1)).default([]),
     initialPages: z.array(z.string().min(1)),
     sourceFingerprint: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
     targetGitHead: z.string().min(1).optional(),
