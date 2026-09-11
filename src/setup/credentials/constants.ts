@@ -45,7 +45,7 @@ export const ONBOARDING_TEMPLATES = [
       "Gmail",
       "Notion",
       "Custom MCP",
-      "Web Search (Tavily)",
+      "Web Search (Tavily or Ollama)",
       "Hacker News",
       "X/Twitter",
     ],
@@ -183,15 +183,15 @@ export const SOURCE_OPTIONS = [
     ],
   },
   {
-    displayName: "Web Search (Tavily)",
+    displayName: "Web Search (Tavily or Ollama)",
     examples: [
       "Track a company, product category, or technical topic.",
       "Find launch posts, docs, pricing pages, and recent articles.",
     ],
     id: "web-search",
     instructions: [
-      "Create a Tavily account and API key.",
-      "Paste the Tavily API key below.",
+      "Web Search uses Tavily by default: create a Tavily account and paste the API key below.",
+      'Alternatively set "provider": "ollama" in the connector config to use Ollama’s web_search and web_fetch APIs with an OLLAMA_API_KEY.',
       "Describe the topics, companies, or pages OpenWiki should search for on the next screen.",
     ],
     secretInputs: [

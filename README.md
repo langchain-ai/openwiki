@@ -223,7 +223,7 @@ openwiki ingest web-search  # run one connector's sources
 - `notion` targets the hosted Notion MCP server, so authenticate through Notion OAuth rather than pasting a token.
 - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail.
 - `slack` uses Slack's Web API with OAuth user and bot tokens to ingest scoped conversations and search results.
-- `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
+- `web-search` uses Tavily through LangChain by default (requires `TAVILY_API_KEY`), or Ollama's web_search/web_fetch APIs when `"provider": "ollama"` is configured (requires `OLLAMA_API_KEY`).
 - `hackernews` uses the public Hacker News feed and search APIs, with no credentials required.
 
 `openwiki auth <provider>` runs a local browser OAuth flow, saves returned tokens into `~/.openwiki/.env`, creates connector config when possible, and discovers MCP tools for MCP-backed providers. Slack and Gmail require app client credentials to already be set in that file; Notion uses dynamic client registration for hosted MCP; X uses OAuth 2.0 with PKCE. `openwiki auth configure <provider>` and `openwiki auth tools <provider>` are advanced retry commands.
