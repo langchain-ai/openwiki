@@ -259,7 +259,28 @@ export async function replaceRepositoryPageManifest(
     const canonicalPage = normalizeWikiPagePath(page);
     if (preservePages.has(canonicalPage)) {
       const previousEntry = previous.pages[canonicalPage];
-      if (previousEntry) next.pages[canonicalPage] = previousEntry;
+      // A page this run did not (re)complete keeps its exact prior stamp so
+      // disjoint runs on separate branches only diff pages they actually
+      // touched, instead of every tracked page restamped with this run's
+      // checkpoint.
+      if (previousEntry) {
+        next.pages[canonicalPage] = previousEntry;
+        continue;
+      }
+      // No prior coverage exists for this untouched page. Try to seed a
+      // first coverage entry from its current durable state, but never fail
+      // the whole run over a page it did not touch; leave it uncovered for
+      // full review instead, matching legacy/never-covered page handling.
+      try {
+        next.pages[canonicalPage] = await buildManifestEntry(
+          root,
+          canonicalPage,
+          source,
+        );
+      } catch (error) {
+        if (error instanceof RepositoryRunError) continue;
+        throw error;
+      }
       continue;
     }
     next.pages[canonicalPage] = await buildManifestEntry(

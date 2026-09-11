@@ -23,6 +23,7 @@ import {
   prepareClaimsRuntime,
   type ClaimsRuntime,
 } from "../claims/brains/code/runtime.js";
+import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
 import type {
   GroundingIssue,
@@ -1551,11 +1552,25 @@ export async function finishRepositoryRun(
   await run.claimsRuntime.finalize(run.state.startedAt, skippedPages);
   await assertRepositoryClaimsDurable(run, skippedPages);
   const store = new ClaimsStore(run.root);
+  const currentPages = await store.discoverPages();
+  // Only pages this run actually regenerated (recorded above as
+  // `producerActorsByPage`, keyed by `completedRunId === run.state.runId`)
+  // may be restamped with this run's checkpoint. Every other tracked page —
+  // formally skipped, left untouched because it was outside this run's plan,
+  // or already durable from an earlier run — keeps its prior manifest entry
+  // unchanged, so disjoint runs on separate branches only diff the pages they
+  // actually touched.
+  const regeneratedPages = new Set(producerActorsByPage.keys());
+  const preservePages = new Set(
+    currentPages
+      .map((page) => normalizeWikiPagePath(page))
+      .filter((page) => !regeneratedPages.has(page)),
+  );
   await replaceRepositoryPageManifest(
     run.root,
-    await store.discoverPages(),
+    currentPages,
     getRepositoryRunSourceCheckpoint(run.state),
-    skippedPages,
+    preservePages,
   );
   const sourceChanged =
     sourceChangedBeforeFinish || (await hasRepositorySourceChanged(run));
