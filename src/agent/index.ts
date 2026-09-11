@@ -34,6 +34,7 @@ import {
   resolveIndexLabels,
 } from "../okf/index-labels.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { createAnthropicPromptCachingMiddleware } from "./anthropic-prompt-caching.js";
 import { getSelectedModelAvailability } from "../model-availability.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
 import {
@@ -485,8 +486,9 @@ function createOpenWikiAgentGraph(
     backend,
     middleware:
       options.command === "chat"
-        ? []
+        ? [createAnthropicPromptCachingMiddleware()]
         : [
+            createAnthropicPromptCachingMiddleware(),
             ...(translation
               ? [
                   createWikiTranslationMiddleware(

@@ -28,6 +28,7 @@ import {
   createAgentBackend,
 } from "./agent-backend.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
+import { createAnthropicPromptCachingMiddleware } from "./anthropic-prompt-caching.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import {
   createRepositoryPagePrompt,
@@ -343,6 +344,7 @@ async function runPlanningAgent(
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         tools: PLANNER_FILESYSTEM_TOOLS,
       }),
+      createAnthropicPromptCachingMiddleware(),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
@@ -479,6 +481,7 @@ async function runPageAgent(
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         tools: PAGE_FILESYSTEM_TOOLS,
       }),
+      createAnthropicPromptCachingMiddleware(),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],

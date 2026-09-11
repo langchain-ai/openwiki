@@ -71,9 +71,12 @@ export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const OPENWIKI_REASONING_EFFORT_ENV_KEY = "OPENWIKI_REASONING_EFFORT";
+export const OPENWIKI_ANTHROPIC_PROMPT_CACHING_ENV_KEY =
+  "OPENWIKI_ANTHROPIC_PROMPT_CACHING";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
 export const DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS = 16_384;
 const TRUE_ENV_VALUE = "true";
+const FALSE_ENV_VALUE = "false";
 export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
   "OPENWIKI_GOOGLE_ACCESS_TOKEN";
 export const OPENWIKI_GOOGLE_CLIENT_ID_ENV_KEY = "OPENWIKI_GOOGLE_CLIENT_ID";
@@ -1080,6 +1083,25 @@ export function resolveOpenAiCompatibleStreaming(
   return (
     env[OPENAI_COMPATIBLE_STREAMING_ENV_KEY]?.trim().toLowerCase() ===
     TRUE_ENV_VALUE
+  );
+}
+
+// Anthropic prompt caching is on by default: it sets a single top-level
+// `cache_control: { type: "ephemeral" }` breakpoint on every Anthropic
+// request, which @langchain/anthropic applies to the last cacheable block
+// (system prompt + tool definitions on the first turn, growing to cover the
+// conversation history as an agent loop continues) and advances
+// automatically as later turns are appended. This is a pure billing/latency
+// optimization — cached tokens round-trip through the API unchanged — so
+// unlike the openai-compatible toggles above it defaults on rather than off.
+// The escape hatch exists for anyone routing OPENWIKI_ANTHROPIC_BASE_URL at a
+// proxy that does not support Anthropic's prompt-caching headers.
+export function resolveAnthropicPromptCachingEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[OPENWIKI_ANTHROPIC_PROMPT_CACHING_ENV_KEY]?.trim().toLowerCase() !==
+    FALSE_ENV_VALUE
   );
 }
 
