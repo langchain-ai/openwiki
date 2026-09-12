@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:70687f213148f0415c5c352909f33bf5da885be78c9c6c031b2cb0175bcb8292",
+  "pageVersion": "sha256:02f707da0fdc6fdc7d9dbbea36f9291d43ba7861e6dd2c4ef5c8b7f711f9fa9e",
   "claims": [
     {
       "id": "claim_b3bcf02b8ac0428c909611ba967f994a",
@@ -489,10 +489,86 @@
           "version": "repo-lines-v1:sha256:f10fec3a9b2c2830745b03769bc652d10b7f397a4d03b684527a847e85a134a2:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxYmM1OGJiMzRjZjAzODZhYjc4NDY2Mzg2ZjQ0NTc0Y2M5MDM0YjJjNzgwNTNhNjlkZGQ0MDI5Yjk0YTRmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkOTM3NjAyOTY1OGU1Y2QyYmRiNTI5YzIwOGNlNzU1OTkxMGU5MzMxM2IzOTNlNmY4NGFmMDgzNzU5OGUwYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_90db6a9e53364de2be78f9d9beb1f053",
+      "statement": "The setup subsystem owns first-run onboarding: src/setup/onboarding.ts persists OpenWikiOnboardingConfig to onboarding.json under the OpenWiki home (readOpenWikiOnboardingConfig/saveOpenWikiOnboardingConfig), owns the repository INSTRUCTIONS.md paths and the isOnboardingComplete/isRepositoryCodeOnboardingCompleteSync predicates, while src/setup/credentials.tsx is a thin composition root wiring the useInitSetup Ink state machine to InitSetupView. Its pure logic lives in credentials/steps.ts (orderedSetupSteps, needsCredentialSetup, hydrateRunModeConfig), credentials/format.ts, and credentials/persistence.ts; the keyboard-driven use-init-setup.ts controller is excluded from unit coverage because ink-testing-library cannot exercise it cleanly.",
+      "evidence": [
+        {
+          "resource": "repo://src/setup/credentials.tsx#L1-L29",
+          "version": "repo-lines-v1:sha256:d7c9f0205061e66800274eb2638a1659e8c0f95c9bfb9c8c226c9298a2f06dd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMGI5M2Y5OWEyZWIyYTgwYTY1OWVjYWQ1YTkzNWNiZWZiMWFhNGMzOTM0NTAzMjc2M2Y2OTIyYWVmNGY2YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZDBkMDJiZWU0MGI1ZmNhOGEzNjczNDI3MmU2N2VmODNiOTQ5OGIwNmJlY2JiNzYwMDIyMDNkNDIxM2NkYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L172-L220",
+          "version": "repo-lines-v1:sha256:2662238daa0cd327f59f4c2e70c44fe189b2fed6f6ef7b0c6d425ba820d7407b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMjdjNDgzODZhMzRjZjRhNTIyOTIwNTNmNWE1MjhmZDRjOGViZjExYjI3OTQwYjU0M2VhYWM4OWYxMTc5M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzODIxZDRhM2Q0ODc0YzE1MTY3MzI4MTlhNjJhMjk4YjRjOTU1N2JiNjQzNTQxYjQxNzNjODUxNTVkZWY5YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4MmE5MDBhNTc1MDljMDU2NDM0ZmUyMDUxOTcyYjUzNjg5ZTAyOTlmYmI5ZmI5NGY0OTZiNDI4MjVjOTg1NmEifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L54-L66",
+          "version": "repo-lines-v1:sha256:386a17fac814b596e4ac320055ae1220609cff66469774c0ec1b6d628d27b08e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MGI1ZDQ4YzY3OGI2Y2MxOTdhODIyODliMmM1MzliMTgzMzVmOWU5MjVlNWNiMjRmY2UwZWZmMTFjMGQ0ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0YTc2MDI3ZDY4ZTM2ZDRiYTczYmE0ZTJkNzRjNTczMjJjMTQwMWZjZTg0NzNhOWJjMWUxZWEyNmI3ZmQ2NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYjJiODUwYWM4ZmZkNGMyOWM4NzgxMGM3MTEzZDcwZWY1NjI0NzA5ZmNhMzU2MTNjOGFiMDg4MjdlOWE4ODkifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L76-L124",
+          "version": "repo-lines-v1:sha256:2ab3fad795031f92d85c558d73f33425dedba73ba75b39b863eb633634389387:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2NmJmZjk0Mzg2ZjBhYmU2NGY4N2QzN2QwYjYxNWE0NDRlNzMzYWZlYzYyMWNhMzNlZTczMjNhMzExNmM5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5MmY2Zjc3ZDRkOTU5Yjc3MDM2MDNkMjAwZjg5NTYzYjJiYTIxMTBmYzcwMjM5OTBmN2NlNTFjYWE1ZGRkNDEifQ"
+        },
+        {
+          "resource": "repo://vitest.config.ts#L37-L50",
+          "version": "repo-lines-v1:sha256:1da1c07ff464b2e7b954ec071e9040debbecefeabd1363428ea11022f3c6dc11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYzUzZDY0MDdjNDg5Y2M2ZDdmMGNhYjM0YmUyNTA2MDg0ZjI3ZjZlYmI5Mzk3YmRiODFjNzRkMTU1YzRkZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NDE5MTE5Nzk5YTUwNDVmOWY5OTkxY2YxZjkxMGE0OGZjYmNlNDU4MmRlMDE3NmM4MzJhNjRhYmM3ZmYzNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNjI5ZGQxNTg1ZjE2YWZhZDdhYWIxNjY1ZWU1YTIzNjM4OTdlNTI3YWI5NTNiZjVhMDkxM2YyODljZThlYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2NTk4ODM4ZmMyY2QyYTlmMmU5NjBhODlkNmI0NTU3Y2YyM2NmZDQ1ZjY4MTM1YjYzMTMzODdmODYxNzBmNGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_501ea00d5c9c41f5bea45e5fa535e939",
+      "statement": "src/version.ts derives OPENWIKI_VERSION at module load by walking up from import.meta.url to OpenWiki's own package.json (so the runtime version never drifts from the published one, with a 0.0.0-unknown fallback) and derives OPENWIKI_PRODUCER_ACTOR (openwiki/<version>), the by value stamped on code-owned OKF generated/verified events.",
+      "evidence": [
+        {
+          "resource": "repo://src/version.ts#L45-L67",
+          "version": "repo-lines-v1:sha256:3dee705c5d7a35299d8e2e16b70a5a196f112a277b95d9101494ec0e604ed196:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NmUxODEzMDA1MTQwZDRiMmJkMGEwYjVlYTkyZWE5OTQ5Y2FiZDAwMjU4MGUwNDJjZjVjZmIzYThiNjY1MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmNjdkODFjZTYwNjc5MjA5YTA2ZjMyNzlmMDFkM2E5OTg1YjQxZWQ2NzhlMGI0YmIyNTBhYTVkZjc2NTAxNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyY2VjNGFlZTRlNDUzNzYwMjVmYzZhOGFjNDYyYWJlOTQxMTAzZWQwNjJjZjc0OTMwZjk4YmZiNWNmODk4NTgifQ"
+        },
+        {
+          "resource": "repo://src/version.ts#L74-L81",
+          "version": "repo-lines-v1:sha256:613a5128ba2e55371b1a17fe978a71cafe213a1ccbcb65fd823631c3fbbff6e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM1YWIwYWRkNzdiZTlkNDFjODZjZjk2ZTY5MjA5NWMzNDBiOWQwMTliMDU4NmExYjhkOTI1OWNmNjI3OTc4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDdiMmM3MjJmMTc1NGY2YWJmODIzMzg0ZWJlMjUzOTA4YjQxYmE2YmM2ZDk0ZThmNjJjYzJmZWY0NzJlYmQxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c06322b7319a40cf8d20ff0b4e3ce502",
+      "statement": "src/model-availability.ts (getSelectedModelAvailability) probes whether a selected model is exposed to the configured OpenAI key, returning available/unavailable/unknown; the unknown status deliberately preserves the inference path so a catalogue-lookup failure is never treated as proof a model cannot be invoked.",
+      "evidence": [
+        {
+          "resource": "repo://src/model-availability.ts#L26-L84",
+          "version": "repo-lines-v1:sha256:c34555374b90a4b889726986613f2fb122a75753db373a2002459d6eb30ac481:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjY2NTQ5MDAzMjdlNDY3YjdiNzI4OGYwY2Y4NzE1MjlkOTRmMGFiMGI5NTUwZGVhYThiMmY5NjUyZGJjZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YmZkNjRkZThlOWQzYTYwZTM1ZjdiOTU5ZTcxYjllY2YyOTM5MGViMzcxOTM2MWVkYzMwMjdlNWJlODU4MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/model-availability.ts#L3-L6",
+          "version": "repo-lines-v1:sha256:14c678aed30b47af1b9c01602434617103824c8f2ce20942323227fb57008283:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZlMGMzODQ3YjBkNGEzNGRiNTRiMTMzMzQ3OTRmN2Y4NjZjNDIwODhhMzkwZjA4Zjk3YjU2NGE3NDFhNGQwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNjOTdjNTNhNzg4Zjk0MTdhYjZiODk3NWYyYjA2YjJiOWYwMWQ1YjU0NzBmZTIxMTJlMDA5YjI1NGYwOGE2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGU2MjcwNmQ0MzYzMjFlZDc4YmNkN2M3MGQzNGNjNTczY2M5MTE5OTdjYTExMDE4ZGI0MTNjMWE5YzNjMWQ2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWNmMTVjMDA1OTdkOWEyZjU0NzQ5N2E4ZjBmMmFmNWRhMTAyOWMzMDcxNGI5ZWJmZjQzYTY5ODU3ZGJmNjc0YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_13059c03cb6a45478b2f20ba5a6c4ae9",
+      "statement": "The server tree is compiled by tsconfig.json (rootDir src, outDir dist, exclude src/visualize/client.ts) while tsconfig.client.json extends it to compile only src/visualize/client.ts against the DOM libs, so the visualizer client is built separately from the Node server; the build script runs both compilations and then scripts/copy-visualize-assets.cjs, which copies the browser assets TypeScript does not emit (currently src/visualize/styles.css) into dist/visualize/ and fails the build if any destination is missing or empty. vitest.config.ts excludes benchmark fixture repos from collection and, for coverage, excludes declaration-only modules (types.ts, .d.ts), the pure re-export barrel telemetry/index.ts, the browser-only visualize/client.ts, and the keyboard-driven setup/credentials/use-init-setup.ts controller.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/copy-visualize-assets.cjs#L9-L40",
+          "version": "repo-lines-v1:sha256:c681a5e4fe1e8bea19864e8916430aadc128875ca9c9161b1b7f55ae1d646348:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNDMzZDU4ODAwYTY1NGIzZWRhOTMwOTcwMTk2MDQxYjI2N2Q5N2JjMTFkMzEyN2Y0ZTMzOTc0Y2JkYWYwYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNjQyMTU0NmU0ODZlZWYwZjM1MmZlNWE2MzEzODMyOGEwOGE0YmFiYzMwZWIyMGVmNTc0ZDkzZDUwODc2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMjYxMWVlMmFiNTQxMzRiYWQxZjgwOGFlOGMwZGIyZWE0NzAxNzFmN2JhNTg4NWRjNGZkYTFmNTBlOTQyY2QifQ"
+        },
+        {
+          "resource": "repo://tsconfig.client.json#L1-L8",
+          "version": "repo-lines-v1:sha256:9b427d820f5e85180149f9e3cd59b5e7aa79d1ae31728926e072e0d844a7476d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDc3ZjA1YjkxODIzOTJhZTljNDE2MTBkYjc0NzI2ZmMxZDQ3M2FhNWU1MTI3YWYwZGFmODhmYjVjODhjZWVlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://tsconfig.json#L17-L17",
+          "version": "repo-lines-v1:sha256:deb28d5c3158bd38be016997ae9e931aeedc44b03fe96e0bf74662d53f410e8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGViMjhkNWMzMTU4YmQzOGJlMDE2OTk3YWU5ZTkzMWFlZWRjNDRiMDNmZTk2ZTBiZjc0NjYyZDUzZjQxMGU4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGViMjhkNWMzMTU4YmQzOGJlMDE2OTk3YWU5ZTkzMWFlZWRjNDRiMDNmZTk2ZTBiZjc0NjYyZDUzZjQxMGU4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2U3NTFjYTA0ZjYzMDZkOTJhOGQ4OWUzN2I3YWQ1ZjIyZjU4NjZiZjU1MTQwYTNkYmY2NWMwYWM5ODM2YzM3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://vitest.config.ts#L18-L52",
+          "version": "repo-lines-v1:sha256:375c1cba62dc110d010c45362714c3c6fa04d7d16d47033931f221c2efaebbc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyY2VjYjE0NGE0NmY1ZGNmMTJhNjE2OWZjZWVkNzY5NWU4Mjk0YjA5MGRlNzZmMzY2MWNkZDAyNDkzMDAxNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyOWUzYzRmZDYxMjc5YjQ5ZDk4OThhMDgxMzg1Mzc3YmMyMzA3OTNiY2RkYTQ3YjIzNmMxZTU0NTNjYTFhM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4M2MwM2ZiZGY5YjM0NmFhNTUyNzg2YjVlZWJiM2FhZDRmYWM4M2FiOWU1YzZiNWQ1MTVhM2ViNTljZWVkNTIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

@@ -4,6 +4,8 @@ title: Source Map
 description: Maps the OpenWiki /src directory to its owned subsystems, giving each one a responsibility and its principal entry files, and identifies the largest, most central files that anchor agent execution, configuration, and repository generation.
 tags: [source-map, architecture, subsystems, entrypoints, src-layout]
 sources:
+  - id: openwiki-source-d9796193ef2a63134f9c6e25
+    resource: repo://scripts/copy-visualize-assets.cjs
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -52,24 +54,38 @@ sources:
     resource: repo://src/mermaid/fences.ts
   - id: openwiki-source-3a971b24f14be56fa16b8e4b
     resource: repo://src/mermaid/validate.ts
+  - id: openwiki-source-ebe194cbeaa2594a6699f9a1
+    resource: repo://src/model-availability.ts
   - id: openwiki-source-54432f9303757678a104d85f
     resource: repo://src/okf/frontmatter.ts
   - id: openwiki-source-2f1e489d53c52a0582582659
     resource: repo://src/platform/fs-errors.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
+  - id: openwiki-source-f6fe7fe151c0fff9f24c55d9
+    resource: repo://src/setup/credentials.tsx
+  - id: openwiki-source-14d4f389b56575bb7afd1310
+    resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-a1d0931b37e6e9efdee37e97
     resource: repo://src/telemetry/index.ts
+  - id: openwiki-source-9114a8122dd976bfa887f356
+    resource: repo://src/version.ts
   - id: openwiki-source-d92f623adbf6b31c3542d58d
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+  - id: openwiki-source-42403648c3f500ce06398039
+    resource: repo://tsconfig.client.json
+  - id: openwiki-source-98d5ddb014a0fd4d678f6f2a
+    resource: repo://tsconfig.json
+  - id: openwiki-source-fbadcd8591b65031efaaedce
+    resource: repo://vitest.config.ts
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Source Map
@@ -346,11 +362,37 @@ error classification (`classifyError`, `tagErrorStage`), and the opt-out gates
 (`isTelemetryDisabled`, `isCiEnvironment`). `senders.ts`, `errors.ts`, and
 `taxonomy.ts` carry the implementation.
 
-### platform — OS and filesystem primitives
+### setup — first-run onboarding and setup wizard
+
+Owns the interactive first-run wizard that collects provider credentials, the
+wiki goal, ingestion sources, and scheduling. Principal entry:
+`src/setup/onboarding.ts` (`OpenWikiOnboardingConfig`, persisted to
+`onboarding.json` under the OpenWiki home, read with `readOpenWikiOnboardingConfig`
+and written with `saveOpenWikiOnboardingConfig`); it also owns the repository
+`INSTRUCTIONS.md` paths and the `isOnboardingComplete`/`isRepositoryCodeOnboardingCompleteSync`
+predicates. `src/setup/credentials.tsx` is the thin composition root for the
+credential-collection wizard: `InitSetup` wires `useInitSetup` (the Ink state
+machine) to `InitSetupView`; its pure logic lives in `credentials/steps.ts`
+(`orderedSetupSteps`, `needsCredentialSetup`, `hydrateRunModeConfig`), `credentials/format.ts`,
+and `credentials/persistence.ts`, with the keyboard-driven `use-init-setup.ts`
+controller excluded from unit coverage because `ink-testing-library` cannot
+exercise it cleanly (see `vitest.config.ts`).
+
+### platform — OS and filesystem primitives, version, and model availability
 
 Owns cross-platform helpers shared by other subsystems: `fs-errors.ts`
 (`isFileNotFoundError`), `diagnostics.ts` (secret redaction), `language.ts`
-(language resolution), `windows-acl.ts`, and `utils.ts`.
+(language resolution), `windows-acl.ts`, and `utils.ts`. Two top-level modules
+sit alongside it as cross-cutting singletons: `src/version.ts` derives
+`OPENWIKI_VERSION` at module load by walking up from `import.meta.url` to
+OpenWiki's own `package.json` (so the runtime version never drifts from the
+published one) and derives `OPENWIKI_PRODUCER_ACTOR` (`openwiki/<version>`), the
+`by` value stamped on code-owned OKF `generated`/`verified` events; and
+`src/model-availability.ts` (`getSelectedModelAvailability`) probes whether a
+selected model is exposed to the configured OpenAI key, returning
+`available`/`unavailable`/`unknown` where `unknown` deliberately preserves the
+inference path so a catalogue-lookup failure is never treated as proof a model
+cannot be invoked.
 
 ### mermaid — diagram validation for generated pages
 
@@ -387,3 +429,19 @@ Caption: Control flow from the CLI through the agent into the repository
 generation lifecycle, with the shared Claims guidance feeding both the native
 page-worker prompt and the MCP host instructions, and config identifiers
 shared across subsystems.
+
+## Build and test layout
+
+The server tree is compiled by `tsconfig.json` (`rootDir: src`, `outDir: dist`,
+`exclude: src/visualize/client.ts`), which `tsconfig.client.json` extends to
+compile only `src/visualize/client.ts` against the DOM libs — so the visualizer
+client is built separately from the Node server. The `build` script runs both
+compilations and then `scripts/copy-visualize-assets.cjs`, which copies the
+browser assets TypeScript does not emit (currently `src/visualize/styles.css`)
+into `dist/visualize/` and fails the build if any destination is missing or
+empty. `vitest.config.ts` excludes benchmark fixture repos from collection and,
+for coverage, excludes declaration-only modules (`types.ts`, `.d.ts`), the pure
+re-export barrel `telemetry/index.ts`, the browser-only `visualize/client.ts`
+(its pure logic lives in `visualize/client-lib.ts`), and the keyboard-driven
+`setup/credentials/use-init-setup.ts` controller, so the aggregate reflects only
+files with real, coverable behavior.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d8cc8026dc76e3e9b9812945197030063a10b5b731bb2573176dbdddf1d8d063",
+  "pageVersion": "sha256:95c1c3619bf69a680a71805a3ec5e64e627c91bf07d568bd7adfccd901aacaf2",
   "claims": [
     {
       "id": "claim_9fea18d761f54f39a632b03243af4a9d",
@@ -391,10 +391,60 @@
           "version": "repo-lines-v1:sha256:cd249aa57ff6a668dbc2ab73d327b4e2bdf250e3164cb49f412b3acc1114bb70:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E2MjQ5NGEzNGI3OGIyODk2MjYzMzgxNzBiODM5NTYwYTZiYzk2ZDcwYmU4MWFkNDI0YWM4Njc5YmI3ZTI4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmM1ODNiZDRiMGRhZjk3OGU3ZTA5MzAzN2Y1YTNiYTI3NmE1MzdjYTEwMWMyYjI5NjcwYjFmZDk4M2ViYmI4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTMxYTA0MzQ5NTBlZmQ1ODUyYjg1MWFkMjkwMTEzOTY4ZmUyM2E2M2YxNWZiMDc1ZDY2NmE3ZmFiMzBiOTMxZSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_eaaae377f7a2489f92deb021056e5ea9",
+      "statement": "OpenWiki maintains AGENTS.md and CLAUDE.md root agent-instruction files by rewriting only its own managed block delimited by exactly one '<!-- OPENWIKI:START -->'/'<!-- OPENWIKI:END -->' marker pair; content outside the block is preserved verbatim, the snippet is appended when no markers exist, and malformed or duplicated markers cause setup to throw and leave both files unchanged (both are prepared and validated before either is written).",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L18-L25",
+          "version": "repo-lines-v1:sha256:3ca1b1316b794ccaa2c6ce4d83121ab5a502ab25d16a5a838565ab25799f5e4b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYyNmM5ODUzMjIzNGIyNDI1OTJjMjM3YjQxMmNiY2ZiMWNkYzFkMWEzMmRmZTUxM2E3MmNmMTE3MmExNjZhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJkZTg4YjRhYzMxYzE0OTEyMDk1ZWJhZDk4NmUyYmFmOTUwZTUyMDIyOTExMzY3M2I0NjYwZDdhNjg3OTY0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJjMWJiOWMyNTE4MjRkZWQ4YjYwZWRiZGNkNzQyZjcyNzQzMjkxZjhkY2E2MzYzOGRhYWRlNTUwZWYxMzZlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWRiMmZlOTViMmNlZjZhYjYyY2NkMzBkNzczZjE1YmFkYmE2ZDM0MDMyZmVhYTIwMzRkNmQ2ZjVmYzdjMjkzNSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L192-L225",
+          "version": "repo-lines-v1:sha256:c01ee7202d4cbd4185ec50b4d1fab659b390a829f5716fb67867d520247966bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTU0YzdkZjI5NmI4NDgyOTNmNzRiZmE2ODRjYjUyMDRjOWVmZGE0ZDZjNzRlNjA2MDUzZDA1NmU4MzMwMzQifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L227-L275",
+          "version": "repo-lines-v1:sha256:335c164c38f1c5ba7290f8315c6ee8f1000d0e6889d4895c3d2551c3ce65dd47:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OTZiMDRkZjI0ZmFlZTQ5ZjUwNWRkNTZkMWUyOTEyNmU0ZDA4MGZmNzJjNGEzZmQ2NTllMWVhNzk2ZTA0ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyOGVkYjA3NTc0ZDcxYWJiZTMzZDcwMGUzZGE4OTQwZDNiYjE5N2RhY2YxNDFkNTNhYWJmYmRmZmVkN2I5YTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0eb130f277fc40e2b6e934738ec62dfb",
+      "statement": "AGENTS.md is the canonical source of agent guidance and its managed block carries the pointer to the generated openwiki/ index plus directives to treat source/tests as authoritative; CLAUDE.md's managed block is intentionally minimal (a single '@AGENTS.md' import) because Claude Code expands its own '@path' syntax, and when CLAUDE.md resolves to the same file as AGENTS.md (symlink/hardlink) it receives the full AGENTS.md snippet instead of the self-referential import.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L192-L206",
+          "version": "repo-lines-v1:sha256:7eda4cac1b88a7dc058a6619eee2b0432052b22d93c675dc73d4dd1eb267018a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MmI3MTlkYTk1ZTE5YzQzZTVlMzE1NWFiZjI5MjhlZmZlNWRlMWI2YzU2N2Q2ZmU1ZWRlYjAxMGRlZGVjZjEifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L423-L457",
+          "version": "repo-lines-v1:sha256:e6906a67db2a83c56b8b9205e4b4dc37852cb12c2539286576b08d147c505e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NzRhMWE3MzI1MTkyZWI1ZWFmYTZlYjU5OTUwZjY4MGVjNzdkMWMwNjg5Y2RiNDA0NTY3OTM5NzhhMDZkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWEyMjc0YmYzNmEwOWMyMjI3ZWRkNGI2M2E1YjgzZDFkZmUyNTIzYjFmOTE3NmE4NGMyY2M0N2IwYTlkODYifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L464-L474",
+          "version": "repo-lines-v1:sha256:8cff508ca4d3c96cf6894f1115dc1dcca14b8777d510847c647c1eaf0a82bc54:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTc1OGMyYWQ5Yjk4MTc0MGI3OGExY2UzMWVhZTBjNTI4ZjY2MTAxOGNhNGQyOGE3ODU4N2E2YzZkMzc0ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYmNiNDg3ZmMyZTFmZDExMzBlZTViMmIyOGQzZDFmYjJiOTI2MTY2NTdjNTg2OTdlNjVhOGNhZTFmOTRhZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d246f74f8b8643f5a09a3d9b3c1f36fe",
+      "statement": "The code-mode setup also creates the scheduled-update GitHub Actions workflow (.github/workflows/openwiki-update.yml) only when it is missing, and that workflow's pull request add-paths includes AGENTS.md and CLAUDE.md alongside openwiki so refreshed instructions ship with regenerated wiki content.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L396-L405",
+          "version": "repo-lines-v1:sha256:6f12985340d8c5025c9735f8bc223d846d4d4d232b89a8a017f6794d475eb44e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNjNiMWQ4NzlhMTQ5YTE4MTA2MjM5ODJlZWRiOWYxODdjZmFkZDJjMGRlNjEyMDE3YjUxZGEzZDA2YzE3MTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyY2QwMjM2MmZhM2Q1YWZmY2Q2YmEzNDY5NzJkYmRhNGQ3ZmI3MzExYzA4YjkzNjE2Mzg4OGRlYmY4ODg0NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MzZmMzlkMzA3YTkwMTA1NzIzODIyMGQ3NjJhODk0NDE5OTExMWQyZDgyN2Y2MmY4ZTJmYmNlZjU4MmU3NTUifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L70-L97",
+          "version": "repo-lines-v1:sha256:9cc73be1fd170889c93baa19692f63ffedcdd5ddea0dc494559724808e3cd04e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMjUyMjIzOTQ0NGExYTExMWU3YmRjODI0MTI3NzI5N2QzNGQxN2E4MTJhYWZkOGI5ZGU0OTlkZjA4ZWU1MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmOGEyZThhMmY5MDgzMGY4YmEyMzA4ZDQ3NjliM2I1MWJlMDEwNTRhMzI5NjQ1NThmNzk1NDg4NjAzMzZiNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MGQwYTA0Mzg4YmJjZDgxZjYyODFjMDMwNTQ1ODc0MDEwZmFmYzZmMzM2ODkwNzU4NmEzYjM3MzhiYjlhZWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T10:21:48.925Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

@@ -1,7 +1,7 @@
 ---
 type: workflow
 title: Wiki Finalization and Link Integrity
-description: How OpenWiki deterministically finalizes a run — persisting Claims, projecting them into OKF sources, synchronizing indexes and generated provenance, validating internal wiki links, and re-proving the whole run before deleting .run.json.
+description: How OpenWiki deterministically finalizes a run — persisting Claims, projecting them into OKF sources, synchronizing indexes and generated provenance, validating internal wiki links, re-proving the whole run before deleting .run.json, and maintaining the AGENTS.md/CLAUDE.md root agent-instruction files.
 tags: [finalization, wiki, okf, link-validation, provenance, claims]
 sources:
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -16,16 +16,18 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
+  - id: openwiki-source-85064d6a188fa56bcc282f11
+    resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-9bac7069736f3ea19ed36748
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-bed0edb2a7279f0e40a56c2f
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -36,6 +38,9 @@ output it writes — directory indexes, OKF `sources`, the `generated` provenanc
 stamp, broken-link stamps — is derived mechanically from the current wiki bytes
 and a snapshot captured before authoring. Its job is to make the wiki internally
 consistent and to prove the run is durable before any run state is discarded.
+A companion contract maintains the repository's `AGENTS.md` and `CLAUDE.md`
+root agent-instruction files, rewriting only an OpenWiki-managed block inside
+each so repo-authored content is preserved.
 
 Two functions bracket a run. `prepareWikiForAuthoring` migrates existing
 concepts to OKF and captures a pre-authoring baseline; `finalizeWikiArtifacts`
@@ -273,6 +278,42 @@ and the `"interrupted"` checkpoint rather than by re-planning. Crucially,
 the run state on disk, so `begin()` can reconstruct and retry. This ordering is
 what makes finalization crash-safe: the run is never marked complete until the
 finalized wiki has been re-proven durable.
+
+## Root agent-instruction files: AGENTS.md and CLAUDE.md
+
+Beyond the wiki itself, finalization keeps two root agent-instruction files —
+`AGENTS.md` and `CLAUDE.md` — pointed at the generated wiki. This is owned by
+`ensureCodeModeRepoSetup` / `writeCodeModeAgentSnippets`
+(`src/ingestion/code-mode.ts`), which run at the code-mode setup boundary rather
+than inside `finalizeWikiArtifacts`. The contract is deliberately narrow:
+
+- **OpenWiki rewrites only its own managed block.** Each file's OpenWiki content
+  is delimited by exactly one `<!-- OPENWIKI:START -->` ... `<!-- OPENWIKI:END -->`
+  pair. Everything outside that block — hand-authored instructions, repo policy,
+  imports — is preserved verbatim. When no markers exist, the snippet is appended
+  to the end of the file; when a single well-formed pair exists, only the text
+  between the markers is replaced.
+- **Malformed markers abort rather than guess.** If a file has markers but they
+  are duplicated, out of order, or otherwise not exactly one `START` followed by
+  one `END`, setup throws and leaves the file unchanged, so a half-rewritten
+  sibling cannot result. Both files are prepared and validated before either is
+  written, so a malformed marker in one does not corrupt the other.
+- **AGENTS.md is the canonical source.** Its managed block carries the actual
+  agent guidance (a pointer to the generated `openwiki/` index plus directives
+  to treat source/tests as authoritative and not hand-edit generated pages).
+  `CLAUDE.md`'s block is intentionally minimal — a single `@AGENTS.md` import —
+  because Claude Code expands its own `@path` syntax at startup; a Markdown link
+  would be inert.
+- **Symlinked CLAUDE.md is handled.** When `CLAUDE.md` resolves to the same file
+  as `AGENTS.md` (a symlink or hardlink), the `@AGENTS.md` import would point the
+  file at itself, so `CLAUDE.md` instead receives the full AGENTS.md snippet.
+  When `CLAUDE.md` already contains only the `@AGENTS.md` import and no managed
+  markers, it is left untouched.
+
+The scheduled-update GitHub Actions workflow (`.github/workflows/openwiki-update.yml`,
+also created by code-mode setup, only when missing) adds `AGENTS.md` and
+`CLAUDE.md` to the update pull request's `add-paths`, so refreshed instructions
+ship alongside regenerated wiki content.
 
 ## Related
 

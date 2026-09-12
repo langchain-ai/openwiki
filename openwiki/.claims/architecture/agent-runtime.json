@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3cb1d33c2a32251cddd61df18d1613d6e98453eb7d6c43c13ee129ed1203c69d",
+  "pageVersion": "sha256:0593c033ebccf128e65f0d78128396cd9f384f9166555159d1613874aa263b81",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -573,10 +573,96 @@
           "version": "repo-lines-v1:sha256:d2556426539ec9812435c62b8ddc9058aa1a9978b6098b0e09233087c6db1b4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGQ2NmNkYjNkMTdiNTJmNDg0NzdiOWI2NzA3ZWQyZmRhZDFkYzRmYmJmNzQ0YzgyNGQ5MDJmYmE4MmRmOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MjA2Nzg2NjI0YWNhZmYzY2ExYWFlZDUzNDZlYWU0Njg0MWNjYjdiY2I4MzVjY2NmNWYyNzYxMWIzYWU1ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OWI3NGI1MDkzMTA2MzFmOTUxZDQ2NmY4ZTg2YWYxM2JmMjJmNTc0ZmYwNTk0NTdmNDg1M2ZhMzM1MmM2NGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f14a1dc13c844447a766a355074a6128",
+      "statement": "runNativeRepositoryGeneration drives the durable repository lifecycle with one planner agent (bounded to submit_plan and read-only filesystem tools) and one fresh page worker per page (bounded to its assigned page via writableWikiPages, with inspect_claims and submit_page tools), converts correctable invalid_input submission rejections into recoverable ToolMessages so the worker can retry, mounts NO_DELEGATION_MIDDLEWARE to strip DeepAgents' task tool, streams only tool-lifecycle events (not narration), skips a worker that exits without submitting (restoring its snapshot for the next update), and finishes with finishRepositoryRun.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L205-L254",
+          "version": "repo-lines-v1:sha256:b42fe1b8de3a1ee8a61d4c90f1edfa36871beec5cb384204cb0cb25fa683d071:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1OGU5MmJkYzc4OTAyNzg5YmE5N2Y5OWNiY2VhMTNiOTA1NDA1MTk3YzE1MmI0OGEwNDJiZDQwYWQ0YzY1YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwZWI3ZDk2Y2YyMTdmMmM4NzBjNWY0YjJjNWM1MzJjZDdiYWJmOWQwNDMyNGE1MTUwNzFlNzNkODBiMGQ4NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNjA1MGE5NGUzZDI3YjQ5NWIzZDJlZDBhMTQxZGJkYTJmOWUxMTViYmY4NWY1NTU2NjZkYmU5ZGQxNzJjZDEifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L287-L363",
+          "version": "repo-lines-v1:sha256:917a7382b6628ef3c5e3a4430e057f985c76a36a888b74b6de976cdaaf502b05:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZjRhODE1MGMyYTE2MTkyYmVjYzRlMGUxODliNGY0MTVjZTUxZjhmZDYxNzI3MTI1ZTFmYjNmNThiMTc1MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYzIxZWNmZjQ5ZGFlZmRlZWVlNjJlMTQ0YjI2NWMxMjk5ZDY5NzU3YTBmZjBkZDcxNDUyZjM2OTJmMDM5NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMjUxODNlYjQzZjMxYjRmMjg2YWE2MGQ0NjcxNDg3MWQ3NWQ3YTk5NjNkMTcwMzk5ZWIwZTI3NDM3MmY4NzIifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L407-L519",
+          "version": "repo-lines-v1:sha256:ad32cdad3a86cb0f93cd949d2322ef1bb0f5f0241314d29fd04c86fea0467980:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNzRhZTdlNDdkOTQyN2NmMzcwMGJiNGZmNWJjMTUyYzAxNjY5Y2Q0NjEwMzhkYTE2MmJjOTFiZmQ2MTVmYWJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OWJkMDE1ZjNjMWVkMWNmN2Q5ZThiYTFhM2M1YzRjZjY1MTVmZjhmNGFlMWY4NDYwNDA3NjhkMTYxOGEzM2RhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjYTg4OTAyOGM4OTA0M2ZhNTQyYzU4YjEwZmE3YWJiYjE4Yjg5NDY3YzQwOTk2MmQwYTQ1ZjgzZjgzZDUxNTAxIn0"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L538-L597",
+          "version": "repo-lines-v1:sha256:9540914e154052873b8cdbeb7d4ba5e048311a696ff185e9feece7ab9662bef3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MzQzNGMxMzFkMjk5ZmNlNjA1YmJjMWU2NDZhNzMwMThlYTcyOTU4NTQwMmJmMTkyMDI2YTZlMzY4MTUxNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiN2Q3OGU5NTgyOWI3NWRjZmRjZWZmNzgxYzNlNGViZGM0YzEyYjNmNTc0NzcyNjNhZDI0YTI4MjdkNjE3YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjNjFmZjU2YmQxYzg5NTAwZjBmMGU2OTA1OTViMzI3MWYwNDFkZDllYjY3ZWM1ZTVkNmY5M2VmNDA0NTY4ODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bec2bb90fe2142228f0fd06b906ac431",
+      "statement": "OpenWikiIgnore parses the .openwikiignore file into an ordered rule set threaded as one cohesive object through the agent backend; it uses last-match-wins gitignore-compatible semantics (! negation, */**/? globs, leading-/ anchoring, trailing-/ directory scoping), case-insensitive matching (the i flag closes an alternate-cased filesystem bypass), and normalizes every path via normalizeIgnorePath (anchoring to / and collapsing . and .. with path.posix.normalize) so equivalent spellings cannot dodge an anchored rule.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L18-L178",
+          "version": "repo-lines-v1:sha256:31ad9f73017f50729e0ddc8f1dc6195c0f1f43611bdbee657b09b8cbc9fe37e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MjljOWY4NDM4MzZhYzdhOGU2OWE0ZDY2MGQ0MzgwMjk0ZjNmYjQ4NTlmY2FhMzdkZWIyZTMyMjQ5NTgyNzQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NzI1YmRiN2JiZTQzODg2YTFjN2RhMjFmMTVmNTBmM2NlMTVkNGQ3MjI5YWU3Y2VjZTcwMWUzMGE3ZGM4NmU4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNzkyOWU5MWUwZjk5YzNlODI1ZGU2OWI0MzVmYjY0ODRkMWIwYTFkZjJmNDY1NjFhYmYxYTI5ZjA0MTg4Yjg4In0"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L194-L288",
+          "version": "repo-lines-v1:sha256:fa1daf7462a52c49fc89729953b9e3748929837e100b0b7f5f3282f5949f3808:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNzJmNjViZTUzNDRkZWMxOWM5NmFkZTMwNmIzNWI1ZmEyOTQ1NTdiM2Q3YTQ5ODdlMWY0OTAxZTZkMWI5NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjZTgwOWJkNjZjMTU4MzJkYWYxN2UyOWI3Yzc2NGRmNDE1NTBiNTE3ZDg1OWM5MDAzYWY5NDExODdkMGRlNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NDdkOWNiZjNjNjUwMmJhMTQ4MjRjMWNmY2ZkZGRhMmM0YzhkMTNmZjkyZjFlNjIyNjhmNjRmMGFlNTI2OGEifQ"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L300-L311",
+          "version": "repo-lines-v1:sha256:61f986a32d736606f20690240052bbdf6eabcba54e25a177d96373cffeed15f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMDIyYTQ3NmVhZDhlNjBiZWMwNmM0OGNmN2M1YzA4YThhNTAzY2MwNTBlMDRmNjlkOWQ3NTgwMmJiZGYzYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmM2RiMzdiOTFiMWMxODZiODQxNDE2ZDVkYzk3ZGViNWZkZjQ2OTY3NjJiM2MyM2I0NDUzMmZmMDg2M2VlNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4YzZhNTIxYTk4ZDQ5MmFhYjA2MzczYjhkYmNkNWE4OGE4MGMxNzEyNGQ2YjNiOGI3N2Q4MTA0NDZjZDhmM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aae3250dcdb44c70a4d36495e906f713",
+      "statement": "prepareWikiForAuthoring runs before the agent starts: it migrates existing pages to valid OKF front matter (migrateWikiToOkf) and snapshots their exact pre-authoring body hashes and prior generated events (snapshotGeneratedProvenance), returning a PreparedWikiState baseline that is serializable (serializePreparedWikiState/deserializePreparedWikiState) so a process restart can recreate the finalization baseline from persisted .run.json.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L133-L166",
+          "version": "repo-lines-v1:sha256:95c4e5fbc69e9b28b9c35328669444753609ab74f436bb42c1a384f4e5a90fcc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlYzZkNGFiNDQ0ZTlmMTk3ZTljN2UzNGI3NjhjZTI2NmQyYzJjZmQ2NjVmYzc3ZmFjNDU0NzQ1ODMxYjJiNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMjIxZTc1OTQyYjVjOTVhNjg1MmE0ODRlZDQ5MGExMjc3NDU0NWY2YzhiYmZkYzJhYTE4NDIzZDlhMjJhMTkifQ"
+        },
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L226-L240",
+          "version": "repo-lines-v1:sha256:9a6c65f382d7556813616527dbe0850f0942d564608bc7fd8874fe15399884d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZGE0ZjkzYjFiMTE0ZjFjYjQ0NGQ5ZTZlYjNmODJkZTc4NjRmMWJkOGRlMjhhMzU3YmRiMGY1ODE0YWM3NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzY2E1NjZkNWE3ZDdmNmQwZjNkZmIzNTY1MzE3N2NjNjczZjE2Nzc1YTdkNmFhNDYxODlkN2U5YWI0NDcwN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzE1YzA2YjQ1ZDQ2MmUwOWEyYzkyYTEyMDM3NWQwMzQyNmY5ZmRkNWZiNDJlYTNkMWMzNjAyZmZlMWE3ZTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58c53ababfc041aebe11f13df036ad8f",
+      "statement": "finalizeWikiArtifacts runs after the agent finishes in internal-agent order: mermaid validation (failed fences become text fences with a diagnostic comment), index synchronization, link validation (broken links stamped in place with an HTML comment, prior stamps cleared first so they never accumulate), optional Claims source synchronization, and generated provenance stamping that diffs against the preparation snapshot so unchanged pages are left alone; each operation runs through a caller-supplied telemetry wrapper.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L248-L285",
+          "version": "repo-lines-v1:sha256:cfb2290596a06239e83112a3ab83540ac3bb56acdf93a4da1133a7a7d0454a70:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+        },
+        {
+          "resource": "repo://src/agent/wiki-link-validator.ts#L161-L166",
+          "version": "repo-lines-v1:sha256:71ff0d14282876ce9fedf150413069da0e7d3a13c69ad035ec9cf3f409c82d04:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZmMzMyM2ExMTk3YzZmNGQ4MTJhZTg3MzJhMTU2NTdmNTZlMjExODAyNGIzYTliNTViZTMwYmI1ZDFiYzU5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDFmZDRiNDJhZmFkZTQzZTc5MTU1MmZmNGZlZjA0YjI0YzU5ZDk4ZjM2Mjg2NTQ1ZDEzM2Y3ZGY5ZDNmOThmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYxOGE1YTgxMDljNGYwYTdmM2JmMzZjNWY1NWRiNmRmMzhmNzUyZDliNTg1MjdmZjgxYWQ2Y2QzZTNmYTg4ZSJ9"
+        },
+        {
+          "resource": "repo://src/agent/wiki-link-validator.ts#L87-L135",
+          "version": "repo-lines-v1:sha256:a7eb7d858a801784dd5cb59a3cefe8f0abadb841c0ddfa5452342f440350ebe1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2YjU1YjdkNDg4YzdmNmI4NDk2ZjlhNmZkY2JiNmZlNTkyYTc1OWE1MWJhYTM4MmRjM2MyNTIxZDc1YzEzZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkMDE0MTI4ZjJmYzc0NDc5YzM0ZWFiNzg0ZWI0MWZhNzliNjg1Mzk5YjZmNTI3NzA0ODA3YTZmMDhhZjg1MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZWJhMzQyMTkzMDEyMDc2MDYzZGY3YzVkMWU3YTgyY2YxMGI0MzZiN2NlNzY3MmU0NTA4NjI5NjQwMjU1NDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a9003dbaec04520b63d050b43ebdfeb",
+      "statement": "beginRepositoryWikiReplacement backs up the existing openwiki/ directory to a private temp, removes everything under it, recreates it as a blank generation target copying back only INSTRUCTIONS.md (user-owned control metadata), and returns a transaction with commit (discard backup) and rollback (restore exact pre-init wiki); SIGINT/SIGTERM are intercepted for the duration so an operator cancellation restores the backup before exiting with the signal's code (130/143), and a first init with no openwiki/ directory returns a no-op transaction.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-replacement.ts#L198-L204",
+          "version": "repo-lines-v1:sha256:7cc9e8a834da67782305324c2e6d18face31362d2cd951ce68c5cfade128a72d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI2YTVhNzliYmJlODg3MDQ4YzhiZWU3MzNkYTlkNTMwYzI0ZWEwZmExNGJjNmRhYWM0Y2ZjZDExZWI5YzE4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDgyZjM2OGY4ZmQ1YmQ0ODliNGMxYWM3Y2MxNTg0MjBiYTM4NTI2ZjVlMjFmMDJlZDA1NmE1MDQ2ZDFhNjFjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/agent/wiki-replacement.ts#L42-L196",
+          "version": "repo-lines-v1:sha256:f986e5b5981b09005bb0e1c38d4434df1aa9c2f05d38a44f279bc03b986cb69c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwOGQxYWQ4YTJmNTIzMDA4ZTg5NmEyY2JmOTc0MjJhOTQzNjdiZTBkNzE4MGYxZmQ0ZWFiNzg1MmMxNWQ0MzBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNDY3YTQwMzBjMGIxZjJhYjg2NGNhYjI2NjViNWFiNzY2ZTkzZDBlN2I2ZTgzMjBiNGNkYTY2Y2IwNjNhMDFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNWFkYjFjMzgxNTQyOWEyNjFhZDJjYTllNzNhZmNkZjJhMTcyYTM0YTVjMzZlMTdhNGVkODQ1ZWYwMWU4MDAwIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

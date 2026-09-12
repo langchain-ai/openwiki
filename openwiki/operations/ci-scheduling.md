@@ -1,7 +1,7 @@
 ---
 type: operations-guide
 title: CI Scheduling and Self-Update
-description: How OpenWiki runs scheduled self-updates on GitHub Actions, GitLab CI, and Bitbucket Pipelines to open a docs pull request on change, how the scheduling module parses and manages cron expressions, and the ephemeral-runner resume caveat.
+description: How OpenWiki runs scheduled self-updates on GitHub Actions, GitLab CI, and Bitbucket Pipelines to open a docs pull request on change, how the scheduling module parses and manages cron expressions, the auto-merge setup, and the ephemeral-runner resume caveat.
 tags:
   [
     scheduling,
@@ -13,6 +13,7 @@ tags:
     self-update,
     launchd,
     pmset,
+    telemetry,
   ]
 sources:
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
@@ -33,12 +34,14 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
+  - id: openwiki-source-983a7ea90223cb0c0bfc6faa
+    resource: repo://src/telemetry/gates.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+    at: 2026-09-12T08:08:12.385Z
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 ---
 
 # CI Scheduling and Self-Update
@@ -232,7 +235,17 @@ the committed wiki, not leftover in-process state.
 
 `examples/openwiki-update-auto-merge.yml` extends the canonical GitHub Actions
 example with two extra steps that manage the PR's auto-merge state through the
-`gh` CLI after the PR is created:
+`gh` CLI after the PR is created. Auto-merge is repository infrastructure rather
+than an OpenWiki runtime feature: the example creates a docs-only PR and
+enables GitHub auto-merge only after OpenWiki finishes successfully, while
+required branch checks and reviews still control when the PR actually merges.
+Before using it, enable **Allow auto-merge** in the repository's pull-request
+settings, add branch protection or a ruleset for the default branch (require
+the checks that gate generated docs, and decide whether OpenWiki PRs still need
+human review), and create the `OPENWIKI_PR_TOKEN` Actions secret described
+below. Keep the workflow's `add-paths` restricted to generated documentation,
+pin every action and package version, and do not auto-merge changes to
+executable workflow files.
 
 - **Enable auto-merge after a successful update** runs `gh pr merge --auto
   --squash` when `steps.openwiki.outcome == 'success'` and a PR was created
@@ -250,8 +263,13 @@ in three ways beyond the auto-merge steps:
 
 1. **PR token.** It authenticates both `peter-evans/create-pull-request` and `gh`
    with a dedicated `OPENWIKI_PR_TOKEN` secret (the canonical example relies on
-   the default `GITHUB_TOKEN`). The token needs `pull-requests: write` to enable
-   auto-merge.
+   the default `GITHUB_TOKEN`). The token needs **Contents: read and write** plus
+   **Pull requests: read and write** — `contents: write` to push the update
+   branch/commit and `pull-requests: write` to enable auto-merge. The dedicated
+   token is deliberate: pull requests opened with the default `GITHUB_TOKEN` do
+   not trigger most `pull_request` workflows, so required PR checks would never
+   run. Organization policies may require a GitHub App token rather than a
+   fine-grained personal access token.
 2. **Workflow file excluded from the PR.** `code --update` regenerates the
    workflow file from an internal template, which would otherwise drop the
    fork guard on the live repo. The variant restores the protected file with
@@ -277,6 +295,20 @@ in three ways beyond the auto-merge steps:
   CI/CD → Schedules settings.
 - **Bitbucket Pipelines** likewise relies on a repository Pipeline schedule that
   invokes the `openwiki-update` custom pipeline.
+
+### CI telemetry tagging
+
+Scheduled CI runs still send OpenWiki's anonymous reliability telemetry, but
+they are never counted as human installs. Telemetry detection (`isCiEnvironment`
+in `src/telemetry/gates.ts`) treats any CI environment detected by the
+`ci-info` package — or an explicit `OPENWIKI_SCHEDULED` escape hatch — as a CI
+run. Such runs are tagged `execution: "ci"` and sent under a shared sentinel
+install id, `ci-<provider>` (for example `ci-github-actions`), derived from the
+CI provider name rather than the per-install random id. Collapsing every CI run
+to one id per provider keeps ephemeral runners from inflating the distinct
+install count; the runs still report command/outcome reliability data, but
+nothing that identifies the repository. Set `OPENWIKI_TELEMETRY_DISABLED=1` (or
+the cross-tool `DO_NOT_TRACK=1`) to disable telemetry entirely.
 
 The live GitHub workflow also builds OpenWiki from the checked-out source and
 runs `node dist/cli/cli.js code --update` rather than the published package, so
@@ -312,3 +344,5 @@ plus full git history, as the only durable state carried between runs.
   `code --update` regenerates and its resumable page-job architecture.
 - [Personal ingestion](/openwiki/workflows/personal-ingestion.md) — the
   ingestion run that native macOS schedules trigger.
+- [Telemetry](/openwiki/operations/telemetry.md) — the CI/scheduled run tagging
+  and opt-out described above.

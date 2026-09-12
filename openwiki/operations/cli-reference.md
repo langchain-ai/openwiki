@@ -1,17 +1,23 @@
 ---
 type: cli-reference
 title: CLI Commands and Flags
-description: Reference for the OpenWiki CLI surface, covering command and flag parsing, run mode selection, print versus interactive dispatch, host integrations, visualize, cron scheduling, and how parsed commands are wired to their runners.
-tags: [cli, commands, flags, run-mode, integrations, visualize, cron, ink, mcp]
+description: Reference for the OpenWiki CLI surface, covering command and flag parsing, run mode selection, print versus interactive dispatch, host integrations, visualize, cron scheduling, auto-exit for init/update, in-chat slash commands (/api-key, /langsmith-key, /effort), and how parsed commands are wired to their runners.
+tags: [cli, commands, flags, run-mode, integrations, visualize, cron, ink, mcp, slash-commands]
 sources:
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
   - id: openwiki-source-5f52dc71fb07ef4892914c46
     resource: repo://src/cli/app/app.tsx
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-b8329aff60732d4f8e2be87c
+    resource: repo://src/cli/components/chat.tsx
   - id: openwiki-source-9472f4eef69027c6849ac706
     resource: repo://src/cli/diagnostics/error-diagnostics.ts
+  - id: openwiki-source-e4ec1fca2618600753c2eec7
+    resource: repo://src/cli/input/menu.ts
   - id: openwiki-source-ada18c62d92003b613355e30
     resource: repo://src/cli/integrations.ts
   - id: openwiki-source-8d81ffb5996861d05633851c
@@ -28,10 +34,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # CLI Commands and Flags
@@ -79,6 +85,34 @@ flowchart TD
 ```
 
 Dispatch of a parsed CLI command to its runner or the interactive UI.
+
+## README command reference
+
+The README enumerates the primary invocations. The bare command and the
+`personal` positional start interactive chat (code mode by default, personal
+mode with the `personal` positional or `--mode personal`); a quoted message
+starts chat with an initial request; `-p`/`--print` runs one-shot and exits.
+
+| Invocation | Behavior |
+| --- | --- |
+| `openwiki` | interactive chat, code mode, current repo |
+| `openwiki personal` | interactive chat, personal brain |
+| `openwiki "generate docs"` | start chat with an initial request |
+| `openwiki -p "what can you do?"` | one-shot, print, and exit |
+| `openwiki --init` | initialize code docs (`personal --init` for personal) |
+| `openwiki --update` | update code docs (`personal --update` for personal) |
+| `openwiki visualize` | interactive graph + live reader |
+| `openwiki visualize openwiki --export docs/visualizer` | static graph + reader |
+| `openwiki auth <provider>` | authenticate a connector |
+| `openwiki ingest <source>` | run connector ingestion (`all`, connector, or instance) |
+| `openwiki integrations list` | show installed coding-agent integrations |
+| `openwiki integrations install <codex\|claude\|opencode\|cursor> [--project [path]]` | install a host integration |
+| `openwiki integrations uninstall <codex\|claude\|opencode\|cursor> [--project [path]]` | remove a host integration |
+| `openwiki --help` | full help |
+
+In chat, `/api-key` updates the current provider key and `/langsmith-key`
+updates or clears LangSmith tracing credentials, both via masked prompts (see
+[In-chat slash commands](#in-chat-slash-commands)).
 
 ## The parsed command union
 
@@ -167,6 +201,54 @@ code-mode repo setup (`ensureCodeModeRepoSetup`, creating the workflow on
 `runOpenWikiAgent`. The interactive `App` additionally handles help/error views,
 credential setup, and auto-exit for a real init/update run
 (`shouldAutoExitStartupRun`).
+
+### Auto-exit for `--init` / `--update` in a terminal
+
+`shouldAutoExitStartupRun` returns true for a non-dry-run, non-print `run` that
+was asked to start and whose `command` is `init` or `update`. In an interactive
+terminal the `App` then renders the final `RunView` and exits with the run's
+exit code (0 on success, 1 on error) instead of returning to a chat prompt.
+This is why `openwiki --init` and `openwiki --update` generate the wiki and
+exit on success when run from a TTY, while the same invocation in CI/pipes goes
+through `runPrintCommand`. The auto-exit path also applies to the code-mode
+ingestion summary (`ingestion-success`), which exits non-zero if any source
+errored.
+
+## In-chat slash commands
+
+Interactive chat exposes a closed set of slash commands, listed in
+`slashCommandOptions` (`src/cli/input/menu.ts`) and handled in
+`runSlashCommand` (`src/cli/components/chat.tsx`). `parseSlashInput` matches a
+typed line against a command label and splits off trailing arguments; an
+unrecognized leading token yields "Unknown command". Typing `/` (or any
+`/`-prefixed prefix) opens a selectable command menu; `/model`, `/provider`,
+and `/effort` each open their own submenu.
+
+The full set: `/provider`, `/model`, `/effort`, `/api-key`, `/langsmith-key`,
+`/init`, `/update`, `/clear`, `/help`, `/exit`. Of these, three are credential
+and reasoning controls called out by the README:
+
+- **`/api-key`** opens a masked prompt that writes the typed value to the
+  current provider's API-key env var (`getProviderApiKeyEnvKey`). Inline
+  arguments are rejected — keys must be pasted, never passed on the command
+  line. It errors for providers that use the AWS SDK credential chain (which
+  `/api-key` cannot safely configure) or providers without an API-key env var.
+- **`/langsmith-key`** opens a masked prompt for the `LANGSMITH_API_KEY` env
+  var; an empty submission clears the key and disables LangSmith tracing by
+  blanking `LANGCHAIN_PROJECT` and setting `LANGCHAIN_TRACING_V2=false`.
+- **`/effort`** sets the reasoning effort for the current provider/model. With
+  an argument it accepts a supported effort value or the literal `default`
+  (also `provider-default`), which resets to the provider default. With no
+  argument it opens a capability-gated submenu built from
+  `getReasoningCapability` — combinations that do not support reasoning return
+  no options and an explanatory error. An unsupported value names the offending
+  input and lists available values; if a shell-level
+  `OPENWIKI_REASONING_EFFORT` is set, the saved value is shadowed and the
+  notice tells the user to unset it.
+
+`/init` and `/update` route through the same run machinery as the CLI flags;
+`/clear` starts a fresh chat thread; `/help` prints the command list; `/exit`
+quits.
 
 ## Host integrations
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bf8bf3823081b84a0e7366c6fe1b278f325279f39358d2e905ed063dbd31e858",
+  "pageVersion": "sha256:c0e8fa9cc355346b7d45fdec7ed3a9a1f59a71a2d36b2a1f759fb8927fbac545",
   "claims": [
     {
       "id": "claim_2c2c25ddb0d546a397521ccdb56c10ed",
@@ -267,10 +267,148 @@
           "version": "repo-lines-v1:sha256:8d1fdcbd8f48851dc43993c4ef9112415a7c050cba3d4e84e32dee33445344cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZmNTVjMmJlMmU0MmU1ZGExNGI0N2FhOGE4YmY4MmEwZGNkMTg2NGRkZGM5ZDRjYjZlYWY5M2Y3ZjM2NDc3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWI5OGY1Y2E0MjBlNzNiYzFjNGVmOTYxZmY5Mzk5MTllMTg1YzcwYWEzYmE0YzgwZjA4NDdjMmNlYzBkNGIyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQ2MGQ5NWFkNDQzMmYwMDMzYmY2Zjk4ZGJjZDZkZGNlNzJkN2EyZjkwOGE2NTJmOWI3NDY1MDdhNGUyM2U3MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_8eeccf2aef2d44b8958988ed3948db1b",
+      "statement": "Connector secrets live in the OpenWiki env file and are referenced by env var name, never stored raw in config: MCP transport.headers values are ${ENV_VAR} templates expanded by resolveTemplateEnvReferences, which rejects a secret-like header (token/secret/authorization/api_key/bearer) that has no ${...} as a literal credential; buildChildEnv forwards only a base allowlist plus explicitly declared transport.env refs to spawned stdio MCP servers so the full process.env is never leaked, and sanitizeMcpTransport redacts ${ENV_VAR} to <env-ref> in persisted/logged transport.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L824-L911",
+          "version": "repo-lines-v1:sha256:870082238a969de623fe7af32bbe34f44b8301b846387cba193e7f4263aa3896:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1YmY1NGU3MTQwZTliYzNlNmJlZDM5ZDk0OGRlNWJmNTI2OTI4ZGU2ODNlMTRiNDA4NzYzNDY4MzE0OWE3YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxNzU0OGI3MzMyOWRjZjQwYzQzMmJkMDA1MGJlYzlkOGZhOGU3MWM5NTE2MzQzYTQzZjJlMzlhMTViODQzNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYWUxM2UxYTViY2I5ZjJiZjY0YWQyYzE5OGQ1YmIwYzgxOTI0ZDhkODM5NWU5ZmM3NTI3N2U0Y2JmN2Q0MzkifQ"
+        },
+        {
+          "resource": "repo://src/connectors/mcp-runtime.ts#L132-L154",
+          "version": "repo-lines-v1:sha256:876b84a481ba6d2fb18db5546dc766a1bc32a8361a6f791d478c0f867e2702ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MjIxYzkyNjVmNGE4ODYxNDBkZGM5M2Q1NWVlMmQ0NjQ0NzdjODgwZTY5OWE2MjFjZDdmNmQ2NTkyZjA2YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhN2E3MTg5YmE0OWI3Y2MxMTU4ZmFkYjI0YTYwNDA5ZWE3YWNiYjVjODE4ODYxM2QxMWQ1NTRiZTEyOWQ5OTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_21e91a56885f43098a97c369f02f6db4",
+      "statement": "Personal ingestion is driven by config.sourceInstances, where each OnboardingSourceInstanceConfig carries connectorId, an id (auto-assigned as <connectorId>-<n> via createSourceInstanceId when omitted), optional name, connectedAt (required for eligibility), an optional connectorConfig override, and an optional ingestionGoal; multiple instances of the same connector are first-class, and the instance's connectorConfig is merged field-by-field over the on-disk connector config without inventing defaults.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L222-L249",
+          "version": "repo-lines-v1:sha256:8bdb76035dd9ddd6876d538e3f0853ec340bdaa47bcaca0927b72b7f40c2c79d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNzIzZmE1OWRhNzliODVhYmY0MzNiODZkMDAwNDUwYzM5NjU1MzY4N2U0ZDM0MDQwMDY1NDY5MGNkNDVkOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczMTY2NmNkMDE2ZmNjNWZhMTExN2FjODkzOWVlNzM2OWI5OTdmZGFkMjJhYmQ1NDA5ZTk2MGRlMTY2ZGI3MjAifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L306-L348",
+          "version": "repo-lines-v1:sha256:568cdd27a47e093f37d8d5794629704e5e778974234a4e77b3c12208237757e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMmQ0ZWYzYjIzZmU5ZTc2MTJkNTEwNDNiMzNmMDgwNmZlNzMyYTgyNDVkNjFiNWI5ZmJlMTAzYTNlYTIzMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNmE5OTQxNmI5YjllZGI4N2UzZjkxNWQ2MDlmZjFiYzUyZjc3YjhhYjM3Yjc1ODc1OTI0NDlmYTg0M2Y5NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMzBkNjYyNGZiYjNiMDVlMDg4MTM1YWQ4M2YxMjUyZDhlNWM2ZmE0NTVmZWQ0NTk4OTZhNmIwMGY2YmYyYmIifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L37-L41",
+          "version": "repo-lines-v1:sha256:b813b946518e1fe4aee8888cfd23e6bf28348530f8ea619bd6a4e8e2dfa64095:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2EyYzg5ZWJlMmFmM2IwMmJjMzczNDBmZWU4NGZmYzU5ZDgzZTcyOTE0Mjk0NTljMTBhNzRlN2RhNTUwZjMyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDdhMzRjZWY3NWZjZjhmZDY0ZTg1NmY3ZjViNmQ2ZjAzN2IwNGE2MWI3MTg2NGQxZjMzMDU4NWI3NDAwYmMwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZkYTI2YTBiN2NhMjEzYzI3MGVhNmM0NmI3NWNmZGU1YmVjYWFkYTIyZDQ1ZGY1NzJiZTViNWJlODZjN2VjNiJ9"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L424-L429",
+          "version": "repo-lines-v1:sha256:9e5aaa3949e2337a55621c241d663ac9d89fe10f2007a3ac0e6ad7ae7e3c12b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAzZDY4ZmE1YzYwZjY5ZmVjMDYyZjA5YjE0MjdiZGIzZTM1NDRmZGJhZjhkMzhlNjFlOGY3ODM2NTY5ZTk5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ExZDkxMzQxMGVhNjJkMzk5NTk2ZGJkMGI1NGIyOWE5Y2UxYzUyZmFjY2M2MDZjMjY1MWY4M2YyOTJmZTMyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2M2NmFiYjk1MmJhMWJiZWIwMWFmOTY1OTk5MjJhZGFkMjJjNTAwZmUwNDliOWRkMzRiZWYzNTczYzk0OTlhOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dd86310d1cc34431b4e2614e4d6425f8",
+      "statement": "Under the OpenWiki home (~/.openwiki, mode 0o700), connectors write config.json and state.json (mode 0o600) and raw data under connectors/<id>/raw/<runId>/<file>.json (runId is an ISO timestamp with separators replaced), while the agent synthesizes the local personal wiki under ~/.openwiki/wiki; the agent's virtual filesystem tools are rooted at the wiki dir so it writes pages directly under /, raw files live outside it and are read with shell tools, and resolveConnectorRawPath plus symlink checks keep raw-item reads inside the connector raw dir.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L41-L67",
+          "version": "repo-lines-v1:sha256:2ab99c2c28d9a86d2a49b4f6013553b6f97c53737c895abb28bab3033e4b5262:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYTM0ZGQ2NGMyYzVhMGE4OTg3OTgwNTdjZTFkZGUxOTFmMmVhZTk2MDhiY2VhZmY4ZDM4ZjQ5MTRiYzI0YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkOTkwOTljNzQ0MGRhYzRlNmYxMWU4NjcxYWFlMzlmMjhkZTZiMjU0ZWY0NTNmM2I1NWZhYzJlYzM3Y2M5YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0YTU3YjdhYTI3OGJkNmYwZDFmZWRjNDFhYjI2Y2E5MDgxNDcxNmVkYzY0NzhhZTk2YWU3YTlhZjUzNDg3OGIifQ"
+        },
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L73-L118",
+          "version": "repo-lines-v1:sha256:1251f9fa3af4f6b04f89655163f689fb35b32edbbf5052888cb64706deef09f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MjNmMGFiZWViMDkyMDNlOGZlNGE0NjE5MjViYWU2NzU2ODA5NDdkNDI3YTQ3YWE5NDVkMWY0YTIyMmI3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYWJlM2I0NmQzMGFhMjBiYjYwYjE3MmJhODViYzc3ODEwYjdjMDMwMjYyMjVkZmIwYWQyY2YzOTFlZjJlOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4Yzc0YTkyNDM3ZDEzY2FjZDNmMmZmYWE4NDI5NTkyMGFmY2IwNDdiYTBkMjJkMGEzODc2ZTk2ZGRkOTlkMjEifQ"
+        },
+        {
+          "resource": "repo://src/connectors/io.ts#L59-L100",
+          "version": "repo-lines-v1:sha256:06a8647762bb36a805203e9bf85dad8e1137ad5f4e458483c4f9783b79bb829e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YzJiYWFhZGIwZWM0N2VkNTBlOGU1YzZjZmExNWM2MWM4NDcxMGI1NmMyZGNmYTdiYmVhMjYxY2JhOTQ4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5MTg1NjY4MTc4Y2EzZWM5ZjVkYmM0N2Y1MDMxOTNiMWYxZGI1NGZhNGJhYzc2OGRmMDRkM2I4MTI4ZmM1MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NzNkZWM1MWIwYjgxODRiNmEzOWI2M2Y4ZTgxZmRiNzRiYmQyNDljMTk3NTRmMjVhOTkwYzljYTI5MGY2MzQifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L305-L317",
+          "version": "repo-lines-v1:sha256:aa849c55edd801b408f5b724255458028c93a2187f6d133d110a41a908795c2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0MWIyNjhkYjEwYmU2NzI0ZDEzMWI5OWI1OGQ4ZTZlNWRiNjVkMjk2OTViYjkxMmFlMzM5MDQ5NWU2NzYxMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NDBiMTkwOWY3M2RlMTUwMjc2OTQ2NTUyMTBlZjM2ZTJiZWRhMzQ0ODQ3NDZkODZjOGQ5ZTdmZDljZGQxMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MGRmY2Q2NDBkM2NkNWRjOWY5NTJlNjc0ZDlkNzYwMWFjYTE4YWIxMTJjMDM1ODM4MjZkODNkMWY0YWZlOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMDgyOTUwMmEzOGY3MTkzZjIyNmViMTk0YzE1M2MyZDVjOWJhMWUwMzRiYjAwZjg0NjI5ODQyOTY5NDk3ZGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3d07b04d1fd492fba4a395a75aa9d37",
+      "statement": "runOAuthAuth is the shared PKCE OAuth loop for providers gmail, notion, slack, and x: it starts a 127.0.0.1 callback server (default port 53682, override via OPENWIKI_OAUTH_CALLBACK_PORT), opens the browser, exchanges the returned code for tokens, and persists access/refresh/expiry tokens (and Notion's dynamically registered client id) to the OpenWiki env file via saveOpenWikiEnv according to each provider's tokenMapping.",
+      "evidence": [
+        {
+          "resource": "repo://src/auth/oauth.ts#L47-L105",
+          "version": "repo-lines-v1:sha256:04f5bb87f772472395728d2aa732f56ab71e780fb4d9d7e011f82b20b0451397:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZGY2OGVjZGExMzBiNmVmMzVhMDk1NTkzZGFjMzNlZmI3ZDJmN2NmZjVkY2UxYTc4N2M5NTNhMmIyYzhlYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViOTFmZmQ1NDM1YWVhOWZhY2YzOGVkYmU5MzlmOTNmZDAwMGNiNTliZDEyMGQ4NzcwYTgyMjdlZmI3ZWVlNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2OGZlMjBiZTA5MjM5NzFmYTU0YjFiYWNiN2I0ZGFiOGI1NTVlZmFhZmYwMjIwZTI5MjdlZjliMjE5MDlhYTQifQ"
+        },
+        {
+          "resource": "repo://src/auth/providers.ts#L19-L98",
+          "version": "repo-lines-v1:sha256:c1256483d34cea6e4ebff51bbeee8e7e1cc9e7cdbc3c186028e5e40455752f2c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZDhhMTVmOTM3OWRmZTQ0MGMwMDY5MzVkMzExMGI1MjVmODU3YjU4ZWY2NjFhN2EyYmI0ZDQzYTYyMzExZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMTkxM2Q2NTAwMjNkZGQ0MDg4MDQ0MWViZGZmOGM3YmExNzYyODJjMDQ5ZDgzNWEyZTMyODkxNmQ0MTFkZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMTU4MWIwMGY0YjQ2NzU1Yzc4MTllNTczZGJiOTdiODM1ZDg5NzM5MjhlY2YxNWY0MTY3NTVmODk0MzM5YzAifQ"
+        },
+        {
+          "resource": "repo://src/auth/types.ts#L1-L39",
+          "version": "repo-lines-v1:sha256:8068b614de0b4fe992fb6a7829fe3d6e4e8e31c60453509c9926c1387c0764f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZDgwMDY3YzBhOTk4YjhlMTc2NTM0Y2QyNDIyY2VlOTkyZWE4YWY1MTYzNDZmN2I5ODQ0YThjZWRhZDc2ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0583b08606204aeeb2cb58587270e8dd",
+      "statement": "Slack is the only OAuth provider that cannot use a 127.0.0.1 redirect: providerUsesHttpsRedirectOverride returns true only for slack, startNgrokTunnel spawns ngrok http <port> and saves the discovered public HTTPS URL as OPENWIKI_HTTPS_OAUTH_REDIRECT_URI (must end in /callback and use https), and getProviderRedirectUri substitutes that ngrok URL for the local redirect URI when set.",
+      "evidence": [
+        {
+          "resource": "repo://src/auth/ngrok.ts#L23-L72",
+          "version": "repo-lines-v1:sha256:0b41199f70d44f4689b1b1fdad544050a58ce0382081c0297a8a8bd2a80ce6f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZGNiODY0YmVmMmQwYjYzOTY4ZDQ1ZDQzZDk4YjFiNDJlNzBhN2QxNWFmY2VkOTgyNjkyMjc1MDZmNjI2ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZTI2NzIzYmM5MmExYjkxNzhkMWNkODJkYjk2ZTMxNjg5ZTE4MzMzMzcxNWM4MmJjZWY4NmMxNWRkMDgyN2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNjFmNjMwZjYzM2QyYzhlYjQ4OTExODI3NWYxNGM2NmE4NTEwYTQ2NDBmZTE5Mzc1YTBmNDk5OTIyZjgyNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYmVkOTNkNTlhZjc0ZGJkZGM2MzE0YzU4ZDllZGJkMmIwNjg1YmFlNTFhNDJhMWZjNzY1ZTczMjYzZDg5YjkifQ"
+        },
+        {
+          "resource": "repo://src/auth/oauth.ts#L520-L558",
+          "version": "repo-lines-v1:sha256:4a1c8ba941bfb922172258c82faf3b151d73842f73aeb1d061f5b22f3ee97a27:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZDc5ZDMxNGZmYzBiYTllZjkwZTIzYzI1ODE3YzAyNWEwYWVmOTVjNjhjNWI0MDcxZjRjMWVkNjMzOWM1MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlZDFkZDllZGY2OTM1MTkzNTI1N2YyYjdkYzFmMDJiYTdiNDNmZDU0ZjliNWVjNmIyMDJmMTIxZTZkNTJkMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMWJjZDUwZjVhZGVhNDZiNWExMGVmOWJhNzMyYzJmZDUwNjg4MjViYTEyZWY4NGNhMTExOGQzZTRiMzI3MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49f44950ed4148428245a3b97bd3eba0",
+      "statement": "Notion OAuth does not use a static client id: its provider config carries mcpResourceUrl (https://mcp.notion.com/mcp), so resolveClientRegistration routes to registerMcpOAuthClient, which performs RFC 7591 dynamic client registration against the authorization server advertised in protected-resource metadata validated against oauthAllowedHosts, and the resulting client id and access token are stored in OPENWIKI_NOTION_MCP_CLIENT_ID and OPENWIKI_NOTION_MCP_ACCESS_TOKEN.",
+      "evidence": [
+        {
+          "resource": "repo://src/auth/oauth.ts#L124-L180",
+          "version": "repo-lines-v1:sha256:c9a6faf9c17fb8325953e1e15b6585cdf464e989ff9cfcf4e279174c29b4a05c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMDRjNDg0MGQ4NmM1MzJlYTU2ODZiMTYyYjhlZTM3MThjOTVhNzMzMzFlMGM1YzRkYjc1ZGIzMzAyMjMyNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NzY1MzcxYWVhMWNjN2Q0NmVjNmVmY2NiYmU5ZTllNzNjOTE4OTRmMGQwNmM3MWYxMjVhYzhiZTI1NWI3YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlNGJhNmZiNjI1ZGFiYjI1ZGQyNzVkNmU5ODFiMzllZjFmMGJjZjYyNTdiMWNhODEwMGEwNTJjMmMwMWY3ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZmRiMjIwZjczNjE3OWViOGEyMDA0MmY3ZmJjY2I2YzU2ZjVlOWY4ZWQwYTJmODZkMmI4NDc3YjI5NzExZTMifQ"
+        },
+        {
+          "resource": "repo://src/auth/providers.ts#L40-L54",
+          "version": "repo-lines-v1:sha256:68d244ad1ef42dc438cf937cbd13a0191403e2bda94d1ffebaf6682fae1b7761:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NmJmNzA2MDEzNmFlYzAyMjkyZjg3ZTk1ZDI0YTFlYzRkODE0ZDNjODI0MmY4ZmI5ZTIxZmNmNWE1NWQ1NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNDJkNmQ0OTI3M2ZkNmE5YzFkZjg0MzFiNjdiOWMwODQ2NTlhYWE1MTI4NmQ3N2JmODQyOWJiZGFiNDE1NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1NDQwYWViNzE0ZjU0ZjdmZWM3YjQyNDQ0Yjg4ZDE0OGYyMDI1YzkxYjE5ZjY0OGZiYzkxZmZiYmQ1NmVmMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_54eca6dd28dc46689e21c2e078204b20",
+      "statement": "The personal connectors and their auth models are: google/Gmail via Gmail OAuth user-context tokens, x via X API v2 OAuth user-context, slack via a Slack web API user token obtained through OAuth with an ngrok HTTPS redirect, notion via Notion hosted MCP OAuth with dynamic client registration, custom-mcp via user-configured MCP transport with credentials referenced by env var name (no required env), web-search via TAVILY_API_KEY, hackernews via public APIs with no auth, and git-repo via local filesystem; each connector's requiredEnv lists env var names and a connector counts as configured only when all required env vars are set.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/registry.ts#L24-L72",
+          "version": "repo-lines-v1:sha256:6e3fa128b13513ede3b97e2828cd8f4c6b5d0e93a453c2a2a32462d3c64ac157:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzkyNTIxNDdjZmVlYTUwYWY5ZjE0MmQ3MGM0MzQzYzJmOThmNzlmYTBkMWI1ZTQwYzRiOTYxYmY1YjZhNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MWNjN2EzOTFiMDYwNzE2ZjM0ZjhjOWRkMGU0ZmYyMmRjYWE5MGE0MDBiYzk3ZjkxNzkyMjk3YmFkZDcwNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/git-repo.ts#L40-L49",
+          "version": "repo-lines-v1:sha256:1231dd4549b9ca59872509b583d031b2e3651ad933cdfb7a7444bd6106d64dfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NzlmNjIwOGZkY2NiNjJjYzNmZTJhMjRhOGFhNzMzMjYwMDE2YmEwMjBmODc0Y2MxODkzOWE4NTMyZjA3NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYmIwZTVmMTUyOGJmNWIyNzAxMGVjYmRkYzY1YmYzZmQ4ODM2MTg5NDJjMGY5MzYzOGQyODEyODNmOWZlZjMifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/gmail.ts#L65-L77",
+          "version": "repo-lines-v1:sha256:9ed769e576d6abc7fe86f593d5760a431018d76dc596d42cd5b96645c896aa60:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiNThjNzIxZjYyMWQyYmQ3ZWE3YmI4MDg2NGUzNWU2YWIwNzY4M2ZhY2IwZmM5ZTgzNTJhNzU4MGNkZGMwYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzNmNkNjYwN2MxZDI1MTdkNDgxNzE1NGQ4ZTQ1MTAzYjQ3NTg1YTZkOTMyOWRiZWU3Y2MxMjU4MjFjZTY5YjkifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/hackernews.ts#L83-L91",
+          "version": "repo-lines-v1:sha256:50cb2e5221f6db78659cf4f72919041505e9da1fee5e6fc922ad30b41f7da94e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwZTA5YTJiMjU1MDc3YzNiNjdjNDkyOGNkNjNjZTg5NTU5YmRiZTIyZWY5NGExZTk5YjZlMzE5MmE1NDRhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWU5ZDIwOGI2MTgyNzQyNmY3Yzk0NDUyMmRkYTRjZDA1NzNiYzBlMWJhY2VhMzgzY2FiNzE2NTk4Mzc4ZDFjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVmYjA3ZjFmZTllMjRmNGNlNDgxNGNiYjZiYjQ4OTBhN2QwNzY0ZDA2MjhiMmNhMmE2MmQ1ODI0ODFlNGUxNiJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/slack.ts#L150-L159",
+          "version": "repo-lines-v1:sha256:c7e0686949794201c2d8e4c7471f77be15a124a576d1d50306487132e36af89b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NjMyMWU1NDA2NzMyNGRhZGNkYWQzZGNlYWIyOTUxYjM1ODFjNmEyYTAxODcwZDdkNzIzYTE2ZmFkYzlkMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZjg1YjU2MzE3M2JkMWE3OGU3MDZkMmYzNmM3MWM3M2E2ZGUyMDBmMzBkNzhmYWMzY2IwZjMyZWE4ZTg5NjcifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/web-search.ts#L41-L50",
+          "version": "repo-lines-v1:sha256:e68d6e941a8320528f6226c4e82a33973764b0986dc52780f350a47f2200ccd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NDU4NzJlZmY1NzgwMjcxNzU2MWVmOTRmYTA3OWZhMDY3YWRjNWU5ZTAyNzcyZDg3MWYwZWVlNGRhN2RkMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NjdhMmRjZGQ3Y2NmNzMwMmE2ZDEwN2E3YzExMjNlZGRlYjE2NDIwMjUzNmExY2FhYmUzNmIyMDcxZTk1NjkifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/x.ts#L55-L64",
+          "version": "repo-lines-v1:sha256:d29d2eefc6592a033bd3f14f40b073ff03d2be8dea97140d2817a8cfc446303c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlMTJlYmFiNTM2NGE2NmQyYzFhZDE1NGY4ODY4M2MwYTNiMGFlMTg1ZTlhY2VhYzlmMWYwNDJjYTNmN2M5NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYTA2ZTYyYjI4OTYwNTVjMWI5NDlhNDRiOTQ1MWMwNWM1ODY3ZjZiNjEwZGE1MTdmMmRjOGI1YjA3NDY2ZTcifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

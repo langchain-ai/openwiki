@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ac50027a6278acc67b1c5125ad7327a9885484697131c979b26e9a2298c77c50",
+  "pageVersion": "sha256:b95dfef9c9614a378a2c6fd1ffaf7311f58f73cdbb35b09562378346bfabfe25",
   "claims": [
     {
       "id": "claim_b7c92dfb63db42c6ab9db3a60115cec9",
@@ -130,11 +130,15 @@
     },
     {
       "id": "claim_2acfcd0e9a1f4778b02f0289bbb7429f",
-      "statement": "Host-driven coding-agent runs (Codex, Claude Code, OpenCode) currently support repository code wikis only, not personal brains, and use only repository source and tests as context.",
+      "statement": "Host-driven coding-agent runs (Codex, Claude Code, OpenCode, or Cursor) currently support repository code wikis only, not personal brains, and use only repository source and tests as context.",
       "evidence": [
         {
-          "resource": "repo://README.md#L109-L111",
-          "version": "repo-lines-v1:sha256:3650625f1a3ea296759963ed5192dab33599d9869368f946fffa4e6c2ec58021:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI4NGFmMjYzYjg0ZTlkOGRjNzcyYjEzNjU4ODYyNjZlNzBiZGQyYzUwMTBlNDI1NGQyZWEzZjQ1ZDEzZGFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjM2U3MTA4Y2U2MTgwZjQwMjgwMGY0OGEzYWI1YzJjOGEzYWM0OGZiMWFmYTNmMTNjY2ZjNGJiOGM0ODhiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIxNmM2ZTk4Zjk1NzRkMjUxMGRmNThhNDI5MDgzNTMxMjZlZDUzNDMyNjM4ZmVlZjY0ODVkMTdjNzU5YzUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWVkYWJiYWM1YTA2YjMzZDFlYTg3NmI0MDZkMjczZDA4NzYwOTQyNDEzNjg3NDlmNzM3NGFiNjYyOTQxMTE0ZSJ9"
+          "resource": "repo://README.md#L128-L130",
+          "version": "repo-lines-v1:sha256:3650625f1a3ea296759963ed5192dab33599d9869368f946fffa4e6c2ec58021:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI4NGFmMjYzYjg0ZTlkOGRjNzcyYjEzNjU4ODYyNjZlNzBiZGQyYzUwMTBlNDI1NGQyZWEzZjQ1ZDEzZGFlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVjM2U3MTA4Y2U2MTgwZjQwMjgwMGY0OGEzYWI1YzJjOGEzYWM0OGZiMWFmYTNmMTNjY2ZjNGJiOGM0ODhiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIxNmM2ZTk4Zjk1NzRkMjUxMGRmNThhNDI5MDgzNTMxMjZlZDUzNDMyNjM4ZmVlZjY0ODVkMTdjNzU5YzUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzljZDdlOGY5YmExNzU5ZTc1MmIwZGU5YmI0M2ExYTlmMmJhYTk3NjAyMGYyYzNmZTFhMTFlNDkxYzQ4MWI1OCJ9"
+        },
+        {
+          "resource": "repo://README.md#L26-L27",
+          "version": "repo-lines-v1:sha256:8b2b852b260a2053ae5b6bb9dfd9ebdb8d1e3e047721e447f2db8943f866d6b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY3YmMyMWNmYjMzNjVhYzNjZmFmMzYwYTc3NDY2YjkyNTFlZTE2NTcwYmIzYTUxYjJlZDg5MWQ5YjQ0NWI5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkwZTlhYmI1ZjI5ZDk4YmU4NzJiM2E4M2UzNTQyNDQ0MzBmMTgxYTI4OTg2MTFiMzMzMWE4MmRkYjAwMjBiNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFiMDFhNGZlNjk3YjRlNzVjYmQyNzhlODljZjQwYzdiZDg5ZTg5ZjkyYjc2MjNmNGJhMGYyMTc5MzUxYjY4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWJiY2RkODk4Y2VjZDQyOTM4M2VlNTRjMGUyMjI1N2E1OGYyMDlmNTljMGJjMTkyZDMzMjE3NjY0Y2VmNjg4YyJ9"
         }
       ]
     },
@@ -211,10 +215,62 @@
           "version": "repo-lines-v1:sha256:c0d1be879c84ffd86237d746dc9f24ccd6db8237b879bf30466c9e655078bd67:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MjhlYjdjMTIzNzA4ZTBmNzhiNWVhN2MyMDdiYzJjOGU1NmRmOTEzZDRlNjZmYTk5MTYzMDYzM2NmYzliNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NWIwODkyYjVjMTk0NWU5NTliNDEzYmQ2NTkwZjU2ZmM1MzBjMzQ2NDhkMDA4Njg0ZTRlZmRhYTA0YTkwNWYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1e8f125560fe4c91a97f0007efc2a3f9",
+      "statement": "Every built-in connector is a personal-mode source except LangSmith, whose ConnectorDefinition sets mode to \"code\", making it the only code-mode connector; all other connectors (custom-mcp, git-repo, google, hackernews, notion, slack, web-search, x) set mode to \"personal\".",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/git-repo.ts#L46-L46",
+          "version": "repo-lines-v1:sha256:1b170970bd8f85e59f342f281624b51af52c54a2b2677b450e8989236de284f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWYzZTVhZjM5NDM1ZDNmNGJkZGUwODJiNTZkNGU1ODNjNDZkZDIzYzRhMTQwZDZkNDA0MDAzMmEwNzVlZDczMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE1YjAwY2JmMjEzZGIwMzJmZTRjM2U3MzM1YzQzMzY4ZTBlNjY4NzI1YzBlYTYyMGM0MTMwYWMwYWNjNmY2ZSJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/gmail.ts#L71-L71",
+          "version": "repo-lines-v1:sha256:1b170970bd8f85e59f342f281624b51af52c54a2b2677b450e8989236de284f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWE2MGUyMzEyMGQzN2E2NDYxYzJjNDFmYWQ0NmU1OTI0ZmVlMWI4YzI1NGI3NjBmZGVlYjk1NzQ0NzIzNTBiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTEzYjM5MDdmMmFhNzdlODMwOTJhODU1OGUyOWRhMjA0YzExZGY0ZWJlYTI0Zjg1YzkxZjIzMWE4YjM5ZTBiMCJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/hackernews.ts#L88-L88",
+          "version": "repo-lines-v1:sha256:1b170970bd8f85e59f342f281624b51af52c54a2b2677b450e8989236de284f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDgyYjUwZTI2MTk1ZjIzODU2ZDJjMDgxNjc0NjNmZWY1ODkzZDE4ZTA3NGI1YzI1ZGY2OWY3MTExYzFmYWNmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU2YTcxZTFmYTllNGQyYjEzYThlNzFkNDE1Zjc2ZjhiYWFiN2UwMTI4MGRmNTNiZTRjNTgyNzZjYTBmZTE0ZCJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L86-L95",
+          "version": "repo-lines-v1:sha256:bb0fe6e32ec16febb2ee1ba29b5dfd084ab3ed7a52cd7ef01c6ed4a5628792ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMWIxNWY2N2UzNTc4NWMxZDU4NWNhNjVjNzhlN2VkNTVlZDVjMTJhY2M4ZjYzMWM1Yzg3MWE4NzEwYThhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzA3YThiZTRkYWI5OTgyMDg5NzE3MDU4ZjM0ZmMwMDZjMmU5MjhjZjRlODRiZGEwOTlkYzQ0NzQzMTg4ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1N2JmN2YzY2M5MTlkZWJhMjkyNDQ4MTM5ODc2ODQ5NTMyZTA0MTA4ZmY5YjE1OWE4OWFiMjdkYzViZjA2Y2MifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/mcp.ts#L30-L30",
+          "version": "repo-lines-v1:sha256:28166b72327070ade2bd6d11cdfa38915d1e90c8962dbaa26ba8f2a2c9bbe905:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgxNjZiNzIzMjcwNzBhZGUyYmQ2ZDExY2RmYTM4OTE1ZDFlOTBjODk2MmRiYWEyNmJhOGYyYTJjOWJiZTkwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgxNjZiNzIzMjcwNzBhZGUyYmQ2ZDExY2RmYTM4OTE1ZDFlOTBjODk2MmRiYWEyNmJhOGYyYTJjOWJiZTkwNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY4MDIyZTRmYzViNzhhNGFkOGI3NGI4ZjMyNDFlYjg5YTkyNmNkYjE0NzQyOWQ0Zjk2MGU0OGEyZTFlMWM4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM3ZDcxNDM4NTUzNWMyMmJkMGEwNTJkOTJlMGU3NGE0Y2RkZTQ3YWVmYThjNTBiOGNmN2IxOWM4NWJlMTk3MSJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/slack.ts#L156-L156",
+          "version": "repo-lines-v1:sha256:1b170970bd8f85e59f342f281624b51af52c54a2b2677b450e8989236de284f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDJlNjE3YmU4MzNlMGZiODkyODczYThkNzNmYjNlMjJkYTdmZTM5ODc2Zjk5MTVjNjVkZjQ2MWU0NTdlNDM0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTM1YWJmOTlhOGViODk4YmU4OWEwMTBjMGNiYzcyNDY0MThhZTRlOGVmZGZkZWI5YzNiMDY2MzYzMmQ1YTliYyJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/web-search.ts#L47-L47",
+          "version": "repo-lines-v1:sha256:1b170970bd8f85e59f342f281624b51af52c54a2b2677b450e8989236de284f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDgyOWUwNTIzYjdiZTNmMDFhODdiMmFhZDgyNjAyNTc4ZWEzNWZkMGI3NTZiZDgxZDkzYmMxMjc5Mjk2NDgyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU2YzdhOTEwYTZkMWIyMzRlZTQ2OWM3ZGRjN2RkNTczNGEwNThjYjM0MzUyMzYxNjdkMmFmNjFjOWIyNWM5MyJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/x.ts#L61-L61",
+          "version": "repo-lines-v1:sha256:1b170970bd8f85e59f342f281624b51af52c54a2b2677b450e8989236de284f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWIxNzA5NzBiZDhmODVlNTlmMzQyZjI4MTYyNGI1MWFmNTJjNTRhMmIyNjc3YjQ1MGU4OTg5MjM2ZGUyODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjM1MWIwZjIzNjk4NGI1ZGYwNjgwNjhhMDQyNDFhZmQ0MzE2YTdmY2Q1NGEyZDVhMjhmNTczZWFlNzliNWUwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODJjOWRjZTFiY2ZkYjdiYzVhYTMzZjc0ZDQ2MDI1MWFiYWU0YzIwOThlYmY0NDAxNGQwMTA3OTI5YTk1YTBhYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca9947878f484b43832a5ed6522b6c54",
+      "statement": "Before a code init/update run starts the agent, runCodeModeConnectors walks the connector registry and runs only the connectors whose mode is \"code\", so LangSmith is the only connector that enriches a repository code wiki: it pulls recent traces windowed by the last recorded update and appends its synthesis guidance to the agent message, while a connector that throws is skipped (fail-open) and an unconfigured repository contributes nothing.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/runners.ts#L299-L315",
+          "version": "repo-lines-v1:sha256:2db4e82e690e25f7935d4bd79c8afc2e947d3a29b3c72c303b407ca386b7ee45:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiOTU5MjVlMDY3MjcyMzZjMmNlMjY1ZTIwNDQ3ZDU3YTc1NzMzN2NkZmJjZmZmNzJmNWRhYjUwMWQ0YjliNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMzcyNDdhNTk0MzA5YmFjNzA3MjdmZWI1MTBiMWQ2MWExMTVkZTUxNGMyYWI0NjVhNGQ3ZWE5MzdlNjZjMmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxNjVjZDA4NjExOWM4YmFiNTRiYjVlMzk1N2I5ZmJiOWY0ZDE5NzRlODk4MzgwNzhiMGVmYzFiNGVjMzlmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODJiOTEzNjhkYzhjNzQ4YzIwMGY1ZmEzM2M2NTJiOGFkMmYyNGZjZDM1ZTc1MTU5M2ZjYmY3NjBkNGNhNDUifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L105-L148",
+          "version": "repo-lines-v1:sha256:e364a46cb0276c85c4b3db21e24d6998e1744e67715136972e2b44bce7cd4859:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYmY5MDhhYTY2MjIwMDMxYzc0MmI1ZWZmOTVjM2IyN2JjYjNiNTkyMDNhYWQxZGM0NDMwMmU0Yjc2MTgzODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MjVkMTRkNjJmYjk4MGI1OTYyZWE1NDY2OTkwMjQ5Yzg0Yjk0NmI3NTAwNmIwZTI0MjA4NjU3NjYzYjkxMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNDU2Y2JhZDhlM2U4NDkzZjA2YWNmYmU2NjUzZTRjMzRlNGVmYjdmZjkwMzY0MDNiZjhjYjljMmQzZTcyOTEifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-29T08:08:01.897Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

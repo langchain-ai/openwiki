@@ -1,7 +1,7 @@
 ---
 type: operations-guide
 title: Telemetry and Diagnostics
-description: How OpenWiki's opt-out telemetry pipeline emits a single anonymous run event per init/update run, how failures are classified into a closed error taxonomy, and how secrets and PII are kept out of the payload before it is sent to PostHog.
+description: How OpenWiki's opt-out telemetry pipeline emits a single anonymous run event per init/update run (plus a crash-guard post-mortem for runs that escape every catch), how failures are classified into a closed error taxonomy, and how secrets and PII are kept out of the payload before it is sent to PostHog.
 tags:
   [
     telemetry,
@@ -13,6 +13,8 @@ tags:
     observability,
   ]
 sources:
+  - id: openwiki-source-fcb06f91f699f462b4d84a90
+    resource: repo://src/agent/crash-guard.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
@@ -53,10 +55,10 @@ sources:
     resource: repo://test/telemetry/telemetry.test.ts
   - id: openwiki-source-9ba5e33980ba1f452c6884d4
     resource: repo://test/telemetry/with-run-telemetry.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Telemetry and Diagnostics
@@ -67,8 +69,9 @@ pipeline. It emits exactly one event — `openwiki_run` — per completed `init`
 failure) a closed-set error classification. No file contents, repository data,
 credentials, prompts, model output, IP address, or personal information ever
 leave the process. This page documents the gating/opt-out model, the single
-run-telemetry boundary, the error taxonomy, the PostHog senders, and the
-anonymity guarantees baked into each of them.
+run-telemetry boundary (plus the crash guard that catches runs escaping it),
+the error taxonomy, the PostHog senders, and the anonymity guarantees baked
+into each of them.
 
 The module surface is re-exported from `src/telemetry/index.ts`; the important
 pieces are the gates (`gates.ts`), the install id (`install-id.ts`), the run
@@ -119,12 +122,14 @@ or plain framed text on stderr for print mode.
 
 ## The single run-telemetry boundary
 
-`withRunTelemetry` is the **sole place** an `openwiki_run` event is recorded. It
-wraps the whole `setup -> connectors -> agent` sequence a caller performs (see
-`cli/runners.ts` and `ingestion/ingestion.ts`), so a throw anywhere in that
-sequence — repo setup, connector pull, agent prologue, or the agent itself — is
-recorded exactly once, closing the pre-agent coverage holes where a throw
-previously reached no telemetry.
+`withRunTelemetry` is the **sole boundary** for the run lifecycle that records
+an `openwiki_run` event. It wraps the whole `setup -> connectors -> agent`
+sequence a caller performs (see `cli/runners.ts`, `cli/app/app.tsx`, and
+`ingestion/ingestion.ts`), so a throw anywhere in that sequence — repo setup,
+connector pull, agent prologue, or the agent itself — is recorded exactly once,
+closing the pre-agent coverage holes where a throw previously reached no
+telemetry. (Runs that escape even this catch are recovered by the crash guard
+below.)
 
 It threads a mutable `RunTelemetryContext` through the run. The agent publishes
 the resolved `provider` onto it the instant provider resolution succeeds (so a
@@ -168,6 +173,31 @@ classified and recorded once, then rethrown to the caller.
 attaches the setup fields (`mode`, `provider`, `configuredConnectors` from the
 connector registry) **on init only** — the configuration moment — omitting them
 on updates. Like `recordRun`, it never throws.
+
+`withRunTelemetry` is the boundary for every recorded run. It wraps the
+interactive TUI run (`cli/app/app.tsx`) and the print-mode run (`cli/runners.ts`)
+exactly as above, and it also wraps **each per-source ingestion agent run** in
+`ingestion/ingestion.ts` as an `update`. So while there is no dedicated
+`ingest`-branded event, an `openwiki ingest` invocation still emits one
+`openwiki_run` update event per source whose agent run reaches the boundary —
+ingestion failures are recorded there too. Standalone `chat`, `auth`, and the
+`ingest` command's own connector-pull/summary bookkeeping are not recorded.
+
+### Escaped-rejection post-mortem (crash guard)
+
+A run can throw in a way that escapes every `withRunTelemetry` catch — a
+runtime rejection surfacing on the microtask queue, or an `uncaughtException`.
+`installCrashGuard` (called once at CLI startup in `cli.tsx`, before any run)
+registers `unhandledRejection`/`uncaughtException` handlers whose `handleFatal`
+claims the single in-flight run (`registerActiveRun`/`clearActiveRun`, set around
+the agent stream-consumption window in `agent/index.ts`) and records it once as a
+`failure` via `recordRunSafe` with the same `describeErrorForTelemetry`
+classification, then stamps the run `interrupted` so the next scheduled update
+retries instead of no-opping against a half-written wiki. The claim is atomic
+(read-and-clear with no `await` between) so a burst of rejections records the run
+exactly once; every side effect is swallowed independently and the process still
+exits non-zero. The local stderr line carries the raw message, but that is the
+user's own terminal UX and never enters telemetry.
 
 ## Building and sending the event
 
@@ -292,6 +322,6 @@ the no-key send path in `client-no-key.test.ts`, and the install-id lifecycle in
 
 ## Related pages
 
-- [Architecture Overview](../architecture/overview.md)
 - [Configuration](./configuration.md)
-- [Testing Overview](../testing/overview.md)
+- [CI Scheduling](./ci-scheduling.md)
+- [Two Modes](../concepts/two-modes.md)

@@ -44,8 +44,8 @@ sources:
     resource: repo://src/okf/claims-verification.ts
 generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Grounded Claims

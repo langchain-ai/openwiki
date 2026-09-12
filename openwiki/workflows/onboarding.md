@@ -6,6 +6,8 @@ tags: [onboarding, setup, credentials, code-mode, openwiki-home, configuration]
 sources:
   - id: openwiki-source-a34c01da72fb3c9bee4f3cb9
     resource: repo://src/agent/openwiki-ignore.ts
+  - id: openwiki-source-5f52dc71fb07ef4892914c46
+    resource: repo://src/cli/app/app.tsx
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-d80f123259efa4712b198b63
@@ -14,6 +16,10 @@ sources:
     resource: repo://src/config/env.ts
   - id: openwiki-source-7d433875b0854d0b8b951be0
     resource: repo://src/config/openwiki-home.ts
+  - id: openwiki-source-9e541d09b8e52185141cdccb
+    resource: repo://src/connectors/sources/langsmith/repo-config.ts
+  - id: openwiki-source-053e849654b42fbddfbcfd7e
+    resource: repo://src/connectors/sources/langsmith/setup.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-85064d6a188fa56bcc282f11
@@ -32,10 +38,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Onboarding and Setup
@@ -65,7 +71,10 @@ as the literal `~/.openwiki`, otherwise the resolved absolute path is shown.
 every access: the home directory and each managed subdirectory are created with
 mode `0o700`, the home directory is `chmod`ed to `0o700` if it already existed,
 and `restrictDirToCurrentUser` applies the Windows ACL equivalent so the
-directory is owner-only on every platform.
+directory is owner-only on every platform. It only ever `mkdir`s (recursive, so
+a pre-existing directory is a no-op) and `chmod`s — it never moves, renames, or
+deletes an existing `~/.openwiki`, so operator files placed there survive setup
+and a re-run never destroys a configured home.
 
 The managed layout is:
 
@@ -286,6 +295,58 @@ the operator's choice or the provider's first suggested model; an opted-in
 `OPENAI_COMPATIBLE_STREAMING` transport override is propagated so a SSE-only
 gateway does not commit a blank wiki unattended.
 
+## LangSmith code-mode connector setup
+
+Code mode's only code-mode connector is **LangSmith**, which enriches a
+repository wiki with recent LangSmith traces (tool calls, outcomes, latency) so
+the docs reflect runtime behavior rather than just source. It is configured from
+the source menu during `openwiki --init` (code mode), not from the personal-mode
+connector list.
+
+The connector separates *what to document* (committed, shared) from *the key to
+document it* (local/CI secret):
+
+- **Committed config — `openwiki/.langsmith.json`.** `saveLangSmithSetup`
+  writes a `LangSmithRepoConfig` whose `workspaces` array names, per workspace,
+  the `apiKeyEnv` (the env var name that will hold the key), the `projects`
+  (tracing session names, trimmed/deduped, order preserved), and an optional
+  `apiBaseUrl` for non-US regions. The API key itself is **never** committed —
+  only the env var name that points at it — so the file is safe to commit and
+  every teammate/CI run documents the same set of workspaces and projects.
+- **Secret — `OPENWIKI_LANGSMITH_API_KEY`.** During setup, a freshly-entered
+  workspace key is written to `~/.openwiki/.env` under that workspace's
+  `apiKeyEnv`; an empty `apiKey` keeps the existing saved key. In CI it is set
+  as a repository secret and exported for the run. At pull time the connector
+  reads `process.env[apiKeyEnv]` and sends it as the SDK Authorization header.
+- **Multi-region / multi-workspace.** A LangSmith key is workspace- and
+  region-bound. Each workspace gets its own key env var:
+  `OPENWIKI_LANGSMITH_API_KEY` for the first, then
+  `OPENWIKI_LANGSMITH_API_KEY_2`, `_3`, … assigned by `nextLangSmithApiKeyEnv`.
+  Region is chosen in-wizard (US/EU/APAC, via `LANGSMITH_REGION_OPTIONS`) and
+  maps to an allowlisted official host written into `apiBaseUrl` (US is the
+  connector default, so it is omitted from the file).
+
+Two hard guardrails keep a committed config from exfiltrating secrets or
+escaping the LangSmith surface:
+
+- `sanitizeLangSmithApiKeyEnv` accepts an `apiKeyEnv` only when it matches
+  `^OPENWIKI_LANGSMITH_API_KEY(_[A-Z0-9]+)?$`, so a malicious PR cannot name an
+  unrelated secret (e.g. `AWS_SECRET_ACCESS_KEY`) and have the connector send
+  it to a LangSmith host.
+- `sanitizeLangSmithApiBaseUrl` accepts a base URL only when it is `https`,
+  carries no embedded credentials, and targets one of the three official hosts
+  (`api.smith.langchain.com`, `eu.api.smith.langchain.com`,
+  `apac.api.smith.langchain.com`); otherwise it is dropped so a committed value
+  cannot drive SSRF or key exfiltration to an arbitrary host. A workspace
+  failing either allowlist (or any shape check) is dropped, not fatal, so one
+  bad entry does not invalidate the whole config.
+
+The committed config is WYSIWYG and touch-gated: `saveLangSmithSetup` is called
+at the `final` step only when `langsmithSourcesTouched` is true (the LangSmith
+sub-menu was opened this run), so an untouched setup never rewrites
+`openwiki/.langsmith.json`. A workspace with no projects is dropped, which also
+removes it; switching a workspace back to US drops its `apiBaseUrl`.
+
 Repository content the doc agent must not read or edit is governed by a
 gitignore-style `.openwikiignore` file loaded via `OpenWikiIgnore.load`. Rules
 are applied in file order with last-match-wins semantics (a later `!` rule can
@@ -301,3 +362,53 @@ configured provider is missing a required credential, telling the operator to ru
 in an interactive terminal to save credentials. Interactive chat likewise
 requires a TTY. One exception exists: a clean `update --print` run that would be a
 no-op can skip the credential requirement, because there is nothing to generate.
+
+## The `--init` path end to end
+
+`openwiki --init` (code mode) and `openwiki personal --init` (personal mode)
+always open the full setup walk, even when everything is already configured, so
+an operator can review or change any step. The App component gates this with
+`initWizardConsumed`: `--init` forces `shouldRunInteractiveCredentialSetup` true
+once, and the flag is consumed when the walk finishes so it does not re-open on a
+later return to idle. `needsCredentialSetup` independently opens the wizard for
+any run (including `chat`) when the provider is invalid or a required
+credential/model/LangSmith input is missing.
+
+The walk, driven by `InitSetup`'s controller state machine, proceeds:
+
+1. **Run-mode chooser** (only when mode selection is allowed) →
+2. **Provider** selection →
+3. **Primary credential** step chosen by `credentialStep` (OAuth login,
+   external-CLI auth, API key, or GCP project; AWS-SDK providers have no in-wizard
+   step) plus any provider-specific steps (secret key, GCP project/location, base
+   URL, region) →
+4. **Model** selection (and optional reasoning-effort sub-step) →
+5. **LangSmith** tracing step (the `LANGSMITH_API_KEY`/`LANGCHAIN_*` tracing
+   toggle, distinct from the code-mode LangSmith *connector* above) →
+6. **Code-repo confirm** (code mode only): confirm or edit the target repo root
+   (`findNearestGitRepoRoot`, falling back to the cwd) →
+7. For personal mode, the **source menu**, **wiki goal**, **schedule**, and
+   optional macOS power-management sub-flows, ending at the **final** step.
+
+At the **final** step the controller persists everything in order:
+
+- `buildCredentialEnvUpdates` computes the `.env` update map (pure), and
+  `saveOpenWikiEnv` atomically writes it to `~/.openwiki/.env` (provider key only
+  when changed, empty values dropped, LangSmith tracing toggled).
+- In code mode, if the LangSmith sub-menu was touched, the workspace keys are
+  saved to `~/.openwiki/.env` and `saveLangSmithSetup` writes
+  `openwiki/.langsmith.json`.
+- `saveConfigForCurrentMode` writes `onboarding.json` (with `completedAt` set),
+  and — for code mode — `saveRepositoryWikiInstructions` writes the brief to
+  `<repo>/openwiki/INSTRUCTIONS.md` (`0o644`) with `wikiGoal` cleared from
+  `onboarding.json`.
+
+The `onComplete` callback returns an `InitSetupResult`. If the operator chose
+"Run ingestion now" (code mode), the App transitions to `init-setup-saved` and
+proceeds into the init run; otherwise it returns to idle. The init run itself
+then calls `ensureCodeModeRepoSetup` (refreshing `AGENTS.md`/`CLAUDE.md` and,
+because the command is `init`, creating the scheduled-update workflow when
+absent), pulls code-mode connector evidence (LangSmith traces, when configured),
+and hands the augmented message to the doc agent for the first wiki generation.
+`--init` and `--update` auto-exit on success in an interactive terminal, so the
+same command works one-shot or interactively.

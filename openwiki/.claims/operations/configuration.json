@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:90803d8449ac9b7281016182f3feb6c5d12d43e8664e4c8f8029d3b49efada93",
+  "pageVersion": "sha256:a8fa23fddd7922e43246b703dbed4c55bdefef84ad676efc9bf98456547a25f0",
   "claims": [
     {
       "id": "claim_f6ee1be411cc44af8ce963e1af7842d1",
@@ -411,10 +411,178 @@
           "version": "repo-lines-v1:sha256:dd599ef952d4728f51a44e16fa9e12a30307941cb06afc26248fe2edd7a317d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NjMzMjE2N2EyZGNiZGMzOTY5YTBiYTI1YjY1NzVmMmMyMmY5MDg5YjAyYTExMmE2YTIyYjBmYTg5MGEwMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxMTIxNWU0MjY2YzlhNjVkNDNhMjdjMjQ5YTQ5YjJlOTYwMzNhOGQ1NWQ5MmE1MzRkOTY4ZmU2OTg1YzEzN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ZGUzY2M0YWU4MTI4YmUyMzkzOGYzYzBkYWI1OGI5NTgxZmI3OTIzMGIxMDM5NmNhZjg1NzU4NmQyYzYzZWUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_47400bfb0a014c41ba0bc4c45dc3149f",
+      "statement": ".openwikiignore (OPENWIKI_IGNORE_FILE) is a gitignore-style read boundary at the repository root that OpenWikiIgnore.load reads; a missing file is an inactive matcher (isActive false) and any non-missing-file read error is rethrown rather than fail-open. It scopes agent filesystem/shell access, not a guarantee a topic is never mentioned.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L210-L233",
+          "version": "repo-lines-v1:sha256:89e4e0326df440598e3180d32a41f67ab74580bf3019ccb73a40c9ec6653aad2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNDAwYTQ3ODRkYTVjOWI0OTEzOTI1YzdmNTUzMzM2Yjc2MGY1OGVmMWRhNmE4ZjlkNDE1OTA4NGQ0MjU0YzMifQ"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L253-L257",
+          "version": "repo-lines-v1:sha256:af7e2eb146073ee15c7b77e6db53accdc31ce1c2ea4225a9c54e82735db6c56e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk1NGRlYjIwNmIxZWE0YTEzMGVlZGJkYzJkNjQxMWJhMDA0MTA1ODU0Zjg2MWY5YThiNDYzM2M3MThkM2M4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWE5MjkzZmQ4MDU0YjZlNDcyNDgzNzNmMzlmNGRkNzc4MDAxMDVlYjc1ODM0ODY4NzI1NDI4NWNkMTI4MmI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWJiNTdjNzkzZWE3OGU0NmM1MTk1OTUzZmNkMjNmYWUzZjBmNzM2MThhMGJmYzg4YTlmOWVlNWI0NjM3YmNlMyJ9"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L5-L8",
+          "version": "repo-lines-v1:sha256:980cd03fb9609d4b37b34862b1798a001f0ad44f1071673116b29e0581ae7064:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU5M2E4ZjY1OGRmZmEzZGU3NTlmMzhiOTczNjZmNWQwOGFiOGI5YzUyYjVlMTBkMzBkMmI3MmVhZTQ2ZTExMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFmYWEwMjM2ZGEzOGRmYjIyMWQ1MWFjYjljYmQ5MTJjMGE4OTBkYzhlYmU4MzFiYTlhOThjOWFkOThlYTg5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTk1MDk2MmE4NDRiZmE1YTE0YzhhYmM2MDFkMTlmY2JjODYxMzA5YjJlNDczYTA2MTA5MTRkNzQxYjhjOGUyNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8bf2d89515f64852b712c6fd330e961f",
+      "statement": ".openwikiignore syntax supports blank/#-comment lines (dropped), * (single segment), ? (one non-slash char), **/ (zero+ leading dirs) and trailing ** (nested), leading-/ or embedded-slash anchoring to repo root, trailing-/ directory scoping (still matches nested files), and ! negation with last-match-wins in file order.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L27-L54",
+          "version": "repo-lines-v1:sha256:bb2e2bc652d89f31cbfd9621d494bc992ccb8dbf0aca6e783c545841d812fe33:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMjdiZTQ4ZGQ2MDkwMDE2NmYwODgxN2M4ZDQ4YjdmMjUyN2M4MDNjMGU1NTgxNGZkMmUyYTk3MTJhMjk0NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ZGI5Y2JiMTE2ODkzMDRkNDg4ZDczYjYwNmQxYTMxZGQwYzkxNGU1MmM3YWI0ODlhYmU2ZmJjYWNmOWE1NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NjYwNzM3MjcyMTQ5Nzk2NDZmYjJkZjE5NmFiMTE3MTQ0NDYzNmVkNDk5NTVlNTc2MTAzNjc1NmQ4NTY2OTkifQ"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L313-L326",
+          "version": "repo-lines-v1:sha256:d1e772cabbc6ead744964f675a2f9d5a76741afb5a2d92485606b149e3823754:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5NTFkNDY0ZjRmMzJkZjJiZDFlNjdjZjcxMzE3Mzg4ODgzOWI0YWFmMWE0ODFkZjkxNzg2MTYyOTFiYzU5YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L72-L125",
+          "version": "repo-lines-v1:sha256:adcd3b55d576f19e9558c5ee9b1afe5747ec9d98161b5dc64958c7d5b91a7676:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNWRiNTA0ZmY0ZGNjYmEzZWIxYWFhM2M2YjEzNmJjNjk0NDM5M2E4ODI3NmVkZWU0MjhkNTkxZjQ4ZmM3MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0NTJhMzNmMzhlYjkwYjM3MDljNDMwZTY5NjJiOTllYWVmYTRkOWY3YzMxNmEzNGZkYzI5ZjhhODk3Y2VkODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2Mzg4NjY3OTYxNTZlZDkzNGQyMTY3ODg0ZGEyZjE1ZDk2YzQ2ZDNhZWMxZGJiYjYwNjFkOWU5NGRmZmY5MzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_252544fb28ae42acb56e9520c12f23d5",
+      "statement": ".openwikiignore matching is case-insensitive (i flag) everywhere and canonicalizes paths via normalizeIgnorePath (backslashes to slashes, . / .. collapsed by path.posix.normalize) so equivalent spellings like ./secrets/token.txt or secrets/../secrets/token.txt cannot bypass an anchored rule on case-insensitive filesystems.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L290-L311",
+          "version": "repo-lines-v1:sha256:285a6b54e0ce43b51ef573aa4cd720580b57c422ac9e7af1d8ad696d83cc91a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4YzZhNTIxYTk4ZDQ5MmFhYjA2MzczYjhkYmNkNWE4OGE4MGMxNzEyNGQ2YjNiOGI3N2Q4MTA0NDZjZDhmM2UifQ"
+        },
+        {
+          "resource": "repo://src/agent/openwiki-ignore.ts#L62-L81",
+          "version": "repo-lines-v1:sha256:f553f530fe8d97cda8350fb333a53cd5b6b968e202ae6598f554aef1c4599f2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNjlmODVhZTg2MjY0MmU3ZDE4NjAwZGE1MDhkNzlmOWUyYjRkMzY4ODIxZmJlOGZmMmVmNWRhODA3MjQwM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNWZhOWVjNjQ1YTQxYzVmMDQ4NmI1ZDNhY2NjZDAzZDE3Y2QxNDRmNGY0YjI5MzA5MTkwOTQxMzE3MWJiMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1OWRkZDdjNDEyOTE2NGY4Y2QyZWFkZmQ0YTI2NTIzY2I2ZDM4NGU0Y2Q4YzQ5OTE2ZjM3OGY0OGM2NGE1NzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e7165d31ade4bb6b183b89d541bb3fa",
+      "statement": "OpenWikiLocalShellBackend enforces .openwikiignore on every agent tool: read/readRaw/write/edit/delete hard-deny ignored paths with an error, ls/glob/grep silently drop ignored entries and short-circuit when the search root is ignored, upload/download return permission_denied for ignored paths while processing allowed ones, and shell execute is restricted to the allowedIgnoredShellCommands allowlist (pwd and git rev-parse HEAD) while any rule is active because arbitrary shell cannot be proven not to read an ignored path.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L147-L195",
+          "version": "repo-lines-v1:sha256:b780a4f603c924f8d531b368e85dbe2f9c37e33249122c6b9f716b5b591652de:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5ZTZmNTYzNWNiZWI3Mzc0MjVlYWI3MjNkOWYxZjRkOTBlZmJhZjE3YzA1NDMxYjY0YTYxMjQ2ZDMwMGI0YmUifQ"
+        },
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L197-L323",
+          "version": "repo-lines-v1:sha256:01ce77defdd3d898495dbc60791a22ef63629ce162b788f2e6e48e374a89fd4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0ZjJhMmY5OTZmMDhlNjgwYmQyOTIxMzVhNmZhNDk3OGJkYTI2ZTYwMmQ4NGYzM2NiMWQ1OTQ3NzVkNDMwNGI1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZjJkZjMyYTk3Zjg3MTU3MGJhOTkzODFkZTA3ZThkYWQ3MzAyZjc4ZDg5NGI0NDU0YWM4OTcxZjc0ZmQ2MWQ5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlN2YzYTE3NWZhMTg5OTM5NTNjYTQxNjk3OThiZDMzZGZjNzA2YjdkYzM1NzY0YWEyMjYwYWY1OTE5MzFiYTcxIn0"
+        },
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L442-L509",
+          "version": "repo-lines-v1:sha256:3e26ea1faab017b87f734d09bd8ecc7db153050173d457149f0d88e91abf7195:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZGRjOTRhMzFmZjdhOGVjM2FlMTY5Zjk2NWE4NWI0Njk2YTY4MDQ5MTA3MjQ2NDExM2U4ZTc2NzQ2MjliMjUifQ"
+        },
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L679-L689",
+          "version": "repo-lines-v1:sha256:801c5797c06d54b16ba31014eaf388fe853f84ee8263686a404c10f339da1826:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjOWMzMTMzNTExODc5ZTVlYTJlN2IyZjlhODE1YjQ2MmEzMmM1OGFhYzNmYTdlZjk3Mjc4NDBkNmRmZTA1YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/agent/docs-only-backend.ts#L68-L77",
+          "version": "repo-lines-v1:sha256:f1c7f3b02864afbc77a86b6169b6867dd5880ef3362c729017d2a9c83188079a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZjgyNzE4YjI4NDk3YzE3YmRkYmRkOGIyN2E5ZTcwMjA3ZjBjYmQ3NTRlNjk2ZDQxMWM1N2U5Y2FlZTYyMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiMzZiOTMwZThhMzEyZDEzMmM4ZmIxZWUzNTI0NWRhNzgyN2QxYjQxMzY2ODgzZDlhNzdmMjQ3OTQ4ZDY3NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwM2FhYzJmNDZjNDI0OGQ5MDU3N2JhYmUxMjBlMzU2Y2EyMDU2ZDllZGVhYzgxN2NiYTlkMTE3NjI2YjNmZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a187368e60ad425384d79ea73142a34e",
+      "statement": "openwiki/INSTRUCTIONS.md (REPOSITORY_INSTRUCTIONS_FILE) is a user-authored Markdown brief for the repository wiki's scope/priorities that OpenWiki reads via readRepositoryWikiInstructions and threads into the run as wikiGoal, but never rewrites during normal runs; openwiki --init preserves it while replacing the rest of the generated wiki and Claims, and a non-empty wikiGoal is required for onboarding to be complete.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L258-L258",
+          "version": "repo-lines-v1:sha256:b2b7873db4e07e0021b2d97ed2fce31cc3ebddc34487dbfd526719751beea467:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJiNzg3M2RiNGUwN2UwMDIxYjJkOTdlZDJmY2UzMWNjM2ViZGRjMzQ0ODdkYmZkNTI2NzE5NzUxYmVlYTQ2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJiNzg3M2RiNGUwN2UwMDIxYjJkOTdlZDJmY2UzMWNjM2ViZGRjMzQ0ODdkYmZkNTI2NzE5NzUxYmVlYTQ2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmJlYzQwN2U0YzZhZGYxOTJmOWJhZWZkMGNkN2MyMzE5YzFlZjliZWNkOTdkNjg0NTljNDg1YTljZWExMzNjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJjYzU5OTgxNzc2ZDYxYjFjNjgxYjZiOWJmMDdiYWM0ZDg3OGQwYzlhMTlmODkyMDE1ZWE5MTU3OTEyZmZhZCJ9"
+        },
+        {
+          "resource": "repo://README.md#L55-L55",
+          "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc5ZGRkZTViNzViMGIzODQ4ZGZjMzgyYTZmYTIwMjdhMjNiNTkxNzVlYjcwMWU1YTczMmRmMGEwMjczYjZhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
+        },
+        {
+          "resource": "repo://src/agent/utils.ts#L99-L108",
+          "version": "repo-lines-v1:sha256:bcdc8816850f80790f47aad619eca45b6c3092cf75336926d0d456140f517b7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MzJjYTJlNTA5N2JlZDljZGI1MmMwYjdlMGIyMDA3Zjc1MTlhYmVjMjkxYTZiMWRiMDFhMmI2MWNjNjcwM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MGUwNjc5NDVlY2ZiMzM2NDVhYjA2OGZjNmZiZTI0OTZhYTJhYzFhYjg3YmQyZjEwZDljMmI3YWMxYTliZDMifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L126-L170",
+          "version": "repo-lines-v1:sha256:e008d0a3e3d7eeb6746443d145a55f1e345c553c0f6684528e775b6e14c7ab8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNWU4NGI2ZWU5NWExODZjMTc1MzkxOTZkMTlmNjhjZDEzZTVjYThlY2Y3OGM0ZDU0YTE3ODY2Y2E3OGU2NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZDY5MzE3MTc5ODZiMzE3NGJmYmRmYmQxNWU3ZWE3OWYwODJlNDIzZDVmZTFlMTU5NzhkMzkxNTk4NWIxZTMifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L15-L19",
+          "version": "repo-lines-v1:sha256:f0041a95fc0c09db9b7228ba9619a109bde7691560e947ce4d6d7a325755f695:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThlMjA5MzFmODY0NmU0MjcyY2NlZTUwNzczMzQ4NzYwMmQxY2EwNWM0OTJiOTgyNDg4ODViZTdlYWQ3NGNiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdlYmJjM2U4MWYyZjZiYTk3NzQ2NmJhNWZlYmRhNzI1Mjg5N2I0Nzc1NWY4MWZjZTNhYTcwNGU3ODZmNWVjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JkZWFjYjY4OWQ1Mjg5ZGFkNjQ1ZjMwMGJlMzRhN2ZjOWJlOWI4MmUwZjJjY2FkNTNhOGM0Y2JlMjVlZDdhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRjNGRhYzUyOGQzZWZiYzEwMzk5NTkzYTZkMWVkNjUzMjRhZmViZmVkZDY3ZGIwNmFkYTEyMjYzMDcwYTIwZCJ9"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L172-L180",
+          "version": "repo-lines-v1:sha256:b9e8c8dd13b719855cb0b4b68f1c57347956e931a52a760eeaf9d7b509b30645:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTIyN2M0ODM4NmEzNGNmNGE1MjI5MjA1M2Y1YTUyOGZkNGM4ZWJmMTFiMjc5NDBiNTQzZWFhYzg5ZjExNzkzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmQwZjJkM2EzYWFkYTI3NTg2NDU3OGQwYTQzOTE1NjM4ZDU0M2ZlY2EyYzk0ODU4ZGI5NDEyMTFlODZjZWYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEyNDVhYTc3ZDVlMGNlMGU1YjllMDE3NDhmNWM4MmViNjFmOTg1YjUxZDk5OGRmYzZlY2QxZDIwMDU4NzcxYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4bccee275024548841e16ddebf613a7",
+      "statement": "In local-wiki/personal mode the equivalent user brief lives in the private state directory at ~/.openwiki/INSTRUCTIONS.md (openWikiInstructionsPath, mode 0o600 written by saveOpenWikiOnboardingConfig) and is read by readWikiInstructions, distinct from the committed repository openwiki/INSTRUCTIONS.md (mode 0o644 written by saveRepositoryWikiInstructions).",
+      "evidence": [
+        {
+          "resource": "repo://src/setup/onboarding.ts#L100-L124",
+          "version": "repo-lines-v1:sha256:08256ff1463d6a963888eafe7a1bf904b412a1873de0f70ff103d3db573f1ffa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZjc2NGFkYmZiNDY3YzBiNGQxYTdlNTNkZTIzY2Q4MjNhNDY3MTUzNGRlNGExYWY0Zjk1YzkzNDBjODYyMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5MmY2Zjc3ZDRkOTU5Yjc3MDM2MDNkMjAwZjg5NTYzYjJiYTIxMTBmYzcwMjM5OTBmN2NlNTFjYWE1ZGRkNDEifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L11-L18",
+          "version": "repo-lines-v1:sha256:5aa022f307e6a32b67657e5051a73db9e53342bcf573fd607c88cadb60c346aa:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM5NWZjZjA4NDI3NjczZmE2Zjk0ZjkxYjhlYjE5OWFjNWQ4Njc2YTJjNmE4MDFlMGNkYWY4NWViMjJkYWY3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDk5NjdlYzFlZDM4MzZmOGViMTdhZmYxNzJiNWJmZWY3ZGU2MDQ4NWE0MzljNmNhMTFjNTkxZTE3NTU3MzlhZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ3ZjJjYTMyOGViNGVhNmU0NDZlNWQyOGMzNjNkZGMyNDhjZjM3M2NhY2QwYjNkNWRmNWU2ZDI3NTcwNTUwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjVmMWMxZGJhNzNhNmRjZDJhZDZmOWMzZDRhNjEwMmZkMzUwYTkzMzFiNWYxYmRiNDU4MWRiYzViZGQwYTAxZCJ9"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L160-L170",
+          "version": "repo-lines-v1:sha256:b0e1ad49fa4915f85ae56db04a0daa9bbb75fa1615be18a91ef247d7cc600a93:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiODdmN2Y2MDFkNTYxYWVlYzk2YTcxYjUxYTA2MjYwOTUxMmE1MGZmNmRhZWNlODk2MTllMDNlYWNlMWQzZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwNmFiZDYyYTEzOGQ1ZjBmNmZkZDNkZGE1NDM5MTlmYjQ0NmY1Nzg4ZDJmNjMxNmU5NTUzYWE0Njc4MDMyNTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZDY5MzE3MTc5ODZiMzE3NGJmYmRmYmQxNWU3ZWE3OWYwODJlNDIzZDVmZTFlMTU5NzhkMzkxNTk4NWIxZTMifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L225-L245",
+          "version": "repo-lines-v1:sha256:f0ab2bd30b8a9103171dca10095b59ca3181bde1dff2947a93fda04534cccece:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkZmQ4MzMyNDE0MDllYzg5OTRlMmE4MWUyZjM5YzI0ZGUxYTcyMjJmZDY5NDhkMTc4MzhmYzI2MTMxNmQ2YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4ZDJlYTMyMWEyZjdiODEwMjAwMTUzMGMwYWQ1ZTI2MDI3OTRlMThhZWE5ZTQxMzdiN2Y5NWY0ZjNiYmZkMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7c405145b87441aab7b8bb47d68cdf6",
+      "statement": "openwiki/.langsmith.json (getLangSmithRepoConfigPath) is a committed JSON config read by the LangSmith connector that names workspaces and projects to document but never the API key: each workspace carries an apiKeyEnv (the env-var name, constrained to the OPENWIKI_LANGSMITH_API_KEY(_<n>) namespace by sanitizeLangSmithApiKeyEnv) and optional apiBaseUrl (validated against the three official LangSmith hosts by sanitizeLangSmithApiBaseUrl, since the base URL receives the key as an Authorization header); the key itself lives in ~/.openwiki/.env or a CI secret.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L175-L200",
+          "version": "repo-lines-v1:sha256:537502ceb77d297453365babfafc934c2d6d9851131eb7c7942fd261dfe7e580:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YTQ4NDE4Njg3ZWU2MjQ5YTUyOTg5NGIzM2MyOWQ2ZWU3MDRjYjFhY2MxNzc1ZjFlYmIwMjlmZTZmMGE5ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MTA0YzcxZTdhMmEwMTdlNzI2NGFhOTBlNmVlNmY5ZmViMzI4Y2M5N2U3Mjg3ZWIxYWRlODE4MjE1OWM2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NjEwM2ZkNjk2ZGM3NjZiZGYyMWMwMTg0MjljNmE4MTYyYWE0N2JiOGJmMWY4OGVkYWM5OTY4Y2M5NWMyOTIifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L44-L68",
+          "version": "repo-lines-v1:sha256:76a04c8c02683a7764579e085953775116701023d7f3a4acdf2114bd3a9ebb47:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4NjRmZmVjNjk1MTU3YWQ0YmU0YWU2ODMzNTEzNzVlODE4NmI4ZGQ3ZDg3NWM1NmY2OTQ0NjcxZTc1ZmVjODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYjExZTgzNThhNTc4MzE5MGM3ODA3YmFiNGEwN2E3NzI5YWQ3N2M1NTQzMDc3M2FkNWFhZWM3NzY4YWEwMTgifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L55-L109",
+          "version": "repo-lines-v1:sha256:96aaa3ce1bdb18e13a69eaad42647d8d0d238c0e244cc278be20d56ae2f69978:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5OThiNDZhN2FjY2Y5YmQ3NDM0MzM0OTRlYjQyYmJmMjM0NDgyNmM2NGYwMzAwYTEzNGNjOTExZTI0ZjI3YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4Mjc5OWI1MTFkNGU3MzAyYzAzY2NjN2I0YzZmNDM5Yzk3MGU3MTgzMGQ0ZGJjOTc0NGM5YjExNTU2ZTIzNGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3014469d088d4b2da122ef90bfb0a77c",
+      "statement": "parseLangSmithRepoConfig reads only named, allowlisted fields and drops any workspace failing a shape or allowlist (apiKeyEnv/apiBaseUrl) check rather than failing the whole config, so a malicious committed config cannot point the connector at an arbitrary host or name an unrelated secret as the key to send. The setup wizard writes it WYSIWYG via saveLangSmithSetup/writeLangSmithRepoConfig only once the LangSmith sub-menu is opened (langsmithSourcesTouched), so an untouched setup never rewrites the file.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L116-L210",
+          "version": "repo-lines-v1:sha256:5d580964349846d99fecdf8f11ada8c16355453aabdf3ffe8aca72d1ab2eca16:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZjQ2ZTAxMDRmYTJjNmVmNDY3MTk5NTgxOGExYTIzNTc3YTQ2MmU4MzBmYzA2ZGQ4MTRhOWUzZGY3NDhjNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxNTdkNDA0ZGJjYzQxMTczNjhhNWZlMzFiZTcxYmUyNzEyYTJlNmQ5ZjRlZTFiMTlhN2MwMjZlYjc3NmMxODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyNTY3NjA0OWQxNTE3NDc0MmY5Y2IyYTczOGU1Y2ZlNTkzMTJhNzU0MzYyOWVhOTM0YjhiM2VhNzAyYWI4NGIifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L212-L224",
+          "version": "repo-lines-v1:sha256:2387af794121eb7db54afd7f0b09833799ba4eee62f7a24101ce094ab0c3bc2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/setup.ts#L71-L110",
+          "version": "repo-lines-v1:sha256:5a7e82d5a88181515bf1cadb653579a4ab356ab194c624516715a13c52053d55:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMTc3MTk2NzcyYWM1N2Q3NTk4MmEzNjU1MTBkN2FhZmY4ODQyYzFiNjFlOGRmMzMzN2Y3Mjc4MmY3NTk3YzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ODQ3OTdkMTQ3MGE4YmZmN2JkNWE2YTAyMTRlOTViOWYzMzMwNzg4MWU2NmMzNWZmNzAwNTgxYzcyMDhiZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2005-L2035",
+          "version": "repo-lines-v1:sha256:84b41472ed7b8a3ba53ef6f165eb0ccec07936eb756a9ecc5ba39c63b7ad4549:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMmI4ZDc3MGMwYmQ2MzVlMDQ3MTM5NjhlOTBlZTlhYjU5ZGE1MGY3MzIwNTA5NmY2ZGNiMWMxZWJhNGEyNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMzFhMjU5NmU0NDk4NDkyMjZmNjE1ODVmZmIzZWFhOTgwMGQ2YTlkMWQ5ZWFmZmI3NjI1YTQwZTJhMTQ0YWYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

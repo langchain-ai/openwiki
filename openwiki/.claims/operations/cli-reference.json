@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1da4500a0aab562bf4a252cf59d0ac172854b0013b2ca6c560d6b1adf74ca62a",
+  "pageVersion": "sha256:4be4c31c87a197aff24e017238174c1ddad151fdc870055aba7218cc1aea9d2b",
   "claims": [
     {
       "id": "claim_e161d3153b544232b9f17aa2f2838616",
@@ -493,10 +493,98 @@
           "version": "repo-lines-v1:sha256:2272fe56dbf1fb8b96953582887767a727776f88b0364cbebc545a96d087be88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZmM0MGUwYzJlYWYxNTA0MzRmZDEwOTdlNWZkZWUxMmU0M2E0YjA4N2ExY2M4OGJkOWY5NWQ4NWY0OTVhNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Zjc0ZDhkOGMyNjM5NjhhOTIxYjJkOWRmMTU2NTI1ZjNjMTQ1ZmEyNjVhMWFlYWMzZDk2ZjFmM2MxNDQ3OTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZDYyZTJiNTE1ODI5ZjgxNjBjMDkzYjEzYjE0ZTgwMjgwYTYzYjViYzg4NDBjMzhjZWJhNDEwODU0ZDQzNDQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7ebf45cc40784359befa74aba4854c4f",
+      "statement": "shouldAutoExitStartupRun returns true for a non-dry-run, non-print run that was asked to start and whose command is init or update; in an interactive terminal the App then renders the final RunView and exits with the run's exit code (0 on success, 1 on error) rather than returning to chat, and the ingestion-success auto-exit path exits non-zero if any source errored.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/app/app.tsx#L696-L716",
+          "version": "repo-lines-v1:sha256:24a5eb372d5bf4e33e980cf9d4199d91a6a80d5c004949147f91fe99f4b91c39:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YTdhYTExMmYwY2ZmN2ViMjJkMGVkMDQ1OGE5NTA5YmI4OTk1MGRjNGRlYWJjOTcxZDYzZjA4YjQ3ODJmNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZWNmMDAxMDM4ZDU3MzJkZWRkZTg5NTEzYjE2NDI0N2ZlYTYzNmRjMjNmZjFjOTkyYWFhYWMwMDIwMmI2MTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxMjVhYjMwOWIwZjJhYzFkNjNmMzI5ZTRhNjIzNzJkNDJhODA1MzE2MmUzYjc4YWI2YjhhZWY1NTU3YjgzZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYzNhODg3OGRlMTExZjRjOWUzYjc3OTg4ODI1NDQ2ZTNjMjYxM2RmYjdmYzllMzEwMjliMWI0MTBkZDhiODMifQ"
+        },
+        {
+          "resource": "repo://src/cli/run-mode.ts#L57-L69",
+          "version": "repo-lines-v1:sha256:93103ac16bc740b1887b8942844d5b0b01ea450f7e4a5f269b1099492e988668:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZDA4YzI2MTQ4MTA5ZTg0M2ZhMmZhOTlmZDJhMzU2MDExOGNlYTU3NzI3ZGE5MDBhNmY1Njg2MWVmNWU0ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af3883322e88442a8b1f8347032d6922",
+      "statement": "Interactive chat exposes a closed set of slash commands defined in slashCommandOptions (src/cli/input/menu.ts): /provider, /model, /effort, /api-key, /langsmith-key, /init, /update, /clear, /help, /exit. parseSlashInput matches a typed line against a command label and splits trailing arguments; an unrecognized leading token yields 'Unknown command'.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L336-L346",
+          "version": "repo-lines-v1:sha256:ffa52214890f43f241790f9b69201d31230c2e05fd4558168b3a4d515174b9a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNzIzZjEzZTAyMGE4ZGIwN2Y4MTc3NjhkN2NiOTY3ODhmODc0Njc5YmQ3MGVkODVkZDM4ODBiN2VhMTc0Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2ZmMxYTYxODU2OGEyMjgyYmZjZjMwZmU2NDYxM2U2NzVlMjQ0NmViMjI3OWE4YjdhMDJiZGIzMDE0ODlkYjMifQ"
+        },
+        {
+          "resource": "repo://src/cli/input/menu.ts#L18-L69",
+          "version": "repo-lines-v1:sha256:a3572b1e1d0b955faf2e010f52b9c2d8bed8a03f7aa1539023e85845e199c155:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNjFiY2MyM2FhNDE5YWQ0ODQ0MTU2YjI4ZjZkMmU1YjY1YjIxMjI3MWE3ZTUyZTc5NTRmYzBhYzcxMDM3MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0OTAyMmZjYjgwNjYxZGQ3MzgyNTczOGQ5OGNiNTk5ZDAzNGI3Njk3Y2FhYjAzM2U2Mjc3YjM4OTliOTQyMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwNzI1ZmE3MGVkN2JhMGUxZTg2YmY1MTBiYjBhNGU2ZmY0OWNjMTBlZjBiODAzY2ZhMDc2ZTFkMmYwN2Y3YzIifQ"
+        },
+        {
+          "resource": "repo://src/cli/input/menu.ts#L308-L318",
+          "version": "repo-lines-v1:sha256:f8c14867a68337c3b4f0efd98eee9e90bfdc8f681fb88e8b8aa75db65fefac8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYWM1NjhjNWFhYzU1NTRlOTVmODRlZjc2YWNhM2RmODM3NDAwNDhmYTU1MzAzOTA3NjhhMGJhMzJhYWMwY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxZGExNGE0ZTFhYjgwZjFkMmRkMjhkNzZhYWQxYjQ0MGRjODgzMGJmNTAwMDljMmU3OWEyOTQwN2U3YTVmYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTliNDY2MTJhMDNiMjZiM2Q5NzgwNGQ2NWE3ZTMwZmFjYzE1ZjZhMzg3MjI0MzNkZjYxNTIzMzgzNjU2MmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff5b1169b3d4438d8e11889255e090c0",
+      "statement": "The /api-key slash command opens a masked prompt that writes the pasted value to the current provider's API-key env var (getProviderApiKeyEnvKey); inline arguments are rejected, and it errors for providers using the AWS SDK credential chain (which /api-key cannot safely configure) or providers without an API-key env var. An empty value for an api-key secret is rejected as required.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L424-L462",
+          "version": "repo-lines-v1:sha256:68be7f2918211446f366360c0a171a77616ae86861fd1b07aea9cd816388dcd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzNmQyNWFjNWVkMWVjMGUzZWRiZTU3MWNkOTJlOGNkMzEyYjI0ZDUzNzhhZjExM2UzNzdmMDFmODE2NjExNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTJmODQ3YmIyMWNiMjkyZGQwOWY3ZmE2ZTdjYWM0YThjMTRkOTdkMzg5NjMzYjNkMTUyMGVhMTRiNWIxZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYmMyZTE4ZGVhYTA0YTBhNjZjOTUyN2FhMGJjNGJjNTI3ZjhiYWQ1ZDVjOTA0YmY5ZGYyM2Y3ZGZmYTk1ODIifQ"
+        },
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L690-L694",
+          "version": "repo-lines-v1:sha256:9e673523dbaaf31271f1a22abe9d702d5527cab9f6a9f880a5f7e1244a5cff40:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgzNDk0N2RjZDQxY2RmYjQ0MWYxYTc2YjQ2MGY3OGYzM2E0MzE3MmU4ZWQwODAwM2VmOTY4MWZlZjIwY2Y4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmE0MWQ3M2M0NTIyYmVhMzlmZjgxNWUyNGJjZjEzMTE4NTMxZDY3MWViM2NmNTMxMjE4ODVlMTFhMWM0NzI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkyNWE4OWZiMTdmOTI3NzMxYTM3YWI3MTE0Yzg1Y2MzYjhhN2Y1ZTBkZTk1YzNhZjMyZThjYmZlMDk1MWQ1OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0dffb70f0d6b47f0985a0c212d90ecea",
+      "statement": "The /langsmith-key slash command opens a masked prompt for LANGSMITH_API_KEY; an empty submission clears the key and disables LangSmith tracing by blanking LANGCHAIN_PROJECT and setting LANGCHAIN_TRACING_V2=false, while a non-empty value sets all three. Inline arguments are rejected.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L465-L483",
+          "version": "repo-lines-v1:sha256:4363e0f1b32fc2084370e67e79f5c95e8c33c0ad03b9fe7a4c859df6b11e7b6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTA5MzY3NjEyNjg4ZTAyYjkwMTFjYTQ1OGEzODc3YjE3NDIwMDIwYWRkNTc0NGQ1M2RlYjI2NTViY2IzZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiZWE4YzIwYTU2NmUwYjA5MjJjZGVkMDlkMjNhNGJkNjMxMjQ2YTVmYWVjYzNhYzAyYmNkOGMxYzA2MWRkNWIifQ"
+        },
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L700-L711",
+          "version": "repo-lines-v1:sha256:ea332e0d0ce3520360968c79cadf96b1e87c8d55f8dd677d31320ded0ae150c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZGY4N2E0NzMxNmM3MDhjNTUwMjA5OGU5YWY2YzQ0NTM0ZWI4MGJlYWRjZjYwNjMwMjhlZmNhODU5MzdhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzM2JkNTBmM2FjYjJiMWQyYWE4ZmU4MDMwZGViMzg2ZTY5ZDljNTQ0ZjZmMGMxN2FiNDhhZmZmYzg0MzNhNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMGE3ZDE3ZWU2OGZmNDRmODQwODRhMjMwYzc2MTI4NDc3MzMwYWM2MTkwMWNmM2RjMjQwOWUwZWJhMzQzODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4838e5d031e4d06a4082c1320247e21",
+      "statement": "The /effort slash command sets reasoning effort for the current provider/model. With an argument it accepts a supported effort value or the literal 'default' (also 'provider-default') to reset to the provider default; with no argument it opens a capability-gated submenu built from getReasoningCapability, and combinations that do not support reasoning return no options with an explanatory error. An unsupported value names the offending input and lists available values; when a shell-level OPENWIKI_REASONING_EFFORT is set the saved value is shadowed and the notice tells the user to unset it.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L377-L405",
+          "version": "repo-lines-v1:sha256:3b54ab4ca7ad52c0d80cbd4d5c02dd250ed9ae9f61ba46d5c02422ef22f2c1bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMGJiNGE2OTY4OTFmZjgwNTNkY2I4MDZmZWNmNzcxYmY0ZjA0NmI2NWE2YzI2NjI1ODQxZGI1ZWI2MmFmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTJmODQ3YmIyMWNiMjkyZGQwOWY3ZmE2ZTdjYWM0YThjMTRkOTdkMzg5NjMzYjNkMTUyMGVhMTRiNWIxZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNGQ4MjFkMWVkM2ZmZDAyMTI4ZjM2MTBmZmM2YmU5NTk3NDNiNWIwMTk0NTNkZDk0YTE3ZDE0YWVkY2UxN2IifQ"
+        },
+        {
+          "resource": "repo://src/cli/components/chat.tsx#L573-L624",
+          "version": "repo-lines-v1:sha256:05ccc52acff78640705b3b1f2d6cb15c83a2fc68c39e64f1853d0aa7106feda6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhNDc2Zjk0NDRjNTE2YTg5NWVmYzJkZGI1ODEzNTliMjM4M2JjNDA3ZmYzM2U2ZDk0ODgwMmVkYWI3MjZjNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMGQ5NDlkMzg4MTZkY2FjZDc2OWQzNjU1MWYwNjViNjM2N2ViOWQ5YmVmZGVhMTliNmE4NDlkNDA2NjAxYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMDljZjAyMzU5M2E5NjBiMGExNzg4NzFjOWFjMTM2ZDQ3ZmQzYmNiYWJkNGMwNGMxZjUyZjdjZDhkOTgzYzUifQ"
+        },
+        {
+          "resource": "repo://src/cli/input/menu.ts#L268-L286",
+          "version": "repo-lines-v1:sha256:0bace27bd0ecd9d3c8a698193be774eb7b0f42aaed526d1ebc6826f7bea6b268:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YWUxNzQ1ZGQ5NzU5YWQ0Njc3ZDFjMDQ3MmIwYjE0NWE2YzBhODY5NGM0MGUzMmI0OWQ0NjNmNzdmYTFjM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNzlhY2VlY2Y3MWQxNGQ4MmFhN2U5MTI4ZWFjZDBjNzU2NGFmMjBiOWE0YjE1NWRlYWEyYWZhOWQxYTA2MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2NThhM2Y5ZTkyZDViZGQ2N2ZkM2JmNjlmYjlhYzMyMjM5MGM1OGQxODdiYTY4MTIxYzg5MDY4ZDdjYjRiZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_faee580c2f9b4a77901d03393586335d",
+      "statement": "The README command reference enumerates the primary CLI invocations and their behavior: bare openwiki and the personal positional start interactive chat (code mode default); a quoted message starts chat with an initial request; -p/--print runs one-shot and exits; --init/--update initialize or update docs; visualize serves or exports a graph; auth/ingest/integrations run connector and host-integration actions; --help prints full help.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L506-L523",
+          "version": "repo-lines-v1:sha256:de4e5ae14ea574cb3c07a979cb5e0274d37f0c9ec5630c0c983a40a0e55bc4da:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwZDBkNDE5MWE1N2I4YzljNDI5MDc2MTc1ZTVkNTMwZTY4OGJkZWUyYTZkNmNmYjU1Nzc0ZGU2YWY4MDBiZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1OGNhZjRiNDgxZDRhYmE4Yjg0ZjVlOGFiNGJjNzBhZGYwM2NjMzI4ZDA1MDA5NzhlODQ4OTJmMWI0NjRhMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5MzEyOTMwYzRjN2JlMGVlN2RkZWQ1Mjg0NjljZDgxNDA4ODU3Y2ExMjNiMTJhMmJhMzRkZWZhMGUzZjAwY2MifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }
