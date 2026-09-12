@@ -108,6 +108,41 @@ describe("repository worker prompts", () => {
     expect(prompt).not.toContain("force flag");
   });
 
+  test("adds a scoped update mandate for update planning context", () => {
+    const prompt = createRepositoryPlannerPrompt(
+      planningView(),
+      "User: document only src/auth.ts and /openwiki/auth.md.",
+    );
+
+    expect(prompt).toContain("hard scoped update mandate");
+    expect(prompt).toMatch(/Preserve unrelated page\s+framing\/theme/u);
+    expect(prompt).toMatch(
+      /Schedule only directly requested\s+pages\/files and genuinely affected cross-references or navigation/u,
+    );
+    expect(prompt).toMatch(
+      /Refresh\s+\/openwiki\/quickstart\.md only when the page map, navigation, or task-routing\s+links actually change/u,
+    );
+  });
+
+  test("does not add scoped update mandate for init or missing planning context", () => {
+    const initPrompt = createRepositoryPlannerPrompt(
+      planningView({
+        mode: "init",
+        pageUpdateWindows: [],
+        claimIssues: [],
+      }),
+      "User: document only src/auth.ts.",
+    );
+    const updateWithoutContextPrompt =
+      createRepositoryPlannerPrompt(planningView());
+
+    expect(initPrompt).toContain("User and connector planning context");
+    expect(initPrompt).not.toContain("hard scoped update mandate");
+    expect(updateWithoutContextPrompt).not.toContain(
+      "hard scoped update mandate",
+    );
+  });
+
   test("renders unknown baselines as explicit full-review windows", () => {
     const prompt = createRepositoryPlannerPrompt(
       planningView({

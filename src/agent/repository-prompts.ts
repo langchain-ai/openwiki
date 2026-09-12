@@ -40,6 +40,19 @@ ${formatIssues(view.claimIssues)}`
     ? `\nUser and connector planning context:\n${planningContext}\n`
     : "";
 
+  const scopedUpdateContext =
+    view.mode === "update" && planningContext?.trim()
+      ? `
+When the user planning context names files or OpenWiki pages, says to document
+only specific files, or otherwise limits the requested documentation scope,
+treat that as a hard scoped update mandate. Preserve unrelated page
+framing/theme and the existing information architecture; do not use a narrow
+request as permission for a broad wiki refresh. Schedule only directly requested
+pages/files and genuinely affected cross-references or navigation. Refresh
+/openwiki/quickstart.md only when the page map, navigation, or task-routing
+links actually change.`
+      : "";
+
   return `You are planning an OpenWiki code wiki for this repository.
 
 Your only output action is submit_plan. Do not write documentation and do not
@@ -77,7 +90,7 @@ An update with no required page edits and no deletions may submit pages: [].
 For every page provide a concise purpose and useful seedPaths. seedPaths are
 starting points, not research boundaries. Copy only relevant global constraints
 from the user/connector context into that page's instructions array; do not copy
-unrelated context into every job.${semanticContext}${updateContext}
+unrelated context into every job.${semanticContext}${scopedUpdateContext}${updateContext}
 
 ${view.wikiGoal ? `Repository OpenWiki instructions:\n${view.wikiGoal}\n` : ""}`;
 }
