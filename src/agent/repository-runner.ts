@@ -22,6 +22,7 @@ import {
   type RepositoryPageSnapshot,
 } from "../generation/repository-run.js";
 import type { RepositoryRunMode } from "../generation/run-state.js";
+import type { CodeModeAgentFilesPolicy } from "../config/code-mode.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
 import {
   AGENT_FILESYSTEM_PERMISSIONS,
@@ -137,6 +138,9 @@ function createSubmissionRejection(
  * Inputs for one native repository-generation command.
  */
 export interface NativeRepositoryGenerationOptions {
+  /** One-run override for repository agent-file handling. */
+  agentFilesPolicy?: CodeModeAgentFilesPolicy | null;
+
   /**
    * Absolute Git repository root owned by the run.
    */
@@ -263,6 +267,7 @@ async function beginNativeRepositoryRun(
   options: NativeRepositoryGenerationOptions,
 ): Promise<BeginRepositoryRunResult> {
   return beginRepositoryRun({
+    agentFilesPolicy: options.agentFilesPolicy,
     root: options.root,
     mode: options.mode,
     language: options.language ?? undefined,

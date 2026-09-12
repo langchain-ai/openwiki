@@ -200,6 +200,7 @@ export async function runOpenWikiAgent(
         "run",
         () =>
           runNativeRepositoryGeneration({
+            agentFilesPolicy: options.agentFilesPolicy,
             root: runtimeCwd,
             mode: command,
             language: options.language,
