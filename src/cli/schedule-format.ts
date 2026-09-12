@@ -112,20 +112,20 @@ export function formatPowerScheduleStatus(
 export function formatScheduleStatus(
   schedule: ConnectorScheduleStatus,
 ): string {
-  const launchdStatus =
+  const nativeJobStatus =
     schedule.pausedAt !== undefined
       ? "paused"
-      : schedule.launchAgentPath === undefined
+      : schedule.nativeJobPath === undefined
         ? "not installed"
-        : schedule.launchAgentLoaded
+        : schedule.nativeJobInstalled
           ? "loaded"
-          : schedule.launchAgentPlistExists
-            ? "plist exists, not loaded"
-            : "plist missing";
+          : schedule.nativeJobPathExists
+            ? "job file exists, not loaded"
+            : "job file missing";
   const rows = [
     ["Schedule", schedule.description],
     ["Cron", schedule.expression],
-    ["Launchd", launchdStatus],
+    ["Scheduler", nativeJobStatus],
     ["Updated", schedule.updatedAt],
   ];
 
@@ -133,8 +133,8 @@ export function formatScheduleStatus(
     rows.push(["Paused", schedule.pausedAt]);
   }
 
-  if (schedule.launchAgentPath) {
-    rows.push(["Plist", schedule.launchAgentPath]);
+  if (schedule.nativeJobPath) {
+    rows.push(["Job file", schedule.nativeJobPath]);
   }
 
   if (schedule.warning) {
