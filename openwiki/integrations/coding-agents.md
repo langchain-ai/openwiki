@@ -1,7 +1,7 @@
 ---
 type: integration guide
 title: Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
-description: How OpenWiki runs inside a host coding agent through the five-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
+description: How OpenWiki runs inside a host coding agent through the six-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
@@ -48,8 +48,8 @@ sources:
     resource: repo://src/platform/language.ts
 generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)

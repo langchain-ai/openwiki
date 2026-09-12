@@ -1,7 +1,7 @@
 ---
 type: workflow
 title: Repository Generation Lifecycle
-description: How OpenWiki drives resumable repository wiki generation through the six durable operations begin, submit_plan, next_page, inspect_page_claims, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json with source-fingerprint invalidation, sparse Claim reconciliation, and skipped-page handling.
+description: How OpenWiki drives resumable repository wiki generation through the six durable operations begin, submit_plan, next_page, inspect_page_claims, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json with per-page source checkpoints in openwiki/.page-manifest.json, source-fingerprint invalidation, sparse Claim reconciliation, skipped-page handling, clean-update no-op detection, and ephemeral-CI resume semantics.
 tags:
   [
     repository-generation,
@@ -11,18 +11,25 @@ tags:
     run-state,
     source-fingerprint,
     claims,
+    no-op-detection,
   ]
 sources:
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
   - id: openwiki-source-9697823032111d36e2d4caa9
     resource: repo://src/agent/wiki-replacement.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-ed90c6fa13119927ecd82845
     resource: repo://src/generation/errors.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
+  - id: openwiki-source-674d6e5badef7368ab04f064
+    resource: repo://src/generation/page-manifest.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
@@ -35,10 +42,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-02T08:09:44.873Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-02T08:09:44.873Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Repository Generation Lifecycle
@@ -89,7 +96,7 @@ stateDiagram-v2
     generating --> skipped: worker fails or exits without submit_page
     skipped --> pending: resume resets skipped jobs
     generating --> done: finish after every job complete or skipped
-    planning --> noop: clean update preflight
+    planning --> noop: clean update preflight without --force
     noop --> [*]
     done --> [*]
 ```
@@ -97,18 +104,23 @@ stateDiagram-v2
 Lifecycle phases and per-job status transitions of one repository-generation run.
 A `skipped` job is not a terminal run state — resume resets it to `pending`.
 Source drift during finish finalizes the wiki and records a later update due rather than resetting to planning.
+`--force` bypasses the `noop` preflight so an unchanged repository still plans.
 `inspect_page_claims` is an on-demand read inside `generating` and does not
 appear here because it changes no phase or job status.
 
 ## Durable run state: openwiki/.run.json
 
 A run's entire resumable state lives in a single JSON checkpoint,
-`openwiki/.run.json`, whose basename and schema version are fixed constants. The
-checkpoint carries the run's identity (`runId`, `mode`, `phase`), resolved
-language, the pre-run page inventory (`initialPages`), the source fingerprint,
-planning context, the stable actor, prior successful metadata, a pre-run content
-snapshot, serialized wiki-preparation state, and — once installed — the ordered
-`plan`.
+`openwiki/.run.json`, whose basename (`.run.json`) and schema version
+(`REPOSITORY_RUN_STATE_SCHEMA_VERSION`, currently `1`) are fixed constants. The
+checkpoint carries `schemaVersion`, `runId`, `mode`, `phase`, `startedAt`,
+resolved `language` (and `languageChanged`), `requiredRewritePages`, the pre-run
+page inventory (`initialPages`), the `sourceFingerprint` (and paired
+`targetGitHead`), `planningContext`, the stable `actor`
+(`producerActor`/`metadataModel`), `previousLastUpdate`, `baseGitHead` (the
+prior successful Git HEAD), `wikiGoal`, a pre-run `beforeContentSnapshot`,
+serialized `preparedWiki` finalization state, and — once installed — the ordered
+`plan`. Every field is schema-validated by a strict Zod schema on read and write.
 
 The checkpoint is loaded and schema-validated on read; a malformed checkpoint
 raises `invalid_state` rather than being silently discarded, so resumable work is
@@ -181,6 +193,14 @@ completion is the workflow's durability boundary and recovery unit: once the run
 state is durable, already-completed pages are the recovery mechanism. An
 interrupted run resumes by simply replaying `next_page`/`submit_page` for the
 remaining pending jobs rather than restarting the whole wiki.
+
+Per-page source checkpoints are recorded in `openwiki/.page-manifest.json`,
+which maps each factual page to the exact source fingerprint, Git HEAD, page
+version hash, and completing producer/run that were proven durable.
+`recordRepositoryPageCompletion` writes the entry only after the page's Markdown
+and Claims sidecar agree, and `getCurrentRepositoryPageCompletion` re-checks the
+current Markdown and sidecar against the stored entry on resume, so a stale
+manifest entry can never promote a pending job.
 
 ## Sparse Claim reconciliation on submit
 
@@ -336,7 +356,11 @@ For a fresh **update**, Claims preflight runs before Git-status no-op detection:
 `begin` returns a `noop` view only when the working tree is clean, there are
 zero grounding issues, _and_ every existing page has complete baseline coverage
 in the page manifest — so a clean Git status alone cannot hide stale grounding
-state or partial prior-run page coverage.
+state or partial prior-run page coverage. A clean no-op skips all model work but
+still refreshes `openwiki/.last-update.json` to `complete` status (so freshness
+checks reflect the run), after re-proving the source fingerprint stable across
+the finalize and publish window. `--force` bypasses the entire no-op block, so
+an operator can force regeneration even when the repository is unchanged.
 
 For a fresh **init**, the existing wiki is first replaced with a blank target via
 a recoverable transaction that backs up `openwiki/`, preserves user-owned
@@ -382,6 +406,18 @@ midway. When source has drifted, finish does **not** raise a conflict or reset
 the plan. It persists `interrupted` metadata (so a later `begin` sees work
 remains), removes `openwiki/.run.json`, and returns `sourceChanged: true` so the
 caller can inform the user that a later update reconciles the drift.
+
+### Ephemeral CI resume semantics
+
+Resume only helps when `openwiki/.run.json` survives between invocations — that
+is, on a persistent checkout such as a developer's machine. Ephemeral CI runners
+discard their workspace after the job ends, so an interrupted scheduled run does
+not retain uncommitted run state and the next run starts fresh rather than
+resuming the durable queue. The committed wiki plus full Git history is the only
+durable state carried between CI runs, which is why the CI examples treat each
+run as a full pass. A workspace-preserving runner (for example one that commits
+intermediate state or caches the checkout) would resume like a persistent
+checkout, but the default ephemeral model does not.
 
 ## finish: deterministic finalization
 

@@ -30,10 +30,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # OpenWiki Quickstart
@@ -119,6 +119,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                                                          | Read                                                        |
 | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Get the top-level picture of how the CLI, agent, modes, resumable generation, Claims, finalization, connectors, and the visualizer fit together | [Architecture Overview](/openwiki/architecture/overview.md) |
+| Drill into the Deep Agents documentation agent: model instantiation, the docs-only sandbox backend, OKF/translation/crash-guard middleware, prompt construction, and the repository runner | [Agent Runtime](/openwiki/architecture/agent-runtime.md) |
 | Find which subsystem lives where under `/src`                                                                       | [Source Map](/openwiki/architecture/source-map.md)          |
 
 ### Learn the core concepts
@@ -127,6 +128,8 @@ the canonical wiki pages; each one links into the deeper source map.
 | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Understand grounded Claims: material facts tied to versioned repository evidence   | [Grounded Claims](/openwiki/concepts/grounded-claims.md)             |
 | See what OKF output looks like (frontmatter, provenance, validated Mermaid)        | [Open Knowledge Format Output](/openwiki/concepts/okf-output.md)     |
+| Understand the two operating modes: code (repo wiki in `openwiki/`) vs personal (brain in `~/.openwiki/wiki`), and how the CLI selects one | [Two Modes: Code and Personal](/openwiki/concepts/two-modes.md)      |
+| See which model providers OpenWiki supports, how it selects and configures one, and where credentials live | [Model Providers](/openwiki/concepts/model-providers.md)             |
 
 ### Follow a workflow end to end
 
@@ -138,6 +141,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | Understand how repository source drift during a run is detected and why the run finalizes without advancing the source checkpoint | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md) |
 | Understand how Claims are reconciled on update and how a page submits sparse Claim decisions (`confirmedClaimIds` / `claims` / `retractedClaimIds`) with issue-free Claims retained automatically and full Claims available via on-demand inspect | [Claims Reconciliation](/openwiki/workflows/claims-reconciliation.md) |
 | Understand deterministic finalize-once finalization, index/provenance sync, link validation, and skipped-page restore on finish | [Wiki Finalization Workflow](/openwiki/workflows/wiki-finalization.md) |
+| Trace personal-mode ingestion: connector data pulls, per-source agent runs, and synthesis into `~/.openwiki/wiki`        | [Personal Ingestion Workflow](/openwiki/workflows/personal-ingestion.md) |
 
 ### Operate and configure it
 
@@ -146,6 +150,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | Look up CLI commands and flags (init/update, mode, print, integrations, visualize, schedule) | [CLI Reference](/openwiki/operations/cli-reference.md)        |
 | Understand environment loading, the `~/.openwiki` state directory, provider/token/reasoning settings, and secret sanitization | [Configuration and Environment](/openwiki/operations/configuration.md) |
 | Set up scheduled self-update in CI and the docs-PR workflow                                  | [CI Scheduling and Self-Update](/openwiki/operations/ci-scheduling.md) |
+| Understand the anonymous telemetry event, what is and is not collected, the error taxonomy, and opt-out | [Telemetry and Diagnostics](/openwiki/operations/telemetry.md) |
 
 ### Integrate with other tools
 

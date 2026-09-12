@@ -18,16 +18,36 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-8d81ffb5996861d05633851c
     resource: repo://src/cli/run-mode.ts
+  - id: openwiki-source-106c72a9cb6dd904077fc747
+    resource: repo://src/cli/runners.ts
   - id: openwiki-source-7d433875b0854d0b8b951be0
     resource: repo://src/config/openwiki-home.ts
+  - id: openwiki-source-ebd2b316d3147e7fde3920a4
+    resource: repo://src/connectors/sources/git-repo.ts
+  - id: openwiki-source-0dd970ab1b5ab5ad763ca199
+    resource: repo://src/connectors/sources/gmail.ts
+  - id: openwiki-source-e5bd2d88cb8bc284faef6f2e
+    resource: repo://src/connectors/sources/hackernews.ts
+  - id: openwiki-source-e322f3319b9736ea1a0793af
+    resource: repo://src/connectors/sources/langsmith/index.ts
+  - id: openwiki-source-208e19767098e36e721f4333
+    resource: repo://src/connectors/sources/mcp.ts
+  - id: openwiki-source-1f94cd80bf448efe6d61d3ea
+    resource: repo://src/connectors/sources/slack.ts
+  - id: openwiki-source-fb0f16602b9d0cfe87d3c43c
+    resource: repo://src/connectors/sources/web-search.ts
+  - id: openwiki-source-bdb4edab7b339f62867857bf
+    resource: repo://src/connectors/sources/x.ts
   - id: openwiki-source-01c7d07d9800df0261f20efb
     resource: repo://src/connectors/tools.ts
+  - id: openwiki-source-85064d6a188fa56bcc282f11
+    resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 ---
 
 # Code vs Personal Modes
@@ -125,8 +145,8 @@ apply to code repository wikis only:
   `execute` commands that reference Claims state are rejected. This ownership
   boundary is applied only in `repository` output mode.
 - **Host-driven (coding-agent) runs.** Running OpenWiki inside Codex, Claude
-  Code, or OpenCode currently supports repository code wikis, not personal
-  brains, and uses only repository source and tests as context.
+  Code, OpenCode, or Cursor currently supports repository code wikis, not
+  personal brains, and uses only repository source and tests as context.
 
 ## Capabilities that apply to personal mode only
 
@@ -136,6 +156,28 @@ because a code-mode run documents a codebase and must never be handed connector
 ingestion. Personal ingestion runs (see the ingestion pipeline) always run
 against the local wiki directory as their working directory and use the
 `local-wiki` output mode.
+
+## The one code-mode connector: LangSmith
+
+Every built-in connector is a `personal`-mode source that feeds a personal
+brain, except **LangSmith**, whose `ConnectorDefinition` sets `mode: "code"`. The
+distinction matters in two places:
+
+- **Connector tools.** `createOpenWikiConnectorTools` gates the personal
+  connector tools out of repository runs, so the agent is never offered
+  ingestion of Gmail, Slack, Notion, and the rest while documenting code.
+- **Code-mode enrichment.** Before a `code` `init`/`update` run starts the agent,
+  `runCodeModeConnectors` walks the connector registry and runs only the
+  connectors whose `mode` is `"code"`. LangSmith is the only one: it pulls recent
+  traces (tool calls, outcomes, latency) for the repository, windowed by the
+  last recorded update, and appends its synthesis guidance to the agent message.
+  A connector that throws is skipped (fail-open), and a repository that has not
+  configured the connector contributes nothing.
+
+LangSmith therefore enriches a repository code wiki with runtime evidence rather
+than feeding a personal wiki. It is the exception to the rule that connectors are
+personal-mode: it never appears among the personal ingestion tools, and a
+personal ingestion run never pulls it.
 
 ## Local state directory and the OPENWIKI_CONFIG_DIR override
 

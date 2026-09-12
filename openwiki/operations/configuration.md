@@ -13,8 +13,16 @@ tags:
     operations,
   ]
 sources:
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-12c17ed8ca9c89ec61f28df7
+    resource: repo://src/agent/docs-only-backend.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
+  - id: openwiki-source-a34c01da72fb3c9bee4f3cb9
+    resource: repo://src/agent/openwiki-ignore.ts
+  - id: openwiki-source-69abc6f0f641147820a274bc
+    resource: repo://src/agent/utils.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
   - id: openwiki-source-c2770ac037a7f4b0116a0dc5
@@ -23,18 +31,28 @@ sources:
     resource: repo://src/config/openwiki-home.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
     resource: repo://src/config/reasoning.ts
+  - id: openwiki-source-e322f3319b9736ea1a0793af
+    resource: repo://src/connectors/sources/langsmith/index.ts
+  - id: openwiki-source-9e541d09b8e52185141cdccb
+    resource: repo://src/connectors/sources/langsmith/repo-config.ts
+  - id: openwiki-source-053e849654b42fbddfbcfd7e
+    resource: repo://src/connectors/sources/langsmith/setup.ts
   - id: openwiki-source-04a008dbe4969919f7141a55
     resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
+  - id: openwiki-source-7c7ce1305f8f14f43fec29de
+    resource: repo://src/setup/credentials/use-init-setup.ts
+  - id: openwiki-source-14d4f389b56575bb7afd1310
+    resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-5fc87e9739dab52c4e447110
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Configuration and Environment
@@ -282,6 +300,120 @@ the transport from the Responses-API toggle: `responses-reasoning` when
 (`gemini-3.6-flash`) supports only `low`/`medium`/`high`, and the NVIDIA NIM
 capability supports only `none`/`low`/`high`, so a value like `max` is rejected
 for those models even though it is valid for OpenAI GPT-5.6.
+
+## Repository-authored configuration files
+
+Beyond the `~/.openwiki/` state directory and env vars, OpenWiki reads three
+files that live **in the repository** (under `openwiki/` or the repo root) and
+are committed alongside the generated wiki. They are user-authored or
+setup-authored, not OpenWiki-managed environment state.
+
+### `.openwikiignore` — the agent read boundary
+
+`.openwikiignore` (constant `OPENWIKI_IGNORE_FILE`) is a gitignore-style file at
+the repository root listing paths the doc-generation agent must not touch. It is a
+**read boundary** enforced by `OpenWikiLocalShellBackend`, not a guarantee that a
+topic is never mentioned: the agent could still infer details from visible code
+or tests, so it scopes *access*, not *speech*. `OpenWikiIgnore.load` reads it
+from the repo root; a missing file is treated as "no rules" (an inactive matcher,
+`isActive === false`), and any non-missing-file read error is rethrown rather
+than silently fail-open.
+
+```mermaid
+flowchart TD
+  L["OpenWikiIgnore.load(cwd)"] --> P{".openwikiignore exists"}
+  P -- "missing" --> N["inactive matcher (no rules)"]
+  P -- "present" --> R["parse: drop blanks + # comments"]
+  R --> C["compile each pattern to OpenWikiIgnoreRule"]
+  C --> B["OpenWikiLocalShellBackend enforces on every tool"]
+  B --> B1["read/readRaw/write/edit/delete: hard-deny ignored path"]
+  B --> B2["ls/glob/grep: silently drop ignored entries"]
+  B --> B3["upload/download: permission_denied for ignored"]
+  B --> B4["execute: allowlisted commands only while active"]
+```
+
+How `.openwikiignore` gates the agent's filesystem and shell tools.
+
+Syntax (parsed by `OpenWikiIgnore.parse` / `OpenWikiIgnoreRule.compile`):
+
+- **Blank lines** and **`#` comments** are dropped (`parseIgnoreLine`).
+- **`*`** matches within a single path segment; **`?`** matches one non-slash
+  character; **`**`** spans directories — `**/` matches zero or more leading
+  directories, a bare trailing `**` matches anything nested beneath.
+- A **leading `/`** (or any embedded slash) anchors the pattern to the repo root;
+  unanchored slash-free patterns (e.g. `*.log`) match at any path segment.
+- A **trailing `/`** scopes a rule to directories (`build/`), but the rule still
+  matches files nested under that directory.
+- **`!`** negation re-includes a previously excluded path. Rules apply in file
+  order with **last-match-wins**, so a trailing `!logs/keep.log` re-includes a
+  file excluded by an earlier `*.log`.
+
+Matching is case-insensitive (`i` flag) everywhere — on case-insensitive
+filesystems (macOS APFS/HFS+, Windows NTFS) `Secrets/token.txt` and
+`secrets/token.txt` resolve to the same file, so a case-sensitive rule would let
+an alternate-cased spelling slip past an exclusion. Paths are canonicalized by
+`normalizeIgnorePath` (backslashes to slashes, `.`/`..` collapsed via
+`path.posix.normalize`) so equivalent spellings like `./secrets/token.txt` or
+`secrets/../secrets/token.txt` cannot dodge an anchored rule.
+
+Enforcement is layered onto every agent tool in `OpenWikiLocalShellBackend`:
+
+- **Reads/writes/edits/deletes** of an ignored path are hard-denied with a
+  `Path is excluded by .openwikiignore` error (`getIgnoredPathError`).
+- **Discovery tools** (`ls`, `glob`, `grep`) silently filter out ignored entries
+  rather than erroring, and short-circuit to no results when the search root
+  itself is ignored.
+- **Upload/download** returns `permission_denied` for ignored paths while still
+  processing the allowed ones, preserving input order.
+- **Shell `execute`** is restricted while any rule is active: only the
+  `allowedIgnoredShellCommands` allowlist (`pwd` and `git rev-parse HEAD`) may
+  run, because arbitrary shell cannot be proven not to read an ignored path.
+  Everything else is refused with guidance to use the gated file tools.
+
+When `.openwikiignore` is active, the prompt also tells the agent to skip
+broad-root globs, avoid reconstructing git history through shell, and not
+document excluded paths.
+
+### `openwiki/INSTRUCTIONS.md` — the user-authored brief
+
+`openwiki/INSTRUCTIONS.md` (`REPOSITORY_INSTRUCTIONS_FILE`) is a user-authored
+Markdown brief that tells OpenWiki the repository wiki's scope and priorities.
+It is read, never rewritten by OpenWiki during normal runs — `openwiki --init`
+explicitly preserves it while replacing the rest of the generated wiki and
+Claims. `readRepositoryWikiInstructions` reads it (trimmed; an empty/missing
+file yields `undefined`), and its content is threaded into the run as `wikiGoal`
+via `createRunContext` → `readRunWikiGoal`, surfacing in the agent prompt under
+"Repository OpenWiki instructions".
+
+The setup wizard writes it through `saveRepositoryWikiInstructions` with mode
+`0o644` (committable), and a non-empty `wikiGoal` is required for onboarding to
+be considered complete (`isOnboardingComplete`). In `local-wiki`/personal mode
+the equivalent brief lives in the private state directory at
+`~/.openwiki/INSTRUCTIONS.md` (`openWikiInstructionsPath`, mode `0o600`, written
+by `saveOpenWikiOnboardingConfig`), read by `readWikiInstructions`.
+
+### `openwiki/.langsmith.json` — LangSmith workspaces/projects
+
+`openwiki/.langsmith.json` (`getLangSmithRepoConfigPath`) is a committed JSON
+config read by the LangSmith connector that names the LangSmith workspaces and
+projects to document — **never the API key**. Each workspace entry carries an
+`apiKeyEnv` (the *name* of an env var holding the key, constrained to the
+`OPENWIKI_LANGSMITH_API_KEY(_<n>)` namespace by `sanitizeLangSmithApiKeyEnv` so a
+committed config cannot exfiltrate an unrelated secret) and optional `apiBaseUrl`
+(validated against the three official LangSmith hosts by
+`sanitizeLangSmithApiBaseUrl`, since the base URL receives the user's key as an
+Authorization header). The actual key lives in `~/.openwiki/.env` or a CI secret.
+
+`parseLangSmithRepoConfig` reads only named, allowlisted fields and drops any
+workspace failing a shape or allowlist check rather than failing the whole config,
+so a malicious PR cannot point the connector at an arbitrary host or name an
+unrelated secret. The setup wizard writes it WYSIWYG via `saveLangSmithSetup` /
+`writeLangSmithRepoConfig`, but only once the LangSmith sub-menu is opened
+(`langsmithSourcesTouched`) — an untouched setup never rewrites the file.
+
+Related reading: [Connectors](../integrations/connectors.md) for the connector
+registry, and [Onboarding](../workflows/onboarding.md) for the setup flow that
+writes these repo files.
 
 ## Credential diagnostics
 

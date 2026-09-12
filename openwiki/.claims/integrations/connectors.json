@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:759bf39112f2d5930c96da1fc9ea45308480bca145cda62b1ff6a923670b4673",
+  "pageVersion": "sha256:90e162aa78381770b4e4d949b5a667a98cdf33299537626cfb4a4270a39a4da5",
   "claims": [
     {
       "id": "claim_877c98c88bd841fdb1bcd9de28cb0448",
@@ -461,10 +461,120 @@
           "version": "repo-lines-v1:sha256:a2d5f79b669a762fd36446c4bdb8662288890b78d92ecd21746756bddad2dbb9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxY2FiZGRkZTk3MjhkMzdmMWJhM2I1MDU4NTM3OGU3ZTZiMTZlYzU2ZDk5MDhmZWRmZDk4ZWEyM2Y5YzdlMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzMDZkMzhiZmVkZTBjYmQwZmM4ZGNmODRiZjgxYTc3NDUwMzkwZmM5MzZkODUwZWUwM2NlNjNmMzY2ZDBhMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_737371031cb446b494a3a8211952db49",
+      "statement": "A connector id names a kind of source, not a single configuration: onboarding records one or more source instances of the same connector (e.g. web-search-1, web-search-2) that share the same ~/.openwiki/connectors/<id>/ storage (config.json, state.json, raw/) but each ingestion run is tagged with the instance id via ConnectorIngestOptions.instanceId. Several connectors (web-search, hackernews, langsmith) record that instanceId inside their raw dumps so a later agent run can attribute evidence to the right source.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/hackernews.ts#L205-L213",
+          "version": "repo-lines-v1:sha256:3eb17172c17d1671fb89e65e8998dde469ed299ed20ea620ab751ccc0f7e4f4b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VjNzI2MjZiM2EyZDcxNjFkZTA5N2JmYWNhMTUwNjBhMTMxNzg2ZGFjMWJmN2U4OTQwMmQyMjgwYjEwOTI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMxNmZmZWI5YmM1YTBmNGE1NTlkNmI4MGZmNzljNjExYzM4ZjdjZDAyOTFjZTQ3OWVhODU2ZWM4NjljOThjMSJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/web-search.ts#L142-L152",
+          "version": "repo-lines-v1:sha256:96047b9a09ff67de69ad648609d815b38330775b0db1c7003540864da1fe350e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNjFmZWFhMzdmNjQwODQ0NmU0ZjBjOWU3MmIyMjk0YTljNzhlOWIxOGM4Zjk4NzgwYzAxMTY4MzNkMjM3NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTBlYjZjY2RiMGZlZmNjM2M5YTg4M2M4NzljOTg2NmJlMzM5MzFjYWFhYmYzNjYyZDdhYzRjNDEzZWM4YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZGQ1YTVhN2M1MDc0ZTc4NjNhMGIxZjUxYzlkNTAwNTIwOGFlODBlY2UxZGNhMWU5OGEzY2M5OWJjODRiYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkMDBiOGEwYWY1YTk2YmJhNWEyZWJiYjMyYTk5N2QzODJiOTg2YmZhNmE3YWRhMDQ0MWU4MGE5ZWUwNWY1MWUifQ"
+        },
+        {
+          "resource": "repo://src/connectors/types.ts#L25-L32",
+          "version": "repo-lines-v1:sha256:2e62ec4fda8d35e0c173ff8cdd45c06913d5b7e6e81c1a705ef628995f3493ff:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjYTAzOGM3MzhlMmFmMWJhMjc5NzU1ZjcyNDc3YzczMWMwY2ExMDgzNTRjZTRjZjJjMDQ4NDc5NTU4NjdjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTBiYjE4N2JjZjZjZDAxMGY0NzRkNTI0Y2U4N2Q1NjA1NWYxYTAyMjJkODkyNGE3NTRiYTMyMTY0OWJkNDJjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmYwYmE1NDU0NDg0MGM4MGJmZTlkODFlNTJhYTZmMTRhNDY1YzFkNGQxMmJkYmJmYzY0YTU0Y2IxYWEyOGMwMSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L144-L168",
+          "version": "repo-lines-v1:sha256:a26bc972e095a2c4f4769954f24bf2058c73828df5a2e14abbaa1cab4946c75e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5Mjg0ZWE1NTQ4M2NkNDE5NmRkODhkM2IwNTY5ZjBlNWRmMjBkNDI4MGQ2M2IwYjY3OWI3ZWE2ZTcwYmFhNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYTM2NDEzOTI5MmRkNmQ4M2Y3ZGRlYjA4OTgyYjBkOTg0NDU4NTlhODliMmFkYjk1MWUwNjhlYzVlNWQ4ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjMTdjYTZlMGY4NGNjZWRkZDQ2MTk3OTY0Y2JlOWViZDgxMDFjMjhhYmZmZDgzZTk1ZmQ4NDA4MTRhMzRkNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc603e033005446c85ce20964eada4ab",
+      "statement": "runOpenWikiIngestion resolves configured source instances from onboarding config and runs each as a separate agent update over a 24-hour window (INGESTION_WINDOW_HOURS=24), passing the instance's connectorConfig override, instanceId, and windowHours into ingest(); it throws when a non-'all' target matches no configured instance.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L144-L151",
+          "version": "repo-lines-v1:sha256:dc7b99d071bd8e8f4d2fddf968d19452ba4f20dc8baa5ed0bd31c6f9d725341a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1OTVmNGVlNWZmNjNkNTA5NTA0MTlkYzM0NDE0NTEzODUxZGM5NzM2ZmQxN2E0ZjdiZmE5MzBiMjYxYjZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRlNzg1YWZhMzc3ZWQzZWJhODJmZDFiZGE5NDFlNzUzNGFhMjVkMjIxMjg4MWMwYjBhZjUxMjQwODg3OWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDJhMzY0MTM5MjkyZGQ2ZDgzZjdkZGViMDg5ODJiMGQ5ODQ0NTg1OWE4OWIyYWRiOTUxZTA2OGVjNWU1ZDhlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE3ZWE1MmQwYjA3Y2EyMWYyNGYxOWI0OWVkMmExOTJjM2Y5NWM4NGY3ODM4ODgyYzczYTI4M2Y5YWMwYzZjNyJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L34-L101",
+          "version": "repo-lines-v1:sha256:63b177ee2d5f890d5bb33b76396cab31f048bb24a658bbed6fdf96a33f4f9d85:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNDgxYjdiN2ZkMDQyYWI4NzA5MzEyYjRjNjNkNTlkOTMzN2M4ZWQ2MTViM2NiNTU0YzE3MzNmMWIwYjM2Y2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExNDAwOTgxMTgyYzM4NjFkOWNjMDgxNjExMWVmNTA2ODg1ODg0ODY0NmRmZTc5ZjFiMDM2N2M2YmM5ZjU3Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ZjUwMmYwY2IwNzY1YzFlYTI0M2M3ZGM4YzZmYTFkZWNjOWEwNzhkZDllODBkOTJlNDE3ZGY3NDNmN2Y1ZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb70542e7a194c0790e56d5edf8cd754",
+      "statement": "Because the LangSmith apiBaseUrl and apiKeyEnv come from a committed repo file (openwiki/.langsmith.json), both are allowlisted at the use boundary: the base URL must target an official LangSmith host (api.smith.langchain.com, eu.api.smith.langchain.com, or apac.api.smith.langchain.com) over HTTPS with no embedded credentials, and the key env var must match the OPENWIKI_LANGSMITH_API_KEY(_<n>) namespace — so a malicious PR cannot exfiltrate the key via SSRF or name an unrelated secret to send to the host.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L175-L200",
+          "version": "repo-lines-v1:sha256:537502ceb77d297453365babfafc934c2d6d9851131eb7c7942fd261dfe7e580:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YTQ4NDE4Njg3ZWU2MjQ5YTUyOTg5NGIzM2MyOWQ2ZWU3MDRjYjFhY2MxNzc1ZjFlYmIwMjlmZTZmMGE5ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MTA0YzcxZTdhMmEwMTdlNzI2NGFhOTBlNmVlNmY5ZmViMzI4Y2M5N2U3Mjg3ZWIxYWRlODE4MjE1OWM2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NjEwM2ZkNjk2ZGM3NjZiZGYyMWMwMTg0MjljNmE4MTYyYWE0N2JiOGJmMWY4OGVkYWM5OTY4Y2M5NWMyOTIifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L44-L61",
+          "version": "repo-lines-v1:sha256:59fd8e35dad3b79732efd292764a06b5d6d62eee594945fc5a990feb1e9922bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhZjVkOWE3M2JjMWFmZmQxMjlhNTEyNGQxM2FkYWNmYzRkMzRjNzg5NGY4MDMxY2Y4ZGNjNzBhNDA2OTRhZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4NjRmZmVjNjk1MTU3YWQ0YmU0YWU2ODMzNTEzNzVlODE4NmI4ZGQ3ZDg3NWM1NmY2OTQ0NjcxZTc1ZmVjODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhY2M5MTM3ZjgwYzAwNWQ5MmQyODlhNWY1ZjZjZDg3ZjVhZGUxNGFmYmE5MWY2MjE0ZTIwMDA5ODg3ZGYwODYifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L77-L109",
+          "version": "repo-lines-v1:sha256:ce64313596f5f09ef703998a69c5c256cb93710f1d65585d58afc2ffb25e67db:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YTIzMDc0ODE5ZDc4ZTc0N2U5ZTcyNGVhZWIyMTRkNzkwMGQ0ZGY2ZDg4Y2YzZmZkNWQzZWIxN2RjNTFkOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNjI0MGEzMDM4ZDg5ZTlhNWIyOTk2OTFjMDcxNzU5NjcxNmMxMGM1OTYyNTVjNDMyMzA2ZjBmYmRiMjhjOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4Mjc5OWI1MTFkNGU3MzAyYzAzY2NjN2I0YzZmNDM5Yzk3MGU3MTgzMGQ0ZGJjOTc0NGM5YjExNTU2ZTIzNGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52a664dd7b194e3caedcd5359fb28900",
+      "statement": "A spawned stdio MCP subprocess receives only an allowlisted set of safe base environment variables (PATH, HOME, USERPROFILE, APPDATA, TMPDIR, LANG, TERM, etc.) plus the credentials the transport explicitly declares via transport.env; the full process.env (which holds every provider API key and OAuth refresh token) is never forwarded, so a spawned MCP server command cannot read the user's secrets out of the environment.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/mcp-client.ts#L792-L838",
+          "version": "repo-lines-v1:sha256:2e79b75f799c775893b9f92ef21c85e39d421fbf399b3703e14ac0638c3432d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOTBjOGRhNTMzNWZhODhmZGMyNWQ4ODUyMmRmNGI0MzgwMWM1Nzg1MTNjOWRkNjBlMWI4OGM0ZTU3ODgyOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyMGM2ODEzM2RhYWY2ZjNmOGUzYWEwNDQxNDI5OTEyMWExNDQyYTBmNThlZDBmYzlmZDk0YzIyYjczNDc3M2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb2c7ed846224dba8b06970c99f505c1",
+      "statement": "The Gmail connector refreshes OAuth access tokens on a 401: gmailApi returns a 401 response unchanged to the caller logic, which calls refreshOAuthAccessToken('gmail') and retries the same request once rather than failing the run — fetchWithResilience returns 401s unchanged precisely so this caller-side refresh can happen instead of a wasteful retry.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/http.ts#L13-L17",
+          "version": "repo-lines-v1:sha256:7c0781f1e4d8874900c1ceffe6c38ae78413453560646202d62920dba86d0cfe:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIzY2I0YzEzZDY3NzU5ZDU0Zjc2NzFkNDQwMzQ5NzJkMDkwM2EzOWQwOGFmYWU3M2JiOTgxZWI5YWIwZGNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU4ZWI2NGU4NzVmZDczNThlNzU5OWE3OTBkM2I2ZmM4YWY3OTA0MWJlNmI3NzQwOGMwZmE0YmQ2OWZmZWQwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWFkNDA2ZjYwOGRmZTdhZWJjNDYwMzBiOTE1ZTBiNjIxM2E1ZWNiZmUyMjQ2M2ZjYzg4YjQ5ODk1ZWVlODQzZiJ9"
+        },
+        {
+          "resource": "repo://src/connectors/sources/gmail.ts#L270-L296",
+          "version": "repo-lines-v1:sha256:e3c714f78d711cd83ac4dd2fc6e3c877f49e9bbde1c6e8a9f58575d487de8c7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOWZkYWI5ZjY5MjZkYjU4ZjNkYjQ1YTBjMTAyMjI3ZWYzZTMyNzY0ZDRmYjJmMmY1NTBmOGYxMzllNGE1ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZTRmYzk4OGU4ZjNhZmYxY2FlOWE1ZTExMzZlMmM5MzViODgxNDM3MzZiNzJjM2E1OTY0MGRhYzQ3YjExMDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2592990c42843d9a49663bd824acecb",
+      "statement": "Raw-read tools (openwiki_list_raw_items, openwiki_read_raw_item) reject symbolic links on every path component of the resolved raw path and open files with O_NOFOLLOW when available, in addition to the resolveConnectorRawPath confinement that rejects any relative path escaping the connector's raw/ directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/openwiki-home.ts#L103-L118",
+          "version": "repo-lines-v1:sha256:fd922571be51b6ebccb002ad31fa763b801dc792884b54767da7ad91fa13bee1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZTJlMTVkYWNiMWFhODhmNWMzMjYyNzhkZTY0NWE5NDFmNDlkOWIzZWY0ZjUyOWQ4Yzg2Y2Q5MTRjYzJiYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4Yzc0YTkyNDM3ZDEzY2FjZDNmMmZmYWE4NDI5NTkyMGFmY2IwNDdiYTBkMjJkMGEzODc2ZTk2ZGRkOTlkMjEifQ"
+        },
+        {
+          "resource": "repo://src/connectors/tools.ts#L348-L456",
+          "version": "repo-lines-v1:sha256:0f1a329f692d09a266e3902cdc0eb9fb299375fcd88a6802f1d385068b62ee08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MWNhOTBjNjAzMzI1OWMwOTRlZGM0YzY0MzdlZmQ2YzdlYWFjZDBiNzJhMTlhYTBhOWU0ODBhNzZlOWFkNmFkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MjA0MGUwOTVhOTRlMmFkYTc0ZTQyMWYzNzE4NzUxYTkxYTgxMGJmZDY2ZjQ4ZjRlOTM5YzdiNzQ4MGViNjcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjZjQ2ZmE2OWRmNGI4NDQwY2E2OTVmM2U1ZmMzMzE1YTYxMDJiMmUxNTJmMmE1Yzg5ODI4MzBlY2I1YzU2ZWRjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_038d541399454832b30dd41086484968",
+      "statement": "supportsAgenticDiscovery distinguishes connectors the agent discovers and drives interactively (custom-mcp, notion, git-repo) from deterministic-pull connectors that fetch their full payload up front; runOpenWikiIngestion uses isDeterministicConnector (the inverse of supportsAgenticDiscovery) to decide whether to call ingest() before the agent run or let the agent drive the source itself.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/types.ts#L15-L23",
+          "version": "repo-lines-v1:sha256:8d1fdcbd8f48851dc43993c4ef9112415a7c050cba3d4e84e32dee33445344cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZmNTVjMmJlMmU0MmU1ZGExNGI0N2FhOGE4YmY4MmEwZGNkMTg2NGRkZGM5ZDRjYjZlYWY5M2Y3ZjM2NDc3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWI5OGY1Y2E0MjBlNzNiYzFjNGVmOTYxZmY5Mzk5MTllMTg1YzcwYWEzYmE0YzgwZjA4NDdjMmNlYzBkNGIyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQ2MGQ5NWFkNDQzMmYwMDMzYmY2Zjk4ZGJjZDZkZGNlNzJkN2EyZjkwOGE2NTJmOWI3NDY1MDdhNGUyM2U3MSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L145-L151",
+          "version": "repo-lines-v1:sha256:90588758237e7d193b82e1944abc6cf9544adebeb2c156490536afe29aaab57a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q1YjRhNzJiN2Y4NTJmZTg5YjVkOTE2YWYyODk1MjQ0ZGY4MWJiNDgzMzE1Y2Q4NjgzYWUyZjY0ZmMyNDZiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRlNzg1YWZhMzc3ZWQzZWJhODJmZDFiZGE5NDFlNzUzNGFhMjVkMjIxMjg4MWMwYjBhZjUxMjQwODg3OWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTYzYzk5OTg4ZDczODIzZDEzZjMzZjJjYjY5Njg0MTQ5MjIwY2RmZTBmY2ViNGMzYmEyOTQzNmM3MWFmYTkxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE3ZWE1MmQwYjA3Y2EyMWYyNGYxOWI0OWVkMmExOTJjM2Y5NWM4NGY3ODM4ODgyYzczYTI4M2Y5YWMwYzZjNyJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L266-L268",
+          "version": "repo-lines-v1:sha256:059d91264c4b18bbdc65b0cbb1baf1386c8c0a4fbbba0ef43285a3a60748506a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODU2N2YwMDE3OGFkZDIyYjAwMjVjYTdhZGU4ODI1ZDIyMWY1Nzg2Mzk0NGJmOGNiMjc3OTdhYWMwMzdmMjU0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWY5MzgzNjIxMGE4ZmYxNjRiZDA2MWJiYTQxZDVhYTBjNDE1YTc0MDE3MjJmNWFiZWFlZDlkZWJhYmFlNmE4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM2N2NmZjE1ZGI3NWZjNjljODUyZGQyZTYzZjMyNGM0NjY0YTY4MTIwNDBlYWQ1OTIzYWUxMGNiMjg5NmMzYiJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

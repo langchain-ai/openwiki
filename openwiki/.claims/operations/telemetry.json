@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3c710a0d0e0e47caca6dacdf81c9c01ac447a897914bf66f560a9f5dca997b76",
+  "pageVersion": "sha256:7c214e39e75b2139dfc4465d5ee4388cfe1dd76658a24b857b6561f64d29fbfa",
   "claims": [
     {
       "id": "claim_da05ca1b44a042d9ab9a5935194059af",
@@ -401,10 +401,50 @@
           "version": "repo-file-v1:sha256:4b733c755b29921d39acc8b6e9180a1034e00664abc84d79f7fbda2dc1bafb3e"
         }
       ]
+    },
+    {
+      "id": "claim_fec603b4b79a4c30a85ccf0823572ff4",
+      "statement": "installCrashGuard (called once at CLI startup before any run) registers unhandledRejection/uncaughtException handlers whose handleFatal claims the single in-flight run (registered via registerActiveRun/clearActiveRun around the agent stream-consumption window) and records it once as a failure via recordRunSafe with the same describeErrorForTelemetry classification, then stamps the run interrupted so the next scheduled update retries instead of no-opping against a half-written wiki. The read-and-clear is atomic (no await between) so a burst of rejections records the run exactly once; every side effect is swallowed independently and the process still exits non-zero. The local stderr line carries the raw message but that is the user's own terminal UX and never enters telemetry.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/crash-guard.ts#L103-L158",
+          "version": "repo-lines-v1:sha256:c233403b50cddb20812c7fcc89f483d4b1c6e21fe0d96c65066eeff1f24b0a69:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmODMzNzQ0MTg2YjZiNDIxYTgyNTQ3MGIwNjdkMjQ3ZTIyMGZmYTJmNjU3ZjQ1OTFjYjUzMjE5ZTQ1MGRhOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMTRhYjVkOGQ5NDQ1YzkyNjhjMGJiYWU4ZGZlOWE1YjdkYzdjNjY0NDY3ZWViYjE0MDJlY2Y1MjMxODFmOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiNTYwMDk4ZDQwNjNjY2E3NWQyMjkxMjRmOTA5M2UzNmNmNWI2MzIzNzg5MGZjMTM4ZGJhNTRiZGZmNGU1ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/agent/crash-guard.ts#L59-L77",
+          "version": "repo-lines-v1:sha256:5cfd916ab45f6865d4eba1a7fa81a607a53d0c4cada0ef3ff08590f1f6ccf7ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZmNmOGQ5NDA4Nzk3MTY0MmQwYjM1ZDk2OGE2MzBjMzk0ODljNmI2ZGU2ZDUwOTk1YWRhZGJhNmM0ODExZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ZTU0OTM2ZmVkOWQ0OTEyMGQxYTE3MGZjMzJiMGU4YzBjZWI3MWU1MjI2MGJhZjg4MTRiMjZhZWM0ZTNjMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzOTI4ODMzY2YxZmM3MWRlYTZlOTQ5NWY2ZjY3NmFhNzM2ODg4Mjc1YjBlYWFkZDM0MTY4ZDkwNGQ2MzgxMjQifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L652-L662",
+          "version": "repo-lines-v1:sha256:3ee0f1e78a6fdc88ddfd6f1a0a26ce7a9b811bf11e67bc309a90b337397b36c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ODlhZTJkZWY2NDc5ZmZiODY5NGE0MDJmNjAwMTY1MzAzYjliOGM2NjY4NzVmNDM0M2Y0OWIwNjc0YTQ4MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNzlkMWZiNDU2NjQwMTA4ZGIyZjA4YmU2NDQ3YzExYjJkYTkyYTQ5NGE3ZGEzNzkzNDdkZTVlYjUwMDliNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzZDg1ZDFkNmMzZmUxYThjZjQ2NmM0NGI0NDQxZGIyYWJiN2IxOGQ3NTY5MTZiY2NiMGMwZmFlY2M5YWE2MGYifQ"
+        },
+        {
+          "resource": "repo://src/cli/cli.tsx#L39-L42",
+          "version": "repo-lines-v1:sha256:7f1f89406435ead74e06dbd099b373c17f1845afbdadfaebd49782e174c95b66:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZkMmEyOTZiNDQ3NGQxODgxNzEyZTYwZmYxN2E3MGQzMjQ3ZTc3YzZhMTYyYjVhYWE3NmZiZTRmMjkwMGQ4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGZhOTIyOGVlY2Y0Zjc3NjUyMTBhMzI4MjJlODk4MjNhZjg4OGRjYjFhYTA2NGY4ZjM1NzkwMDU0ODZiODc5ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjc0YTM2Yzk4ZDkzZWRhYzM5ODJhY2NhMWIzM2Y4Y2Y1MjY5MGRmOWRkNTlmM2M2MTQ2Y2QyYzlkNTk1YTEzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGJmNTdlY2M4OGRhNjNhZjY3NWVlMTNlYmJjZmFjZGE3OTlmMGE2YTdhZWM3ZjllNzA5NTJiMzU3NWI0ZTBiMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b88a675e155d49c4b47811b657928528",
+      "statement": "withRunTelemetry wraps each per-source ingestion agent run in ingestion/ingestion.ts as an update, so an `openwiki ingest` invocation emits one openwiki_run update event per source whose agent run reaches the boundary (ingestion failures are recorded there too). There is no dedicated ingest-branded telemetry event: the ingest CLI command is not a telemetry-emitting command (commandEmitsTelemetry returns false for it, so no first-run notice), and standalone chat, auth, and the ingest command's own connector-pull/summary bookkeeping are not recorded.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L1057-L1068",
+          "version": "repo-lines-v1:sha256:ef40ae736c21fc42dd47fca7086d383cd282fa41a9d04f94470cd03b1c814120:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhZWViMGYwMmRkZDI0ZDA4NWFiNzI4NjM2Y2I3MWQwOGI1NGY4YTEyMGEzZGI1ZWVmZjNiZjMwZTY1OTAzYjcifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L188-L198",
+          "version": "repo-lines-v1:sha256:67dfc53913f72d132af0330fdbef93fc3ced77dd5eb8f4a264aba55d9130ea69:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1MWJiYzU5MGNhNThhZmUwMGJjYmMxODliNjU3NWY2ZjJkOTBkYjNmNzA0YzIxZWUwY2FjYjQ3MWM3YTA4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NDA4ZmM3MGU2YjVjMThmYThhOWMwYzk0ZmE0MjA5NDc5MDJiY2FhNjIxOGRkZmIzYTE4MzMxZGRiMTk2MmUifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/record-run-safe.ts#L49-L53",
+          "version": "repo-lines-v1:sha256:eb4fc6df19a013a4300070cd514e43c577835b6bbbef99abaa8179bdbfa243f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QxMTk5MjFhZjdmZTc2NTA1YTM3YzBjYjIyZjE5MmM3NDE1ZjU0YWNhM2YzZjJiMjY5YTNiZjFhMWM3NzUyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2EwOWE1NGM4MDFhNGEwYmMzZWI4ODJiZDIzMGFhOWE1YzFkODJiYTllN2MwZDdjMzIyM2IxYTdkZWZhZThiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2FmYjlkMTA1ZjU3MTQ5NjA2MTBmZjRiZmZjOGY4MGQ0MDY0Njg4YTk2YzM4MzZmMGQ4ZGU4Mjc3MzkxMmI2MyJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-29T08:08:01.897Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

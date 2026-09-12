@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:46c33441530c789de5d97c1be456616707c0bb2e117e5d2d2389644011bffb47",
+  "pageVersion": "sha256:4ca8200cc8374d107264c76e67762d810a8a3f47d48793bf7145e030e3a2e648",
   "claims": [
     {
       "id": "claim_6a07849de8a7454ab87fae516e7e2d8e",
@@ -575,10 +575,78 @@
           "version": "repo-lines-v1:sha256:ce5f2fbe7648aa3e8de8c2a90b90b428d1a6faef2945cad518d4bba5aaf5433c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNjI3MjRhNTIzMzZhZGQzYTYwMzZkMTFhNTRjNjEwNTllM2M5MTkzMGIwODIzNDI2OWRhY2YyMzBmYWM2M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNDJjYTNjYmU5ZWEzZGM2MjVkY2RmNWZlYmNhNjFmMzA0ZDg0YTg5NDI0M2I3OTI5NmQ5YjMwOWVmMzg3YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhMzRkMjhmYmQzZDY5ZDhiYTMzZGM0MTIyODJlNDNlZWQwNzVhZmFkNTA3Njg0NGQ2MDdlYTRmNDc2OWRjYWUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_442660dd688340a580212d3e964c094d",
+      "statement": "The RepositoryRunState checkpoint in openwiki/.run.json carries schemaVersion, runId, mode, phase, startedAt, language and languageChanged, requiredRewritePages, initialPages, sourceFingerprint (with paired targetGitHead), planningContext, actor (producerActor and metadataModel), previousLastUpdate, baseGitHead, wikiGoal, beforeContentSnapshot, serialized preparedWiki, and the ordered plan once installed. Every field is schema-validated by a strict Zod schema (RepositoryRunStateSchema) on both read and write.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/run-state.ts#L121-L218",
+          "version": "repo-lines-v1:sha256:15b49b631085d584fe5e24733dc75eab9c18497ce90faa04c871e7da733cd181:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNzc5M2Q1Y2Y1OWNjYjllZjNhZDIxNDViZDc5YzZlYjJmNTE4MWNhYTU2OWY3NDI0MjZmOTgyMGJmMGYzZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlMWViZDViY2VjZGU1MDMyODBmODJiYjJiZWY3ZDE0ODlmYzg5YWU0YjAzMjA5ODg1NDNlOTYzMTRhYjE4YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhMWMxOGUwOTFkNGExYjI4YzM5Mzc0YjM0YTE4NDU1NGExYjk3MzlmZjJjOGE0MjBiNDM0NDQwMTAxY2VhOGMifQ"
+        },
+        {
+          "resource": "repo://src/generation/run-state.ts#L265-L298",
+          "version": "repo-lines-v1:sha256:6547d16c9c8ba7f55297e1bb1ee9070b72b9d6f850db24a017b0299490720f05:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzNTc2NDcxYjk1YTE5NGNjYmNkN2E1NmNiOTRkZTYyNDM2YTc3NjI0YmY5NjIwZTE2YzVlY2RlMTA1ZWY1OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTI1YzJiMTg0OWJhZTcwNjVjZDM2Y2Y5NzYwZWVjOGMyODY0N2NlMDc3MmU1NTU3NWY3OWU3NDdiY2I2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMzRjZWYxOTg0NDJhMzViZjM5NDU2ZTdlNTA3NTFiOGE5YjlhZDU2ZjQ0ZTRhY2VmMjcxYzdlYzIwNjdjOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiYTU4ZGMzYzhhMGYxY2ZkZTEyYTIxYjM4YzUwNDM2NzBlNTYwMjcwN2Y1OWU5NjA1MDg4NzAwMTU0MDRkZjkifQ"
+        },
+        {
+          "resource": "repo://src/generation/run-state.ts#L338-L356",
+          "version": "repo-lines-v1:sha256:e30e229435929fc9153eb4b8e23102edff0a316a8b3cf3b2c3e8abd3849407b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMDk2YjM0MzQyOTZkM2EwMmU0M2QyN2E0ZGI5YjBmMzdjNmJkYzMxZjMxNDE1MjljNjg2YjkzOWY3NTk1MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwODE5NDYxMjFiYTc3ZjU3ODcxY2Y1Njc0ZTA1MTE4MmQzOTcwOWJlYTExZmJlOTlmNTE0N2ViYmQ4MjdkOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5OTVlYjI2MDE3MjRhNjJiOTMxZTg2MGUxNGZkZTk2NGFlNjg4ZGNkZmE2YWMwNGNjMmMyMDc1ZGFlYmQzMjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_74f79a83a60c49218a3bdfe0668abb78",
+      "statement": "Per-page source checkpoints are persisted in openwiki/.page-manifest.json: recordRepositoryPageCompletion writes an entry (source fingerprint, gitHead, pageVersion hash, completedBy, completedRunId) only after the page Markdown and verified Claims sidecar agree, and getCurrentRepositoryPageCompletion re-checks the current Markdown hash and sidecar verification against the stored entry, so a stale manifest entry can never promote a pending PageJob on resume.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L1-L3",
+          "version": "repo-lines-v1:sha256:67ca386a76b4681e999c6947e21f8d7eca2e739b5025822cc62da27a2fb93c24:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM4Y2E0Yzc1MGU0NGFmN2U4YzJkZjQ2NmI0MDMxMjExNmU0MGNhODk2NzUyNjZlNmIzNmU2ODRmNTYzZjI2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg2NDE2YTM3ZDk0YWE3NGRjOTdlODkwYWZjNWI4ZTgxMGQ0ZTc3YmE5NWRlOThhYzk4MjRkZGRkMmZlNWQ0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTgyZTUwOTlmMjc0ZmJkNGU3ZDlkMGI5YmQzNzhmNzdlYzAxMmVkYmI4YzkxZmI4YjcyZWNmYzkyZmI0ZDMzMiJ9"
+        },
+        {
+          "resource": "repo://src/generation/page-manifest.ts#L186-L205",
+          "version": "repo-lines-v1:sha256:f2e158cec5e858879972edde160d76c32a282dc29165a0392197cf2ec55eb563:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDdhNzEyOTIwZTU1YjllMzI4MDZiMzY0MDgzZDFmZDJmNzdjZGQ0NjU4MTdmOTlhZTI5M2M1NDMyZDJjM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZjhhOWJiZDBiZDA3ZDk2ZjU3MzllYTU3NTk2MmVhMWEyOWE4NDIyNDdhNmI5MzY4MDhkZmZlNGIyYTdiZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmZDFlZWFjZjNjZTU3ODU3NWNlMjg0NzEyZjMwYzY3OGM3MWYwYmE1ODVhYzE1YmNlMzU5NzViY2YzOGE0NjcifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-manifest.ts#L305-L331",
+          "version": "repo-lines-v1:sha256:765b21fa59f20c87f474cd3dc94c5fea65d64686e189bc51ef8ba64041013184:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NmRiOTg2NTRkNWM3ZDJiOGVhODQ2NWVkM2U1MTc1YjdmMmVmMzM5NzBmZWQwZTIxN2IyMTk1NzYzYmJlZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExOTY3Mjg5OTI3YzRjNWFmZjkyNjc2ZjY0MmU0Yzk1MzEzZTJkODJmZmRiNTc1NDRiZGMxYmZmMzNlN2JlYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MDA4Y2ZmZWQ5ZDcwNTUxYjg1MjVhMWJhMzYyNGIxMjM1YzMzNmJkZjYyYmFiOTJiNWM4NTQ5NWE2ODNhNWEifQ"
+        },
+        {
+          "resource": "repo://src/generation/page-manifest.ts#L344-L377",
+          "version": "repo-lines-v1:sha256:fdb0733c1758ecd9f712a9c8746d9792d2b22e23e7383d1a4dbb608dc1322f7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2M2FjZGYzOWY3NGZkMzBmMzZjNWU3M2E2ZjkyNjQyMWEyYWYzMmJiMmJhYTdjZTJiNTJhZGFiZjIzNDZmMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmODVkYjYyN2JmODZmNTE4YjkzOWQ0ZTY3OTE1M2QxMTk5YzJlZGY2Yjc0ODdhMjRmY2NlOTI5NTM4NmM2YzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiY2ViNjI5NzE5M2YxYjllNGE0ZjhjNzE3MTdjN2E0OWFhNTBlYjU0N2FkNDFiYjU5NDA1ODYwODhkYzUyMmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2b2cecaa81844a4bab742caf076c588",
+      "statement": "A clean update no-op skips all model work but still refreshes openwiki/.last-update.json to complete status (so freshness checks reflect the run) after re-proving the source fingerprint stable across the finalize and publish window. The --force flag bypasses the entire no-op preflight block, so an operator can force regeneration even when the working tree is clean, grounding issues are absent, and manifest coverage is complete.",
+      "evidence": [
+        {
+          "resource": "repo://src/generation/repository-run.ts#L411-L458",
+          "version": "repo-lines-v1:sha256:996aae98a2442a7d6d91e2f4571299188b27b05931603d82119e2a6f4500c20b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkMDU2MjVlMTUwYzk5MTIxNzViNDRiOTY1OTViNDExMDNlZDkwZjA3OWU5MTA1ZjJjNmU0MjEzZDNiMDI2MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMGNkMjI3MTQwNmE0ZGVmNzFmYzdmNzVlZGFkZDhiYjZhMjk1MzVmMGYyYzVlMTA0MWI3ODFhNWU4NThmOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViOWEyYzgyYTMxYWMzYWU3ZjQ3OWM5ZmViYTY3OGQxYjhkNjNhODM4NmJmMWI3MjY3MzRkMjZhZmQyN2RiYmIifQ"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L438-L445",
+          "version": "repo-lines-v1:sha256:870f8b532853a976c01a576ee9fe23a77fc553616a38a4242ca4850fbde9bf10:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjExZDBmOGIzZmVhNzU2OWM2NzFjMTgwNjc0ZTdhY2VkMzNlYmY5ZTgyY2M3NTJmMjA1MTRlZjg3NTg2ZDgwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNiMDU5Nzg5NjIxYzRiMmFhOTY1OTdkYmQ1NDQxZjUyMTA2ZTQ5ZjViZmI3YWJmNWU3N2M4OWE0NDQzZWMwMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ4OWUyNTdlZjM2ZTk2NDBmMTdjMmI1MmExMjY5YzY3ODk3MTRhMTgxY2VmYThmMTg4YThlMGY3MzFiMmVmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg2OWY1ZGEyMTI0Nzk5MzJmNGFkYTE0ZjA0YTI5YzY2YjQzOGJmZWMyMzk3NDdjYWY1NjcwMGIwYzM0NjFkZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d244b8d8fdfa467c81808f94184778fc",
+      "statement": "Resume only helps when openwiki/.run.json survives between invocations, i.e. on a persistent checkout such as a developer's machine. Ephemeral CI runners discard their workspace after the job ends, so an interrupted scheduled run does not retain uncommitted run state and the next run starts fresh rather than resuming the durable queue; the committed wiki plus full Git history is the only durable state carried between CI runs. A workspace-preserving runner would resume like a persistent checkout.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L55-L55",
+          "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc5ZGRkZTViNzViMGIzODQ4ZGZjMzgyYTZmYTIwMjdhMjNiNTkxNzVlYjcwMWU1YTczMmRmMGEwMjczYjZhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
+        },
+        {
+          "resource": "repo://src/generation/run-state.ts#L300-L331",
+          "version": "repo-lines-v1:sha256:0d8ed76050b8b1e6a2ffe37105bf99979c6c19c91167f0ebfbd9bed12fd33ad1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMzRjZWYxOTg0NDJhMzViZjM5NDU2ZTdlNTA3NTFiOGE5YjlhZDU2ZjQ0ZTRhY2VmMjcxYzdlYzIwNjdjOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNDAzNzhjNDVjNzY0MDMxNDYwNWUzMTE2M2YyMmIwYmRhMGFjMzNhNDE2MWQxODM2YWViYWZjYzk3MTMzOWMifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-02T08:09:44.873Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

@@ -1,9 +1,27 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
+description: How the OpenWiki test suite is laid out, the Vitest and ink-testing-library tooling it uses, the pnpm test pipeline, the format/lint and tightly-scoped-PR pre-PR gate, the evals/ledger harness, and how to scope the narrowest validation that proves a change per subsystem.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
 sources:
+  - id: openwiki-source-f317ee207e1653d2033c81a4
+    resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-276795f6d5ad19adb078c64e
+    resource: repo://eslint.config.js
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
+  - id: openwiki-source-8fe49b679bb29b6d5403548c
+    resource: repo://evals/ledger/reevaluate.ts
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-cbc766890230b3eb91e4f047
+    resource: repo://evals/ledger/run/runner.test.ts
+  - id: openwiki-source-2dc719639f40452478188d6b
+    resource: repo://evals/ledger/system/openwiki-system.ts
+  - id: openwiki-source-af757cc4aeadf75369bd18ca
+    resource: repo://evals/ledger/testing/tiny-repo.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -88,10 +106,10 @@ sources:
     resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Testing Guide
@@ -151,6 +169,38 @@ When iterating locally you usually do **not** want the whole gate. Run Vitest
 directly (`pnpm exec vitest run <path-or-pattern>`) to execute a focused slice,
 then run `pnpm test` once before proposing the change so typecheck, build, and
 coverage all agree.
+
+## Pre-PR gate: format, lint, and tightly scoped PRs
+
+`pnpm test` is the type/build/coverage gate, but it is the **last** of three
+local checks `CONTRIBUTING.md` asks you to run before opening a PR:
+
+```sh
+pnpm run format
+pnpm run lint
+pnpm test
+```
+
+`format` and `lint` mirror the checks that run on every PR. `pnpm run format`
+runs `prettier --write .` (and `pnpm run format:check` runs `prettier --check`
+—the read-only variant CI uses); `pnpm run lint` runs `eslint . --fix` (and
+`pnpm run lint:check` runs `eslint .`). The formatter is the repo's pinned
+`prettier`; the linter is `eslint.config.js`, which applies `@eslint/js`
+recommended plus `typescript-eslint`'s type-checked recommended set to
+`src/**/*.{ts,tsx}` and `test/**/*.{ts,tsx}` (resolved against
+`tsconfig.eslint.json`), disables type-checked rules for plain `.js` files that
+cannot use them, and gives `.cjs` scripts Node/CommonJS globals. So the local
+`format`/`lint` pair and CI enforce the same Prettier and ESLint
+configurations.
+
+The other CONTRIBUTING rule is scope: **one PR = one change**. Pull requests
+should do exactly one thing; if you find yourself fixing something unrelated
+along the way, open a separate PR for it. PRs that bundle multiple unrelated
+changes may be closed with a request to split them into separate, tightly
+scoped PRs. (For an AI agent opening a PR here, CONTRIBUTING makes these rules
+binding and says to stop and surface to the human rather than proceed if a
+change would violate them.) User-visible changes also need a Changeset
+(`pnpm changeset`); docs/tests/CI/internal refactors do not.
 
 ## Coverage configuration
 
@@ -698,3 +748,61 @@ real Mermaid DOM shim to guard the browser-guard workaround, using a throwaway
 offline credentials file so no real token or network request is involved. These
 still run in the default suite; they are named to signal that they cross an
 integration boundary rather than testing a unit in isolation.
+
+## The LEDGER eval harness
+
+Beyond the Vitest suite under `test/`, `evals/ledger` is a separate
+source-grounded evaluation harness — LEDGER (Longitudinal Evaluation of
+Documentation Grounding, Evolution, and Revision). It is **not** part of the
+`pnpm test` gate; it is driven by three dedicated scripts that invoke the harness
+with `tsx` against TypeScript that lives outside the `src/` tree:
+
+- `pnpm run eval:ledger` (`tsx evals/ledger/run.ts`) — the primary entrypoint.
+  It resolves config, loads a benchmark, runs it through the System Under Test,
+  evaluates each checkpoint's frozen wiki snapshot, and persists the result and
+  report. The CLI run stamp (the one wall-clock read) is captured here and
+  threaded into the runner so the result is otherwise a pure function of its
+  inputs. On an unrecoverable failure it persists a failure audit before
+  re-throwing.
+- `pnpm run eval:ledger:reevaluate` (`tsx evals/ledger/reevaluate.ts`) —
+  re-evaluates one completed LEDGER run **without invoking the System Under Test
+  again**, then persists a fully auditable independent result. Source is ground
+  truth: surface extraction and grounding both read the repository at each
+  checkpoint's commit, so the working tree must still exist even for a pure
+  re-evaluation of a saved run.
+- `pnpm run eval:ledger:typecheck` (`tsc --noEmit -p evals/ledger/tsconfig.json`)
+  — type-checks the harness independently. `evals/ledger/tsconfig.json` extends
+  the root `tsconfig.json` with `noEmit`, no declarations, and a `rootDir` of
+  the repo root, so the harness is checked without being added to the `pnpm
+  typecheck`/`pnpm build` gates.
+
+The harness is exercised by its own co-located Vitest tests (`pnpm exec vitest
+run evals/ledger`), which use the same Vitest runner as the main suite. They
+rely on a `createTinyRepo` fixture (`evals/ledger/testing/tiny-repo.ts`) that
+builds an isolated throwaway Git repository under the OS temp directory with
+identity pinned via per-command `-c` flags so it does not depend on the
+developer's Git config. The default suite is **offline**: it substitutes
+deterministic evaluator and system implementations (e.g. a `FakeSystem` that
+writes one deterministic wiki file per run, and a scripted model that captures
+prompt/lifecycle telemetry), so no real model call or network request is
+involved. Live evaluator calibration is opt-in through `LEDGER_LIVE=1`.
+
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Lexical error on line 9. Unrecognized text. ...vals/ledger/tsconfig.json.-> TC2["indepe -->
+```text
+flowchart TD
+  BM["loadBenchmark\n(pinned checkpoints + optional evidence map)"] --> SYS["System Under Test\nOpenWikiSystem via runOpenWikiAgent init/update"]
+  SYS --> CAP["captureArtifact\nfrozen wiki snapshot per checkpoint"]
+  CAP --> EV["EvaluationBackend\nextract claims → ground against current/historical evidence"]
+  EV --> SCORE["computeLedgerScore\nopportunity-weighted claim health"]
+  SCORE --> OUT["report.md · result.json · assertion inventory · evidence corpus"]
+  RUN["eval:ledger: run.ts"] --> BM
+  RE["eval:ledger:reevaluate: reevaluate.ts"] -.reuses saved run artifacts.-> EV
+  TC["eval:ledger:typecheck"] -.tsc --noEmit evals/ledger/tsconfig.json.-> TC2["independent type gate"]
+```
+
+Provider credentials use the same environment configuration as OpenWiki
+(`OPENWIKI_PROVIDER`, `LEDGER_EVALUATOR_MODEL_ID`, etc.). `--system-model`
+and `--evaluator-model` override each model; `--verbose` prints every stale and
+hallucinated claim. The `eval:ledger:reevaluate` path takes the saved run
+directory via `--run`. See the harness README (`evals/ledger/README.md`) for the
+LEDGER score formula and claim-state definitions.

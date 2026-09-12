@@ -22,10 +22,10 @@ sources:
     resource: repo://src/setup/credentials/persistence.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Model Providers and Credentials
@@ -239,6 +239,22 @@ default instead of the Converse API's 4096 cap (the OpenRouter legacy
 `OPENWIKI_OPENROUTER_MAX_TOKENS` setting takes precedence on OpenRouter runs, and
 an explicit `OPENWIKI_MAX_OUTPUT_TOKENS` always wins for any provider).
 
+The `anthropic` provider and the Vertex Claude surface share a parallel default:
+`resolveAnthropicMaxOutputTokens` raises LangChain's 4096-token fallback to
+`DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS` (16384) for modern Claude families
+(`claude-(haiku|sonnet|opus)-(4|5)…`, after stripping the publisher path), because
+LangChain 1.5.1 otherwise caps unrecognized aliases at 4096. Older or custom
+Claude model IDs keep the SDK default, and an explicit `OPENWIKI_MAX_OUTPUT_TOKENS`
+always wins.
+
+### Retry attempts
+
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` sets how many times the LangChain client retries
+a transient provider failure, via `resolveProviderRetryAttempts`. It defaults to
+`DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3), accepts only a positive safe integer (no
+fractions, exponents, or hex), and is passed to every provider as
+`{ maxRetries: providerRetryAttempts }`.
+
 ### External CLI auth (GitHub Copilot)
 
 `copilot` has `authMethod: "external-cli"` with the `github-cli` adapter
@@ -300,6 +316,38 @@ transport for the provider:
 `providerUsesResponsesApi("openai-compatible", modelId, env)` (which itself reads
 `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`), so the reasoning transport and
 the request transport always agree.
+
+### OpenAI-compatible streaming and stream mode
+
+The `openai-compatible` provider exposes two independent streaming axes, both
+opt-in because the provider points at arbitrary third-party endpoints where SSE
+is not guaranteed to survive proxies and load balancers:
+
+- `OPENWIKI_OPENAI_COMPATIBLE_STREAMING=true` (`resolveOpenAiCompatibleStreaming`)
+  forces the **HTTP transport** to SSE for every generation. Some gateways serve
+  only the streaming transport: a non-streaming request is rejected (`Stream must
+  be set to true`) or returns HTTP 200 with empty content, which DeepAgents'
+  internal non-streaming `.invoke()` calls turn into a blank wiki with no error.
+  `providerUsesStreaming` returns this flag, and `createModel` applies it as a
+  conditional spread (`streaming: true`) rather than assigning `streaming: false`,
+  because LangChain turns an explicit `false` into `disableStreaming`.
+- `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true`
+  (`resolveOpenAiCompatibleUseResponsesApi`) routes the request through the
+  OpenAI Responses API (`/responses`) instead of chat completions.
+
+A third, distinct axis is the **stream mode** the agent graph surfaces in the
+TUI. `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES=true`
+(`resolveOpenAiCompatibleStreamMessages`) opts the `openai-compatible` provider
+back into LangGraph's `"messages"` stream mode, which routes the model's
+`.invoke()` through chunk aggregation. That mode is unsafe for endpoints that
+emit reasoning deltas before the first `role: "assistant"` delta (z.ai GLM): the
+aggregator produces a `ChatMessageChunk` the agent loop rejects (`expected
+AIMessage or Command, got object`). OpenWiki therefore defaults
+`openai-compatible` to the safe `"updates"` stream mode; known-good endpoints can
+opt back into `"messages"` for live token streaming. `providerUsesResponsesApi`
+and the reasoning opt-in read the same `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`
+flag, so the request transport, the reasoning transport, and the stream mode
+stay consistent.
 
 ## Credential persistence and env file
 

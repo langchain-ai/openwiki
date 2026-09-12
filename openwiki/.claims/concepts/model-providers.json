@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2312872bd5a8701045c076f56baa36974a48be35b34a81c21cfc1cedf11e6a0b",
+  "pageVersion": "sha256:0f20eb4618d7b7bf6021cc3b42b02a722f2fb77402660a1f99e9fc26d826fa1d",
   "claims": [
     {
       "id": "claim_881dbd60dd434311a4774d72dabe29af",
@@ -377,10 +377,64 @@
           "version": "repo-lines-v1:sha256:d2556426539ec9812435c62b8ddc9058aa1a9978b6098b0e09233087c6db1b4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGQ2NmNkYjNkMTdiNTJmNDg0NzdiOWI2NzA3ZWQyZmRhZDFkYzRmYmJmNzQ0YzgyNGQ5MDJmYmE4MmRmOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MjA2Nzg2NjI0YWNhZmYzY2ExYWFlZDUzNDZlYWU0Njg0MWNjYjdiY2I4MzVjY2NmNWYyNzYxMWIzYWU1ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OWI3NGI1MDkzMTA2MzFmOTUxZDQ2NmY4ZTg2YWYxM2JmMjJmNTc0ZmYwNTk0NTdmNDg1M2ZhMzM1MmM2NGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f7235e5d9dc942808b5e3a09bde5751d",
+      "statement": "The anthropic provider and the Vertex Claude surface share a parallel output-token default: resolveAnthropicMaxOutputTokens raises LangChain's 4096-token fallback to DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS (16384) for modern Claude families (claude-(haiku|sonnet|opus)-(4|5)..., after stripping the publisher path), because LangChain 1.5.1 otherwise caps unrecognized aliases at 4096; older/custom Claude IDs keep the SDK default and an explicit OPENWIKI_MAX_OUTPUT_TOKENS always wins. createModel passes the result to ChatAnthropic as maxTokens (and to the Vertex anthropic surface likewise).",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1162-L1174",
+          "version": "repo-lines-v1:sha256:33de173e46bc1ab88f1db36cff8697e4069ad4887da99e26b2756ca5d3117c2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MTNlOWI0NGU4ZjRjM2QxMzFhZTQ5YWMxMzEwMzUzMjk4ZGJhOTE1ZDM5YThiMzUwNjFkZmQ2NDFlMzg5NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MTAyZDZlMTFkOWEwZWEyY2JkNWFhODY2M2M3NzYzN2Q3OGFlNTEyZmE0MjFlNjBjMjBhZGE0YjFkMTMzNGMifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L1316-L1344",
+          "version": "repo-lines-v1:sha256:15ad4132be7f5fb3bc3e2c88e2991cba5ffa64a049a800b22bdf2ad2c49b22da:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwNjIxOGM1ZjBiMTYyMzQ0YjU2MDdjOWIyZmUxMmRmODk2NWU0Yzk1MTk1NWZiMjNkYTJiOGJhMjUxYmVjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3YmY3MGM5YTBlNGJjZTQzOWE0ODI0NmU1NDgxYTBkMzAyZDUxYmVhZGMzNTM0ZGU1ODk1YjY4MzU5MGE0YzgifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L75-L75",
+          "version": "repo-lines-v1:sha256:5c41ea78d47f1c98a1d5716b1bd81079498258127742a59b40f224db1b699bc6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM0MWVhNzhkNDdmMWM5OGExZDU3MTZiMWJkODEwNzk0OTgyNTgxMjc3NDJhNTliNDBmMjI0ZGIxYjY5OWJjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM0MWVhNzhkNDdmMWM5OGExZDU3MTZiMWJkODEwNzk0OTgyNTgxMjc3NDJhNTliNDBmMjI0ZGIxYjY5OWJjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI5YjI1MmE5ZTVmMWRmNmJkZTU4OWY0MDhmM2I3YjE2MWI4MjVmYWMzNzFiY2Y3ZTIyZjhiZTA3NjFmMWQyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU2ODcwYTViYWE2OGYwZjA5YWVkNWM1YjYwNDUwNjc5OTgyOTk2NGI3MjRkNGQxNmQ4YjE0MDg0NTkxNzFhZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7d75d75f5ca46c0811cfe8ec73b215a",
+      "statement": "OPENWIKI_PROVIDER_RETRY_ATTEMPTS sets how many times the LangChain client retries a transient provider failure via resolveProviderRetryAttempts: it defaults to DEFAULT_PROVIDER_RETRY_ATTEMPTS (3), accepts only a positive safe integer (no fractions, exponents, or hex), and createModel passes it to every provider as { maxRetries: providerRetryAttempts }.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1077-L1090",
+          "version": "repo-lines-v1:sha256:425bde1415963744894578e18664307e82a4f93d08a656e533e3be4ef84e8e14:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNGQyZjM2YzJkNWY4MmIwN2FlMjMwNTkyZjJjNzJmMmMxNDIxNjNmMzIxOTEzYjhhOTQ5NzE1MTk5NjZiOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZTNkOGM5ZjIwMWM3MTljY2Y3YzgwYWRjZGQ3MjdmYWI0MzEzY2RhOWI1M2I4MTBjZGE4NDQ5ZDU2NmMzYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhY2I2ZGFmNzBiM2FiZTA3NDI0OGUzOWI2MDMyMjA1NGQ4Njk1MDcyYzMzNmE0YjMyZjQ0NmE0NzA2OWEwMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMzJlNzIyZDBjNGJhOTk2MWU5Y2QwYmQwNjg0YWM1MTEwM2NlM2FjMWU4MTAwZGFhNGUyY2EwODJkN2M3MTkifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L978-L1004",
+          "version": "repo-lines-v1:sha256:bce0e5ba23b0acb60bd7fb7dc795a03eb9604a7f3d31908bacbccd7ca079d506:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YWZmMjcwNTU4ODk2OTc5ZWI5MmY4ZTg3ZGM2OTc5ZTE4NDZlOGNhOWQ5YWM2MDgwZmZkZDhiMmQ4YTdmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMDUzZTQyNDkzZWE1ZDZlM2ExNzNkYTllMDNhMTg4ZTE5ODhmMzc4YWQ0ODE1M2FkNjE0NTNkNzNjZTI1NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZDY3NTFhODI1OTBkNzk5ZDU4MGYyMGY0MDJjMjdmMTQ2OThhMjk1OWY0NmJlNWM0YWU4NmRmOGFlZjg4NGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_85f20daeca1a42c6ba1024756a8b2f77",
+      "statement": "The openai-compatible provider exposes three independent opt-in toggles (each true only when the value trims to \"true\"): OPENWIKI_OPENAI_COMPATIBLE_STREAMING (resolveOpenAiCompatibleStreaming) forces the SSE HTTP transport for every generation, returned by providerUsesStreaming and spread as streaming:true by createModel (not streaming:false, which LangChain turns into disableStreaming); OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API (resolveOpenAiCompatibleUseResponsesApi) routes through the Responses API; and OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES (resolveOpenAiCompatibleStreamMessages) opts the provider back into LangGraph \"messages\" stream mode, defaulting openai-compatible to the safe \"updates\" mode because messages mode aggregates reasoning-before-role deltas (z.ai GLM) to a ChatMessageChunk the agent loop rejects.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1255-L1263",
+          "version": "repo-lines-v1:sha256:39086bfe701c2fec8e61ad933f569c18e8d7f88221b0815029b78ed344e5c6b8:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDU2YzIxNzQzOGI0NmExYjA4NWY5N2Y5YTNhNTEzM2UxZjljOWIwY2QxYzNmYTJjOWFmODRkY2RhODZhNDA5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODViNGU5MDNiOWQxNTUxNjM4MTlmZjMwYjRmNWUyOTVjZDE4M2Q4ZjBiOWQ3MDhjZWQ5YWUwZmMyN2M3N2Q1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWI3ZjlkN2VlYWQwY2E2ZjNmZjk1Y2NkMGE0OWFmYmM0YzUyMDAzYjAwMjkyODY5MWFjMjExMjhiMGFmYzdmMiJ9"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L623-L636",
+          "version": "repo-lines-v1:sha256:8034d9511a3f0b58242845fdd8b763097d6c9b4b8c545a82eed8e192452379b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZGJjNjIwMjBjZWM3MDBmYTA0NzFiODFjYmFhNDg0YmQ4MjA4ZGE0NGIzNGVhZDNhYTZjMGRkNDhiODg4NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZTdlMTdkYjRhYmM3YWI2YTBiODUxMGIxMDA5YjFjMWEzMWIwNzgyZTMwYTI3ZGI4Njg2NTk2NzFiNzVkMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYmZhYjczNDhjZTY0YzI2NWVhYjM0ZjRmMzc2Y2IyNjFlOTJmZTBjYjQzODcyODdmM2JlNjBhYzk0NzYwMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiM2Q1ZGQ1ZWU1MGMzMjQ1NzZmZThhZGYyYzMyZTA4NjUxOGEzYzRmMTY1OTJlM2IzNWQwYWQ2YmZhN2Q4OWEifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1023-L1061",
+          "version": "repo-lines-v1:sha256:04f2d9eeeaa0a9196ea37a221f42cd0b8ecf8c6a7ca4573a9debef278d2d5799:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYmNmODAwZmY3OWJkNDRmMGJkZjA1M2FhOTBhNDI3YWIxMzRlYmU5Mzk2ZmU1YmEyYjEwMjc2YWMwYTVjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNWNlZjVkYTQzOThhMWJmOTFlNGQ3ZDRkZWQwZjdiMDQ4MjZlNGNlNWU4YjA0Zjc1OTMwMmIyN2E3OWE3MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMmI5OWRjMWNkMzYwNjczMmUzM2E1ODcwNjIwNmU4ZmVhNTJhMjg4Y2E2NDViNTE0MDU0MjljMDMyMGQ2YzkifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1063-L1084",
+          "version": "repo-lines-v1:sha256:847c27d3179c9878da589161d41bed5f96e7ae22e06f7fb5a27806acef3c0f81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MWQzNmVhYmRiYzBjY2I1OTNjMGE0MjRhMDk1YmIxZGIwZTU2OTkwYWMzNGUwOTJiZjg2YzYxMWRiMzdjMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODA4OGNkMTU3ZDUwMGRiOTk1NDQ4NTY2OTE3YzM1ZjI3NDY3YzRlY2I0OWIwN2RkY2ViZjE3ZjViMGU2MGIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

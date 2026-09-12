@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6d194ff1b8dd0335aaa92c28f2a99adaf7bf72bf1c527eef3a79714c84fdca18",
+  "pageVersion": "sha256:1b221c21fb5076cd7900f64fed5bb54a44c168be7abd0aba948f8f8290718822",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -677,10 +677,106 @@
           "version": "repo-lines-v1:sha256:314fe17badd46270abb57348d4d599e8b16529a9addeb5a47b2fbed93782319d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_de55037a32fd475381f1299306ae2839",
+      "statement": "CONTRIBUTING.md requires running pnpm run format, pnpm run lint, and pnpm test before opening a PR, and states that format and lint match the checks that run on every PR. format runs `prettier --write .` (format:check runs `prettier --check`); lint runs `eslint . --fix` (lint:check runs `eslint .`). The lint config (eslint.config.js) applies @eslint/js recommended plus typescript-eslint's type-checked recommended set to src/**/*.{ts,tsx} and test/**/*.{ts,tsx} resolved against tsconfig.eslint.json, disables type-checked rules for plain .js files, and gives .cjs scripts Node/CommonJS globals, so local format/lint and CI enforce the same Prettier and ESLint configurations.",
+      "evidence": [
+        {
+          "resource": "repo://CONTRIBUTING.md#L22-L34",
+          "version": "repo-lines-v1:sha256:ddae2ed302153e49f14978bae780e75ee4a87749807354efb3d3ac922ff8ff1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNWI2YTZkZjdjYmNhY2E1MDZiMGVlOWIzZTNlYWQyOTkxNTM4NDBjMDk4ZjVmMDZkYjk1OWMzNDFhZWZjZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0NWUxYWEzNWJmNzEwOGRmMTJiYjhiZWEzMzVjYWI0YzhhY2ViZTg5MGRmZGFhNzc4YWY4YTE4OTE5ZjM0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlMmYxZGZlMWVlZjgzOTI3ZWRlODVjOTZlOGRkNDE4NDZiMWFiM2VlOWQzYzExN2FjZDAyMTk3NmM2MDQzODcifQ"
+        },
+        {
+          "resource": "repo://eslint.config.js#L1-L51",
+          "version": "repo-lines-v1:sha256:876211f2c0d4ebebe0e9617a3372613a420db087a659c0367e0bf1617727fdd7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZmUzMjU0ZjRjOTg2NzQwMGY0NGUyMDA1OTVlNTJkNjkxZDIwMDQ2OTQ0OWI5YTc4ZTk4YzI3MzJjZTIzZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://package.json#L47-L51",
+          "version": "repo-lines-v1:sha256:a925f1a73d768971a8e68589ec291c897ab70f4b6d78396eab1e4d5a755921ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNmZDk4ZWQ4ZjMxODhkZjdlOTQ1ZTJlZTkzMjI1NzBjNzE4YTkzYTY1NDNhYmNmMTc5YTg0ZjhiZGY3MjI3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlkZWFlMWE1NGM0MzMyMTNlNTZhMTY0MzFkN2IzNGVkMDgxOWIxZTFlZjEyNzI1NDg1NzM3NGFlMTgyNjkzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZlODVmNTBmZDU3YmRmYjhjOTcyMTExOWI4MjAwZDExYzA0YWY4ODg3ZGRhODYwMjIzODhhZmQwYTdmZmY5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmFlYmM1Nzg1YmI2YmUwMDNkMGYxNjVjYzMxODNjNTVjMzIzYTAxNGRkNGRmNjhhMmFjMDQ1NWIxNzA3ODUzZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_021ec0d838054c4a8a9c0402e6201b8b",
+      "statement": "CONTRIBUTING.md's contribution standard is one PR = one change: pull requests should do exactly one thing, an unrelated fix found along the way should go in a separate PR, and PRs bundling multiple unrelated changes may be closed with a request to split them. For an AI agent opening a PR the rules are binding and it should stop and surface to the human rather than proceed if a change would violate them. User-visible changes need a Changeset; docs/tests/CI/internal refactors do not.",
+      "evidence": [
+        {
+          "resource": "repo://CONTRIBUTING.md#L1-L21",
+          "version": "repo-lines-v1:sha256:8338932655c872e433a965d41a05a92db7352f4a45a2bc7943c08f6ba270198a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNTFiYzlhYTY3MGE1YjM4ZjFlZTdhNmUyZTk2NGQzYzc4NmE3ODJlZjIwNDRmYWMwYTZmM2Y5MWQ2MjJhNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3Nzk1YmYzYTkxMGQ3NTM0OGUyMWRmZDU2ZTFlYzcwODhjOTJkNmM0YTViODg0OWQ4NzQ2NzBmNThjY2FkZmYifQ"
+        },
+        {
+          "resource": "repo://CONTRIBUTING.md#L128-L138",
+          "version": "repo-lines-v1:sha256:a2486b70e9f564749479585420647e5e8c31cf468b55b9582cdac61039b4b740:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNTA4MWFmYWQ4OWFlNzVjZWMxMDcwOWFhMDgyYmFjYjY5ZjhiMjUyNDU0M2QzYTkwODcxMTBlY2Y0YzU5OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZWE1NmRjZTYyMzJmNzZhN2U1ZDhiZDVkODYzMzM2YTZiZDMwZGM3NGU5MjNlOTViMmEyMzlkMDk5Y2RjYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjODUyYjk4OGViNWI3YjE4MWNjNmM0MmNlMGU4MWUyYTJlMzg5ODcyY2MzMWUzZWU2ZjI4MGM1YjlmYjZhMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://CONTRIBUTING.md#L88-L113",
+          "version": "repo-lines-v1:sha256:56598f6fa95f8b3142c18ebb621f38e897a25f5c2357c548703a5ff9f6789832:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNWI0Yjk0NGZlMGY5OWNiZWYyMWI3MDdiMzU0ZmIyMzRlYTM3MmI2NDdhNmVjNjc3Yjk2YTJjY2E1ODc1NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4OWJiNmNhMDQwOWM2MGNlMzg0NDA3ZDJmNzU3YmQzMTFlYzcxYTQwOWQ5ZjNmYzQ0OGI0NzUwZWE1MjllOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYTVjNzhhMmZjNTE5YTAwMWY3NGQ0ZDhhZjg3NDVjNDNmOWM4YWFhZjEyMDIwODg1MzBmYWE3YzZjMDE1OWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1011e4960691416e95fd44d95db64a3d",
+      "statement": "The evals/ledger harness is driven by three pnpm scripts that invoke TypeScript outside the src/ tree with tsx and is not part of the pnpm test gate: `pnpm run eval:ledger` (tsx evals/ledger/run.ts) runs the benchmark through the System Under Test, evaluates each checkpoint's frozen wiki snapshot, and persists result/report; `pnpm run eval:ledger:reevaluate` (tsx evals/ledger/reevaluate.ts) re-evaluates a completed run without invoking the System Under Test again (source is read at each checkpoint's commit, so the working tree must still exist); `pnpm run eval:ledger:typecheck` (tsc --noEmit -p evals/ledger/tsconfig.json) type-checks the harness independently since its tsconfig extends the root tsconfig.json with noEmit and a repo-root rootDir.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/reevaluate.ts#L28-L85",
+          "version": "repo-lines-v1:sha256:15bc09a72516702162b358b08c4b754c8701cda2d4ee5395834086ba1c70e131:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxODQ0NjU1OThkZTI4ZTU3ZTVmMmFhNjNhYTg2YzYwZDVlMWZmZTFjZDAzMDY3ZDlhMTE5YzYzZTBiYmIwOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYThiMzMwYTlhY2ZjNzM1NzUxYWY0NmQ3ZjM5N2Q2ZTk2MDUwY2FmMWZhODczZWUxMDNkODJjYTJiMWVlMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/run.ts#L32-L91",
+          "version": "repo-lines-v1:sha256:8dd7b50605ae68a33a7838dcedc53999746e6d63f292b4e51c312246f3a82bb1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxODQ0NjU1OThkZTI4ZTU3ZTVmMmFhNjNhYTg2YzYwZDVlMWZmZTFjZDAzMDY3ZDlhMTE5YzYzZTBiYmIwOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMTU3MjU2MWExN2U1ZTBlNTMxNzNiMWQ3NjdkOGY4MGRiOTkyZjhmOTVjZDU2NGI2MzA0ZmRiYmVmNTJkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/tsconfig.json#L1-L8",
+          "version": "repo-lines-v1:sha256:1bf0b928d104193deda94af31326fb34e8d370ecc11d4a1979fa9ac3c394a0b8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY4OWVlMWIwYThiNDJjNTdiNWZmODAzNmNlMGNhM2RmYzJkZmJhOTM2MmY5YmI4OTg0ZDUyMzQwM2MzZTg5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://package.json#L44-L46",
+          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3de6c9d7845a4e6c9610c7e3d65c01ed",
+      "statement": "In evals/ledger/run.ts the CLI run stamp (the one wall-clock read) is captured at main() and threaded into runBenchmark so the run result is otherwise a pure function of its inputs; on an unrecoverable failure it calls persistFailureAudit(runDir, error) to persist a failure audit before re-throwing, and otherwise calls finalizeRun to persist results.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run.ts#L32-L82",
+          "version": "repo-lines-v1:sha256:fe528cae0af571f3b39f579355fa45270b72012b3fdd2c2318ab6c8b186a1136:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxODQ0NjU1OThkZTI4ZTU3ZTVmMmFhNjNhYTg2YzYwZDVlMWZmZTFjZDAzMDY3ZDlhMTE5YzYzZTBiYmIwOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMTU3MjU2MWExN2U1ZTBlNTMxNzNiMWQ3NjdkOGY4MGRiOTkyZjhmOTVjZDU2NGI2MzA0ZmRiYmVmNTJkOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NmJjYzI0NTY2YzM5OTQ5ZmRmZjA2N2JjY2VhZTQ2YzA3YTBhY2NkYzBhZjk3NDczZDA2NzFhYTViOGFkOWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfccd2d3270240bda64796c54322d888",
+      "statement": "The LEDGER System Under Test baseline is evals/ledger/system/openwiki-system.ts: OpenWikiSystem sets OPENWIKI_PROVIDER (and OPENWIKI_MODEL_ID when a model is supplied) in the environment, then drives the real runOpenWikiAgent entrypoint with outputMode: 'repository' so the worktree cwd is honored (without it OpenWiki writes into the user's local wiki directory), translating a throw into a SystemRunError and returning {skipped, durationMs}.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/system/openwiki-system.ts#L35-L91",
+          "version": "repo-lines-v1:sha256:0dfdea76745713d75485de2f127e6cabdb7d9a1adc550ee8ebb99bf76c7767b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NWIwNzZkZjk3NjJiNTI0MWY2NmIwZjVhNWJkNjYzNTVjNTM4MGExOGZlNWMyYjYxZTYxYTg1MDQzZDVkYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMjkzNmM0ZWQ1YjY5ZjQ0ZWNkZGQ0N2MxNzgyYzMzNGUxNzMzYTI3NzVmYTY0NDNjNjhlMDEwYjQ0ZGU5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52c297232128428b879f8802d028c897",
+      "statement": "The LEDGER harness is exercised by co-located Vitest tests (`pnpm exec vitest run evals/ledger`) using the same runner as the main suite, and the default suite is offline: runner.test.ts substitutes a FakeSystem that writes one deterministic wiki file per run, and evaluator tests use a scripted model that captures prompt/lifecycle telemetry, so no real model call or network request is involved. Live evaluator calibration is opt-in via LEDGER_LIVE=1. Tests rely on a createTinyRepo fixture that builds an isolated throwaway Git repo under the OS temp dir with identity pinned via per-command git -c flags (user.email=ledger@example.com, commit.gpgsign=false) so it does not depend on the developer's Git config.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L219-L227",
+          "version": "repo-lines-v1:sha256:2aeafbcde78f5b6e988a79431d5b015289dce34c9610c7209931d724c5322b84:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDRjNTU5MGRlMTlkNmJiMjU0ZDBmZGNjNDNmODdjNTE4NjE4OGIxZjdjNGFhNDEyODI4YTI4YjlmYjE2ODJkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2YwNjBiOTUzMDNmOGZkNmY3NjRlNTU1YTBkMTcwMTg5MWIzY2M2ZjhmMDRlYmM2Y2ZjMWMyYjBiZjI3MzUzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjIzYmYzYzMwODhiZTBiMWVhYzFmZWE2ZWRiNzJmODA4MjVjOWU3ZDQ0YmUxNDFjODkxZmE4ZWZmMmY3MTFjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://evals/ledger/run/runner.test.ts#L25-L41",
+          "version": "repo-lines-v1:sha256:e7612a918a134d8c52b5e2ab63b1e0845f3e207ace3a2158f17bc94ae567a345:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYzIzZGFjYmEyMjc3NjkxN2JiZTNiZTZmNGNlN2Y4NzI1NDkyOTJhMGZjMmYzNjg2MDJiZmY3NGQzN2I0MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZDg0MmRmNjVhNDhkNTdkOWU1ZjE3MmU3ODZkYzA3OWRhYWFiMTcwZGM0ODY5YzBkMzllMzgyYzBjNWVhNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmN2E0YWIwY2UzOGQ1OWQ4Y2Y1NTk4MGFkMWNkZjdhMjZhYWIzNzNmZWQ5ZmRjZDYwNDBjZGZkYWM0YTcyODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ODgxNzUwYWI0NzAyYWU4NGI2MzUxM2ZiNjE0YzZkODFhYWQxZTZlNzlkMDI5ODFhZDVlNjI4YmU1NDA2YmUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/testing/tiny-repo.ts#L53-L67",
+          "version": "repo-lines-v1:sha256:767f1de8292dd6f4c6bc2bb33a95126327c69bf02cb733e827a1c11f33dadf85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiZGU2ODEyNDQ5ZWQyYzFjNDVjNjI2NDZiYzQ3YzZkNjFlN2FmY2RlNzRhZDZmMDFhYjNlYjdkNDQ1NWQ2NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlODlhZDU5OTcwZWEyZTQwNzJmMmVlYjM0NjIzODY0ZWM4NGYyMDY1ODVkNzQ1NmMwZGY2ODNhODgwOWJmMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMmEzZTc0ZDQ1M2Y2ZDFjODBmN2YwZjQwZGI5MjFhZDQwMTQyZjJhMWRlODZlNDQ3MDcwOWJhZWRkYzk1YzEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

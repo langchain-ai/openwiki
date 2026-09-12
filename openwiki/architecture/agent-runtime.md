@@ -1,7 +1,7 @@
 ---
 type: architecture
 title: Agent Runtime, Models, and Middleware
-description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, running the OKF, translation, and crash-guard middleware, and parsing the agent graph stream into display events.
+description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend with the .openwikiignore read boundary, running the OKF, translation, and crash-guard middleware, driving the native repository generation pass, and parsing the agent graph stream into display events.
 tags:
   - agent-runtime
   - model-providers
@@ -10,9 +10,11 @@ tags:
   - deepagents
   - filesystem-sandbox
   - langchain
+  - repository-generation
+  - wiki-finalizer
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-12T08:08:12.385Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -24,12 +26,22 @@ sources:
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
     resource: repo://src/agent/okf-middleware.ts
+  - id: openwiki-source-a34c01da72fb3c9bee4f3cb9
+    resource: repo://src/agent/openwiki-ignore.ts
   - id: openwiki-source-8bf337d8927152d7d30230b4
     resource: repo://src/agent/prompt.ts
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-73e36256f612bf9dbe62d127
     resource: repo://src/agent/translation-middleware.ts
   - id: openwiki-source-06902db4574f065a9a6ad95d
     resource: repo://src/agent/vertex-surface.ts
+  - id: openwiki-source-adcadc660c1888613ec50f9a
+    resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-0a92e09462f540e5e005c7e4
+    resource: repo://src/agent/wiki-link-validator.ts
+  - id: openwiki-source-9697823032111d36e2d4caa9
+    resource: repo://src/agent/wiki-replacement.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
@@ -40,7 +52,7 @@ sources:
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -72,6 +84,16 @@ flowchart TD
 ```
 
 Control flow from the entrypoint to either the native page-job runner or the shared DeepAgent graph stream.
+
+## Repository generation pass
+
+`runNativeRepositoryGeneration` drives the durable repository lifecycle with one planner agent and one fresh page worker per page. It begins (or resumes) the run through the shared lifecycle, runs the planning agent if the phase is still `planning`, then iterates every pending page job with a fresh bounded worker, and finally calls `finishRepositoryRun` with the skipped-page snapshots. If source changed while the run was in flight, it emits a text event telling the operator to run `openwiki --update` to reconcile.
+
+The planner is a bounded DeepAgent with only `submit_plan` and read-only filesystem tools (`read_file`, `ls`, `glob`, `grep`). Its `submit_plan` tool either accepts the plan (stamping it durable) or, on a correctable `invalid_input` rejection, returns a recoverable `ToolMessage` with a correction instruction so the planner can retry instead of crashing. If the planner exits without submitting, the run throws.
+
+Each page worker is a fresh agent bounded to exactly its assigned page. It gets `read_file`/`ls`/`glob`/`grep` plus `write_file`/`edit_file`, an `inspect_claims` tool that returns the page's current Claim set, and a `submit_page` tool that accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`). The backend is scoped with `writableWikiPages: [job.path]` so the worker cannot touch any other page. An `invalid_input` rejection from `submit_page` is likewise converted to a recoverable `ToolMessage`; any other submission failure is fatal.
+
+Both the planner and page workers mount `NO_DELEGATION_MIDDLEWARE`, which strips DeepAgents' general-purpose `task` tool after all tool-contributing middleware has run, because repository workers are deliberately non-delegating. Workers stream only tool-lifecycle events (`streamWorkerTools`), never worker narration — `parseWorkerToolEvent` normalizes the DeepAgents `tools`-mode chunk and drops narration and unknown tool names. A worker that exits without submitting is skipped (its snapshot is restored for the next update) and a deferred-page warning is emitted, unless it already submitted or hit a fatal submission failure.
 
 ## Resolving the run configuration
 
@@ -174,6 +196,16 @@ The backend also refuses unbounded root globs and globs that target `.git` metad
 
 These boundaries exist because the agent may be prompt-injected via untrusted repository content, so they are treated as security controls rather than mere conveniences.
 
+## The `.openwikiignore` read boundary
+
+The `.openwikiignore` file at a repository root declares paths the doc agent must not touch. `OpenWikiIgnore` parses it into an ordered rule set that is threaded through the agent backend as one cohesive object, so the matching semantics live in exactly one place. A missing file is treated as "no rules" (an inactive matcher), not an error; `isActive` gates whether the shell allowlist enforcement applies.
+
+The matcher aims to be gitignore-compatible: last-match-wins semantics, `*`/`**`/`?` globs, leading-`/` anchoring to the repo root, trailing-`/` directory scoping, and `!` negation that re-includes a path an earlier rule excluded. Rules are applied in file order, and the last matching rule decides — a negated rule only re-includes relative to the rules that precede it, which is why `OpenWikiIgnore` walks the full ordered list rather than short-circuiting on the first match.
+
+Pattern compilation peels off the gitignore modifiers before building the matcher: a leading `!` marks negation, a leading `/` (or an embedded slash) anchors the pattern, and a trailing `/` scopes it to directories. Unanchored, slash-free patterns (e.g. `*.log`) match at any path segment; anchored patterns match from the start. The `i` (case-insensitive) flag is deliberate and security-relevant: on case-insensitive filesystems (macOS APFS/HFS+, Windows NTFS) `Secrets/token.txt` and `secrets/token.txt` resolve to the same file, so a case-sensitive rule would let an alternate-cased spelling slip past an exclusion. Over-excluding a case variant on a genuinely case-sensitive filesystem is the safe direction for an access gate.
+
+Every path is canonicalized by `normalizeIgnorePath` before matching: it anchors to `/`, collapses `.`/`..` segments with `path.posix.normalize` (so `../foo` cannot escape above the repo root), strips backslashes, and trims leading/trailing slashes. This mirrors the confinement check in `isOpenWikiDocsPath`, so equivalent spellings (`./secrets/x`, `secrets/../secrets/x`, `/secrets/x`) cannot dodge an anchored rule.
+
 ## The middleware pipeline
 
 Chat runs use no middleware. For non-chat runs, `createOpenWikiAgentGraph` mounts, in order:
@@ -183,6 +215,26 @@ Chat runs use no middleware. For non-chat runs, `createOpenWikiAgentGraph` mount
 
 Both middleware hooks operate purely on file text read and written through the sandboxed docs-only backend; model output is never executed.
 
+## Wiki preparation and finalization
+
+The OKF middleware delegates to `prepareWikiForAuthoring` and `finalizeWikiArtifacts` from `wiki-finalizer.ts`, which own the deterministic wiki lifecycle. Each operation runs through a caller-supplied telemetry wrapper (`runOperation`) so it is individually staged and attributed.
+
+`prepareWikiForAuthoring` runs before the agent starts: it migrates existing pages to valid OKF front matter (`migrateWikiToOkf`) and snapshots their exact pre-authoring body hashes and prior generated events (`snapshotGeneratedProvenance`). The returned `PreparedWikiState` is the baseline against which finalization later measures what changed. This state is serializable (`serializePreparedWikiState`/`deserializePreparedWikiState`) so a process restart can recreate the finalization baseline from persisted `.run.json`.
+
+`finalizeWikiArtifacts` runs after the agent finishes, in internal-agent order:
+
+1. **Mermaid validation** (`validateWikiMermaid`) — every `mermaid` fence is parsed; a fence that fails is converted to a plain `text` fence with a diagnostic HTML comment, so a broken diagram never breaks rendering.
+2. **Index synchronization** (`synchronizeWikiIndexes`) — the deterministic directory `index.md` files are regenerated from the actual page tree using localized labels.
+3. **Link validation** (`validateWikiInternalLinks`) — relative internal links and GitHub-style heading anchors are checked; a broken link is left in place and stamped with an HTML comment starting with `openwiki: broken internal link` (with the reason) so a later update can self-correct. Existing stamps are cleared before each pass so they never accumulate.
+4. **Claims source synchronization** (`synchronizeClaimSources`) — only when a `claimSources` projection is supplied, projects page-owned Claims evidence into OKF `sources` before generated provenance is reconciled.
+5. **Generated provenance** (`finalizeGeneratedProvenance`) — stamps the code-owned `generated` event (producer actor, shared run timestamp) on every new or changed page, diffing against the preparation snapshot so unchanged pages are left alone.
+
+## Init replacement and recovery
+
+Repository `init` on a repository that already has an `openwiki/` directory does not overwrite in place: `beginRepositoryWikiReplacement` backs up the existing wiki to a private temp directory, removes everything under `openwiki/`, and recreates it as a blank generation target — copying back only `INSTRUCTIONS.md`, which is user-owned control metadata rather than generated state. The returned transaction has `commit` (discards the backup) and `rollback` (restores the exact pre-init wiki).
+
+SIGINT and SIGTERM are intercepted for the duration of the replacement: if a signal arrives while replacement I/O is pending, rollback waits for that I/O to settle before restoring the complete backup, then exits with the signal's conventional code (130 for SIGINT, 143 for SIGTERM). This keeps an operator cancellation from leaving the repository with a partial replacement wiki. A first `init` with no `openwiki/` directory returns a no-op transaction, preserving the existing partial-run recovery behavior. If the wiki path is not a real directory (e.g. a symlink), the replacement refuses rather than following it.
+
 ## Run lifecycle, persistence, and the crash guard
 
 `runOpenWikiAgentCore` builds the run context and a pre-run content snapshot, instantiates the model and a SQLite checkpointer keyed to a thread id, and streams the graph while forwarding parsed events to the caller. Around the stream-consumption window it calls `registerActiveRun` / `clearActiveRun` so the run is attributable if it dies.
@@ -190,3 +242,30 @@ Both middleware hooks operate purely on file text read and written through the s
 On success it persists run metadata as `complete` (skipping the write when content is unchanged, or always for chat) and locks down a persistent checkpoint file. If the stream throws, it persists metadata as `interrupted` — best-effort, swallowing persistence errors so the original run error propagates — so the next scheduled update does not no-op against a possibly partial wiki.
 
 The crash guard is the last-resort boundary for failures that escape every `catch`. `installCrashGuard` registers idempotent `unhandledRejection` and `uncaughtException` handlers once at startup. `handleFatal` claims the single registered active run synchronously before any `await` — making the claim atomic against a burst of rejections so one crash produces one record, not hundreds — then best-effort records the crash as a telemetry failure, stamps the run `interrupted`, prints the raw error to the user's stderr, and exits non-zero. OpenWiki runs one run per process, so a single module-level active-run slot is sufficient.
+
+```mermaid
+sequenceDiagram
+    participant Entry as runOpenWikiAgentCore
+    participant Graph as createOpenWikiAgentGraph
+    participant Trans as Translation MW
+    participant Okf as OKF Index MW
+    participant Stream as agent.stream
+    participant Parse as parseAgentStreamChunk
+    participant Final as finalizeWikiArtifacts
+
+    Entry->>Graph: build model, backend, middleware, prompt
+    Entry->>Trans: beforeAgent (update only)
+    Trans->>Trans: translateWiki into target language
+    Entry->>Okf: beforeAgent
+    Okf->>Okf: prepareWikiForAuthoring migrate and snapshot
+    Entry->>Stream: open stream messages or updates mode
+    loop each chunk
+        Stream->>Parse: raw LangGraph chunk
+        Parse-->>Entry: OpenWikiRunEvent or null
+        Entry->>Entry: onEvent then yield
+    end
+    Entry->>Okf: afterAgent
+    Okf->>Final: mermaid, index sync, link validation, claims, provenance
+```
+
+A single agent turn through the middleware stack to finalization: the translation and OKF `beforeAgent` hooks run before the stream opens, each chunk is reduced to a display event, and the OKF `afterAgent` hook finalizes artifacts after the stream completes.

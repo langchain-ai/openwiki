@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8a8c75d75016ad537c7dd0ffeb09b80602100baef6b702de5841824937cac2f0",
+  "pageVersion": "sha256:eb0afdf6ff0977dc01dfba82cf8b47e751cbb37b8fd5bc5152ef3d269f43ec9d",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -14,11 +14,11 @@
     },
     {
       "id": "claim_fabcda7dfe954832840499271246f253",
-      "statement": "ensureOpenWikiHome creates the home directory and its managed subdirectories (connectors, conversation_history, wiki, skills) with mode 0o700, re-chmods the home directory to 0o700, and applies restrictDirToCurrentUser so the state directory is owner-only across platforms.",
+      "statement": "ensureOpenWikiHome creates the home directory and its managed subdirectories (connectors, conversation_history, wiki, skills) with mode 0o700, re-chmods the home directory to 0o700, and applies restrictDirToCurrentUser so the state directory is owner-only across platforms; it only ever mkdirs (recursive, so a pre-existing directory is a no-op) and chmods, never moving, renaming, or deleting an existing ~/.openwiki, so operator files survive setup and a re-run never destroys a configured home.",
       "evidence": [
         {
-          "resource": "repo://src/config/openwiki-home.ts#L41-L81",
-          "version": "repo-lines-v1:sha256:06e0c1c164345af7e223c2c5cf743aebeea6ba04b06a90a79f47ef7f5801e925:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYTM0ZGQ2NGMyYzVhMGE4OTg3OTgwNTdjZTFkZGUxOTFmMmVhZTk2MDhiY2VhZmY4ZDM4ZjQ5MTRiYzI0YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkOTkwOTljNzQ0MGRhYzRlNmYxMWU4NjcxYWFlMzlmMjhkZTZiMjU0ZWY0NTNmM2I1NWZhYzJlYzM3Y2M5YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMmE3MDI4MDc4ZTJjY2IyYmIzN2UzMWU5NWU3NjNhMTQ3MmIwMzgzZWNjNTFjN2Y5NzllNDQ1M2UxOWQ3OTcifQ"
+          "resource": "repo://src/config/openwiki-home.ts#L73-L81",
+          "version": "repo-lines-v1:sha256:460af70b5568be4695957d2a82c31a2eef290dc9116701b475346aba60dfe6c7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQyM2YwYWJlZWIwOTIwM2U4ZmU0YTQ2MTkyNWJhZTY3NTY4MDk0N2Q0MjdhNDdhYTk0NWQxZjRhMjIyYjc2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhYmUzYjQ2ZDMwYWEyMGJiNjBiMTcyYmE4NWJjNzc4MTBiN2MwMzAyNjIyNWRmYjBhZDJjZjM5MWVmMmU5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjIyYTcwMjgwNzhlMmNjYjJiYjM3ZTMxZTk1ZTc2M2ExNDcyYjAzODNlY2M1MWM3Zjk3OWU0NDUzZTE5ZDc5NyJ9"
         }
       ]
     },
@@ -335,10 +335,132 @@
           "version": "repo-lines-v1:sha256:633d65cbdb437a58d2d3ba806f22b8b8a3c3123d30adef91159f6e8886d909d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlODcwMTQzOGYwNDEzYTI0ZTY5YmMwYWI3N2U2NzU2ZGVhNDQ4M2IwN2JlZjU0ZGVjOTVkNTUyZjM4ODU3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2ExYjkwYTQ0OWYzMGQ4MGRlMmY3NjJkZDJlOTEyNWUzNDRhMzQwOGFiMmQ5OWQzYjBkNTk0MGZhNjVkMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NzgwZGU1NTA2MDU3MjA1ZGU0M2YxOTc0ZTE5NmFiNWRkZDNiOGJiZjFlZGFkMjg0NWFhYWE2NmM4YzEwZjUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_45a40b79d8454c108426bbded3a4d1cc",
+      "statement": "The LangSmith code-mode connector separates committed shared config from the secret key: saveLangSmithSetup writes openwiki/.langsmith.json whose workspaces name apiKeyEnv (the env var name), projects (trimmed/deduped, order preserved), and an optional apiBaseUrl for non-US regions; the API key itself is never committed, only the env var name that points at it. During setup a freshly-entered workspace key is written to ~/.openwiki/.env under that workspace's apiKeyEnv, and at pull time the connector reads process.env[apiKeyEnv].",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L13-L42",
+          "version": "repo-lines-v1:sha256:5dafe5058738c140df5dcc240512d80afd3ef152694cb00f88859d8c1a0d0911:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhODk3Y2YxZGVhYzI1ZjE4YWYwNGU3ZTZjMmRjMGM0Yzk1ZDI5NGFhNmI3N2Y4ZDkyMGIxNzY4MDcwNTdkZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkZTY3ZjY5MDRiNmQyODkyNGQ4NTI4ODhhZWYyYTUwMzI4OTA0YzMzN2QwMGFhOGEyZDQ1NzMxMzU1YjhjYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2OWVhYzYzNTM3OGRlNTgxMTI5MGI1ODY2MzUyNjQyZmEwNmNiNzQ4NDU5NDhkM2ExYjlmNDg3MmNhMDQ1MWYifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L66-L68",
+          "version": "repo-lines-v1:sha256:02aafbdcba6cf0bc56dd41ab2e2b3fd48410d1e68fe28371bd740370f265492e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjlmYjk4MWU2ZjY4ZDczZDA5ODQ4MGY2ZTZlMmQ3ODYzNjk5MTlmNmU1OTFhODdjYTkzN2VmODM1MGQ3NDdlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQxNjU0ODQzNDI5ODc4MGJhNDIwZmQ2MzA3ZWZkZGIxYTFkMmM2MjBmZTQwYjYyZTFhNWM0YTE1Y2FkMzUzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmNiMTFlODM1OGE1NzgzMTkwYzc4MDdiYWI0YTA3YTc3MjlhZDc3YzU1NDMwNzczYWQ1YWFlYzc3NjhhYTAxOCJ9"
+        },
+        {
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2010-L2034",
+          "version": "repo-lines-v1:sha256:6ef4000d62d99dde2ce2deb8efad1c5342279c35ddfea7ac2a405d3710de90a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NzgyNzY4NzVlYjIyYWY0NWU1ZmQ3ZTcxODc0OTk3YjYxODMwMDM2N2MwOTcyNzVjYjEyY2I2ZjIwYTlkNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyYmFiYWJlMWVkNGQ4N2EyNDhjMTNiN2EzZWFkMWQ4MDdhNTU0ZGNjMDFmMmJkNGUzMGVkZWY4OGQzNGE5MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjN2NiZjkzMjcwMjNhZTljYmZkNWI3M2M1MDg2Yzg5NmNlNzk0MmU2NWZlYzMxYTVjMjU3M2Q5MGQ2ZDY5YTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c06627eab39c499e9f8fd39a17ff0720",
+      "statement": "A LangSmith key is workspace- and region-bound, so each workspace gets its own key env var: OPENWIKI_LANGSMITH_API_KEY for the first, then OPENWIKI_LANGSMITH_API_KEY_2, _3, ... assigned by nextLangSmithApiKeyEnv. Region is chosen in-wizard (US/EU/APAC via LANGSMITH_REGION_OPTIONS) and maps to an allowlisted official host written into apiBaseUrl (US is the connector default, so it is omitted from the file).",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/setup.ts#L113-L126",
+          "version": "repo-lines-v1:sha256:7401db960ddac93e1287f0b04f10231c3cb1d00ab2e00c777ed7249831f7318f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MzRlMGM3YjdiMjA0N2IxYTBiNDY0YWU4NmIzZTMyODhiNDI2MzM1OWNkZGRiZWUzNWRmNjZhNWUwMDgyYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/connectors/sources/langsmith/setup.ts#L24-L28",
+          "version": "repo-lines-v1:sha256:9fe488493fd5de66234afc63963db1acdecd88b89bee5699943057810e56cb53:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2ZjdkMzEyOGNjODRmMTdlODVlYmZiOGViOWFhMWFiMjkxNzgzYmJiODliNDY0YmU5MjU1YmRmYzcxOTQzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjE1YTc3YTYxZjUzZDNiYjQzNTk2ODJmYWE1MzJhZGVjNDBkMzY1ZTQ3ZGRiYjFlNDllNTJhZGZmZDVkZTQ0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDljMTQ2NDM5ZWI0ODM2ZmUyMjZjYzEwZGE4YzdhYjNlMTJmZGI3OTAyODA4NjE0ZWEzOWViMzIxYzJlNjYzMyJ9"
+        },
+        {
+          "resource": "repo://src/setup/credentials/constants.ts#L75-L99",
+          "version": "repo-lines-v1:sha256:121227f4400ef85e5a917695d6e50e0cc3f2baf48ddf490532333e2d5b5cb6a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwN2M2MGY2ZDQxYTg5N2Q3ZDAyNDJmNWRkYzNkNWZkZGE5ZDJkYWVmZjEzNTgxZTE1MzMzOWNjMWUyZWY0NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyOWQ1MmJlM2JmZDVlNzg3MjU2ODQwZDc3N2I2Mzg0NWRkNGQ0NmMyYmMyNDdmZjM4NGZhY2JlMDQxOTM0NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNDM2MWUzN2U0NmU4MzY4YjM5OGViNzExZjNlZTJkOTI5ZDYyYzMyOTZlZGYwOWRlZjhhZjliNWFhMzU3NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MDgxZWY1Y2RmZWM4NTViOGE3NDAwYjE5ZDJiYWI3NzYyNjkwZjk2ZDM4MzBmOWYyYWY5OWZlMmFjMzdmY2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_187c477a30214625a59059ab4cea4b38",
+      "statement": "Two hard guardrails keep a committed .langsmith.json from exfiltrating secrets or escaping the LangSmith surface: sanitizeLangSmithApiKeyEnv accepts an apiKeyEnv only when it matches ^OPENWIKI_LANGSMITH_API_KEY(_[A-Z0-9]+)?$ (so a malicious PR cannot name an unrelated secret), and sanitizeLangSmithApiBaseUrl accepts a base URL only when it is https, carries no embedded credentials, and targets one of the three official LangSmith hosts (otherwise dropped to prevent SSRF/key exfiltration). A workspace failing either allowlist or any shape check is dropped, not fatal, so one bad entry does not invalidate the whole config.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/repo-config.ts#L49-L109",
+          "version": "repo-lines-v1:sha256:6ad755f375789a8d3f583247c2c0ab0ef3f1e023cf05383df6ba50da5367642e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZWY1YjVlZGQ4ZTlkYzYxYzE0YzZhM2VkM2Y2NzdlZDQ5MDc2NzM5M2E2NDVhZmQ2ZmQyMDkyMmY4MTliNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjNzc1MjU1Y2RkYTFkN2IzMjBjZGFkZDA0MTAxZDJmMzQ0Y2VkYzE1OWYzZmFhZTg2ZjZhZGViODcyZWM4YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4Mjc5OWI1MTFkNGU3MzAyYzAzY2NjN2I0YzZmNDM5Yzk3MGU3MTgzMGQ0ZGJjOTc0NGM5YjExNTU2ZTIzNGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e533a3bbc84740968db79de6e9e3ce96",
+      "statement": "The committed LangSmith config is WYSIWYG and touch-gated: saveLangSmithSetup is called at the final step only when langsmithSourcesTouched is true (the LangSmith sub-menu was opened this run), so an untouched setup never rewrites openwiki/.langsmith.json; a workspace with no projects is dropped (which also removes it), and switching a workspace back to US drops its apiBaseUrl.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/setup.ts#L78-L111",
+          "version": "repo-lines-v1:sha256:45c39f6bfbf0b8aeb09284e0c72944c1116c7a5d67ef9431aef80e90767764f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNGE0Yjg4ZDcwMjQ5YzlhZTRkZjhjYmVmNzFlOTMzNWMzZWZkNzY2YjA0NjZiN2MzZmJlZTViZTEyMmI5YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YWY4YmM4NzI2MzgyZDZiNGFmMWMwMDk2ZTZlYWYwZTMxNjIzZWExNjMxM2Q5MmViZjQ0ZDI3YWQzMTgzYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3Mjc3ZGE2NTM3OGI3M2Q4NGE2ZDg3YmYxZjExMzczYzJlMDZhZmJjYzlkMTFjOTNmYzdhYjFiOGU5NjZhZmQifQ"
+        },
+        {
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2006-L2034",
+          "version": "repo-lines-v1:sha256:9a92cc9dd89bca229f30e4346834fa64b79237f590caa7e011e50b67850bdd1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjZmVjNGMyMTUzMmNlOTUwNTUzYWNjNTQwZjYxMDllMmQ1NGVkYmJhZmQyNTFkMDczOTg5NTAxZDdkZTQyNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjN2NiZjkzMjcwMjNhZTljYmZkNWI3M2M1MDg2Yzg5NmNlNzk0MmU2NWZlYzMxYTVjMjU3M2Q5MGQ2ZDY5YTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea208c2e623848928006762106b3ae35",
+      "statement": "openwiki --init (code) and openwiki personal --init always open the full setup walk even when already configured, gated by initWizardConsumed so the walk opens once and does not re-open on a later return to idle; needsCredentialSetup independently opens the wizard for any run (including chat) when the provider is invalid or a required credential/model/LangSmith input is missing.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/app/app.tsx#L164-L176",
+          "version": "repo-lines-v1:sha256:b831a7f2834c0c55cec5e2c190875b07fec7dbd3de9d62d7d72c8e35c9aec8fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNWM1OTBhM2QwOTc5ZjhiNTIzN2NlOTAyMzA1NWFiYTc4OWQ1OWVhNWE4N2NmMmM5MTEzNjU1NGFiYTBjZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZjllNTRlYjkyOTcxODYzZThjMDM4NGM1MDVhYzdjYjcyYTg1OTM0M2M2MmIwZDEwYmQwMDQ5YTViZjllZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyMmRiYmExNTQyYjA0ZDZiZDcyNjE1YTE2NDYxMzQ4MmFmNjJiMjM3ZDU4Mjk1NjNiNDgzNWIzNWEzYzY5NGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4MGY3Mjc4MDYyYTc1YjA0YjkzZWMxOWVlYTJmODRiZTM0YTA5Y2JmNTA3Y2QxZTQzZGZkMWNmYzFjMTNiNGMifQ"
+        },
+        {
+          "resource": "repo://src/cli/app/app.tsx#L471-L476",
+          "version": "repo-lines-v1:sha256:21d7f5db54fb7b2d59b05264b276fbac31493911e54093c62fd5e8fb617b9655:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjAzMjU5MzE3MzE2YWJmNjZkNjhiZTcwNmM2MzYxNzlmZjQwYzNhZTk1Mjk4NDcyNzA3Y2I2YzgwZTkzZmM5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc5MmY4NDdiYjIxY2IyOTJkZDA5ZjdmYTZlN2NhYzRhOGMxNGQ5N2QzODk2MzNiM2QxNTIwZWExNGI1YjFkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmE0MWQ3M2M0NTIyYmVhMzlmZjgxNWUyNGJjZjEzMTE4NTMxZDY3MWViM2NmNTMxMjE4ODVlMTFhMWM0NzI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdiZjhjYjUwOTllNDM1NjZlYjNkYmFlYTQ0MWJlNzU5MjBiNGJkOWMyNzhjNGExNjU3OTFhYWI0ODUxYjQ1NCJ9"
+        },
+        {
+          "resource": "repo://src/setup/credentials/steps.ts#L68-L92",
+          "version": "repo-lines-v1:sha256:e3ce1cb70e5acdb82e307ba126021f42d05aacb3c47faa03ba5a09f94ce89d2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhNTBjNTBiYjMwMTAxZjQ4YzQ0ZWZhMzI0M2IyZDdjYTI3M2ZjNDFjNThlZTg5MjYxNmM1M2ZhZGY5ZTcxZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5Zjk2MDllM2I0YmE1ZjQ5OTllZjFiOWE3MzkwMjRmNDU4NzU2ZjQ1NWQ1ODUyOGY1ZWFlMTk5OTk4ZDk1M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1YjZiNWU5OGVkYTA0MjdiNGQ3YmRiODkyMTQ0MDc4YmFlMWFjYTdhM2Q4ZTE2MjIyY2ZhYmI1NjY3YWNjOTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b3c8ce34d8448309d720641c8d37550",
+      "statement": "At the final step the setup controller persists in order: buildCredentialEnvUpdates computes the .env update map (pure) and saveOpenWikiEnv atomically writes it to ~/.openwiki/.env (provider key only when changed, empty values dropped, LangSmith tracing toggled); in code mode, touched LangSmith workspace keys are saved to ~/.openwiki/.env and saveLangSmithSetup writes openwiki/.langsmith.json; saveConfigForCurrentMode writes onboarding.json (completedAt set), and for code mode saveRepositoryWikiInstructions writes the brief to <repo>/openwiki/INSTRUCTIONS.md at 0o644 with wikiGoal cleared from onboarding.json.",
+      "evidence": [
+        {
+          "resource": "repo://src/setup/credentials/persistence.ts#L31-L129",
+          "version": "repo-lines-v1:sha256:a69111ef913e68abd8bddfec517c3402808f5aaea2e6dcdb48c34767b5a74c5a:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MmIxNTk4Y2YyODg1YTQ4NGE3MDI4Yjk0MDdlM2U0MDQ1YzQyYmRmNzI3MjRkZjA5MjgwNzc2NmU2ZDM0MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZjkwOTcwNDI4ZWIxMjAyZjdhMzQ3ZTMyMjRkNjVlOGEwYThmYjBiMzU2MjllZTlhM2NhNDVjNjBhNGIzZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5YTBlODY1M2NkZGJjY2M4NTRhYmQxNjNhMjJhMDkxYzM4YTUwNzA5NzRhNGExOTA2ZjU1NWZkYmE4NzI0ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2006-L2067",
+          "version": "repo-lines-v1:sha256:c7077c32fb2c21789500e087147a4a9669f503216f0ae5de161164fb6e6f68bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjZmVjNGMyMTUzMmNlOTUwNTUzYWNjNTQwZjYxMDllMmQ1NGVkYmJhZmQyNTFkMDczOTg5NTAxZDdkZTQyNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMifQ"
+        },
+        {
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2544-L2565",
+          "version": "repo-lines-v1:sha256:45145b0a58106a9cd22718e0017454c94d87b2a8301548d4342afb45967dad53:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmZTJkMzUxMzlmZThhMzRjYzAxMzU5MTcwNmRhNjAxMjM5ZTc3ZTJiYmYyMzc2MjE3YjdmYWJjYjNiNTQxNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3N2UwNTA3NDZhYzc4OWFmZjI5NTczNWQwYzZkNDgzMGJiNjI0NzQ2OTM1OTQxMmI0YmU0MzBjNTM1MTczNDYifQ"
+        },
+        {
+          "resource": "repo://src/setup/onboarding.ts#L160-L170",
+          "version": "repo-lines-v1:sha256:b0e1ad49fa4915f85ae56db04a0daa9bbb75fa1615be18a91ef247d7cc600a93:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiODdmN2Y2MDFkNTYxYWVlYzk2YTcxYjUxYTA2MjYwOTUxMmE1MGZmNmRhZWNlODk2MTllMDNlYWNlMWQzZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwNmFiZDYyYTEzOGQ1ZjBmNmZkZDNkZGE1NDM5MTlmYjQ0NmY1Nzg4ZDJmNjMxNmU5NTUzYWE0Njc4MDMyNTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZDY5MzE3MTc5ODZiMzE3NGJmYmRmYmQxNWU3ZWE3OWYwODJlNDIzZDVmZTFlMTU5NzhkMzkxNTk4NWIxZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8cffeb44857e43fbbb6c5ea5e57393c4",
+      "statement": "When the operator chooses Run ingestion now in code mode, onComplete returns runIngestionNow and the App transitions to init-setup-saved and proceeds into the init run, which calls ensureCodeModeRepoSetup (refreshing AGENTS.md/CLAUDE.md and, because the command is init, creating the scheduled-update workflow when absent), pulls code-mode connector evidence (LangSmith traces when configured), and hands the augmented message to the doc agent for the first wiki generation; --init and --update auto-exit on success in an interactive terminal.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/app/app.tsx#L574-L604",
+          "version": "repo-lines-v1:sha256:b52a6c0ba26d79a989ab0cb165d2d2e8f8afa6f648f2d6d02276f371d0565e18:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNjlmOTI1ZTc3N2Q1MTBhNmRmOGNhZTZiZmU0ODQxODRiYmVlZTcyMTZjMGI2MGFjNzBiMzMzMDllNjI4MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MWJmNDI2ODU4ZDI5OWRjOTQ4NGMyZGE3MjM0ODBkYjdmMjVmODZmZjVjZmI5ZDVjNzBiZjAyMTE5YjBlNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5Y2Y0NzhhMzg1YjI1MDIyMTZkMmQ4MTQ5NDQzMmNhMWUxMjk4OWMzZThlMDNjNTE3MGMzYzhlZTIyYTUzMDkifQ"
+        },
+        {
+          "resource": "repo://src/cli/app/app.tsx#L783-L806",
+          "version": "repo-lines-v1:sha256:580cd614af783f960aa0cddb113f86fd07a715b62e8a3975182d6423f47bee8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YWJmZDI5MGQzNjUzNzhiZDVjMjk2NzBlMzVhMGUyZDQ4NGY4MTk5YTVhOGIwMTU1M2Q5NWNjZDRiODY0MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTA1ZjE5Y2E2M2YwZTk2YjU4YTg1YzljNTljYTNiNDAyMTkzZjY0NjUxNDk5OGY4MDliMDU0ODE0OGFmNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYzA5YThjMDc5NDc3NmY5MTRhYTA4ZjdmYzhhN2IwZWQ5ODVhZmM1Y2FiY2FhODBhYWJmMzc3YTExYTg4N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OGE1YjY1NDhkZjYyZDYwZTU2OTA1OWE1YWU3ZWNkZTBhOTk4MWE2OTA3OTcyMzJkZmFmNDkwZDI1MTg0NmIifQ"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L299-L322",
+          "version": "repo-lines-v1:sha256:cf6d24d78a4a675c97f5be1a2a09c94c1db2be63efaa73264e72e5c5afcf4976:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiOTU5MjVlMDY3MjcyMzZjMmNlMjY1ZTIwNDQ3ZDU3YTc1NzMzN2NkZmJjZmZmNzJmNWRhYjUwMWQ0YjliNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxNjVjZDA4NjExOWM4YmFiNTRiYjVlMzk1N2I5ZmJiOWY0ZDE5NzRlODk4MzgwNzhiMGVmYzFiNGVjMzlmNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMmMyMDI0MmMwZjI3YjNjOWY3NThkOTcxN2IzNjlhYmYyZjRiMjJlY2ZkMmQ0NDk0YTRhOTcxMzYyZmE1MTYifQ"
+        },
+        {
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2036-L2067",
+          "version": "repo-lines-v1:sha256:2395b6b2e6701ab15fc7a064afdc20a5bacac65221dfb405b16fd67449280472:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5Nzc2NjJjY2NiYTY3NGM1YjVhOGVmMWI4N2VkZTczYjQ3NmI4ZjVjYjJkMWEyM2NiOGRkYmM4YzRjMjkyMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YzMxMWYwN2RlNjc1M2Q5MTMyNDg1ODQzMTY0NjFhYzYxZDQ3NDk5MmQ2NWQ0MzY1N2FjNjdmZTNmM2U4ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }

@@ -38,8 +38,8 @@ sources:
     resource: repo://tsconfig.client.json
 generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Interactive Visualizer

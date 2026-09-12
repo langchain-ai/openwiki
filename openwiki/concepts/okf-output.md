@@ -1,11 +1,18 @@
 ---
 type: concept
 title: Open Knowledge Format Output
-description: How OpenWiki produces OKF-compliant pages — validated YAML frontmatter, code-owned generation provenance, synchronized directory indexes, and Mermaid diagrams that are validated and degraded before they reach a renderer.
+description: How OpenWiki produces OKF-compliant pages — validated YAML frontmatter, code-owned generation provenance, grounded-claim sources and verification projection, synchronized directory indexes, and Mermaid diagrams that are validated and degraded before they reach a renderer.
 tags: [okf, frontmatter, provenance, index, mermaid, wiki-finalization]
+verified:
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 sources:
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-239b2968fb2bcd073e89cedc
+    resource: repo://src/claims/brains/code/runtime.ts
+  - id: openwiki-source-2408f48009166e2b2c4a2aac
+    resource: repo://src/claims/brains/code/session.ts
   - id: openwiki-source-1324a62ac93d0625148b498e
     resource: repo://src/mermaid/dom-shim.ts
   - id: openwiki-source-4fbeebe90bb8c6910ecd1b3d
@@ -14,6 +21,10 @@ sources:
     resource: repo://src/mermaid/validate.ts
   - id: openwiki-source-3fe3d5f6fe125af314c54067
     resource: repo://src/mermaid/wiki.ts
+  - id: openwiki-source-9bac7069736f3ea19ed36748
+    resource: repo://src/okf/claim-sources.ts
+  - id: openwiki-source-95484b6dcd037757691dcbb2
+    resource: repo://src/okf/claims-verification.ts
   - id: openwiki-source-54432f9303757678a104d85f
     resource: repo://src/okf/frontmatter.ts
   - id: openwiki-source-bed0edb2a7279f0e40a56c2f
@@ -22,17 +33,15 @@ sources:
     resource: repo://src/okf/index-labels.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 ---
 
 # Open Knowledge Format Output
 
 OpenWiki emits documentation in the Open Knowledge Format (OKF): every concept
 page begins with a validated YAML frontmatter block, carries code-owned
-generation provenance, is reachable through a deterministically synchronized
+generation provenance, projects its grounded Claims into `sources` and
+`verified` trust metadata, is reachable through a deterministically synchronized
 directory `index.md`, and may embed Mermaid diagrams that are validated (and, if
 broken, degraded) before the wiki is finalized. These guarantees are applied by
 deterministic post-authoring passes rather than by the authoring agent, so the
@@ -41,7 +50,9 @@ persisted wiki is conformant regardless of what the agent wrote.
 These passes run in a fixed order inside the wiki finalizer: a pre-run
 preparation phase migrates existing pages to OKF and snapshots provenance, and a
 post-authoring phase validates Mermaid, synchronizes indexes, validates internal
-links, synchronizes claim sources, and finalizes generated provenance. See
+links, synchronizes claim sources, and finalizes generated provenance. The
+`verified` trust field is projected separately by the repository Claims runtime
+after each page's Claim set is reconciled and persisted. See
 [wiki finalization](../workflows/wiki-finalization.md) for the surrounding
 lifecycle and [architecture overview](../architecture/overview.md) for where OKF
 output sits in the system.
@@ -153,6 +164,86 @@ sequenceDiagram
 ```
 
 Provenance is reconciled by comparing pre-run and post-run body hashes.
+
+## Sources projection from grounded Claims
+
+Repository pages carry an OKF `sources` list that mirrors the evidence files
+backing their grounded Claims. During finalization, `synchronizeClaimSources`
+projects the current page-owned Claims evidence into the `sources` field. It
+runs after Mermaid validation, index synchronization, and link validation, but
+before generated provenance is reconciled, so a body's trust metadata reflects
+the final accepted Claims state.
+
+The projection is deterministic and ownership-aware. Each evidence resource is
+normalized to a whole-file `repo://<path>` form — precise `#Lx-Ly` line ranges
+are kept inside Claims state but stripped from the OKF `sources` projection,
+because page-level provenance only records which source files a page depends on.
+OpenWiki-owned entries are stamped with a stable, portable id derived from a
+SHA-256 prefix of the resource (`openwiki-source-<24 hex chars>`), so a later
+reconciliation can replace or remove only its own projection without touching
+anything else.
+
+`mergeClaimSources` reconciles in two passes. First it retains every existing
+entry that is *not* OpenWiki-owned — independently authored sources (for example
+a human-written footnote) survive every run, and deduplicated against the
+projected set so a producer entry pointing at the same file is not duplicated.
+Then it projects the current evidence resources, sorted and de-duplicated, as
+fresh OpenWiki-owned entries. The result is written through `setOkfSources` only
+when it differs from the current list; a page whose projected sources match what
+is already persisted is left untouched, so unchanged pages produce no diff noise.
+A write failure aborts the run rather than shipping a page whose `sources` lie
+about its evidence.
+
+## Verification provenance
+
+The `verified` field records that a page's complete Claim set was reconciled
+against current evidence and persisted. Unlike `generated` and `sources`, it is
+not written by the wiki finalizer: it is projected by the repository Claims
+runtime through `synchronizeClaimsVerification`, which runs after
+`ClaimSession.finalize` successfully persists each page's sidecar.
+
+A page becomes eligible for a `verified` event only after its Claim set is
+complete and clean. During `finalize`, every dirty page is rechecked: unresolved
+evidence debt (missing, moved, or version-drifted evidence caught by
+`assertEvidenceStillCurrent`) disqualifies it, and a page with zero Claims
+receives no verification event at all. Only a page that is persisted, not dirty,
+has a non-empty Claim set, has no open issues, and already holds a verification
+event contributes a non-null active event; everything else contributes `null`,
+meaning OpenWiki removes its own prior stamp without touching human or process
+events.
+
+`synchronizeClaimsVerification` walks every discovered page and reconciles the
+`verified` list ownership-aware: it retains every event whose `by` is not an
+`openwiki/<version>` actor (human reviews, CI, and other producer events survive
+indefinitely), removes all prior OpenWiki-owned events, and appends the single
+active durable event when one exists. A bare mapping is normalized to the
+canonical list form when the field is touched. Because an empty retained-plus-
+active list removes the field entirely, a page that loses eligibility loses only
+its OpenWiki stamp — never the independent verifications around it.
+
+After the frontmatter is written, `refreshPageVersions` re-hashes every affected
+page into its sidecar, because the deterministic finalizers may have changed
+code-owned frontmatter without changing the verification event. If a refresh
+fails for a page that had an active (non-null) stamp, `rollbackClaimsVerification`
+restores that page's exact pre-projection Markdown, so a stale sidecar hash can
+never vouch for bytes that no longer match. Any remaining refresh warnings
+surface as a strict `ClaimsPersistenceError`, failing the run rather than
+shipping partially durable trust metadata.
+
+```mermaid
+flowchart TD
+    A["page Claim set reconciled"] --> B{"non-empty, no issues, evidence current?"}
+    B -->|no| C["verification = null"]
+    B -->|yes| D["persist sidecar with verified event"]
+    D --> E["project verified frontmatter"]
+    E --> F["refresh page version in sidecar"]
+    F --> G{"refresh ok?"}
+    G -->|yes| H["stamp stays"]
+    G -->|no for active page| I["roll back frontmatter to pre-projection"]
+    C --> E
+```
+
+Verification is stamped only after a clean, non-empty Claims reconciliation, and rolled back when the sidecar can no longer prove the final bytes.
 
 ## Index synchronization
 

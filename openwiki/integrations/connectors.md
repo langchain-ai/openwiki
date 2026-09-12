@@ -30,6 +30,8 @@ sources:
     resource: repo://src/connectors/sources/hackernews.ts
   - id: openwiki-source-e322f3319b9736ea1a0793af
     resource: repo://src/connectors/sources/langsmith/index.ts
+  - id: openwiki-source-9e541d09b8e52185141cdccb
+    resource: repo://src/connectors/sources/langsmith/repo-config.ts
   - id: openwiki-source-208e19767098e36e721f4333
     resource: repo://src/connectors/sources/mcp.ts
   - id: openwiki-source-1f94cd80bf448efe6d61d3ea
@@ -42,6 +44,8 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
     resource: repo://src/connectors/types.ts
+  - id: openwiki-source-c6189f89b3f67d0cbf87739f
+    resource: repo://src/ingestion/ingestion.ts
   - id: openwiki-source-3644b45ff9c47926aa74026e
     resource: repo://test/connectors/mcp-client.test.ts
   - id: openwiki-source-a0cec66bd3bed0c13c668ff0
@@ -50,10 +54,10 @@ sources:
     resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-12T08:08:12.385Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.1
+    at: 2026-09-12T08:08:12.385Z
 ---
 
 # Source Connectors
@@ -75,10 +79,10 @@ Two implementation families exist:
   `web-search`, `hackernews`, `langsmith`) fetch directly from a provider API or
   local filesystem with connector-specific logic.
 
-Related pages: [Source map](../architecture/source-map.md),
-[Model providers](../concepts/model-providers.md),
+Related pages: [Two modes](../concepts/two-modes.md),
+[Configuration](../operations/configuration.md),
 [Personal ingestion](../workflows/personal-ingestion.md),
-[Testing overview](../testing/overview.md).
+[Onboarding](../workflows/onboarding.md).
 
 ## The ConnectorRuntime contract
 
@@ -100,7 +104,10 @@ flowchart LR
 `ConnectorId` is a closed union of nine ids, and `ConnectorBackend` is one of
 `direct-api`, `local-git`, `mcp-http`, or `mcp-stdio`. `mode` marks a connector
 as `personal` or `code`; `langsmith` is the only `code`-mode connector and skips
-cleanly when invoked without a repo root.
+cleanly when invoked without a repo root. `supportsAgenticDiscovery` distinguishes
+connectors the agent discovers and drives interactively (`custom-mcp`, `notion`,
+`git-repo`) from deterministic-pull connectors that fetch their full payload up
+front.
 
 ## Connector registry
 
@@ -144,7 +151,23 @@ directories `0700`) and the connector home is restricted to the current user.
 Connector ids are validated with `assertSafeConnectorId`, and raw reads/writes
 are constrained inside the connector's `raw/` directory (`resolveConnectorRawPath`
 rejects any path that escapes it), so a malicious relative path cannot read or
-write outside the staging area.
+write outside the staging area. Raw-read tools additionally reject symbolic
+links on every path component and open files with `O_NOFOLLOW` when available.
+
+### Source instances
+
+A connector id names a *kind* of source, not a single configuration. Onboarding
+records one or more **source instances** of the same connector (for example one
+`web-search` source for AI research and another for NBA news, stored as
+`web-search-1` and `web-search-2`). All instances of a connector share the same
+`~/.openwiki/connectors/<id>/` storage — the same `config.json`, `state.json`,
+and `raw/` tree — but each ingestion run is tagged with the instance id
+(`ConnectorIngestOptions.instanceId`) and several connectors (`web-search`,
+`hackernews`, `langsmith`) record that `instanceId` inside their raw dumps so a
+later agent run can attribute evidence to the right source. `runOpenWikiIngestion`
+resolves the configured instances from onboarding config and runs each as a
+separate agent update over a 24-hour window, passing the instance's
+`connectorConfig` override and `windowHours` into `ingest()`.
 
 ## Agent tools
 
@@ -210,6 +233,12 @@ or HTTP. Key safeguards:
   `… is required for MCP connector ingestion.` error. This empty-string-is-present
   rule mirrors `buildChildEnv`'s `typeof value === "string"` check for base env
   vars, so an explicitly-blank credential is passed through rather than rejected.
+- A stdio MCP subprocess receives only an allowlisted set of safe base
+  environment variables (`PATH`, `HOME`, `USERPROFILE`, `APPDATA`, `TMPDIR`,
+  `LANG`, `TERM`, …) plus the credentials the transport explicitly declares via
+  `transport.env`. The full `process.env` — which holds every provider API key
+  and OAuth refresh token — is never forwarded, so a spawned MCP server command
+  cannot read the user's secrets out of the environment.
 - `tools/list` is fully paginated but bounded twice (a repeated cursor and a
   100-page cap) so a misbehaving server cannot hang discovery.
 - stdio commands and args are validated against control characters, requests
@@ -233,7 +262,10 @@ or HTTP. Key safeguards:
   (`git diff --name-status HEAD`) rather than failing, so the manifest still
   reflects local, uncommitted work.
 - **google / Gmail** (`direct-api`): fetches recent messages from the Gmail API
-  using OAuth access + refresh tokens.
+  using OAuth access + refresh tokens. A 401 response triggers a single
+  `refreshOAuthAccessToken("gmail")` and retry of the same request, rather than
+  failing the run — `fetchWithResilience` returns 401s unchanged precisely so
+  this caller-side refresh can happen instead of a wasteful retry.
 - **slack** (`direct-api`): fetches conversations, recent messages, and assistant
   search context with a Slack user token; supports `recent_messages`,
   `my_messages_search`, and `assistant_search` streams.
@@ -251,10 +283,17 @@ or HTTP. Key safeguards:
 - **hackernews** (`direct-api`, no env): pulls public HN feeds and Algolia search
   results with no credentials.
 - **langsmith** (`direct-api`, `code` mode): pulls recent traces via the LangSmith
-  SDK. It reads committed repo config (workspaces/projects), requires a
-  `repoRoot`, and builds an anomaly-weighted sample (errors first, then latency
-  outliers) capped at 20 traces. Per-workspace/per-project failures degrade to
-  warnings rather than failing the run.
+  SDK. It reads committed repo config (`openwiki/.langsmith.json` naming
+  workspaces/projects, never the key), requires a `repoRoot`, and builds an
+  anomaly-weighted sample (errors first, then latency outliers) capped at 20
+  traces. Per-workspace/per-project failures degrade to warnings rather than
+  failing the run. Because its `apiBaseUrl` and `apiKeyEnv` come from a committed
+  repo file, both are allowlisted at the use boundary: the base URL must target
+  an official LangSmith host (`api.smith.langchain.com`,
+  `eu.api.smith.langchain.com`, or `apac.api.smith.langchain.com`) over HTTPS
+  with no embedded credentials, and the key env var must match the
+  `OPENWIKI_LANGSMITH_API_KEY(_<n>)` namespace — so a malicious PR cannot
+  exfiltrate the key via SSRF or name an unrelated secret to send to the host.
 
 ### Resilient fetching
 

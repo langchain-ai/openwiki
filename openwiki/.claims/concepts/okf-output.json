@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:68ef6feb90a382c062c2d1e78c3a647b29c04c4c786b13d049e05083eb1ae607",
+  "pageVersion": "sha256:a416064708acd02aa45b0f08db9971286423ed91d05ab58759a94df60af57473",
   "claims": [
     {
       "id": "claim_015f68c61f874418879c6446644e49d5",
@@ -307,10 +307,94 @@
           "version": "repo-lines-v1:sha256:cfb2290596a06239e83112a3ab83540ac3bb56acdf93a4da1133a7a7d0454a70:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_6d16ac8f83484247a0f8a7394a0da748",
+      "statement": "synchronizeClaimSources projects each page's current Claims evidence resources into the OKF `sources` field during finalization, normalizing every resource to a whole-file `repo://<path>` form (stripping precise `#Lx-Ly` line ranges), stamping OpenWiki-owned entries with a stable `openwiki-source-<24-hex>` id derived from a SHA-256 prefix of the resource, and writing through setOkfSources only when the merged list differs from what is already persisted.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L38-L70",
+          "version": "repo-lines-v1:sha256:f5faa0cf14a4f864b3cb3537b6bb2f1b8f7591223798eda1f7424df4db21c816:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYmIwZDk3OWRlNzAxMGY2MzliMzVhOWE0ZjBiOGEwYjU1ZTExYWZjZjEzZWZlNTlmMjIwN2QxMTQ2Mjc0MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjN2QyZjI0NDg0MWI5NTVhMzEzYmJiNDdiMmFkNWUxZmIxNjQxZTRmOTM3ZGRlZGM2ZDU4ZDNiZWE1OGFkYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNTZhYzBhZmY0YzQyYzcwNDgwYWMyNjE4ZGYwOWE5MDBkMjkzZWM5YTY4Nzk5ZmRlN2MxMDZiNGFmNTU3NGEifQ"
+        },
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L75-L93",
+          "version": "repo-lines-v1:sha256:67f58d54b2e274ce80e15265176721a4e711b3c417e7c6069bd79968f649c2e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0YjFjMTkxYjU5NmM2YWM3MGJjNGI0Zjc1MWM2NzZhNzgyOWE2MmNlY2Y3NTkwMDU2MWVmYzQ0MzkzY2IxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZjY1YzMyNzdlNzBjOThkNzUwNmUxMjZlYTlkZWJiNTA1MGEwZDRhODAzMzg1MTQ4MmY0NzY4MTM3ZjNhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwYWZkYWIxNzNjM2Q1M2ZjYjg0NjAzOGE0YjhlYzE0ZTZlYjI3YzdjNjE3NGI2YmJiN2ZiNmFhZTRhY2QyY2EifQ"
+        },
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L99-L141",
+          "version": "repo-lines-v1:sha256:50ed049baa5f1054c78f3ce59eb8f5d853485ed65b362d4b2867d9e830173b7f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NzM0NzA1MWZhYzllMGNlYTJjYmVjMDM0MjkwYzM4MWYyZWM1ZjkxYjI2MzI5NmRmZGFiMjIzYTVlN2NmY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1MzFmNGYzODkyNDg2NTZlODk4MjhiMTdhMmZhNWEyMGY1ZWM0ODMxOGE5ZjQ1ZjdmYTFjNDFlYmUyMzMzZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZDEzMWRkNTQ3OTViYzI1YjY3YTJiZGY5MjY1MTM4OGUyMzRiNWZjYTZhOGVkOTM4MDE0NGQ0NDgzODE3NTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ece97c13a0d4182968463be165e7402",
+      "statement": "The Claims sources projection preserves independently authored (non-OpenWiki-owned) source entries across runs: mergeClaimSources retains every existing entry whose id does not start with `openwiki-source-`, deduplicates projected resources against retained ones so the same file is not listed twice, and a write failure throws rather than shipping a page whose `sources` misrepresent its evidence.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L62-L68",
+          "version": "repo-lines-v1:sha256:3e074aa7f33bf12fa38347fb1c9f7ed871ae29c87bad3e436a942362aaf5b162:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTE4NTE5NTQ3ZTUwNjFmYzE3MzYwMjgwNThlYjhmN2NiN2VjMjU5ZTdiMjhiMWYyMTNiZWMxZTZkMDBmNzQ0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSJ9"
+        },
+        {
+          "resource": "repo://src/okf/claim-sources.ts#L75-L93",
+          "version": "repo-lines-v1:sha256:67f58d54b2e274ce80e15265176721a4e711b3c417e7c6069bd79968f649c2e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0YjFjMTkxYjU5NmM2YWM3MGJjNGI0Zjc1MWM2NzZhNzgyOWE2MmNlY2Y3NTkwMDU2MWVmYzQ0MzkzY2IxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZjY1YzMyNzdlNzBjOThkNzUwNmUxMjZlYTlkZWJiNTA1MGEwZDRhODAzMzg1MTQ4MmY0NzY4MTM3ZjNhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwYWZkYWIxNzNjM2Q1M2ZjYjg0NjAzOGE0YjhlYzE0ZTZlYjI3YzdjNjE3NGI2YmJiN2ZiNmFhZTRhY2QyY2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9949d68cabf64e0a899ec0155432cf71",
+      "statement": "Claim sources synchronization runs in the finalizer order after Mermaid validation, index synchronization, and link validation, but before generated provenance is reconciled, so a body's `sources` reflect the final accepted Claims state.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L263-L285",
+          "version": "repo-lines-v1:sha256:1149570001fd616e45bf304406709933adfb26d690abfa297db6e3f730a78c93:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NTU4MzE5MjkzNzc3MjE4NTNlYjAxODEwNjU4MTljMmRlNGQ5YmUyMGM1ZjZlZTU0MzVlNDJlYTA2OTA5OTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMDlkMzQzODIwMDY5NDdlZTg5NjIzZmIwNDkwMTM1Zjg4ZWYxOGQwY2RmNzRlZGRjNjU3NzQxZmFmZDg0OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d558d05b8fd248478828cb22eb2b51ab",
+      "statement": "synchronizeClaimsVerification reconciles the OKF `verified` list ownership-aware: it retains every event whose `by` does not match the `openwiki/<version>` actor family indefinitely, removes all prior OpenWiki-owned events, appends the single active durable event when one exists, removes the field entirely when the retained-plus-active list is empty, and normalizes a bare mapping to the canonical list representation when the field is touched.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/claims-verification.ts#L100-L112",
+          "version": "repo-lines-v1:sha256:90381ad4df462c117e57324d8fbe4a4e1f6bbd90c75393faf46159146938f888:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiYzRlNjY0Njk4ZjNiNWQzYmMzNTdjNTM5NmI5ZDAxYTZmMjgzYzA1MjgxZTE1ZWFlZjNkMDJmNDYyOGI0ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYjlkMTZmNTJiMDdhZDNhODAyNDA3NTNiNzljMGVjOTE1Yzg0NWE2OTI3ZDVkM2UwYTM3YWJkOTk0YTM5MjEifQ"
+        },
+        {
+          "resource": "repo://src/okf/claims-verification.ts#L35-L59",
+          "version": "repo-lines-v1:sha256:d096b83929b1b8ae3255921a72ea1165671bf7de47aad1fc01b13c7e6a5b1ca6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YTE2OTRkMzhlYTNmNjRhYzcwNDY0MTI2NmI3MTRmMTY5NGQxZTQwN2Y3NTgzODY0NGRiMmZlZWE3MWIyMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MzIwM2ZiYzVhYzRmMWY1YmI5OWU2MDdmMjExMjE1MDNmMDU1ODNmNTRkYmViM2NlNTAyZmJiZDhmNTY4NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5YWIwMzYzMGMwNzg0NGRlMWQ0NGY1YzA5NGRlZTg2ODVkYTA1NjRmMWI1ZGE5ODI5YTExODNmNTY3YzNiMDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f5bb4e2b8e048c1a15c120cc03e7118",
+      "statement": "A page receives a non-null `verified` event only when its Claim set is persisted, not dirty, non-empty, issue-free, and its evidence is still current; assertEvidenceStillCurrent rechecks every evidence resource's version and rejects on disappearance or drift, and a page with zero Claims contributes `null` so OpenWiki removes its own prior stamp without touching independent verifications.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/session.ts#L301-L420",
+          "version": "repo-lines-v1:sha256:5a680ff0820cdf408c9096e36b9876ec294c0d8a2ed22cb692093587ae7a61cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YjcyZjVlYzE5ZjI1Y2ViODQzMmE0Yjc5YzJhYTQ2NTk3NjNlYzMzYzJlNDY2MWVhNTQzM2ExYmZjODE4NjUyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzYThlNjYyZDljYjFmOWFkMTRmN2MwNTI2ZjM1ZjExNTY1YmU2MDAxMmEzODRlMDliZWIzNzFlZDhlNGY4MDFiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjYmJmNjUxYmNlZmFjYmU4YjljMDYwZTg2YTUzMjk1YmM1ZmQxN2IzMWJmYjM3MWQ4ZmVkMTBmYWMyNzRlNWJhIn0"
+        },
+        {
+          "resource": "repo://src/claims/brains/code/session.ts#L473-L496",
+          "version": "repo-lines-v1:sha256:16f94b501e4f8c79b88411a2832b811c7d255d777f5567e1e5edd83f7e585543:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZDcwZTEyMmM1OGEzNzcwYTg2ZjAzMjQwMmVhNGJlNGQ0MmMwNTE4MjRkMDlhY2E1NmExZTg1NTY0MDNjNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5MTI0ZTdhMDEwYTM5YTU0OTIxY2Y3ZjgwNDA0NzBhNWYwMWNjM2JmNGUzMGU3NDdmMzI1MTMyYzQ1ZWI1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTA4ZDA3OWI4NTA4NWNiYzU0OWMyOTcxZGFkNTMwMTIxM2I5MjQ2NWY0ZjdmOTNhZDY5ZTNhZTdiYTcwOGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_67b86583d21048cba4c75ce7329dc987",
+      "statement": "After the verified frontmatter is projected, refreshPageVersions re-hashes every affected page into its sidecar because deterministic finalizers may change code-owned frontmatter without changing the verification event; a failed refresh for a page that had an active (non-null) stamp triggers rollbackClaimsVerification restoring that page's exact pre-projection Markdown, and any remaining refresh warnings fail the run as a ClaimsPersistenceError rather than shipping partially durable trust metadata.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/runtime.ts#L161-L185",
+          "version": "repo-lines-v1:sha256:4a46f27ce71399f157ac8296fd839f5186ba21a3c942493f54bf62c08a8863e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NGU4ZTEyY2ZiM2Y2MGFlYjA2ODAzNDkxY2E2NzNlZGE2ODViYzY1NWVmNWIyOGQ2NWU3MGZjNmFhZjVhYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkYzA3ZjI3NGY0YmNhOTQ2MGJlZWMzOTViZDc5ZjM2ODQ1YmNiZjEwZmZiZjlkNjFhYzVlYTkwMTY3MTMyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/okf/claims-verification.ts#L64-L75",
+          "version": "repo-lines-v1:sha256:17e928e2634a09f4020420010410852a00fd077c35e09f0cc6824c059ecc6636:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZGM1YzllYTFkNTEyMTZhMDMzYzk4MzgyMjNmZDVlYzVkYWM2ZmE2NDc1NjY2OTg1NThiNTE3NjZlYzVlOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYTY4MGYzYWU1ZjZjMTVkYzgwNzFhY2M2OGM5MDZmMmI3Y2MyNjFmODlkZTI3OGRlYjY5NjM5YTczNzk4ZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NTRkNDgwYWNmYjZiNmNiZWIzNzg0ZWJlOTg1YzgyMjE4NDQ0MDNkNDdmNjY0YmI5MjhiM2UwMTllMGYwZmQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-28T03:39:43.412Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-12T08:08:12.385Z"
   }
 }
