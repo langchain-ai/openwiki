@@ -49,4 +49,17 @@ describe("getSelectedModelAvailability", () => {
 
     expect(result).toMatchObject({ status: "unknown" });
   });
+
+  test("returns unknown for bob without issuing a network request", async () => {
+    const shouldNotBeCalled = (): never => {
+      throw new Error("fetch must not be called for bob");
+    };
+
+    const result = await getSelectedModelAvailability(
+      { ...OPENAI_CHECK, provider: "bob" },
+      shouldNotBeCalled,
+    );
+
+    expect(result).toMatchObject({ status: "unknown" });
+  });
 });

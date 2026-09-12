@@ -8,6 +8,21 @@ import type {
  * Complete immutable registry of supported host installation targets.
  */
 export const HOST_TARGETS = {
+  bob: {
+    id: "bob",
+    displayName: "IBM Bob",
+    producerActor: "bob",
+    user: {
+      skillDirectory: ".agents/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+    },
+    project: {
+      skillDirectory: ".agents/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+    },
+    documentationUrl:
+      "https://bob.ibm.com/docs/ide/configuration/mcp/understanding-mcp",
+  },
   codex: {
     id: "codex",
     displayName: "Codex",

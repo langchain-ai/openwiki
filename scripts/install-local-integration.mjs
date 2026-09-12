@@ -17,7 +17,7 @@ async function main() {
   const target = hostId ? getHostTarget(hostId) : undefined;
   if (!target || process.argv.length !== 3) {
     throw new Error(
-      "Usage: pnpm integrations:dev <codex|claude|opencode|cursor>",
+      "Usage: pnpm integrations:dev <bob|codex|claude|opencode|cursor>",
     );
   }
 
