@@ -1,5 +1,10 @@
 ## OpenWiki
 
+Executable agent skills are global under `~/.agents/skills`, backed by the
+versioned `~/projects/global-skills` repository. The packaged
+`integrations/openwiki/` bundle remains local because it is the distributable
+installer source, not a project discovery mirror.
+
 This repository has documentation located in the /openwiki directory.
 
 Start here:

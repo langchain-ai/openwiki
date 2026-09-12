@@ -34,9 +34,12 @@ export const ONBOARDING_TEMPLATES = [
     name: "Personal",
     sourceIds: [
       "custom-mcp",
+      "github",
       "git-repo",
       "google",
+      "newrelic",
       "notion",
+      "sentry",
       "web-search",
       "hackernews",
       "x",
@@ -44,6 +47,9 @@ export const ONBOARDING_TEMPLATES = [
     suggestedSources: [
       "Gmail",
       "Notion",
+      "GitHub",
+      "Sentry",
+      "New Relic",
       "Custom MCP",
       "Web Search (Tavily)",
       "Hacker News",
@@ -155,6 +161,72 @@ export const SOURCE_OPTIONS = [
       "Do not allowlist mutating tools. This is a built-in generic MCP source, not a plugin loader.",
     ],
     secretInputs: [],
+  },
+  {
+    displayName: "GitHub",
+    examples: [
+      "Track open issues, recent pull requests, and release activity.",
+      "Correlate repository blockers with commits and roadmap status.",
+    ],
+    id: "github",
+    instructions: [
+      "Install a read-only GitHub MCP server or use your own.",
+      "Edit ~/.openwiki/connectors/github/config.json after setup.",
+      'Set "enabled": true and an HTTP or stdio "transport".',
+      "Put the GitHub token only in ~/.openwiki/.env; reference it as ${OPENWIKI_GITHUB_TOKEN} in headers/env.",
+      "Set readOnlyOperations or allowedTools to keep ingestion read-only.",
+    ],
+    secretInputs: [
+      {
+        envKey: "OPENWIKI_GITHUB_TOKEN",
+        label: "GitHub personal access token",
+        secret: true,
+      },
+    ],
+  },
+  {
+    displayName: "New Relic",
+    examples: [
+      "Track alert violations, APM error rates, and release health.",
+      "Correlate operational regressions with recent deployments.",
+    ],
+    id: "newrelic",
+    instructions: [
+      "Install a read-only New Relic MCP server or use your own.",
+      "Edit ~/.openwiki/connectors/newrelic/config.json after setup.",
+      'Set "enabled": true and an HTTP or stdio "transport".',
+      "Put the New Relic API key only in ~/.openwiki/.env; reference it as ${OPENWIKI_NEWRELIC_API_KEY} in headers/env.",
+      "Set readOnlyOperations or allowedTools to keep ingestion read-only.",
+    ],
+    secretInputs: [
+      {
+        envKey: "OPENWIKI_NEWRELIC_API_KEY",
+        label: "New Relic API key",
+        secret: true,
+      },
+    ],
+  },
+  {
+    displayName: "Sentry",
+    examples: [
+      "Track unresolved issues, error spikes, and affected releases.",
+      "Correlate production incidents with commits and PRs.",
+    ],
+    id: "sentry",
+    instructions: [
+      "Install a read-only Sentry MCP server or use your own.",
+      "Edit ~/.openwiki/connectors/sentry/config.json after setup.",
+      'Set "enabled": true and an HTTP or stdio "transport".',
+      "Put the Sentry auth token only in ~/.openwiki/.env; reference it as ${OPENWIKI_SENTRY_AUTH_TOKEN} in headers/env.",
+      "Set readOnlyOperations or allowedTools to keep ingestion read-only.",
+    ],
+    secretInputs: [
+      {
+        envKey: "OPENWIKI_SENTRY_AUTH_TOKEN",
+        label: "Sentry auth token",
+        secret: true,
+      },
+    ],
   },
   {
     authProvider: "gmail",

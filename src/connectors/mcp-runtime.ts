@@ -18,7 +18,10 @@ import type {
 } from "./types.js";
 import { isSecretLikeKey } from "../platform/diagnostics.js";
 
-export type McpConnectorId = Extract<ConnectorId, "custom-mcp" | "notion">;
+export type McpConnectorId = Extract<
+  ConnectorId,
+  "custom-mcp" | "github" | "newrelic" | "notion" | "sentry"
+>;
 
 export type McpToolDiscoveryResult = {
   connectorId: McpConnectorId;
@@ -36,7 +39,13 @@ export type McpToolCallResult = {
   toolName: string;
 };
 
-const MCP_CONNECTOR_IDS = new Set<ConnectorId>(["custom-mcp", "notion"]);
+const MCP_CONNECTOR_IDS = new Set<ConnectorId>([
+  "custom-mcp",
+  "github",
+  "newrelic",
+  "notion",
+  "sentry",
+]);
 
 export function isMcpConnectorId(
   connectorId: ConnectorId,

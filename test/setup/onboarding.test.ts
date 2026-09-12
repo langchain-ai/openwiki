@@ -280,13 +280,12 @@ describe("normalizeOnboardingConfig (via readOpenWikiOnboardingConfig)", () => {
   test("drops sources whose connector id is not recognized", async () => {
     const home = await createTempHome();
     const onboarding = await loadOnboardingModule(home);
-    // langsmith is a ConnectorId in the type but is intentionally absent from
-    // isKnownConnectorId, so it must be discarded during normalization.
+    // Unknown connector ids must be discarded during normalization.
     await seedRawOnboardingJson(onboarding, {
       sourceInstances: [],
       sources: {
-        langsmith: { ingestionGoal: "traces" },
         notion: { ingestionGoal: "docs" },
+        "totally-bogus": { ingestionGoal: "traces" },
       },
       version: 1,
     });
@@ -297,7 +296,7 @@ describe("normalizeOnboardingConfig (via readOpenWikiOnboardingConfig)", () => {
     );
 
     expect(ids).toContain("notion");
-    expect(ids).not.toContain("langsmith");
+    expect(ids).not.toContain("totally-bogus");
   });
 
   test("backfills modeId and modeName from templateId and templateName", async () => {
