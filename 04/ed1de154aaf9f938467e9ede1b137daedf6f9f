@@ -1,0 +1,25 @@
+.changeset/fuzzy-dingos-smile.md
+  s_0bd3edb645d41e::t_dad26199ef120b 2
+  h_f78d33d4280f3f 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "04ed1de154aaf9f938467e9ede1b137daedf6f9f",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_0bd3edb645d41e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0a122-4db5-73c2-9802-6ee13eae719f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
