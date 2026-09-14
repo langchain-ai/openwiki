@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:13a7bd8b25d2aa664a022595503ded6425137099a80ca3d2fbf43820bd887272",
+  "pageVersion": "sha256:cd2c6f1fa2747453be7d8a5e00a0279d68af0c4cdd7e6d59ce995602c15679a8",
   "claims": [
     {
       "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
@@ -235,10 +235,38 @@
           "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc5ZGRkZTViNzViMGIzODQ4ZGZjMzgyYTZmYTIwMjdhMjNiNTkxNzVlYjcwMWU1YTczMmRmMGEwMjczYjZhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_a53a6ead332b4f3a80172ee0a455c73b",
+      "statement": "examples/openwiki-update-auto-merge.yml is a GitHub Actions variant of the canonical update example that adds two post-PR steps: 'Enable auto-merge after a successful update' runs `gh pr merge --auto --squash` when steps.openwiki.outcome == 'success' and a PR was created, and 'Disable auto-merge after a failed update' runs `gh pr merge --disable-auto` when the outcome is 'failure', both gated on a non-empty steps.create-pr.outputs.pull-request-number; a trailing Propagate OpenWiki failure step still fails the job on a failed run.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update-auto-merge.yml#L75-L95",
+          "version": "repo-lines-v1:sha256:1c06c02d6a0011b17f79f6b7cb4a49075ab2739ec45cb00176bfe4a558945783:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTg5OGIxYWYyMWYwOWU4MjE4ZGI1NTkzMzM3NzNkNDYyYTM2Y2ZiZjU0YTA4NGZlZGFhY2YwYjQ1MGU5MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YTgxOTc1MWIzNDhmYzY0MDBkZTc2N2Q4N2E2MjFkODUxMjZhZDZhNjRkNzJiYjZjYjY3ODE1OTYxMDdkZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_528b7ef2cc7842a09948a3a9edc41f67",
+      "statement": "The auto-merge variant differs from the canonical examples/openwiki-update.yml in three ways beyond the auto-merge steps: it authenticates peter-evans/create-pull-request and gh with a dedicated OPENWIKI_PR_TOKEN secret (needs pull-requests: write) rather than the default GITHUB_TOKEN; it runs `git checkout -- .github/workflows/openwiki-update.yml` before the PR step (if: !cancelled()) and omits that file from add-paths so only openwiki, AGENTS.md, and CLAUDE.md are committed; and it adds a concurrency group (openwiki-update, cancel-in-progress: false) and pins peter-evans/create-pull-request to the v8.1.1 commit SHA 5f6978faf089d4d20b00c7766989d076bb2fc7f1.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update-auto-merge.yml#L12-L14",
+          "version": "repo-lines-v1:sha256:5b5128337484d378a11aaf08aebe2a5a395c7c36614ed7b4626c44a8a44083f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODRhZmUyNGRhZjM0ZDFiNWNmODNmY2FhM2Y1NmFhNGMxMDdjMDU4MDM5Yzg1N2JjYjZkNTE2ZDYyMTk0N2YwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRhMDFmMjhiNmIwNGQ0NWNhZDBmZTZiODYyZDFhODAyZDdjMWJjNWU3N2ViODg1ODAwYjhkOTFjZjdmNDQ4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZmN2QzN2ZiMjk3Mzk5ZmVhMmE1Y2VmMWNjNDAyOGM4OTk3OWE5MDUwYTkyODU2ZjBkOTZlMWMxOGJhMTlhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JhNWFmZmQ4MjMxYzBlODFiYmNkNDIxNTRhMWNjOTBlODZlZmY2NjM1NWMwNDhjZTU1YjMyMzdiZGFjM2ExZCJ9"
+        },
+        {
+          "resource": "repo://examples/openwiki-update-auto-merge.yml#L46-L66",
+          "version": "repo-lines-v1:sha256:4fbd00329df8186122b47889676ddc6d8a3cd1ba59c3bf90b2762039d303a460:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNTRmN2YzZTVmNzc0ZTQ3Mjk5MjdlMTA4NTAxNzYzMTZiOTFiYzI4NTQ2ZTY4YmQ2ZDZkZmIyZWFlY2M5Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYTQxNjY0OTBiMTcyOWI1ZWNiZmFmYmRlMmY1YmFiMDlkMmY3ZWVmZTQ0ZGQ1ZWZkMDZkZmUyMDViYjYxYTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkODlkZGU2NjgwODU1NjRmYmRkYzFiZDc3MzAxMGMyNGNhZGViOTViYzQ2ZTcxMTBiMzE5N2NkYmJhN2NkZjgifQ"
+        },
+        {
+          "resource": "repo://examples/openwiki-update-auto-merge.yml#L75-L91",
+          "version": "repo-lines-v1:sha256:ad287a680ab4e68f70f498774f858f5a9eba03e600c228ce757127f3d617329d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTg5OGIxYWYyMWYwOWU4MjE4ZGI1NTkzMzM3NzNkNDYyYTM2Y2ZiZjU0YTA4NGZlZGFhY2YwYjQ1MGU5MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzN2NkZTM4ZGQ2YmJmNzk3NDI2MTExZGRhZmQwODk4ZTdkYjRhMDcxYmM3N2VlMjZjOWU5YTZhMmI3NzBiMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YTgxOTc1MWIzNDhmYzY0MDBkZTc2N2Q4N2E2MjFkODUxMjZhZDZhNjRkNzJiYjZjYjY3ODE1OTYxMDdkZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0YTQ1ZDcyMzdkYmQ0NjVkYzc2Mjc0NTVmMzg1OWVhNjRmNzEwMjY1NDNkZDE3YmY2Nzc3ODkxOTQyZDVjYzMifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-28T03:39:43.412Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-10T08:09:53.024Z"
   }
 }

@@ -4,6 +4,8 @@ export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
+export const BOB_API_KEY_ENV_KEY = "BOB_API_KEY";
+export const BOB_BASE_URL_ENV_KEY = "BOB_BASE_URL";
 export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
@@ -19,6 +21,8 @@ export const OPENAI_COMPATIBLE_STREAMING_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_STREAMING";
 export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
+export const OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED";
 export const OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES";
 export const OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY =
@@ -107,6 +111,7 @@ export type OpenWikiProvider =
   | "anthropic"
   | "baseten"
   | "bedrock"
+  | "bob"
   | "copilot"
   | "fireworks"
   | "gemini"
@@ -206,6 +211,12 @@ type ProviderConfig = {
    */
   locationEnvKey?: string;
   defaultLocation?: string;
+  /**
+   * When set, the provider always uses this model ID and the model-selection
+   * step is skipped entirely. The value is used verbatim; it is not passed
+   * through {@link normalizeModelId}.
+   */
+  fixedModel?: string;
   label: string;
   modelOptions: ProviderModelOption[];
   /**
@@ -238,6 +249,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "openai",
   "openai-chatgpt",
   "anthropic",
+  "bob",
   "copilot",
   "gemini",
   "gemini-enterprise",
@@ -260,6 +272,14 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
       { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
     ],
+  },
+  bob: {
+    apiKeyEnvKey: BOB_API_KEY_ENV_KEY,
+    baseURL: "https://api.us-east.bob.ibm.com/inference/v1",
+    baseUrlEnvKey: BOB_BASE_URL_ENV_KEY,
+    fixedModel: "premium",
+    label: "IBM Bob",
+    modelOptions: [{ id: "premium", label: "Premium" }],
   },
   bedrock: {
     apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
@@ -367,7 +387,8 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4-8", label: "Opus" },
+      { id: "claude-opus-5", label: "Opus" },
+      { id: "claude-opus-4-8", label: "Opus 4.8" },
     ],
   },
   gemini: {
@@ -390,7 +411,8 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       ...GEMINI_MODELS,
       { id: "claude-haiku-4-5@20251001", label: "Claude Haiku" },
       { id: "claude-sonnet-5", label: "Claude Sonnet" },
-      { id: "claude-opus-4-8", label: "Claude Opus" },
+      { id: "claude-opus-5", label: "Claude Opus" },
+      { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
     ],
   },
   openrouter: {
@@ -468,9 +490,10 @@ export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
 export function providerUsesResponsesApi(
   provider: OpenWikiProvider,
   modelId: string,
+  env: NodeJS.ProcessEnv = process.env,
 ): boolean {
   if (provider === "openai-compatible") {
-    return resolveOpenAiCompatibleUseResponsesApi();
+    return resolveOpenAiCompatibleUseResponsesApi(env);
   }
 
   const setting = getProviderConfig(provider).responsesApi;
@@ -656,6 +679,16 @@ export function getProviderBaseUrlEnvKey(
 
 export function providerRequiresBaseUrl(provider: OpenWikiProvider): boolean {
   return getProviderConfig(provider).requiresBaseUrl === true;
+}
+
+export function providerHasFixedModel(provider: OpenWikiProvider): boolean {
+  return getProviderConfig(provider).fixedModel !== undefined;
+}
+
+export function getProviderFixedModel(
+  provider: OpenWikiProvider,
+): string | undefined {
+  return getProviderConfig(provider).fixedModel;
 }
 
 export function getProviderSecretKeyEnvKey(
@@ -1023,6 +1056,16 @@ export function resolveOpenAiCompatibleUseResponsesApi(
   return (
     env[OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY]?.trim().toLowerCase() ===
     TRUE_ENV_VALUE
+  );
+}
+
+export function resolveOpenAiCompatibleReasoningEffortSupported(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env[
+      OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
+    ]?.trim().toLowerCase() === TRUE_ENV_VALUE
   );
 }
 

@@ -1,5 +1,29 @@
 # openwiki
 
+## 0.5.1
+
+### Patch Changes
+
+- [#810](https://github.com/langchain-ai/openwiki/pull/810) [`65dbd57`](https://github.com/langchain-ai/openwiki/commit/65dbd575e078b1bece0e9220583cf13f4ea6f212) Thanks [@jkennedyvz](https://github.com/jkennedyvz)! - Modernize runtime and development dependencies, upgrade pnpm, and pin the patched `qs` transitive dependency.
+
+- [#794](https://github.com/langchain-ai/openwiki/pull/794) [`3e180e9`](https://github.com/langchain-ai/openwiki/commit/3e180e9b7d3eb98390e5f63c97a7fe256708b7d8) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: unescape .env values in a single atomic pass
+
+- [#796](https://github.com/langchain-ai/openwiki/pull/796) [`4364f25`](https://github.com/langchain-ai/openwiki/commit/4364f25ee1ebdf7f4439cc3618d22528fb958daf) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: allow the google fonts origins the visualizer page requests
+
+- [#832](https://github.com/langchain-ai/openwiki/pull/832) [`2a22e41`](https://github.com/langchain-ai/openwiki/commit/2a22e41dd1e8700e9d5d06f4b119c297b750e52a) Thanks [@smoochy](https://github.com/smoochy)! - feat: show the error stack in the debug diagnostics panel
+
+- [#838](https://github.com/langchain-ai/openwiki/pull/838) [`9a3a2d8`](https://github.com/langchain-ai/openwiki/commit/9a3a2d8725c5049c018917e48e7d8d07fdc26703) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - fix: accept empty-string env vars in MCP connector env resolution
+
+- [#806](https://github.com/langchain-ai/openwiki/pull/806) [`a0c864a`](https://github.com/langchain-ai/openwiki/commit/a0c864a8fc31e15c49ab96258e4851d9142b7baa) Thanks [@colifran](https://github.com/colifran)! - feat: declutter visualizer graph labels
+
+- [#841](https://github.com/langchain-ai/openwiki/pull/841) [`fb3c4c2`](https://github.com/langchain-ai/openwiki/commit/fb3c4c22e512c5e4df99f7013b2b34f04ba4fe0c) Thanks [@mdrxy](https://github.com/mdrxy)! - fix: preserve CLAUDE.md files that only import AGENTS.md
+
+- [#846](https://github.com/langchain-ai/openwiki/pull/846) [`b4a8045`](https://github.com/langchain-ai/openwiki/commit/b4a8045c57c68cb7156e21a984e1e52a0fb1291c) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - fix: render assistant text emitted from top-level model request streams
+
+- [#808](https://github.com/langchain-ai/openwiki/pull/808) [`83ece67`](https://github.com/langchain-ai/openwiki/commit/83ece673a6709e68e98e72cec318d77695fe066d) Thanks [@colifran](https://github.com/colifran)! - fix: update fast-uri to address high severity security vulnerabilities
+
+- [#817](https://github.com/langchain-ai/openwiki/pull/817) [`eb914e2`](https://github.com/langchain-ai/openwiki/commit/eb914e254137568737b130afb9cf7d63e0280129) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - fix: handle updates-mode stream chunks for openai-compatible provider
+
 ## 0.5.0
 
 ### Minor Changes
