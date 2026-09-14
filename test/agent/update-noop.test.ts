@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 import {
   getUpdateNoopStatus,
@@ -283,6 +283,77 @@ describe("no-op metadata refresh", () => {
 
     const metadata = await readPersistedMetadata(repo);
     expect(metadata).not.toHaveProperty("language");
+  });
+});
+
+describe("writeLastUpdateMetadata atomicity", () => {
+  // Mirrors the analogous ~/.openwiki/.env fix (#407): a failed write must
+  // not leave .last-update.json truncated. A torn/empty file here reads back
+  // as "no prior metadata" via readLastUpdate's SyntaxError guard, silently
+  // discarding the crash guard's interrupted-status signal and defeating the
+  // update no-op check.
+  test("a failed write leaves the existing .last-update.json intact", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const original = `${JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      command: "update",
+      gitHead: "0000000000000000000000000000000000000000",
+      model: "test-model",
+      status: "complete",
+    })}\n`;
+    await writeFile(
+      path.join(repo, "openwiki", ".last-update.json"),
+      original,
+      "utf8",
+    );
+
+    // Re-import against a writeFile that emulates O_TRUNC-then-ENOSPC: it
+    // truncates whatever path it is handed, then throws. mkdir/readFile/
+    // rename stay real.
+    vi.resetModules();
+    vi.doMock("node:fs/promises", async () => {
+      const actual =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      return {
+        ...actual,
+        default: actual,
+        writeFile: vi.fn(
+          async (file: Parameters<typeof actual.writeFile>[0]) => {
+            await actual.writeFile(file, "");
+            const error: NodeJS.ErrnoException = new Error(
+              "ENOSPC: no space left on device",
+            );
+            error.code = "ENOSPC";
+            throw error;
+          },
+        ),
+      };
+    });
+
+    try {
+      const failingUtils = await import("../../src/agent/utils.ts");
+      await expect(
+        failingUtils.writeLastUpdateMetadata(
+          "update",
+          repo,
+          "test-model",
+          "repository",
+          "complete",
+          undefined,
+          null,
+        ),
+      ).rejects.toThrow(/ENOSPC/);
+    } finally {
+      vi.doUnmock("node:fs/promises");
+    }
+
+    // The original file survives: the failed write hit only the temp file
+    // and the rename that would have replaced it never ran.
+    await expect(
+      readFile(path.join(repo, "openwiki", ".last-update.json"), "utf8"),
+    ).resolves.toBe(original);
   });
 });
 
