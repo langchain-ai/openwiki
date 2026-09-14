@@ -1,5 +1,5 @@
 ---
-"openwiki": minor
+"openwiki": patch
 ---
 
-Add user- and project-scoped Kiro coding-agent integration support.
+feat: add kiro coding-agent integration
