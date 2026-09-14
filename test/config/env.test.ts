@@ -151,6 +151,7 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("BASETEN_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("MISTRAL_BASE_URL");
   });
 
   test("manages the reasoning effort setting", () => {
