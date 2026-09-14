@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e14718c58723055850240d67e0db1f882796852238a544c82d0e06ec4e12ce16",
+  "pageVersion": "sha256:3cb1d33c2a32251cddd61df18d1613d6e98453eb7d6c43c13ee129ed1203c69d",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -113,8 +113,8 @@
       "statement": "createModel maps the resolved provider onto a purpose-built LangChain chat model per branch: ChatAnthropic for anthropic, ChatGoogle for gemini, the Vertex model factory for gemini-enterprise, ChatOpenAI against the Codex Responses backend for openai-chatgpt, ChatOpenRouter for openrouter, ChatBedrockConverse for bedrock, and a shared ChatOpenAI for openai and all OpenAI-compatible gateways.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1077-L1248",
-          "version": "repo-lines-v1:sha256:c4a4e2dbfb411ad275acd1148f7dd33e4bb3d4af9d03f488ff31d5421e5dc477:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMDRkMmYzNmMyZDVmODJiMDdhZTIzMDU5MmYyYzcyZjJjMTQyMTYzZjMyMTkxM2I4YTk0OTcxNTE5OTY2YjljIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiYWNiNmRhZjcwYjNhYmUwNzQyNDhlMzliNjAzMjIwNTRkODY5NTA3MmMzMzZhNGIzMmY0NDZhNDcwNjlhMDJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjYzFhMGI2Y2JiNjk2MTE5NTM2ODYzNDJkNTRiYzQ1OTI1ZjVjNWI3NmRjYzJhYWVkYWM0MDBmNDNhMDUwOWU4In0"
+          "resource": "repo://src/agent/index.ts#L1077-L1264",
+          "version": "repo-lines-v1:sha256:aed4ebc67874828ec65c6c809327c381a499b9e889ce4edec7d195a421075312:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMDRkMmYzNmMyZDVmODJiMDdhZTIzMDU5MmYyYzcyZjJjMTQyMTYzZjMyMTkxM2I4YTk0OTcxNTE5OTY2YjljIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiYWNiNmRhZjcwYjNhYmUwNzQyNDhlMzliNjAzMjIwNTRkODY5NTA3MmMzMzZhNGIzMmY0NDZhNDcwNjlhMDJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjYzFhMGI2Y2JiNjk2MTE5NTM2ODYzNDJkNTRiYzQ1OTI1ZjVjNWI3NmRjYzJhYWVkYWM0MDBmNDNhMDUwOWU4In0"
         }
       ]
     },
@@ -134,19 +134,19 @@
     },
     {
       "id": "claim_08e6c4f6873246e1b8af8c713e69f01e",
-      "statement": "Both Gemini (AI Studio) and enterprise Gemini surfaces disable streaming and pin outputVersion v0 so Gemini 3.x thought-signatures round-trip across multi-turn tool calls instead of being dropped by the streaming aggregator.",
+      "statement": "Both Gemini (AI Studio) and enterprise Gemini surfaces disable streaming and pin outputVersion v0 (via the shared GEMINI_THOUGHT_SIGNATURE_OPTIONS) so Gemini 3.x thought-signatures round-trip across multi-turn tool calls instead of being dropped by the streaming aggregator.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1111-L1121",
-          "version": "repo-lines-v1:sha256:d41c814b9f3764a6e23aa1deae97e3a2d6acb616ebba0074f61422378e8ca4fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZTYwNGQwZWU1MzE3YzVhYmQ3ZTUxMDc4OTY1OWYyMmRhZDVjZWIyMTE1MmRlMjdhYzM3MmM2ODA1NDNhYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4NmE5ODJmMmM2ZDUwOTQzODE4ZDI3YzY0OTMwNjI0OWZmZTUwNTAxZWUxODBjMGY2YTA3MGY2NGY2YzczNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNzMxODgxMzE5OGFkOTI2MTVkYzE4MzI0NmQ5NjA5ODQ5NGE2OTM2YjU1YjMzMTBhNWU4YTMzY2JkNmJkZTYifQ"
+          "resource": "repo://src/agent/index.ts#L1126-L1136",
+          "version": "repo-lines-v1:sha256:eaf4815dbf7f575a7f07ca62b8c1fec3277b4e81a0099c4297acc29caeb76019:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZTYwNGQwZWU1MzE3YzVhYmQ3ZTUxMDc4OTY1OWYyMmRhZDVjZWIyMTE1MmRlMjdhYzM3MmM2ODA1NDNhYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2OTA5YzlhOGVlMTc3ZGFkNjUwYTBiYzk4MDYwM2FiMTM4Mzg5Y2MxYzBjZmU2YWY3NmQwMGZlZDI0NDQ5NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjczOTk2ZjZlY2Q4ZDFhM2M0NWQ0MDQ1Y2VlMTRiYWE4ZWRjODFiYWY4N2U2NjQ4NThmNDQ3NWU5MGQ3ZTkifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1286-L1298",
-          "version": "repo-lines-v1:sha256:5beb939847d6a1870b1474bf20fd93a6e18cc4c745649a0048ad26c8929152dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTI2NzRhNjBkODg3NzM1MDhmYTNmOWE5YWIyNDU2NmEyOWU3YTc4YjFhZDYzNTFkMDk5MjdjMTFjZDJlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NGVlOGE4ZDFhYTg0NTM5MWJjNjc5ZWI3MGNlN2Y0NmEzY2Q2ZmIyZDE2ZmNjYTY3ZmExNzhmNGY4YzFlMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2MWE5MGZmNWIxMGU0NWQyOGQ5NDFkOGY2YTg1ZDIxNjA2NTNmN2FiNzU3ODRjMGUyNDIwZTZlMjBjYTE4MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlZjE0MDdlZmU3MTEwMTc1ZWM5YjEyZGJmNTU1MWMzZGZmNjAzMWUxNjc1OGZlYzk0NzE3NjkzOWU1NGQ2NmQifQ"
+          "resource": "repo://src/agent/index.ts#L1311-L1314",
+          "version": "repo-lines-v1:sha256:1bb0cbe51a521600cf5f3188f4c2b75810ce47451d4bc05c405d321dbdd7029e:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRjMzgyMDIxNTE1ZTg5NThkNWM1MWZiNzhiMmY2ZGI5Y2UxOTcyYmU4ZjZlODQ5OTlhMDJkM2ViNzQzY2FkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc0ZWU4YThkMWFhODQ1MzkxYmM2NzllYjcwY2U3ZjQ2YTNjZDZmYjJkMTZmY2NhNjdmYTE3OGY0ZjhjMWUwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk1N2MzZjkwYzEwZDhlM2JhZGEyMzFhMmRkNDVmYjk5ODk3NTA2M2ZmN2ZjOTg3YTEwNjg3Zjg5MmM3YWQ0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmVmMTQwN2VmZTcxMTAxNzVlYzliMTJkYmY1NTUxYzNkZmY2MDMxZTE2NzU4ZmVjOTQ3MTc2OTM5ZTU0ZDY2ZCJ9"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1404-L1427",
-          "version": "repo-lines-v1:sha256:1281558e5040df2733e127caf6d2ca164ab3e682e6fcc75740aa49ce4725e8e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyOGZkZWIwMzY0OGNkMjRiMmMzYTM3MjIyNGEzMzkwYjdjMWRhMzliNDY0NjRlMGVlZjM2MmJmNTVkMWFhODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3ZmViNGZhMjAzNmZiNDE5ZWQ3NDVhOWYzZGY3YWQxYWJiNjE4NjRmYjk1ODIzNzQ5YTMwZTNhMTRkNzg4NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEifQ"
+          "resource": "repo://src/agent/index.ts#L1420-L1428",
+          "version": "repo-lines-v1:sha256:4e33c024fba750fdfb2b7a7b23f8229ccf0847e049fbddab413a9484a9d658d9:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI4ZmRlYjAzNjQ4Y2QyNGIyYzNhMzcyMjI0YTMzOTBiN2MxZGEzOWI0NjQ2NGUwZWVmMzYyYmY1NWQxYWE4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWExODkzNmQ1MTA4ZWQxZmMxNTg4ODVhMWY3NmU4ZWY1MTcxNzliMWNmN2M5NWM5NzBhZTIwNjQ2YmFjYWEwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdmZWI0ZmEyMDM2ZmI0MTllZDc0NWE5ZjNkZjdhZDFhYmI2MTg2NGZiOTU4MjM3NDlhMzBlM2ExNGQ3ODg1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQ0NmY4NTk2MDI0ZWU5ZjUyZjc2N2NiNGM4YmU0ODc2NzM2ZjExMDdjYjUxODVmMDNkOWQyZTc0NmQxNDZlNSJ9"
         }
       ]
     },
@@ -165,26 +165,26 @@
       "statement": "The shared ChatOpenAI fallthrough (openai, OpenAI-compatible gateways, and copilot) honors a per-provider base URL, selects the Responses API only when the provider config declares it via providerUsesResponsesApi, and forces the streaming HTTP transport (streaming:true) for providers whose providerUsesStreaming returns true — copilot is unconditionally forced (all Copilot models stream, because non-GPT-5 chat-completions models reject or return empty responses without streaming) and openai-compatible gateways opt in via OPENWIKI_OPENAI_COMPATIBLE_STREAMING — without disabling streaming when the flag is absent.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1227-L1247",
-          "version": "repo-lines-v1:sha256:3d45c216b9ff530047d7b0fa844a26eb18c7af591059dd71f3dbc90dcbba29b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNGVmNmYyMjhjNTVkNzgxN2MxM2ZhZDg5YzAzZGQxYzA5NTI3YTlmMjBiZGY2ZTFlOTRjOTc3ZWYzNjRiNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiN2Y5ZDdlZWFkMGNhNmYzZmY5NWNjZDBhNDlhZmJjNGM1MjAwM2IwMDI5Mjg2OTFhYzIxMTI4YjBhZmM3ZjIifQ"
+          "resource": "repo://src/agent/index.ts#L1243-L1263",
+          "version": "repo-lines-v1:sha256:6c6715d637290d57f37b47ecf570d809b808c6e3c0d863d420919921e71ab89c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNGVmNmYyMjhjNTVkNzgxN2MxM2ZhZDg5YzAzZGQxYzA5NTI3YTlmMjBiZGY2ZTFlOTRjOTc3ZWYzNjRiNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiN2Y5ZDdlZWFkMGNhNmYzZmY5NWNjZDBhNDlhZmJjNGM1MjAwM2IwMDI5Mjg2OTFhYzIxMTI4YjBhZmM3ZjIifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L483-L500",
+          "resource": "repo://src/config/constants.ts#L486-L503",
           "version": "repo-lines-v1:sha256:b9c730b8d38e76044fc6e2d21124fa629efc4cdbe0129b22bdf39aedd23787b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZWRjNWI0ZWIwNjk5MmRmZDgzMjY0NzE3ODU2MThmNzhiNmVjMmRjMWEyODcwODIxNzU3YmZiOGE3MzI2NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
         }
       ]
     },
     {
       "id": "claim_db629a57f773451aad303bb2e7e3fe03",
-      "statement": "createModel applies OPENWIKI_REASONING_EFFORT only to models that declare a reasoning capability, sending it either as a Responses-API reasoning.effort payload or a chat-completions reasoning_effort kwarg according to the model's declared transport; an unsupported provider/model or an invalid effort value throws.",
+      "statement": "createModel applies OPENWIKI_REASONING_EFFORT only to models that declare a reasoning capability, dispatching by the model's declared transport: a Responses-API reasoning.effort payload for responses-reasoning, a chat-completions reasoning_effort kwarg for chat-completions-reasoning-effort, and ChatGoogle's thinkingLevel for gemini-thinking-level; an unsupported provider/model or an invalid effort value throws. The REASONING_CAPABILITIES table declares GPT-5.6 models (terra/luna/sol) for openai and openai-chatgpt as responses-reasoning (full effort range including max), nvidia/nemotron-3-super-120b-a12b as chat-completions-reasoning-effort (none/low/high), and gemini-3.6-flash as gemini-thinking-level (low/medium/high).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1097-L1109",
-          "version": "repo-lines-v1:sha256:86416ef86572865c597cc5667a1b3a7e0f72ce745ef60070fdf5274368ef8d41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3M2RlZmE1MjNiNjY5YjFiZjQ4ZDExYzZjZTBmZDIyMzg3YjA0OWQ0YzUwYTQwY2I2OTlhYjk3MDQ1NTBlZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTVlZTM0MDAwM2QzZWI3ZWE3MzhjNTQ2MDhiYmQ2MTZjZmU0ZWQxZGQzNjYzYTdjOGIzZGNkNWQwZWM1NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NWUxMDczNDZkOTdlYjM0YzY2MDdkM2IwNDhkNmQ1NzQwOTNhNThjZWE0ZGNhMzBjNzdkYzg3MzY3OTBmOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YjAzNzZmNTllZmFkNWNlNTMwYTlkZjYwZWJiNDQ4YjU1MjYxN2FmMzhiN2Y0YmQ3MmIwYjc5YzMwN2YwMmUifQ"
+          "resource": "repo://src/agent/index.ts#L1101-L1124",
+          "version": "repo-lines-v1:sha256:41644db8c502e7dee438df6b52d4b937e3b38483c5be472a359450690a91813e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MjUzMDFlZTg1MDE2N2M0NDM2Y2FjZjg0YTZkNWQwNDBlM2RhODc1MjY3NTgyYTdkYTNlNDYyZDU3NTc3NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTVlZTM0MDAwM2QzZWI3ZWE3MzhjNTQ2MDhiYmQ2MTZjZmU0ZWQxZGQzNjYzYTdjOGIzZGNkNWQwZWM1NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YWRlNTg4ODc1Y2Q3OGI4M2M2ZWVmZTdjZDkxMzcxYzM2NDM5MDEyMGU0ZDI1ZGU3ZDQwMjAzZjYyNzhjMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YjAzNzZmNTllZmFkNWNlNTMwYTlkZjYwZWJiNDQ4YjU1MjYxN2FmMzhiN2Y0YmQ3MmIwYjc5YzMwN2YwMmUifQ"
         },
         {
-          "resource": "repo://src/config/reasoning.ts#L35-L101",
-          "version": "repo-lines-v1:sha256:30e6dd781d41fd99cd36be9e64f9aa2800358cd9de1626b74352de46d68a1788:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MDg4OGZjOGVmYzMyNjZlNGFmZDFlZjUzNzYzYzI0NjdiMGQ0N2JlMDRmYjM3NzNjZDY0OGQ1N2QwYzAwZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0YTM4YmI0ODFhYzNkYmZmOTRiMTUwMjc4YzY2NTI3ODg2ZjE3ODA0NjNkMTQ4ZGYzM2RlMzdmNDdhNzZjNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/config/reasoning.ts#L38-L147",
+          "version": "repo-lines-v1:sha256:239e6d06da638df28e6e22d1643712a064ca42cc2300de6ad9985e9ae0b756e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmM2Y0ZTk4MmJhMDVjMDUxYjE2NWFkOGFjZGQ2ODlmMTdhYzcyNDc4YTRmODM3MmViMzZmYTFmMjM0ZDNlMGFlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYTcwY2VhZjAzMmU3ZmE3YjI5NTgxMzNlZTZhMGMwY2I4MTQwMTkwMjhhMDhmZjI2NTQ0MWVlMmY0Zjg5MDUzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -429,12 +429,12 @@
       "statement": "OPENWIKI_OPENAI_COMPATIBLE_STREAMING is an opt-in HTTP-transport flag that forces the streaming transport for the openai-compatible provider (because some gateways reject or return empty content for non-streaming requests), a distinct axis from OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES, which only controls LangGraph's TUI stream mode.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L1035-L1071",
-          "version": "repo-lines-v1:sha256:019712bf504cc00982fe2588e0416b934b49c7014a95897088cd92a73dd72365:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5YTYzNjA0OWFhNjY0NGFlZDVmZTk3NDIyZjllOGQ1NTlkNjIxZmUxZmEwZWRlMzdmNzA4YzkyMDc5YjRmNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMTk3MTc3MDc3NmU4YTY1NTYwMjczZjZjYjRhOWJkMWEyMjMyOWU5ZjZiYjAzYjZmNDJkNTU3MGZiMDFkYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODA4OGNkMTU3ZDUwMGRiOTk1NDQ4NTY2OTE3YzM1ZjI3NDY3YzRlY2I0OWIwN2RkY2ViZjE3ZjViMGU2MGIifQ"
+          "resource": "repo://src/config/constants.ts#L1032-L1084",
+          "version": "repo-lines-v1:sha256:38b964f5a76b17a877b31737f9360dc5986f17c9fd3de075fde16ecdf595f18c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNTE4ZGZlNTE2OGM3MTQzZDg5MTM5MGQ2MjRhN2Y2NDhhYTIwOGE2MDAyOTdhM2RiYmViM2U4ZGNlNmYyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODA4OGNkMTU3ZDUwMGRiOTk1NDQ4NTY2OTE3YzM1ZjI3NDY3YzRlY2I0OWIwN2RkY2ViZjE3ZjViMGU2MGIifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L17-L22",
-          "version": "repo-lines-v1:sha256:a28b3abc76ab45c26e63f4b3912d8267c8955a293578c3d6b83abc9d65048117:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE2MjMzYjMzNTBmMTliOTA3MzA0MjFkZjAwOGM0OGM3NjlhYTAyZjhjYzlhMmY3ZTRlN2JhYTc3YTJlZjY5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNhMTQ4MmVkOTdkZTk3OGQ2ODAzMTZhNmFmMDBmMDQ1OWMwNGYxZGZiNDM2MDhjNDExZDYzZjExZWMwZDljYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGY5ZTRiZWY0MGE2ODQyZGJlNmM5MmU3OGFiZDNjMzI3OTEyMzg4YmM3YmM5NjYzYWUyNzUyNmExMzczOGZkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzJmMWRkZWEwNjliZmZiZjFhOWJmZTdiN2ZkNDk3MDA5NjZlNmExOWQyYjUwZDA0MDQyNjkyZmIzNTRlZGU3MSJ9"
+          "resource": "repo://src/config/constants.ts#L18-L23",
+          "version": "repo-lines-v1:sha256:f34745d95c0ab2edce79e12958f5c173bf141621041bbafe29a55aff16cb772b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGI0NDFjYjEwNzNiNmMzYjc2NDE5Y2Y0OGY1OTYxNGQ3ODZlOWE5YzgwZGUwOTIxNWRjMzI2ZjVjMTU5YjE2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZmNTA5MzViNmJkMGUyNmE3ODJkODMyNDc2MmY2NmUzNTc2YWNmNDg0OTFmZjA5MGEyM2MxYjM2YzhlZmViZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM1NmIzNmU1YmZjOTJkMzUwZTk4ZTg1YzZjZjZkNmY0ZTE3YWU2MmExNWIwN2FiZmYyZDIwY2ZjZjI3ZDA1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQxMWRkZTE3NDNiYjQ1ZTVhNzFiNjM2NDlhODk2OGJiMTA4MDQyYmJkYTZmYzk5MTgzYWNmYzczMDFlZDFiZCJ9"
         }
       ]
     },
@@ -555,10 +555,28 @@
           "version": "repo-lines-v1:sha256:3be1d5293cf2440fbbe2dd24c65476e380681fec65136f02b830fc8ba216452a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2RhYWZkZWQ1Y2VmMjFmMDM1Y2QyMTQzYzU4YTgyMjVmMmM5MDlmNTdlZGQwOGNhMzQ1N2ZjY2RiODQ4NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZTQxYTY4NTZkMTgwMWRhOWExNmRkMmI1MTExMzRhOTEwMTVlMmQ2MzU1ZTFlNzRjYjZlZDAyOTlmYjcyOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5OTZkYThmYjZiMTE4NzU5NzZmYzE1MWFlODM4ODk3ZmVjODhhNjc0MTNlMzc0MDMzMGZhMWNiY2FjODYwM2EifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e6e8ecac4b5c4be8962e6f408ff8d528",
+      "statement": "The openai-compatible provider has no static REASONING_CAPABILITIES entry; its reasoning capability is gated by OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED. When the opt-in is set, getOpenAiCompatibleReasoningCapability returns a capability whose transport depends on useResponsesApi (responses-reasoning vs chat-completions-reasoning-effort) accepting the full effort range including max; without it, reasoning effort throws 'not supported' for openai-compatible.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/reasoning.ts#L132-L147",
+          "version": "repo-lines-v1:sha256:c11e301d7bd1a73b3aeeecfd3084fc4d8ebb8c0a139cdd6efa8fd2f2dc8f6029:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MTkzNjliZGMyYTBlNGY2NDJjNzY2ODRiMzAzZTYwODQ1ZTFiNGMxNWZhNWZkNDdiYzU4MWVmYzA2M2UwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyNmU4MDAxODZlNWI5NTU4YmJjYTIyMTliOGQzZTI1ZWU2ZTUxYzhiMDlhMjAxYThkOTQ4ZGFmZDRjY2VmMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/config/reasoning.ts#L72-L82",
+          "version": "repo-lines-v1:sha256:9839ff0e6af7ddd03ffd243a9b329a8fc12f2e3a8df7d53be7d286355cd646bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZWM5YzZlOGU5NzlmZDgwOWQ4ZjVhYWVkMTUwODE0YjY0NjNmMzRlMzhjOTk3ZmNiYWEwZGYzM2U4NDBhZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhMzhlZTljYzczYzlmMWYyYzhmOGM1NmQwMGJkMDBkZTViMDczNjlmMTJlMDgwYWJiZDc5YzhjNDM3NTZjMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlOTQ0MmYxYzVjM2I0NTAwOTFmNTUxN2Q5ZjYxMDc1YTFiYmUxZmY2YTI4ZGFiNTQ4ZWZmZjhkZWVlNTQ5NDAifQ"
+        },
+        {
+          "resource": "repo://test/agent/create-model.test.ts#L464-L501",
+          "version": "repo-lines-v1:sha256:d2556426539ec9812435c62b8ddc9058aa1a9978b6098b0e09233087c6db1b4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGQ2NmNkYjNkMTdiNTJmNDg0NzdiOWI2NzA3ZWQyZmRhZDFkYzRmYmJmNzQ0YzgyNGQ5MDJmYmE4MmRmOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MjA2Nzg2NjI0YWNhZmYzY2ExYWFlZDUzNDZlYWU0Njg0MWNjYjdiY2I4MzVjY2NmNWYyNzYxMWIzYWU1ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OWI3NGI1MDkzMTA2MzFmOTUxZDQ2NmY4ZTg2YWYxM2JmMjJmNTc0ZmYwNTk0NTdmNDg1M2ZhMzM1MmM2NGQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-10T08:09:53.024Z"
+    "at": "2026-09-11T08:09:37.996Z"
   }
 }

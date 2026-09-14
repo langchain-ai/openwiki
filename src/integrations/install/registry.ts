@@ -76,6 +76,20 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://cursor.com/docs/mcp",
   },
+  kiro: {
+    id: "kiro",
+    displayName: "Kiro",
+    producerActor: "kiro",
+    user: {
+      skillDirectory: ".kiro/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".kiro/settings/mcp.json" },
+    },
+    project: {
+      skillDirectory: ".kiro/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".kiro/settings/mcp.json" },
+    },
+    documentationUrl: "https://kiro.dev/docs/mcp/configuration/",
+  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**

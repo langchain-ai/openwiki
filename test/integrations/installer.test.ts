@@ -444,6 +444,23 @@ describe("host integration registry", () => {
           mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
         },
       },
+      kiro: {
+        producerActor: "kiro",
+        user: {
+          skillDirectory: ".kiro/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".kiro/settings/mcp.json",
+          },
+        },
+        project: {
+          skillDirectory: ".kiro/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".kiro/settings/mcp.json",
+          },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -452,6 +469,7 @@ describe("host integration registry", () => {
       "claude",
       "opencode",
       "cursor",
+      "kiro",
     ]);
     const userTargets = TARGETS.filter((target) => target.user !== null);
     expect(

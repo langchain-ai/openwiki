@@ -4,7 +4,7 @@
 
 Prerequisites:
 
-- Node.js 20 or newer
+- Node.js 22.22.0 or newer
 - pnpm
 
 Set up pnpm's global bin directory once if `pnpm link --global` has not worked
