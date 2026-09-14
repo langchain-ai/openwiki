@@ -1,9 +1,21 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
-tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
+description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem, and where the separate evals/ledger and evals/deepswe evaluation suites live.
+tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evals]
 sources:
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-6ad47cf13ce77f0839b358ec
+    resource: repo://evals/deepswe/tests/test_run.py
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-cbc766890230b3eb91e4f047
+    resource: repo://evals/ledger/run/runner.test.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -86,12 +98,14 @@ sources:
     resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
+  - id: openwiki-source-98d5ddb014a0fd4d678f6f2a
+    resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-14T08:10:27.832Z
 ---
 
 # Testing Guide
@@ -178,6 +192,55 @@ rebuild an upstream project's source tree into a `repo/` directory that carries
 that project's own `*.test.ts` files. Those belong to the fixture under test, not
 to OpenWiki, so the exclusion guarantees that a benchmark whose `repo/` happens
 to be present on disk cannot pollute this project's suite.
+
+## Evaluation subsystems (separate test suites)
+
+The `test/` tree documented on the rest of this page validates the OpenWiki
+application (`src/`). The two evaluation harnesses under `evals/` —
+[`evals/ledger/`](../testing/evals.md) (LEDGER) and
+[`evals/deepswe/`](../testing/evals.md) (DeepSWE) — are **not** part of that
+suite. They are self-contained subsystems with their own entry points, type
+config, and test runners, so changing an eval harness does not require the
+application `pnpm test` gate and vice versa. See the
+[Evaluation Systems](../testing/evals.md) page for the full architecture of
+both harnesses; this section covers only how each is tested.
+
+### LEDGER (`evals/ledger/`) — Vitest, with its own tsconfig
+
+LEDGER's test suite is Vitest, but the harness lives outside `test/` and is
+not driven by the root `vitest.config.ts` — that config only tunes discovery
+and `src/` coverage, so the `evals/ledger/**/*.test.ts` files run as ordinary
+Vitest tests that you invoke explicitly (the README documents
+`pnpm exec vitest run evals/ledger`). The suite is offline and substitutes
+deterministic evaluator and system implementations; live evaluator
+calibration is opt-in through `LEDGER_LIVE=1`.
+
+LEDGER ships its own TypeScript project: `evals/ledger/tsconfig.json` extends
+the root `tsconfig.json`, sets `noEmit`/`declaration: false`, and widens
+`include` to `**/*.ts` so it type-checks the eval source (which sits outside
+the application `src/` root). Two npm scripts wrap the harness:
+
+- `pnpm run eval:ledger` — runs `tsx evals/ledger/run.ts`, the live
+  checkpoint-replay evaluation (replays a benchmark's Git history through
+  OpenWiki and grades each frozen wiki snapshot).
+- `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
+  evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
+  (A `eval:ledger:reevaluate` script re-judges a completed run without
+  re-invoking OpenWiki.)
+
+These are separate from the application `typecheck`/`test` scripts and must
+be run explicitly when changing the LEDGER harness.
+
+### DeepSWE (`evals/deepswe/`) — Python unittest
+
+DeepSWE is a Python harness and has no TypeScript or Vitest footprint at all.
+Its tests are Python `unittest` modules under `evals/deepswe/tests/`
+(`test_run.py`, `test_analyze_openwiki_usage.py`) and must run inside the
+pinned Harbor/LiteLLM environment the harness itself uses, via
+`uvx --python 3.12 --from 'harbor[langsmith]==0.20.0' --with 'litellm==1.83.14'
+python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'`. The harness
+itself is driven by `python3 evals/deepswe/run.py` (no npm script is defined
+for it in `package.json`).
 
 ## Test layout maps to source subsystems
 
@@ -675,6 +738,8 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
 - **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression).
+- **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
+- **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 
 Because tests import `src/` directly, a focused Vitest run does not require a
 prior `pnpm build`. Reserve the full `pnpm test` (typecheck + build + coverage)

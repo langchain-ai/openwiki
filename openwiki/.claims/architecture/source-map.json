@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:70687f213148f0415c5c352909f33bf5da885be78c9c6c031b2cb0175bcb8292",
+  "pageVersion": "sha256:792ef1520bd29d7e47d646cca08c4ba387c29ec434b774b0526b7d97d7615399",
   "claims": [
     {
       "id": "claim_b3bcf02b8ac0428c909611ba967f994a",
@@ -489,10 +489,98 @@
           "version": "repo-lines-v1:sha256:f10fec3a9b2c2830745b03769bc652d10b7f397a4d03b684527a847e85a134a2:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxYmM1OGJiMzRjZjAzODZhYjc4NDY2Mzg2ZjQ0NTc0Y2M5MDM0YjJjNzgwNTNhNjlkZGQ0MDI5Yjk0YTRmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkOTM3NjAyOTY1OGU1Y2QyYmRiNTI5YzIwOGNlNzU1OTkxMGU5MzMxM2IzOTNlNmY4NGFmMDgzNzU5OGUwYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3f6485eaaef848488364f800390ac335",
+      "statement": "The evals subsystem lives under evals/ (not src/) and is invoked via pnpm scripts (eval:ledger and eval:ledger:reevaluate) rather than the main CLI binary, with its own TypeScript project at evals/ledger/tsconfig.json.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/tsconfig.json#L1-L9",
+          "version": "repo-lines-v1:sha256:ad4def05ec7cc2b741abe8362f3cdb755bb387eecff932b6d1b21bf22cbd6271:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://package.json#L44-L46",
+          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_db865fb3d9764f2f8c187838f053ba55",
+      "statement": "LEDGER's runBenchmark (evals/ledger/run/runner.ts) owns the benchmark lifecycle: it preflight-validates the trace (every checkpoint SHA resolves, each checkpoint is a Git ancestor of the next, and none tracks the wiki directory), walks it running init then update, captures an immutable artifact at each checkpoint, evaluates it, and always tears down the workspace and worktree even on failure.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run/runner.ts#L139-L161",
+          "version": "repo-lines-v1:sha256:4714608741aa4b671ac42c167d74cd995ef3b3d1d17dcd39888fbf4152c8a40c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MTE2MzYyZGU3OWFjZTZhMGU5ZWI3MzI3ZTRiN2Y2MDE4OTZkYmQwZjg2YjZiZjQzODNkYzA4Y2VjMzU0MWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZmUyN2U5YTRlNzY2ZDhiZGE5NmZmZDU1MTM3Yzg1OTU4Mzg3YmU0MjIwYmMzN2JhMWNkZTkxMTE1ZGRmMzIifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/run/runner.ts#L278-L288",
+          "version": "repo-lines-v1:sha256:135c9bad8214df8f047c52f9dde33a8b137041d5dfa0bf49839fe1278db66834:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZGJmODM4NzUzNjg5NjZmMzEzYWU2Mzk1MzljNDAzNzAwNDViYTUzZTJlMmNlZTkzYmI2N2Q1ZGExN2I5ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMWIyZTNlNDE3YzhjZTNiZTUxNTE4ODM4ZGIyNDQyMzQxOWFmOTRkZDk4Y2JkYzFkNGJmNzY5MmFlMDQ0ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/run/runner.ts#L88-L119",
+          "version": "repo-lines-v1:sha256:1ac4377d59eb6017c65c3a5a039ae9fcb54ae28db5723928d1fed856968e4b65:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2JhZTNlOTU4NjRjYWRhNmM4ZDc1M2U1ZGZlYjg1OTM3YWY4NTU4OTRlNTQ4MGQ1NjJiMTRhNDgzZmU5YzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZWMwMzJjZmE1MDRmMWI0N2E5OTViODBlZmIwMjQ1OWI2ODE5NjJjN2E2ZjJhZWM3ZDgzYWJmOGYwYzA2ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYjczYTcyNjIwNmE4N2E4Y2YwMTJhY2Y3ZmY0OGYzNjRkODA0MjI5NDU2NWY4MmE3YTlmNGZiY2YwNTc0OGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4af74a77d234ae694f7e5f9b20d6af4",
+      "statement": "evals/ledger/core/types.ts owns the LEDGER benchmark and claim types: LedgerBenchmark, LedgerTrace, LedgerCheckpoint, SemanticEvidenceMap (evaluator-only routing metadata), KnowledgeArtifact (the immutable per-checkpoint wiki snapshot), EvidenceCorpus, SystemUnderTest, and the four-state claim model (supported, stale, invented, unverified).",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/core/types.ts#L339-L400",
+          "version": "repo-lines-v1:sha256:5027a3680c602411ed795de7c4888da92a4f1db51cc9f9edf5701ed8038ad692:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiNThkOTNhYmE5ZmIxZmVjODIzZTdjN2VkMDMyZWFkZTQwYzcwMWEyOTg1MGMyN2RjNzk3MzM4YTAwZTA0Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNzExMjdmN2Y1ZjE3MTdiOTZlN2U5NzY5MGE3ZDE4MWE1MDcyMzdmY2FkMTg4NDBiYmIwOTM0MDIyYTkyMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNzQxMGM1YmRkMGU2ZWY0MmEzN2FjZDEwZDk3MTI0Y2E4MTA1Zjc4YzlkOWViODMzZGI1YTBlYjFiMjViOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyYjRhODQ3OTI3ZTE3NDA3MDk3Y2I5NGFmNDUzZWFiMjdlZGMwZTM3NTNhOWVmNDJhM2EzODc4NGRkNjQ5YTgifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/core/types.ts#L5-L69",
+          "version": "repo-lines-v1:sha256:7a3fd47ed281f6224e6b5aa91dc2e8709792fc41bf179c9983233b479799667b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMDQ1YzZiMTE5OTllMWIyYjRjYzhiM2ZiNDU3ODI5YzdlODUzZGJmNTE5NTA4NWJkYmZlNGY1NDRhMWM2MGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZWZhYWMzOWM5NjMwYzE5ZWEzYjQyOWNhZDViMzg4MDE1NWUwMDcwMmUyNWZiMTRkYmE1MDk1YWJlZDRhMTgifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/core/types.ts#L84-L118",
+          "version": "repo-lines-v1:sha256:f5054d0b1e62ebcd2fef23ef5dcbad33cf6c9e867b7713caaeab6a92e7011f94:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NmU2ZjBkOTEwZGRlZmFiOGEwZGVjZmI3OGExYzQ0NTU5N2YxYzJiNjhiOTI0NGZiN2FlZjA1YmE5NTFhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4MGQzNDI5NGI0NjA3MmZiODkzN2ZiMmZlNWFmNTczMzQ4ZWM3YjEyOWI2ZjIwMTdkMzdhOWFmYjZjZTZkYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmYmQ4NjM3ZTU4OGFhYWI0NzNiM2NiOWFmNGM0NDY5OTYwZTYzYzU5ZGM3NjI0YjQ0ZTczY2U1YjZmNDgwYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_65c809ff82fa4acfbf58711da1197dd4",
+      "statement": "evals/ledger/system/openwiki-system.ts (OpenWikiSystem) is the LEDGER baseline System Under Test: it drives OpenWiki through the single runOpenWikiAgent entrypoint with outputMode: \"repository\" and no user message, so update change-detection is driven purely by the real source deltas between checkpoints.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/system/openwiki-system.ts#L27-L90",
+          "version": "repo-lines-v1:sha256:fade5126d21080bdacf188b0d172f122869401c9a90e6806cfc67a3f7704083c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlYTJhMWM3Y2MxYmI3YTM5MTRkNzM3NjAyMjc5ODBmM2Y3NmZlZTg3MTQ2NDVjY2IxYTZhOGIwMmE5NjI1MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88654932213347e884a329f6a6dfe54b",
+      "statement": "evals/deepswe/run.py is the DeepSWE paired-evaluation harness exposing the prepare, baseline, openwiki, paired, and summarize subcommands; paired runs both conditions with the same tasks, seed, model, reasoning effort, and Harbor environment, where baseline gives Codex only the task and repository and openwiki restores/generates OpenWiki in an isolated clone and merges its managed instructions into the root AGENTS.md before the same Codex adapter solves the unchanged task.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L3-L20",
+          "version": "repo-lines-v1:sha256:8a5e8060ed6decab80aa94af2bdc450bc343646d88f72eba0ec726fff26178a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYjIxOTRjNDAyNTUxYTcyNjJkOGY4ODE3YzI2ZDFjNTNiZGEyMzFmNDg1OTY5MGVjNThkMDBhMmZlOTZlN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MDE0NDljNDhkM2VhOWI1YmZmOTZmY2UwMjdhZTAxMWI0ZWRmYjMzOTQ2YzNmZmVmNWEwYTQyMTkzYTIwY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYzQyMTM1MDVjZTFiZjFlYTEwODM5ZWE3YmNhMmU4YTg1MTM2NjU0ZTNjYWE2OTNkZmQ4MDNhNzczYmQ2ZjMifQ"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L783-L825",
+          "version": "repo-lines-v1:sha256:5c19b19ede3c968863056b714830be288878d123376007ecc706801d31fea986:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YTcwMzJkODc5YTA2MDVkOGRhZWY2NjMxYWJkYzY1MmMzMGYwOGRmYWMxZDY3MDcxM2JjNTQ5MzA5NDdiMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMjYxYzllZmI4NzE4NGU2ZGM5OWY5MzMyMDYxYjhjZTU5NjkwMzBkNDIyN2JlMjIwYzY1NzgwNTM3MzRmN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhM2VhNTNkZGFkYWVmMDcyMGY1MjRmNTEwNjQ0ODAyNTExOTI1MDk1Nzc4ZThjNDg5ZTM0NzNmMTQ1ZjJiZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MjU4NWY1ZjliZmRiYjQ0N2Y1MTA0MjE3MzM2YmFkZjUzYTE3YmQxNjg4ZTZjZTUxZTNiOTA0MGY4ODNjYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de5edeed823b4778aa1c8ec6bc9edc98",
+      "statement": "evals/ledger/run.ts is the eval:ledger entrypoint that loads the benchmark, constructs OpenWikiSystem, runs runBenchmark, and persists the auditable result; evals/ledger/reevaluate.ts (eval:ledger:reevaluate) re-runs the evaluator over a completed run without invoking the system under test.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/reevaluate.ts#L23-L76",
+          "version": "repo-lines-v1:sha256:70a05c868f9e7f885adb26844bdeb42074999bdeb117b9ca0b380d96edf87b66:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2M2IxNjNkOTMzMWU4ODlmNTQyOGIzNzg3ODViY2FiZmQ1MDBkYzRmOGQ3OGVmNDhiN2U1Mjk5MGY1NWIyOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMjExMTFiZjZmZTFlMjgwYzZmMjYzNTZjZTg3MWVmZTExNmNjYTVhN2EyMGM5MTMzMTM5YzI1YWVlM2MzM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NmJjYzI0NTY2YzM5OTQ5ZmRmZjA2N2JjY2VhZTQ2YzA3YTBhY2NkYzBhZjk3NDczZDA2NzFhYTViOGFkOWUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/run.ts#L1-L91",
+          "version": "repo-lines-v1:sha256:974cbea4daca8602b395950fc3a17072373dd774ad59954f77bbc7e6b9a8cdb2:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwY2JiMzU4Mzk2MWRjMWRhZDc0YWMwNjZhOWQ1MDE5YWUxMTJiMDMwN2U4ODFkYTAxY2ZmYjZkYmUzYzNlMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "at": "2026-09-14T08:10:27.832Z"
   }
 }

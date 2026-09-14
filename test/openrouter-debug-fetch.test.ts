@@ -43,6 +43,33 @@ function stubFetch(): typeof globalThis.fetch {
   return stub;
 }
 
+function stubFetchSequence(responses: Response[]): ReturnType<typeof vi.fn> {
+  let call = 0;
+  const stub = vi.fn(() => {
+    const response = responses[Math.min(call, responses.length - 1)];
+    call += 1;
+    return Promise.resolve(response);
+  });
+  globalThis.fetch = stub;
+  return stub;
+}
+
+function openRouterProvider404(): Response {
+  return new Response(
+    JSON.stringify({
+      error: {
+        message: "Provider returned error",
+        metadata: {
+          is_byok: false,
+          provider_name: "Nvidia",
+          raw: "",
+        },
+      },
+    }),
+    { status: 404, statusText: "Not Found" },
+  );
+}
+
 describe("installOpenRouterDebugFetch concurrency", () => {
   test("restores the exact original fetch after a single run", () => {
     const original = stubFetch();
@@ -126,5 +153,101 @@ describe("installOpenRouterDebugFetch concurrency", () => {
 
     runB.restore();
     expect(globalThis.fetch).toBe(original);
+  });
+
+  test("retries transient OpenRouter provider 404 responses", async () => {
+    const original = stubFetchSequence([
+      openRouterProvider404(),
+      new Response("ok", { status: 200 }),
+    ]);
+    const delays: number[] = [];
+    const events: string[] = [];
+    const capture = installOpenRouterDebugFetch(
+      {
+        debug: true,
+        onEvent: (event) => {
+          if (event.type === "debug") {
+            events.push(event.message);
+          }
+        },
+      },
+      0,
+      {
+        sleep: (ms) => {
+          delays.push(ms);
+          return Promise.resolve();
+        },
+      },
+    );
+    capture.setRetryAttempts(2);
+
+    try {
+      const response = await globalThis.fetch(OPENROUTER_CHAT_URL, {
+        body: JSON.stringify({ messages: [], model: "nvidia/test-model" }),
+        method: "POST",
+      });
+
+      expect(response.status).toBe(200);
+      expect(original).toHaveBeenCalledTimes(2);
+      expect(delays).toEqual([1000]);
+      expect(capture.getLastFailure()?.response?.status).toBe(404);
+      expect(
+        events.some((message) =>
+          message.includes("openrouter.retry status=404"),
+        ),
+      ).toBe(true);
+    } finally {
+      capture.restore();
+    }
+  });
+
+  test("does not retry ordinary OpenRouter 404 responses", async () => {
+    const original = stubFetchSequence([
+      new Response(JSON.stringify({ error: "missing model" }), {
+        status: 404,
+        statusText: "Not Found",
+      }),
+      new Response("ok", { status: 200 }),
+    ]);
+    const capture = installOpenRouterDebugFetch({}, 2, {
+      sleep: () => Promise.resolve(),
+    });
+
+    try {
+      const response = await globalThis.fetch(OPENROUTER_CHAT_URL, {
+        body: JSON.stringify({ messages: [], model: "missing/model" }),
+        method: "POST",
+      });
+
+      expect(response.status).toBe(404);
+      expect(original).toHaveBeenCalledTimes(1);
+      expect(capture.getLastFailure()?.response?.status).toBe(404);
+    } finally {
+      capture.restore();
+    }
+  });
+
+  test("does not retry OpenRouter request bodies that cannot be resent", async () => {
+    const original = stubFetchSequence([
+      openRouterProvider404(),
+      new Response("ok", { status: 200 }),
+    ]);
+    const capture = installOpenRouterDebugFetch({}, 2, {
+      sleep: () => Promise.resolve(),
+    });
+
+    try {
+      const request = new Request(OPENROUTER_CHAT_URL, {
+        body: JSON.stringify({ messages: [], model: "nvidia/test-model" }),
+        method: "POST",
+      });
+      const response = await globalThis.fetch(request);
+
+      expect(response.status).toBe(404);
+      expect(original).toHaveBeenCalledTimes(1);
+      expect(capture.getLastFailure()?.response?.status).toBe(404);
+    } finally {
+      capture.restore();
+    }
   });
 });

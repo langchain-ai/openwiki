@@ -4,6 +4,24 @@ title: Source Map
 description: Maps the OpenWiki /src directory to its owned subsystems, giving each one a responsibility and its principal entry files, and identifies the largest, most central files that anchor agent execution, configuration, and repository generation.
 tags: [source-map, architecture, subsystems, entrypoints, src-layout]
 sources:
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-a0ae0064681def9d035f11b2
+    resource: repo://evals/deepswe/run.py
+  - id: openwiki-source-92ae12d8c88734df7ebc7663
+    resource: repo://evals/ledger/core/types.ts
+  - id: openwiki-source-8fe49b679bb29b6d5403548c
+    resource: repo://evals/ledger/reevaluate.ts
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-97ffedc1258986c2ef57fb85
+    resource: repo://evals/ledger/run/runner.ts
+  - id: openwiki-source-2dc719639f40452478188d6b
+    resource: repo://evals/ledger/system/openwiki-system.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -66,10 +84,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+    at: 2026-09-14T08:10:27.832Z
 ---
 
 # Source Map
@@ -81,8 +99,9 @@ into a subsystem's own page.
 
 Related reading: [architecture overview](/openwiki/architecture/overview.md),
 [agent runtime](/openwiki/architecture/agent-runtime.md),
-[grounded claims](/openwiki/concepts/grounded-claims.md), and
-[connectors](/openwiki/integrations/connectors.md).
+[grounded claims](/openwiki/concepts/grounded-claims.md),
+[connectors](/openwiki/integrations/connectors.md), and
+[evaluation subsystem](/openwiki/testing/evals.md).
 
 ## The central files
 
@@ -358,6 +377,52 @@ Owns Mermaid handling in generated wikis: `fences.ts` extracts fences,
 `validate.ts` parses/validates them (degrading invalid diagrams), `wiki.ts`
 applies the policy to pages, and `dom-shim.ts` provides the headless render
 environment.
+
+### evals — longitudinal documentation evaluation
+
+Owns the offline evaluation harnesses that measure whether generated wikis stay
+accurate as their source of truth evolves, and whether OpenWiki improves a
+coding agent. Unlike every other subsystem, the evals live under `evals/`
+(not `src/`) and are invoked via `pnpm` scripts — `eval:ledger` and
+`eval:ledger:reevaluate` — rather than the main CLI binary, with their own
+TypeScript project (`evals/ledger/tsconfig.json`). It is split into two
+independent sub-harnesses.
+
+**LEDGER** (`evals/ledger/`) — the Longitudinal Evaluation of Documentation
+Grounding, Evolution, and Revision — replays a benchmark's Git checkpoints, runs
+OpenWiki at each checkpoint, and judges the frozen wiki snapshot. Principal
+entry: `evals/ledger/run.ts` (`eval:ledger`), which loads the benchmark,
+constructs the `OpenWikiSystem` adapter, runs `runBenchmark`, and persists the
+fully auditable result. `evals/ledger/reevaluate.ts` (`eval:ledger:reevaluate`)
+re-runs the evaluator over a completed run without invoking the system under
+test. `evals/ledger/run/runner.ts` (`runBenchmark`) owns the benchmark
+lifecycle: it preflight-validates the trace (every checkpoint SHA resolves,
+each is an ancestor of the next, and none tracks the wiki directory), then
+walks it running `init` then `update`, captures an immutable artifact at each
+checkpoint, and evaluates it; the workspace and worktree are always torn down.
+`evals/ledger/core/types.ts` owns the benchmark and claim types
+(`LedgerBenchmark`, `LedgerTrace`, `LedgerCheckpoint`, `SemanticEvidenceMap`,
+`KnowledgeArtifact`, `EvidenceCorpus`, `SystemUnderTest`) and the claim-state
+model (`supported`/`stale`/`invented`/`unverified`). `evals/ledger/system/openwiki-system.ts`
+(`OpenWikiSystem`) is the baseline System Under Test: it drives OpenWiki through
+its single `runOpenWikiAgent` entrypoint with `outputMode: "repository"` and no
+user message, so update change-detection is driven purely by the real source
+deltas between checkpoints.
+
+**DeepSWE** (`evals/deepswe/`) is a Python paired-evaluation harness that
+measures whether OpenWiki improves a coding agent on DeepSWE SWE-bench tasks.
+Principal entry: `evals/deepswe/run.py`, which exposes the `prepare`,
+`baseline`, `openwiki`, `paired`, and `summarize` subcommands. The `paired`
+command runs both conditions with the same tasks, seed, model, reasoning effort,
+and Harbor environment: `baseline` gives Codex only the task and repository,
+while `openwiki` restores or generates OpenWiki in an isolated clone and merges
+its managed instructions into the root `AGENTS.md` before the same Codex adapter
+solves the unchanged task. The harness pins the DeepSWE commit, Harbor, litellm,
+and Codex CLI versions for reproducibility, and uses Harbor's official LangSmith
+plugin so both conditions record their trials in the same shared dataset.
+
+See the full [evaluation subsystem](/openwiki/testing/evals.md) page for the
+benchmark contract, claim-state definitions, and run instructions.
 
 ## How the central subsystems connect
 
