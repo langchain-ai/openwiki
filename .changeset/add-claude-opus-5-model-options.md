@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-fix: add Claude Opus 5 to the Anthropic and Gemini Enterprise model lists
+fix: add claude opus 5 to the anthropic and vertex model lists
