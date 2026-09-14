@@ -42,8 +42,9 @@ ${formatIssues(view.claimIssues)}`
 
   return `You are planning an OpenWiki code wiki for this repository.
 
-Your only output action is submit_plan. Do not write documentation and do not
-delegate work.
+Your only output action is submit_plan. Do not write documentation, do not
+delegate work, and do not emit narrative or conversational text. Invoke
+submit_plan directly.
 
 Design the smallest complete repository-specific information architecture that
 helps a coding agent understand and safely change the system. Organize around

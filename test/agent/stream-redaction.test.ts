@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { parseAgentStreamChunk } from "../../src/agent/index.ts";
+import { appendRunLogEvent } from "../../src/cli/run-log/reducer.ts";
+
+const MODEL_REQUEST_NAMESPACE = "model_request:fake-request-id";
+const MODEL_RESPONSE_TEXT = "Hello from the primary model.";
 
 function makeChunk(
   contentBlocks: unknown[],
@@ -79,6 +83,35 @@ describe("parseAgentStreamChunk", () => {
       text: "Task output",
       type: "text",
     });
+  });
+
+  test("renders top-level model request text as main assistant output", () => {
+    const event = parseAgentStreamChunk(
+      makeChunk(
+        [{ type: "text", text: MODEL_RESPONSE_TEXT }],
+        [MODEL_REQUEST_NAMESPACE],
+      ),
+    );
+
+    expect(event).toMatchObject({
+      source: "main",
+      text: MODEL_RESPONSE_TEXT,
+      type: "text",
+    });
+    expect(
+      event === null ? [] : appendRunLogEvent([], event, { current: 0 }),
+    ).toEqual([{ content: MODEL_RESPONSE_TEXT, id: 0, type: "text" }]);
+  });
+
+  test("keeps nested model request text classified as subgraph output", () => {
+    const event = parseAgentStreamChunk(
+      makeChunk(
+        [{ type: "text", text: MODEL_RESPONSE_TEXT }],
+        ["task", MODEL_REQUEST_NAMESPACE],
+      ),
+    );
+
+    expect(event).toMatchObject({ source: "subgraph", type: "text" });
   });
 
   test("normalizes tool lifecycle events", () => {

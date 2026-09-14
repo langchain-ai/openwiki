@@ -1,5 +1,7 @@
 import {
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
+  providerUsesResponsesApi,
+  resolveOpenAiCompatibleReasoningEffortSupported,
   type OpenWikiProvider,
 } from "./constants.js";
 
@@ -15,7 +17,9 @@ export const REASONING_EFFORT_VALUES = [
 export type ReasoningEffort = (typeof REASONING_EFFORT_VALUES)[number];
 
 export type ReasoningTransport =
-  "responses-reasoning" | "chat-completions-reasoning-effort";
+  | "responses-reasoning"
+  | "chat-completions-reasoning-effort"
+  | "gemini-thinking-level";
 
 export type ReasoningCapability = {
   transport: ReasoningTransport;
@@ -27,9 +31,18 @@ export type ResolvedReasoningConfig = {
   transport: ReasoningTransport;
 };
 
+export type ResolveReasoningConfigOptions = {
+  useResponsesApi?: boolean;
+};
+
 const OPENAI_GPT_56_REASONING_CAPABILITY = {
   transport: "responses-reasoning",
   values: REASONING_EFFORT_VALUES,
+} as const satisfies ReasoningCapability;
+
+const GEMINI_THINKING_LEVEL_REASONING_CAPABILITY = {
+  transport: "gemini-thinking-level",
+  values: ["low", "medium", "high"],
 } as const satisfies ReasoningCapability;
 
 const REASONING_CAPABILITIES: Partial<
@@ -51,12 +64,20 @@ const REASONING_CAPABILITIES: Partial<
       values: ["none", "low", "high"],
     },
   },
+  gemini: {
+    "gemini-3.6-flash": GEMINI_THINKING_LEVEL_REASONING_CAPABILITY,
+  },
 };
 
 export function getReasoningCapability(
   provider: OpenWikiProvider,
   modelId: string,
+  env: NodeJS.ProcessEnv = process.env,
 ): ReasoningCapability | undefined {
+  if (provider === "openai-compatible") {
+    return getOpenAiCompatibleReasoningCapability(modelId, env);
+  }
+
   return REASONING_CAPABILITIES[provider]?.[modelId];
 }
 
@@ -68,6 +89,7 @@ export function resolveReasoningConfig(
   provider: OpenWikiProvider,
   modelId: string,
   env: NodeJS.ProcessEnv = process.env,
+  options: ResolveReasoningConfigOptions = {},
 ): ResolvedReasoningConfig | undefined {
   const rawEffort = env[OPENWIKI_REASONING_EFFORT_ENV_KEY];
 
@@ -83,7 +105,14 @@ export function resolveReasoningConfig(
     );
   }
 
-  const capability = getReasoningCapability(provider, modelId);
+  const capability =
+    provider === "openai-compatible"
+      ? getOpenAiCompatibleReasoningCapability(
+          modelId,
+          env,
+          options.useResponsesApi,
+        )
+      : getReasoningCapability(provider, modelId, env);
 
   if (capability === undefined) {
     throw new Error(
@@ -98,4 +127,21 @@ export function resolveReasoningConfig(
   }
 
   return { effort, transport: capability.transport };
+}
+
+function getOpenAiCompatibleReasoningCapability(
+  modelId: string,
+  env: NodeJS.ProcessEnv,
+  useResponsesApi = providerUsesResponsesApi("openai-compatible", modelId, env),
+): ReasoningCapability | undefined {
+  if (!resolveOpenAiCompatibleReasoningEffortSupported(env)) {
+    return undefined;
+  }
+
+  return {
+    transport: useResponsesApi
+      ? "responses-reasoning"
+      : "chat-completions-reasoning-effort",
+    values: REASONING_EFFORT_VALUES,
+  };
 }

@@ -87,7 +87,8 @@ describe("host integration CLI dogfood", () => {
       "codex\tinstalled\tCodex\n" +
         "claude\tnot-installed\tClaude Code\n" +
         "opencode\tnot-installed\tOpenCode\n" +
-        "cursor\tnot-installed\tCursor\n",
+        "cursor\tnot-installed\tCursor\n" +
+        "kiro\tnot-installed\tKiro\n",
     );
 
     stdout = [];

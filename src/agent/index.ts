@@ -184,6 +184,7 @@ export async function runOpenWikiAgent(
       const config = await resolveRunConfig(options, (resolved) => {
         telemetryContext.provider = resolved;
       });
+      debugFetchCapture.setRetryAttempts(config.providerRetryAttempts);
       const model = inStageSync(
         "build",
         () =>
@@ -248,6 +249,7 @@ export async function runOpenWikiAgent(
     const config = await resolveRunConfig(options, (resolved) => {
       telemetryContext.provider = resolved;
     });
+    debugFetchCapture.setRetryAttempts(config.providerRetryAttempts);
 
     return await runOpenWikiAgentCore(
       command,
@@ -1094,7 +1096,18 @@ export function createModel(
       : { maxOutputTokens: configuredMaxOutputTokens };
   const streamIdleTimeoutOptions =
     streamIdleTimeout === undefined ? {} : { streamIdleTimeout };
-  const reasoningConfig = resolveReasoningConfig(provider, modelId);
+  const chatOpenAiUsesResponsesApi = providerUsesResponsesApi(
+    provider,
+    modelId,
+  );
+  const reasoningConfig = resolveReasoningConfig(
+    provider,
+    modelId,
+    process.env,
+    {
+      useResponsesApi: chatOpenAiUsesResponsesApi,
+    },
+  );
 
   // GPT-5.6 supports `max` before some OpenAI SDK type unions include it. The
   // documented Responses payload is still `reasoning: { effort }`, so keep the
@@ -1107,6 +1120,10 @@ export function createModel(
     reasoningConfig?.transport === "chat-completions-reasoning-effort"
       ? { modelKwargs: { reasoning_effort: reasoningConfig.effort } }
       : {};
+  const geminiThinkingLevelOptions =
+    reasoningConfig?.transport === "gemini-thinking-level"
+      ? { thinkingLevel: reasoningConfig.effort }
+      : {};
 
   if (provider === "gemini") {
     return new ChatGoogle({
@@ -1115,6 +1132,7 @@ export function createModel(
       platformType: "gai",
       // Gemini 3.x thought-signature round-trip; see the constant's comment.
       ...GEMINI_THOUGHT_SIGNATURE_OPTIONS,
+      ...geminiThinkingLevelOptions,
       ...googleMaxOutputTokensOptions,
       ...retryOptions,
     });
@@ -1225,16 +1243,23 @@ export function createModel(
   }
 
   const baseURL = resolveProviderBaseUrl(provider);
+  const configuration =
+    provider === "openai-compatible" && !chatOpenAiUsesResponsesApi
+      ? {
+          ...(baseURL ? { baseURL } : {}),
+          fetch: createOpenAiCompatibleFetch(),
+        }
+      : baseURL
+        ? {
+            baseURL,
+          }
+        : undefined;
 
   return new ChatOpenAI({
     apiKey: getProviderApiKey(provider),
-    configuration: baseURL
-      ? {
-          baseURL,
-        }
-      : undefined,
+    configuration,
     model: modelId,
-    useResponsesApi: providerUsesResponsesApi(provider, modelId),
+    useResponsesApi: chatOpenAiUsesResponsesApi,
     ...maxTokensOptions,
     ...responsesReasoningOptions,
     ...chatCompletionsReasoningOptions,
@@ -1245,6 +1270,114 @@ export function createModel(
     ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
     ...retryOptions,
   });
+}
+
+function createOpenAiCompatibleFetch(): typeof fetch {
+  return (input, init) =>
+    globalThis.fetch(
+      input,
+      normalizeOpenAiCompatibleChatCompletionsInit(input, init) ?? init,
+    );
+}
+
+function normalizeOpenAiCompatibleChatCompletionsInit(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+): Parameters<typeof fetch>[1] | null {
+  if (!isOpenAiCompatibleChatCompletionsRequest(input, init)) {
+    return null;
+  }
+
+  const body = typeof init?.body === "string" ? init.body : null;
+  const parsedBody = parseJsonRecord(body);
+  const normalizedBody =
+    parsedBody === null
+      ? null
+      : normalizeOpenAiCompatibleChatCompletionsBody(parsedBody);
+
+  return normalizedBody === null
+    ? null
+    : {
+        ...init,
+        body: JSON.stringify(normalizedBody),
+      };
+}
+
+function isOpenAiCompatibleChatCompletionsRequest(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+): boolean {
+  const method = init?.method;
+
+  if (method !== undefined && method.toUpperCase() !== "POST") {
+    return false;
+  }
+
+  const url = getFetchInputUrl(input);
+
+  if (url === null) {
+    return false;
+  }
+
+  try {
+    return new URL(url).pathname.endsWith("/chat/completions");
+  } catch {
+    return url.includes("/chat/completions");
+  }
+}
+
+function normalizeOpenAiCompatibleChatCompletionsBody(
+  body: Record<string, unknown>,
+): Record<string, unknown> | null {
+  const messages = body.messages;
+
+  if (!Array.isArray(messages)) {
+    return null;
+  }
+
+  let changed = false;
+  const normalizedMessages = (messages as unknown[]).map((message) => {
+    if (!isRecord(message)) {
+      return message;
+    }
+
+    const content = normalizeOpenAiCompatibleTextContent(message.content);
+
+    if (content === null) {
+      return message;
+    }
+
+    changed = true;
+    return { ...message, content };
+  });
+
+  return changed ? { ...body, messages: normalizedMessages } : null;
+}
+
+function normalizeOpenAiCompatibleTextContent(
+  content: unknown,
+): Record<string, unknown>[] | null {
+  if (!Array.isArray(content) || content.length !== 1) {
+    return null;
+  }
+
+  const [nestedContent] = content as unknown[];
+
+  if (!Array.isArray(nestedContent) || nestedContent.length === 0) {
+    return null;
+  }
+
+  return nestedContent.every(isOpenAiCompatibleTextContentBlock)
+    ? nestedContent
+    : null;
+}
+
+function isOpenAiCompatibleTextContentBlock(
+  block: unknown,
+): block is Record<string, unknown> {
+  return (
+    isRecord(block) && block.type === "text" && typeof block.text === "string"
+  );
 }
 
 const CHATGPT_LOGIN_INCOMPLETE_MESSAGE =
@@ -1838,12 +1971,23 @@ function parseToolStreamEvent(payload: unknown): OpenWikiRunEvent | null {
   return null;
 }
 
+const MODEL_REQUEST_NAMESPACE_PREFIX = "model_request:";
+
 /**
- * Classifies a stream namespace. LangGraph reserves the empty namespace for
- * the root graph; even a single namespace segment therefore belongs to a
- * subgraph.
+ * Classifies a stream namespace. DeepAgents wraps the primary model call in a
+ * single model_request namespace, while deeper namespaces still represent
+ * subgraphs whose prose should stay hidden from the main transcript.
  */
 function getStreamSource(namespace: unknown): "main" | "subgraph" {
+  if (
+    Array.isArray(namespace) &&
+    namespace.length === 1 &&
+    typeof namespace[0] === "string" &&
+    namespace[0].startsWith(MODEL_REQUEST_NAMESPACE_PREFIX)
+  ) {
+    return "main";
+  }
+
   return Array.isArray(namespace) && namespace.length > 0 ? "subgraph" : "main";
 }
 
@@ -1930,6 +2074,11 @@ type OpenRouterFetchCapture = {
   clearLastFailure: () => void;
   getLastFailure: () => OpenRouterFetchFailure | null;
   restore: () => void;
+  setRetryAttempts: (retryAttempts: number) => void;
+};
+
+type OpenRouterFetchOptions = {
+  sleep?: (ms: number) => Promise<void>;
 };
 
 type OpenRouterFetchFailure = {
@@ -1971,10 +2120,14 @@ const OPENROUTER_DEBUG_BODY_LIMIT = 4_000;
 type OpenRouterFetchSink = {
   lastFailure: OpenRouterFetchFailure | null;
   options: OpenWikiRunOptions;
+  retryAttempts: number;
+  sleep: (ms: number) => Promise<void>;
 };
 
 const activeOpenRouterSinks = new Set<OpenRouterFetchSink>();
 let openRouterOriginalFetch: typeof fetch | null = null;
+const OPENROUTER_PROVIDER_ERROR_RETRY_BASE_DELAY_MS = 1_000;
+const OPENROUTER_PROVIDER_ERROR_RETRY_MAX_DELAY_MS = 30_000;
 
 function openRouterDebugFetch(
   input: Parameters<typeof fetch>[0],
@@ -1997,31 +2150,55 @@ function openRouterDebugFetch(
   };
 
   return (async () => {
+    let attempt = 0;
+
     try {
-      const response = await baseFetch(input, init);
+      while (true) {
+        const response = await baseFetch(input, init);
 
-      if (!response.ok) {
-        const failure: OpenRouterFetchFailure = {
-          request,
-          response: {
-            bodyPreview: await readResponseBodyPreview(response),
-            headers: getSafeResponseHeaders(response.headers),
-            status: response.status,
-            statusText: response.statusText,
-          },
-        };
-        recordFailure(failure);
-        for (const sink of activeOpenRouterSinks) {
-          emitDebug(
-            sink.options,
-            `openrouter.http status=${response.status} statusText=${JSON.stringify(
-              response.statusText,
-            )}`,
-          );
+        if (!response.ok) {
+          const body = await readResponseBody(response);
+          const failure: OpenRouterFetchFailure = {
+            request,
+            response: {
+              bodyPreview: body.preview,
+              headers: getSafeResponseHeaders(response.headers),
+              status: response.status,
+              statusText: response.statusText,
+            },
+          };
+          recordFailure(failure);
+          for (const sink of activeOpenRouterSinks) {
+            emitDebug(
+              sink.options,
+              `openrouter.http status=${response.status} statusText=${JSON.stringify(
+                response.statusText,
+              )}`,
+            );
+          }
+
+          const retry = getOpenRouterProviderErrorRetry();
+          if (
+            attempt < retry.maxRetries &&
+            isOpenRouterRequestResendable(input, init) &&
+            isTransientOpenRouterProvider404(response, body.raw)
+          ) {
+            attempt += 1;
+            const delayMs = getOpenRouterProviderErrorRetryDelayMs(attempt);
+            for (const sink of activeOpenRouterSinks) {
+              emitDebug(
+                sink.options,
+                `openrouter.retry status=404 attempt=${attempt}/${retry.maxRetries} delayMs=${delayMs}`,
+              );
+            }
+            await response.body?.cancel().catch(() => undefined);
+            await retry.sleep(delayMs);
+            continue;
+          }
         }
-      }
 
-      return response;
+        return response;
+      }
     } catch (error) {
       recordFailure({
         fetchError: error instanceof Error ? error.message : String(error),
@@ -2040,8 +2217,15 @@ function openRouterDebugFetch(
  */
 export function installOpenRouterDebugFetch(
   options: OpenWikiRunOptions,
+  retryAttempts = 0,
+  fetchOptions: OpenRouterFetchOptions = {},
 ): OpenRouterFetchCapture {
-  const sink: OpenRouterFetchSink = { lastFailure: null, options };
+  const sink: OpenRouterFetchSink = {
+    lastFailure: null,
+    options,
+    retryAttempts,
+    sleep: fetchOptions.sleep ?? sleep,
+  };
 
   // Install the wrapper once, capturing the genuine original fetch. Concurrent
   // runs share the single wrapper and each detach their own sink; the global
@@ -2068,7 +2252,76 @@ export function installOpenRouterDebugFetch(
         openRouterOriginalFetch = null;
       }
     },
+    setRetryAttempts: (updatedRetryAttempts) => {
+      sink.retryAttempts = updatedRetryAttempts;
+    },
   };
+}
+
+function getOpenRouterProviderErrorRetry(): {
+  maxRetries: number;
+  sleep: (ms: number) => Promise<void>;
+} {
+  let maxRetries = 0;
+  let retrySleep = sleep;
+
+  // The OpenRouter wrapper is process-global, so retry follows the same
+  // best-effort active-run fan-out contract used for debug capture.
+  for (const sink of activeOpenRouterSinks) {
+    if (sink.retryAttempts > maxRetries) {
+      maxRetries = sink.retryAttempts;
+      retrySleep = sink.sleep;
+    }
+  }
+
+  return { maxRetries, sleep: retrySleep };
+}
+
+function getOpenRouterProviderErrorRetryDelayMs(attempt: number): number {
+  return Math.min(
+    OPENROUTER_PROVIDER_ERROR_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1),
+    OPENROUTER_PROVIDER_ERROR_RETRY_MAX_DELAY_MS,
+  );
+}
+
+function isOpenRouterRequestResendable(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+): boolean {
+  if (input instanceof Request && input.body !== null) {
+    return false;
+  }
+
+  return (
+    init?.body === undefined ||
+    init.body === null ||
+    typeof init.body === "string"
+  );
+}
+
+function isTransientOpenRouterProvider404(
+  response: Response,
+  rawBody: string | null,
+): boolean {
+  if (response.status !== 404 || rawBody === null) {
+    return false;
+  }
+
+  const parsedBody = parseJsonRecord(rawBody);
+  if (parsedBody === null) {
+    return false;
+  }
+
+  const error = isRecord(parsedBody?.error) ? parsedBody.error : parsedBody;
+  const message = getStringRecordValue(error, "message");
+  const metadata = isRecord(error?.metadata) ? error.metadata : null;
+
+  return (
+    metadata !== null &&
+    message === "Provider returned error" &&
+    metadata.raw === "" &&
+    typeof metadata.provider_name === "string"
+  );
 }
 
 function attachOpenRouterDebugInfo(
@@ -2197,19 +2450,32 @@ function countMessageContentChars(content: unknown): number {
   }, 0);
 }
 
-async function readResponseBodyPreview(response: Response): Promise<string> {
+async function readResponseBody(
+  response: Response,
+): Promise<{ preview: string; raw: string | null }> {
   try {
     const body = await response.clone().text();
     const sanitizedBody = sanitizeOpenRouterResponseBody(body);
 
-    return sanitizedBody.length <= OPENROUTER_DEBUG_BODY_LIMIT
-      ? sanitizedBody
-      : `${sanitizedBody.slice(0, OPENROUTER_DEBUG_BODY_LIMIT - 3)}...`;
+    return {
+      preview:
+        sanitizedBody.length <= OPENROUTER_DEBUG_BODY_LIMIT
+          ? sanitizedBody
+          : `${sanitizedBody.slice(0, OPENROUTER_DEBUG_BODY_LIMIT - 3)}...`,
+      raw: body,
+    };
   } catch (error) {
-    return `Unable to read response body: ${
-      error instanceof Error ? error.message : String(error)
-    }`;
+    return {
+      preview: `Unable to read response body: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      raw: null,
+    };
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function sanitizeOpenRouterResponseBody(body: string): string {
