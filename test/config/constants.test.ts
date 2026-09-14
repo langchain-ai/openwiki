@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   BASETEN_BASE_URL_ENV_KEY,
+  BOB_BASE_URL_ENV_KEY,
   BEDROCK_DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
@@ -34,6 +35,7 @@ import {
   providerUsesStreaming,
   resolveConfiguredProvider,
   resolveMaxOutputTokens,
+  resolveOpenAiCompatibleReasoningEffortSupported,
   resolveOpenAiCompatibleStreaming,
   resolveOpenAiCompatibleUseResponsesApi,
   resolveOpenRouterMaxTokens,
@@ -233,6 +235,11 @@ describe("resolveProviderBaseUrl", () => {
       }),
     ).toBe("https://gateway.example/baseten/v1");
     expect(
+      resolveProviderBaseUrl("bob", {
+        [BOB_BASE_URL_ENV_KEY]: "https://gateway.example/bob/v1",
+      }),
+    ).toBe("https://gateway.example/bob/v1");
+    expect(
       resolveProviderBaseUrl("fireworks", {
         [FIREWORKS_BASE_URL_ENV_KEY]: "https://gateway.example/fireworks/v1",
       }),
@@ -403,10 +410,17 @@ describe("resolveStreamIdleTimeoutForProvider", () => {
 });
 
 describe("reasoning capabilities", () => {
-  test("returns the configured capability for the initial OpenAI and NVIDIA models", () => {
+  const GEMINI_REASONING_MODEL = "gemini-3.6-flash";
+  const GEMINI_REASONING_VALUES = ["low", "medium", "high"] as const;
+
+  test("returns the configured capability for the initial OpenAI, Gemini, and NVIDIA models", () => {
     expect(getReasoningCapability("openai", "gpt-5.6-luna")).toEqual({
       transport: "responses-reasoning",
       values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("gemini", GEMINI_REASONING_MODEL)).toEqual({
+      transport: "gemini-thinking-level",
+      values: GEMINI_REASONING_VALUES,
     });
     expect(
       getReasoningCapability("nvidia", "nvidia/nemotron-3-super-120b-a12b"),
@@ -422,12 +436,31 @@ describe("reasoning capabilities", () => {
     ).toBeUndefined();
   });
 
-  test("resolves supported values for OpenAI and NVIDIA NIM", () => {
+  test("keeps OpenAI-compatible reasoning unsupported unless explicitly opted in", () => {
+    expect(
+      getReasoningCapability("openai-compatible", "Qwen/Qwen3.7-235B", {}),
+    ).toBeUndefined();
+    expect(() =>
+      resolveReasoningConfig("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_REASONING_EFFORT: "high",
+      }),
+    ).toThrow(/not supported/u);
+  });
+
+  test("resolves supported values for OpenAI, Gemini, and NVIDIA NIM", () => {
     expect(
       resolveReasoningConfig("openai-chatgpt", "gpt-5.6-luna", {
         OPENWIKI_REASONING_EFFORT: " max ",
       }),
     ).toEqual({ effort: "max", transport: "responses-reasoning" });
+    expect(
+      resolveReasoningConfig("gemini", GEMINI_REASONING_MODEL, {
+        OPENWIKI_REASONING_EFFORT: "medium",
+      }),
+    ).toEqual({
+      effort: "medium",
+      transport: "gemini-thinking-level",
+    });
     expect(
       resolveReasoningConfig("nvidia", "nvidia/nemotron-3-super-120b-a12b", {
         OPENWIKI_REASONING_EFFORT: "high",
@@ -436,6 +469,36 @@ describe("reasoning capabilities", () => {
       effort: "high",
       transport: "chat-completions-reasoning-effort",
     });
+  });
+
+  test("resolves OpenAI-compatible reasoning to chat completions when opted in", () => {
+    expect(
+      getReasoningCapability("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+      }),
+    ).toEqual({
+      transport: "chat-completions-reasoning-effort",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(
+      resolveReasoningConfig("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+        OPENWIKI_REASONING_EFFORT: " high ",
+      }),
+    ).toEqual({
+      effort: "high",
+      transport: "chat-completions-reasoning-effort",
+    });
+  });
+
+  test("resolves OpenAI-compatible reasoning to Responses when both opt-ins are set", () => {
+    expect(
+      resolveReasoningConfig("openai-compatible", "Qwen/Qwen3.7-235B", {
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+        OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "true",
+        OPENWIKI_REASONING_EFFORT: "max",
+      }),
+    ).toEqual({ effort: "max", transport: "responses-reasoning" });
   });
 
   test("rejects invalid or unsupported reasoning effort settings before a request", () => {
@@ -449,6 +512,11 @@ describe("reasoning capabilities", () => {
         OPENWIKI_REASONING_EFFORT: "max",
       }),
     ).toThrow(/Supported values: none, low, high/u);
+    expect(() =>
+      resolveReasoningConfig("gemini", GEMINI_REASONING_MODEL, {
+        OPENWIKI_REASONING_EFFORT: "max",
+      }),
+    ).toThrow(/Supported values: low, medium, high/u);
     expect(() =>
       resolveReasoningConfig("nvidia", "openai/gpt-oss-120b", {
         OPENWIKI_REASONING_EFFORT: "high",
@@ -503,6 +571,32 @@ describe("resolveOpenAiCompatibleUseResponsesApi", () => {
     expect(
       resolveOpenAiCompatibleUseResponsesApi({
         OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API: "false",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("resolveOpenAiCompatibleReasoningEffortSupported", () => {
+  test("requires an explicit true opt-in", () => {
+    expect(resolveOpenAiCompatibleReasoningEffortSupported({})).toBe(false);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: " TRUE ",
+      }),
+    ).toBe(true);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "false",
+      }),
+    ).toBe(false);
+    expect(
+      resolveOpenAiCompatibleReasoningEffortSupported({
+        OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "yes",
       }),
     ).toBe(false);
   });
@@ -1039,6 +1133,15 @@ describe("isModelIdForOtherProvider", () => {
     expect(isModelIdForOtherProvider("claude-opus-4-8", "anthropic")).toBe(
       false,
     );
+  });
+
+  test("does not flag Claude Opus 5 on the providers that serve Claude", () => {
+    // Opus 5 was listed only under copilot, so both providers that serve Claude
+    // directly warned that it "belongs to GitHub Copilot" on every run.
+    expect(isModelIdForOtherProvider("claude-opus-5", "anthropic")).toBe(false);
+    expect(
+      isModelIdForOtherProvider("claude-opus-5", "gemini-enterprise"),
+    ).toBe(false);
   });
 
   test("does not flag shared OpenAI models across openai / openai-chatgpt", () => {

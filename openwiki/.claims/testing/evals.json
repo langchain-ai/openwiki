@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:786ed79b000142fe7256a204d8a33afb44444dd5d383e10ed97647137478d844",
+  "claims": [
+    {
+      "id": "claim_94f228e67cb14c1a96bd6c1ca3df4c63",
+      "statement": "LEDGER scores a generated wiki by replaying Git checkpoints, running OpenWiki at each, and reducing every current factual claim into one of supported, stale, invented, or unverified states that share a single snapshot denominator.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L11-L44",
+          "version": "repo-lines-v1:sha256:d92c01c927dc91c084c1c48d3fdc61b57cf469e4d221a4115666395b6d67a8a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ODgyNDE1ZGNkYWJmMmI5ZGQ2NDQ3MDU0NTZlNjRjZGQ5ZTNiMjE4YmM3MDYxYmE2ZDc4ZGFiMmQ3Zjc1YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZWI5ZDgzZTc5OWUwYjFlM2Q4ZjA0ZDY2YmU4YmFmYzA3OWY2N2FkZTc0NDY4MzAyNTUyYTY5YjU0MDM0YTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZjcyNzVlNDI2OWEwNGEzOGVjMDdiODAxZDYzNmM2MTVkNmU3OWNjMzQ4MGYyM2ZkMmNhMWY2ZDE1OGZkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYTcwMTFmZTQ3Njc0MDA4NWMwYjIxMTg2ZjE5YWNhNTUwZDM5YmMzMThmNGMwZWVmMDdlODQ1MzQ0MzA3ZjUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/metrics/claims.ts#L16-L41",
+          "version": "repo-lines-v1:sha256:7780fc4f8fbec2c726e96ce63fbf359f8bbba9464fdc725b66983065101f0c66:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNmVjOTRkYzlmYjc0ZTgyNjUzODA1ZTg5OTcxNGUyMGNhOGYxZGY4YjkxZTkzYWExODAxMTM5OGE1ZDU0NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzVkNzIyYTllMTY5YmNiM2Q1MGU2YTIxNTMxN2U5M2IzMTE2NmNmZTI0NTIyOTk0NzNkN2UzNjUxMzI0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyMDgyMDEzMjkxODkyNTJkMGM1OGQ2NWFiMzg1ZjlkMmM1NTljZTJkMWQ0NDE2NjA5YjMwM2JmY2U3YWUyOTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fede7c57f2ac4de7a98af67900e0b2a6",
+      "statement": "The four claim rates (supported, staleness, hallucination, unverified) are each count / total over current-tense claims, recomputed per checkpoint from the entire current wiki rather than as a delta or average, and total is the shared denominator.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L28-L44",
+          "version": "repo-lines-v1:sha256:c14a69eeee3898ec0f06a29d7e8ff7f199561716a09308842e8933eff703ae2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZmI1Y2ZiOGIyMmY3YWQ1MjM2NTcyZDMxYjY0ODJmYmY0ZTc3YWNjMGYxOWQ5ZjFiMGI1NWUzZDg5N2IyYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZWI5ZDgzZTc5OWUwYjFlM2Q4ZjA0ZDY2YmU4YmFmYzA3OWY2N2FkZTc0NDY4MzAyNTUyYTY5YjU0MDM0YTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2OGY3MmMxZTEzODZkODAxMjM1Y2I3NjcyMGY1NTNkZWVmMTA3MTBmNTI4NGM1YWJkM2MwNDQyMmNiMzE0MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYTcwMTFmZTQ3Njc0MDA4NWMwYjIxMTg2ZjE5YWNhNTUwZDM5YmMzMThmNGMwZWVmMDdlODQ1MzQ0MzA3ZjUifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/metrics/claims.ts#L16-L41",
+          "version": "repo-lines-v1:sha256:7780fc4f8fbec2c726e96ce63fbf359f8bbba9464fdc725b66983065101f0c66:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNmVjOTRkYzlmYjc0ZTgyNjUzODA1ZTg5OTcxNGUyMGNhOGYxZGY4YjkxZTkzYWExODAxMTM5OGE1ZDU0NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzVkNzIyYTllMTY5YmNiM2Q1MGU2YTIxNTMxN2U5M2IzMTE2NmNmZTI0NTIyOTk0NzNkN2UzNjUxMzI0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyMDgyMDEzMjkxODkyNTJkMGM1OGQ2NWFiMzg1ZjlkMmM1NTljZTJkMWQ0NDE2NjA5YjMwM2JmY2U3YWUyOTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b786169b497b4d26ad00199fbc27a8fb",
+      "statement": "The precision pass classifies Markdown text units, extracts atomic claims with verbatim sourceQuote provenance, deduplicates by a conservative normalized key, and grounds claims against current evidence first, consulting historical evidence only after a current contradiction to split stale from invented.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/evaluator/precision.ts#L1465-L1473",
+          "version": "repo-lines-v1:sha256:c98eddd191feff4b089ac15fd6a1e9b0a520310ca9ff252d1f7d64a2e036cb93:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5Njg4MzQzOTNmNGJmMjE4ODM1ZDU1NDQ3MDQ5YTE0NGNjYWY0ZmU2Y2M2MjNiNjIyZjc4YzgxZDE4NTY5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdiYjkyNDhkZWQ1MzYwMTIyNzE3NmRlYWVmNzIxMmJiMjQxNDA4OGYxYTUzN2Q4NzA0YWY5NWYyYzg5M2ViYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQyYTY0MDhjMjFkMDcyNjM0ZDFhMzJjMmY4Yjk1NjRlYjljYTM2ZTIxOTU0ODI3M2RjZjQ3YTY3MDAwMGJjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2E2YmUxMzA5YzRlMDI0OTM1Y2MzNmVkNDU2ZjZlZDcxOGM1YThhMWQzNmE1MTVhOWQ3MDRmMWJiZDY2MDllMiJ9"
+        },
+        {
+          "resource": "repo://evals/ledger/evaluator/precision.ts#L1691-L1773",
+          "version": "repo-lines-v1:sha256:527d39ec27d34642b7155b116850dd76ab216c9de1bb323d66f6514258f90ef9:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0N2ZjMGVkYzkzMjliYjUxZTdhMWY3MzBiOTVmZjllMzRiM2RiYTE3ZDhlNGQ4YjQxOWQyNjM5N2Q3Zjc4ZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NTcxYzViYmJkZGQzZTA3MzE5ZGZkOTYyZWEzM2ZlZTM4NmY0MzYxMWU4OGU2OThkYmVjNmZlNTkwYTkzODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf87134ed7c94e649431adfe1273945a",
+      "statement": "Evidence routing is current-first and mandatory for named source paths and routed evidence-map files: BM25 runs over the benchmark's natural-language concept descriptions (never source syntax), selectors resolve deterministically to raw source, a named missing file receives the full tracked-file manifest, and larger corpora retain mandatory routed evidence plus a minimum eight-excerpt BM25 set within a soft budget.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L102-L114",
+          "version": "repo-lines-v1:sha256:5733240f49af18327a82d8336c87e3be4c9b40aa26a8d7609986654884fa6bc0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmM2JhMWVhZjA4ZTQ2MDZlOTdhZDAwZWU3YzM0MGEyNzY5MWJkOGE3YTEyZTU1OGMzNWVhYTcyNDZmODgxNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZDg1OWNiYjYxZTFhYjAyYmI5Mjk2ZmVkZjY5ZWRhYmQzNTY5YTU2YWM1NzA4NWQ5NGMzY2Y5ZDVjYjczMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxMGM4YTE5MzE1MTA5YzI3OGFlNTRiYTNhNWNlYjFkNTFiNzQ3ZTEzOGI3Mjk2YmRkYmFlNDQzOTM0OTAxZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0Y2NhYWZkYjhhMzM2ZWM1NmU1ZGJjMTQ4YzAyYWM2MDViZjNiYWE3NjRlZWQ0YTExOTk1NWVlMzM1ZGY5OTAifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/evaluator/evidence-map.ts#L48-L126",
+          "version": "repo-lines-v1:sha256:2316f72c4608674d9411dd78c7a02f9e1f38b0d23d0179d2996e055fefb7e0eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjM2RiZTBkZGRhOWU4NDQzZDZhOGIyOTA1MjZlNmZiZDZhZGYwMWM2ZjdkM2UzZDVlOTcyYjhmMWFkNjNkNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYzUwYjc4Y2E4MDQ5YzgxZmVlZGRjNTQ1YWMyYzY2OTkxMDQzNmIwODYxZWIyODFjZmFiYjA4YzcyMTY5ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/evaluator/precision.ts#L999-L1062",
+          "version": "repo-lines-v1:sha256:d9879b62b65da8f994bed013df0b33446614862aec4a431834dd915d52a484bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYzk4NWQ0ZGUxZDgzMTUzMjVkN2VlMzljNjUxMzFlMzQzNDYwYzFmY2U5MWE5YWZmM2NiNGJjODZmNTdlMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1N2YwODYzMjgzODExYzJlMmMwZDExMzVmYmZmMDhlODMyOWQzYjMwYjQwZWYwMjc3ZjJiZjk1ZmQ5Y2Q0YzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2517411e9b74b738181269bde9031b1",
+      "statement": "A benchmark comprises a source Git repository, an ordered frozen trace of pinned checkpoint SHAs, an author-declared difficulty (easy/medium/hard, never computed), and an optional reviewed semantic evidence map that is evaluator-only routing metadata never exposed to the System Under Test.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L116-L127",
+          "version": "repo-lines-v1:sha256:f8a97f644157c596bc1e01e743ec9d501623e112787d4ee7caa637ad4b3bd7af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMzNkNWVkNjI5MzQyOGNhMWRkODE5NmQ2NmVhMTdjOTdjMDU5YTJlNzA0YWNjM2Q3N2VmNzMyZTBlNjBjNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyYmMyYmFlZTZkOGU0NGUzMTUyM2MwOWIzYTFlZGRiN2FlODY5NmVkZWY0NDU0NzE1ZDIyZjk0ZDI3NjE4MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlZDQ0ZDk4NjgyMmU4NGEzNzA3ZGE5OWVhYTIyOGUzNGY5ZmFmZGZkODI1NmI4YmMzNWMwZGY2ZjhjMTE2MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2OTJmN2M1NmY2NmIzZWIwOTFiNDYyODM4NjY3YTQ4ZmMyZDNkMGQyZjE0MTU2YTQxODI0ZTdlNGQwOTNmOTcifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/core/types.ts#L84-L118",
+          "version": "repo-lines-v1:sha256:f5054d0b1e62ebcd2fef23ef5dcbad33cf6c9e867b7713caaeab6a92e7011f94:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NmU2ZjBkOTEwZGRlZmFiOGEwZGVjZmI3OGExYzQ0NTU5N2YxYzJiNjhiOTI0NGZiN2FlZjA1YmE5NTFhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4MGQzNDI5NGI0NjA3MmZiODkzN2ZiMmZlNWFmNTczMzQ4ZWM3YjEyOWI2ZjIwMTdkMzdhOWFmYjZjZTZkYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmYmQ4NjM3ZTU4OGFhYWI0NzNiM2NiOWFmNGM0NDY5OTYwZTYzYzU5ZGM3NjI0YjQ0ZTczY2U1YjZmNDgwYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69c40cef12bd491dac3f0a61e42acb81",
+      "statement": "runBenchmark preflight-validates the trace (every SHA resolves, each checkpoint is a Git ancestor of the next, nothing under openwiki/ is tracked), then walks the trace calling system.init at index 0 and system.update at later indices, capturing an immutable artifact and current+historical evidence per checkpoint before evaluateCheckpoint.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run/runner.ts#L140-L256",
+          "version": "repo-lines-v1:sha256:1b532b08afcbd3a17a41b1ccaaa6e560a7f330f8bf82706b2b811b668b329b63:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNjU5NWY0ZWU1ZmY2M2Q1MDk1MDQxOWRjMzQ0MTQ1MTM4NTFkYzk3MzZmZDE3YTRmN2JmYTkzMGIyNjFiNmYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3MTdhZjExMDFjOTdiN2MyZjUyNTQwNzgyZTYzNGNjNDQ0MGYwZTk3MDM0MWU1MmY5NzUyMzExZDc4YjdkN2QwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxMjU4YTFkZTkyZGQxMjVmNzBmMGVmMTcyZDA2M2E1Y2JhMDNjZjNjNzllOTljZDgxNWU4NWRkMzFhMjg1MmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MDRjNTI4NGNkMjg0ODA3MTE5Y2YwMWY4YWE3NzAyN2ZiNzE4NzExMzE2Mzk1ZTE0MWI0MjU4NTAwZTZiNjE5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_e80eaf9683da45a798392cf4bb5e61bf",
+      "statement": "evaluateCheckpoint is the loop body shared verbatim by the live runner and the saved-run re-evaluator: it extracts the source surface, diffs against the previous checkpoint, advances the sticky forgetting watch set, runs the evaluation backend, and reduces verdicts into claim-state and evaluator-completeness measurements.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run/evaluate-checkpoint.ts#L157-L321",
+          "version": "repo-lines-v1:sha256:dc7f758383afad5b62586a18a5d85ddb8f5b354d707a4d3726666517b3d27d3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2YzM1MWYyMTY0YzI0NjRmM2NkMzg3NjBlYTlmYzU4YTY2OTRiNWQ2NTk5NzI5OTYyMTRhNjZkMDUxYzM4ZTM0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://evals/ledger/run/reevaluator.ts#L108-L223",
+          "version": "repo-lines-v1:sha256:4fcd475983dbb2636c762e71de0a71f37be2d223ff9df263bd593a6f67884779:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjZGMyMjlkYWM5ZjMyYzdjY2VkZTU1YTU4YmJhNzljZTc2YmIyOWVjYjE3ODYzMjY0NDRlYzFjYzVjY2ZmMjQ5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2774917056ab4cde801fc0a05f5645e4",
+      "statement": "The forgetting watch set is sticky: an obsolete fact version stays under watch for every later checkpoint and is retired only when the requirements revive it, so a version already judged forgotten is still re-checked later, which is what lets the Stale-Knowledge Lifetime diagnostic measure lingering.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run/evaluate-checkpoint.ts#L306-L318",
+          "version": "repo-lines-v1:sha256:62308fffe9b1dce1fb63a751c42590558b632a6174e39155c03dac9ecb04fe8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNDRiMmVjMDYxYTFlMTYxZTU3ZTlmNGM1ODRjODFlY2Y1MDBjZjI4MGNlOTYwMmJjNjNkYjY2YWIyZDU5NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmOGI1MjU0ZGQ2NDI2MGFkNjZjNzg3MjZjOWVlYzgxNDBhZmM2NWUxN2NiMjQ0ZGRkNTc0NWQ1ZDcxZDM0N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzYmViZGEyYTdhNDZjYjhkYjlhNjM0ZjU3NTQwOTZmNzg2M2RiMzA3ZjZmNGQ1NjhkNDEwOGI0ODRlOGEzNTYifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/run/runner.ts#L100-L107",
+          "version": "repo-lines-v1:sha256:45c8a3830fdff126d2bf7a517a0e0d9c9d9165d7de8155b54b5267fed5fa34cc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJlM2RhNjdlYzkzMzQ0MjYxZjljOGRjZWRkMzMxYjdlNGNjOTE3NWMzNWRhYzlkN2QwZDVkYjE5NGM4M2FkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFiNDdkNDlmNjViNjMxYTFkZjQyZDNiZjBjOTJhYzU0NjJjZWE3ZjMwYTA0MjgyMDBkZDI2ZDMzNDRiYWU2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFhZTlhNjNmNzEyY2EyNGNjMGRjYjAyNTdiNWNiZGY3M2I1MWQ5OTQyOWM1NzMxYWU4MTk1MjI0ODJkMTA5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNjYTU0ZDBkYzllNDYzNTQ2MzM1M2U4ZjdiYzAwYzRjODQzZGU4ZTM1Mjc3ZWY2Mzg2YjYxMDc0ZjA3YmZjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9768fe565e7f433e999931ab2eb9d247",
+      "statement": "The OpenWiki system adapter is the baseline SystemUnderTest that drives OpenWiki through its runOpenWikiAgent entrypoint with outputMode repository so the worktree cwd is honored, sets OPENWIKI_PROVIDER/OPENWIKI_MODEL_ID before each run, and never passes a user message so update change-detection is driven purely by source deltas.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/system/openwiki-system.ts#L35-L91",
+          "version": "repo-lines-v1:sha256:0dfdea76745713d75485de2f127e6cabdb7d9a1adc550ee8ebb99bf76c7767b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NWIwNzZkZjk3NjJiNTI0MWY2NmIwZjVhNWJkNjYzNTVjNTM4MGExOGZlNWMyYjYxZTYxYTg1MDQzZDVkYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMjkzNmM0ZWQ1YjY5ZjQ0ZWNkZGQ0N2MxNzgyYzMzNGUxNzMzYTI3NzVmYTY0NDNjNjhlMDEwYjQ0ZGU5OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f26bf5eb32b04bfdb4d2abdc82262048",
+      "statement": "The LEDGER run-level score is opportunity-weighted claim health: supported current claims divided by all current claims across checkpoints, computed by summing supported and total per CheckpointResult; stale, invented, and unverified all lower it because they remain in the denominator.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L142-L153",
+          "version": "repo-lines-v1:sha256:a543eefb18a6dfcffb3b5c40b3f1339f40cf19f76289a8a46d47b7051c9eead0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMjI3YTdmNWY3NWMyNDUyMmU5NTQ0NDVjZGE1MzAyODhkMDRjMjI3ODNjOTViOTIyOWU0MjE5NDU0NzU2Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4YTJmNjZhNTM1YzU1MjQ1MTVlYzkxOWQxMjc0NmFlYTAzNDAyNmVhMWQ4MDI3OTQ1MmZiMzVlMTdhNDY1NDEifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/metrics/score.ts#L10-L24",
+          "version": "repo-lines-v1:sha256:2a57b5dc7be0f84444ff48cf0420d97d10aecd0ec3830a91fc72577cb22daefe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkZDYxYmRkODI4YzI3N2VlZmJhZGRjZGRlNzU4YzhiYmM4MjNjNzg4NzhlODc1MmY2ODVkMDJmYzYwMmJkNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmY2FlMmM4MTc2NGJlYWQzMmJjMDVkZjk2OTg3ZWIwOGUzNmRmZjk5ODEzMGMzOTU2ZDE5YmU3YTc4ZTRiMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ce6350a1e0a477cb8c1c27867cb64dd",
+      "statement": "GitReplay drives the source through a detached worktree over a private local clone, never runs git clean so the untracked generated wiki survives checkpoint checkouts, and confines every destructive operation with a realpath containment guard.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/replay/git-replay.ts#L14-L129",
+          "version": "repo-lines-v1:sha256:dfffc19c6efc75079244ad019a512e0e9f44ec33c0b07e0cec89811b1be2f464:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MDY1NDYzNTRmNTg2ZDk2NzNlYWI1NDg1MjRjYWQ1ZjFmOThjMTQyNDM4MDI5NmE1NTFiYTNlZWQ3MTFlNGQxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMzMzZDJjY2ZmMGE0ZWE2MWJjZTIxOWU3ZWI5ZTQ4NWM4MjZmMjg0OTk5MDE5MTBmMmU4YzRmZjk0NWUzYTU4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxYjQ4NzI3ZGY5NGIwZDZhYTY4NWFmMjdlOTA1YTYwYzVkNjg3ODhlYWUwYzYzZGQ2OGMzMGNkOWViZDY1ZGRlIn0"
+        },
+        {
+          "resource": "repo://evals/ledger/replay/workspace.ts#L44-L59",
+          "version": "repo-lines-v1:sha256:2861e39bdc389658d56e75edbb4e2ab03169e408573bab031a4432ccc5b1101a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyM2NiNGMxM2Q2Nzc1OWQ1NGY3NjcxZDQ0MDM0OTcyZDA5MDNhMzlkMDhhZmFlNzNiYjk4MWViOWFiMGRjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3MmQ0NTUwNzRiZTVjMTIwYWMxYzgzOTIxMGQzZTkwZTFhYWZlOGJkZDg1OWYyMTMyZWEwOTg1Y2Q3NGYzNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhNTgzOWM5ZmIxOTUyM2Q5YThkMmIwMzRiY2QzNjI3Yjc4YTZkMzE1NWNlOWRmNGViM2Q0M2NlMzM5NWExNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8a6d3ef1c604fc880f2b4e3116bcecb",
+      "statement": "Source evidence is collected by GitSourceEvidenceAdapter as a tracked-file manifest plus bounded 6000-char chunks from every tracked regular non-binary file excluding openwiki/, read through one O_NOFOLLOW descriptor to avoid a check/use symlink race; current evidence is marked current and prior-checkpoint evidence is marked historical with checkpoint-prefixed ids.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run/runner.ts#L204-L225",
+          "version": "repo-lines-v1:sha256:2450d0d5dbad63954b49cd5d4d8dbbe36e723e377578f8f3622c9453ee4682c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzM2FhZmNkMzRjZGY1YTM4ZTFiNzE1NmQ5ZmI0Y2VmZTIwNDBjZWJjZmI5ZmNjNTVhNTgxNTEyOGNlMjViMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmODY4MjViYjU0ZGY4N2VjMzI5MjY3ZTZlMzIxZTFmZjJhMDUzZjkwYTZlMzJhN2M5ZTdhNGUxN2FmZTlkODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0NDg0NjI2MmEyMzM4YWM2Yjc5NDU2NmMxYzFmZGI2OWI3YjdlYzNmN2ZhZTQwYTg2MmY0MjQwODk1MjBmZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1NDg5ZDJhNTM5OTkzYzhhYmM5ODRkNmQwZjc5NWIzY2I1YTQzNGVlZDU3ZDlmMzNkMTA1MzUxMmQ4NzA4NWQifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/source/git-evidence.ts#L55-L166",
+          "version": "repo-lines-v1:sha256:1a03daf7fbfd13ecbe3bcfbfdd6f8f92dcc901a0a165149c1572f775498e28c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMjQ4NGIzZmIyZmViOTU2NGEwMGY1ZmQ0YjhmZTEwNTk3NDc0ZTUwNDI4NGI1YjZiMzMzNDU1MmZkNDg0YjQ3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_621ad60f25244a73b93a78a0fba2ca71",
+      "statement": "The ModelEvaluationBackend runs forgetting and precision concurrently per checkpoint sharing one limiter of EVALUATOR_CONCURRENCY=6, owns a cross-checkpoint precision verdict cache keyed by statement/tense/grounding-evidence signature, and disables provider retries (maxRetries 0) so 429 bursts degrade verdicts rather than being absorbed.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/evaluator/model-backend.ts#L103-L127",
+          "version": "repo-lines-v1:sha256:044b13d98321fd9f9bd17e7b3023a87c8cc9b665c1f553a24815537d695d1891:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NjUzYWU1YzA1NTZiZjkxZjBmNjI1MGYxMzE1OWQ5ZjcyMDU2NjhjOTNiNGU2ODI0MWE1OTUyZDE5MDBlNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMGQ0ZDY1OWRjZGRjMjVjM2ZmMWU1NWU4Y2U1Y2ZhYzE3NDhlZTQ0ZTdjOTlmMjc3Y2MwODgxM2ExYzljYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4NmQ3MWE0ODIxZjI2YWYyMmE3MGQwNGEyZjg1MDlhNGFkNjBkODU4MGRjOGRkNzI1ZjNkYTI3ZDAxMDI2M2UifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/evaluator/model-backend.ts#L26-L36",
+          "version": "repo-lines-v1:sha256:996a4270b1242163cee87b6600010cecaf4f757d16d7f5b1814781cd99c54c9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YTM5YjBlNzdjMTdkODE0MDZjYmRjZGU2ZGE3OWJhM2Y3ZjExMDJmODM5YTc1MzBiNzA2YWM0YjVhOGMyNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZmEyZmZhZmJiMDFjNTVlYjI5NDIzNGZlNzkyNjVkYzVjMzYxYzJkM2RjMzVhMjZjYzM2ZjA1ZDlkNGNjZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViZTIzZjQ4MjdjY2Y5YzM2ZjM5Zjg0ZWZlOTRkYTk1YmQyYjMxMTE1MDk2Mzc2ZWUyYmQyYzNjMDU3NDg2MmEifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/evaluator/precision.ts#L1086-L1109",
+          "version": "repo-lines-v1:sha256:d333ded5c6f71d9cac73e6afc581facaccb8e720dc4330caeac073c8e2d23b0a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZGQ5MmM3MTFkNDc2ODA4Y2VmMThhOWY2Mjc3MWUyNTgzMTJkMWNkMGUwMmFkYmJiNmY1ODAzYmI0NjdkMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwZWZhNzMzY2RmMWM1MzczZmJmNTdmZmNhNjFiMWU3YjIyYTZkZjk2YjYxNjBjZDg4ZWQwZGEzMzk3NGRlMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0Mzc0MDI4MTgwZThjNGI1ZTYyMTcwYTVkODljMDVlNjVhNzRiYjgyZmVhYjkxYTVjMDdkMDRjZjQ1N2ZhZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2bfdef5f64ce4b8aa8b83217ce5c4617",
+      "statement": "LEDGER CLI is exposed via pnpm scripts eval:ledger (end-to-end), eval:ledger:reevaluate (re-judge a saved run without invoking OpenWiki), and eval:ledger:typecheck, with flags --benchmark, --results, --system-model, --evaluator-model, and --verbose; unknown flags and missing values are hard errors.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L197-L224",
+          "version": "repo-lines-v1:sha256:3cbfd0f130c26595a396be407ff386a5a4fb93cfd955de0b81eafeb74dbcc131:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzllYjg1OWFiZDBmNTI3MTZiZmFjM2U2OWE5YTExNWRhMTc4ZmE3YjZiNWQxMDc3MTkxZmU2MTBjNDk5NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MTlhOTljMTFhMmRlODVkYjZjMzFkNDcyNWVjZmFhZWM3NmE4ZjYzOWE2NTNlM2MyZjk1OWEzMmZmNGNjYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZDliMjljYTg2M2MwOTMwODBiMzNiZTlmNTA0ZDVjYTgxOWY3NjgxYmVlNTk5NjMwYzI4NTZiYzgzYjRjOTAifQ"
+        },
+        {
+          "resource": "repo://evals/ledger/run/args.ts#L41-L99",
+          "version": "repo-lines-v1:sha256:cbefcc484b067fb8055446a7851f5b9e87bb2018318281b98cfdeb69ebafa098:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YWMxOWMzM2M1ZjUxNDc3MDFhYjQ4YzE4M2QwNjg1OWU0ODlkMDQyMTE5Mzc4MWU3MjdkNzJlYTcwODIyMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNGZhOTRmZjQ3OTU2ZDNhZmMxMDdlMWU4MDY5NDI0Zjg1ZDM0Mzg2NWE0YTI0ZmQ0NjE2YmNiN2M1OTU1YjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZGZmZGRhZjI3NzE5YmViNTJhYzcyNTQ2MjYzZmNhNGM4MWUzNzIzOWIzMmJiMGFiYTliNDE3ZGY5MzA3OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://package.json#L44-L46",
+          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b15e9dce85747fb8506905b57d9bdb8",
+      "statement": "resolveRunConfig requires OPENWIKI_PROVIDER, resolves the system model from --system-model or OPENWIKI_MODEL_ID, the evaluator model from --evaluator-model or LEDGER_EVALUATOR_MODEL_ID falling back to the system model, and requires a concrete evaluator model id because the evaluator constructs its model directly.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/run/run-config.ts#L29-L65",
+          "version": "repo-lines-v1:sha256:626dd6eb7c5796550e3d23429eb882a71e5a2458d0287de3272893fd15ac8805:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkY2MwOTdiYWZhOTY5NTYzMzk5M2E4NzIwNzI5NTRmMzliY2M4MDE5NmMxYzM3ODYzYzJkNDljYjQ4YzY1YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjMWUzZmMwYjU5MDU0OWM4NjllNDhmZjdiNDQzNmVkY2ViOTc1NzFlZGQ5NDg0OTZkZWUyZTdkYjg3NjNlMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef02ae63702d4b5a991911c0c2a96147",
+      "statement": "The DeepSWE harness runs a paired experiment where the baseline condition gives Codex only the task and repository, and the openwiki condition restores/generates OpenWiki in an isolated clone, merges managed instructions into root AGENTS.md, and copies AGENTS.md and openwiki/ into /app before the same Codex adapter solves the unchanged task with no treatment-only prompt.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L1-L19",
+          "version": "repo-lines-v1:sha256:958fe78e57274d046b16692ea27d79090c67f4bf693e05843205f725837352f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0OTRmNDlmN2FhNjRiZTdlNmVlYzk5NWVkMGE4MmJmMWE2OGEyYzAyYWM4YWE1OTk1YjUyYjIwM2MzZmQ4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZGNmYzFiODU0NTM2YWM2NWExYWY4YWZkMTc0OWVkZjdhNzA0MmM5ODI2M2NkMjFiOTNiMmZkY2I4MDQwNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MGU0YjJiNThlMzhmNGY4NmRkNjBkZGM1ZWQwZGM3MjRhYWM4MjQ1NzEzZWM2ODhiMzA3OGEwYWNiMjVlNzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aee323a4e3694235b48047498df60c57",
+      "statement": "For reproducibility the DeepSWE harness pins DeepSWE commit 6db64a40f3318d8659238ff34a8cc4b491c49205, harbor[langsmith]==0.20.0, litellm==1.83.14, Codex CLI 0.144.6, Python 3.12 via uvx, and the current packed OpenWiki checkout.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L13-L19",
+          "version": "repo-lines-v1:sha256:e002ac99e715b22ef5c8a806da8f53deab0c0fd6aa24247cba58425f4bdf02cd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlkMzk1NWYwMTc2YTEzOTJlMTY3Mzc0YTNjNDNkMDAzMzQ5YTQ1YmY2ZmFmNDM2ODA3YjU5NmIzY2VhMjI4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdkY2ZjMWI4NTQ1MzZhYzY1YTFhZjhhZmQxNzQ5ZWRmN2E3MDQyYzk4MjYzY2QyMWI5M2IyZmRjYjgwNDA2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODI2ZGJlMjNlNTgzZDQxMmM0Y2YxZDU0ZDViMzI4MWI0NGJmMmNhYWY2MDMwNWExYmUxMTI4N2NlMGUzYTJmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYwZTRiMmI1OGUzOGY0Zjg2ZGQ2MGRkYzVlZDBkYzcyNGFhYzgyNDU3MTNlYzY4OGIzMDc4YTBhY2IyNWU3NCJ9"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L25-L35",
+          "version": "repo-lines-v1:sha256:bba32ade14ae4bc9bb470f87bbc3e8cbd130784e8d6c3f7723c912cc959c8c11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1YWMzMzg5NjMzYmQwOTQxMTQ4OGVlZTI3NTNmNTFiMzhhOWExYjBjMWZjOTJlNDgyYzk3ZWYxY2ZjY2JmNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MDFhZTU5NzYwYWJjNTQ0NTk5ZGUyY2JkYTJkMzg5NDFkYTBkZGY3NzgyYTdkNWNjNzZiNDRjZWRlNWE3OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OWU3NGE0YzJhMjk2ZDVkNzBjOTllY2FjZjY1NDFmNzQ2MDlkZjUwMDdmYTJhZDlmZDViNWEwN2E5NGQ2NjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNGIxYTlmYTMzYzM5MTA0MTBiYjNhODdiODliZjY5ZGFiOGQ4YjUyNTk2NDIyNGY0YWI2NWU4OGRkY2M1YjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1388d8f3af0b4447ac95b987f05c77a4",
+      "statement": "DeepSWE isolation keeps held-out tests/ and solution/ in a separate verifier environment, hides treatment files from Git status and excludes them from the verifier patch, allowlists container networking, removes only inactive label-verified Harbor trial networks (never a global prune), and never writes credentials into images, commands, wikis, or summaries.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L22-L40",
+          "version": "repo-lines-v1:sha256:b80dd6cae9313a7ffe155e7eaf1cbeff15b48d92ecef2b74f6b21abc5a614701:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMDNlMWY5MjFhYjE5NzAwZDZkNmYzODQ2MDUxNjg1MWNlYzRhYzZmZjBjYmI5ZDk3ZGUyYTQwOGMyNDA3OTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjYmM5NGE0NGM5MTQ1MzY0ZDUyZTIwYzY2ZDBkNjVlZmY5MjA5NTBmNzRjMDA1MTIzM2JjMzg4MTQ2MzU4M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiMTM0ODZjNTRjMGY3YjBlYzhjMTc3YzlmNDc3YTZhN2NmMmMyZmQwZjc1NDJlYmJhYzZhMzczMGRkYzQ3NmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ac325ab3f144d11b915fbfb15b118f8",
+      "statement": "DeepSWE provides named task suites via --task-suite (koota-5, openwiki-20, openwiki-doc-leverage-10), mutually exclusive with --task, selecting all members regardless of --n-tasks, with exact members pinned in run.py.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L151-L171",
+          "version": "repo-lines-v1:sha256:e384d52f711c222881371080cac0aa8616b8a29a27bce0c5253d13568ed6ac79:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZTcwNjk3NWFlNmI5OThlYTZhYWZmYTg4ZTZlZWJlYWY4YjdhMDU3NTE0ZDBmYzIyOThjZWFhYzlmYWMyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZWQ1OTBhYTYwYTlkNzMzODNlMmQwZTBjNzExMDcyZTgzNGVmYzc5YTg2MDdjMmQ5MGE1MGUxOTlkYmQ1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyMTU0NjFjNGNlZjk4NGM0NmJmMDdjZGI3MWQwZjUzN2U2MTk5NWM4Y2ZlMDdlODhiNDY0NjczNDdiMmQwYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwMjY5Y2I0MTY5YzkwZTRlYzBjN2E1ODk5ZGIxMzZjYmEyZDg0ZmM5NDZmMWIyNzk5M2ViNjYxYTdmZWQ5MmYifQ"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L71-L115",
+          "version": "repo-lines-v1:sha256:92b275e66cf4279f8fd367d7575a2fad25c7453557628d38d151686cbe778289:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZDg4YTAxNDNjZGM1M2JkMTJlMDQ2MzBlZjYwNzQ0M2M0NWFmZjgxYzRjNjJjNGYyNjg2MDVhMjRlYTI2NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4NzRhNzM4Y2NhZTdiOTBkZWVjN2IzMWU3Zjk3OWVhY2IzMzU5ZTQ1MzQzZTQ3YzI3MmI2M2E1MTBkZDczNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNmExNTM3N2VmZjhkNjRkZDA3M2M1NjQ1NzcxMzRiNGNjNGUxZDZlZWI1NTIxZWY4NTkxNzNlZjdmZjIzYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2f5d3c054bf428eb78704473af79661",
+      "statement": "DeepSWE evaluation uses Harbor's official langsmith plugin with baseline and OpenWiki jobs sharing the deepswe-openwiki-6db64a40f331 dataset but creating separate experiments; ambient experiment overrides are cleared, dataset sync and fail-fast are always enabled, and only bounded verifier rewards are sent as feedback.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L63-L85",
+          "version": "repo-lines-v1:sha256:ce71ed7193169d38b189c85f91c73f408a36fc872d504cb38334d25932fbf863:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlYjI4NDJkMjY5NTBhN2UyYWUyOWZkYmQ4NjY0ZjlhNGZiNWNhNTU0MTAxYzQyMjQzYTVkYzRlZmI0ZWQxNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyZWNmOWQwYTMxZDFhZjkzMDhlOTgxOTljYjU0MTNlNGQ3MDU3OTUxZjhmZjRjMTRlYzI3NWRkMjA3Zjk0YTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5Y2NiNThhZmZjNzU0MjRjZDQwZGVmYzhkZjI4YzYyNWY0YWNkNjZjYzE1OTNhYzY0ZmY2NzBhNTEwMDk2MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZGNkN2VkMjVjOGFkOWI0NzA4ODE3MzE5N2NmNjhlNzNiOGU2NWNkN2E3YzZmYzA2MTg2MjYwMWZiYjNiZGEifQ"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L117-L121",
+          "version": "repo-lines-v1:sha256:6b489ea7ed6f40a44fb96e0cbfce1589e11e0f974917957faf2096a09aa3f871:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI4MzMxZWE4YmZmM2YyODIwOTNjZDk4OTc2NTY5NmRmMTE0NDlkZWMwY2NhOTExMGZmYjYxZWJiMmIyNDhmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTRkMWZiMDJlOWRhYTRjMzI5ODA3MzQ1YmJhNDZlZTBmMzU3ZWU4YzJlYWU4Y2Y0Yjg5OTE4MTIwMDQ3NDI4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA1NTdmNDFkYWE5ODY3N2FhZjJmY2NlZGZhYWNiZGNkMDM2OWFhOGI2NWYyMmM4NDNiMDY3ZDdiZDJjNDg1YyJ9"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L482-L495",
+          "version": "repo-lines-v1:sha256:b4308f28754558006c7899ab239cbfb53087e939b4119d0ddf56180eedaddb2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjYTg4NzYyYzkwZTExZmJhY2FiMzI5NWFmZTE5MzhkZTlkY2VlYTAwMzllNjYyOGM0N2FmZGI2ODkxYmU2YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Y2RmZjAyZDQ3YTBkMDBhNjQ1MDhjZmEwNGQzZDRlNDNkZWQ4Mjc0NmMwMzZiNmYzYWE3NzA0YzAzMTgyY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMzhhYmI0Njg2MmFjNGJjMTM3YzY0NzMzMDk1OWZhYzg3OWQ3ZGQyMTU5YzY1Zjc0MzdkMGQ0NDM3N2JmOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_844a7fd7873a4a7f98fbc400da27f743",
+      "statement": "DeepSWE summaries report binary reward, exception type, Codex input/cache/output tokens, Codex cost, agent and total wall-clock time, and OpenWiki generation wall-clock time; OpenWiki generation token usage is not exposed to Harbor's local summary so treatment summaries omit its tokens and provider cost.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L189-L206",
+          "version": "repo-lines-v1:sha256:1d769006b0f2dc7749d399e819c33c33e23a666becc2a31b86f963ec9dcc3226:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmYWQ2Y2JkMmJjYjNhZTgzZGUxZWEwNDIyZDk3MTc5MmFkMjY3ZjM2YzgyNzFmYWM5MWNiNmY3ZmIzOGI4YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOTg1ODUzYTRiYWIxOWQyYmNlNmU4ODRlYTM3YWViZmRjYWIyZWUyY2M0Y2QxZTNmMWE2ZmIxMjNjNWQwYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyODNiNzE0MjEyMDAwOTZjYTk3YmU1ZGZmZmQxODZjODYxMDE3ODAwYTUwYjBiY2Y5ZjgxNzcwY2I3MDcyZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMTdkNmZmNTFlYTI4MjJjNzkzNGRhYWY1YjYxZjE2MzA3NjQ5YjFhODNiNzM1NzQ5NGJiYzA3YTU4MDVjMWMifQ"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L122-L136",
+          "version": "repo-lines-v1:sha256:268b2f3744460fa7a813a3c97e8464ef4696236df7461a4b5b4d309f10404b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYmVlNzg2YzYxNjM0NTg5Y2Y4MjlkOTQxN2E2NGU5OTZiODYzYTU1MmViMDJlZmQxYWE2NDJmNDEwMGY3NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkY2ZkZjlkYWE1ZmRkYmFlMzQ4MTI2ZDg1ZWEzNjFmMzUxNDA0NWMwMzI1NzU2Nzc3ZWRkZTIwMzBhNThiOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczMjBhZDQ0N2JlYzBjODJkNzQ1MWUwYWRlY2E4Y2EyZWJmM2E4OGJhODA2NGFmNDhlMjFlNjhmZGU2MWQ4ODYifQ"
+        },
+        {
+          "resource": "repo://evals/deepswe/run.py#L592-L666",
+          "version": "repo-lines-v1:sha256:4aeb782cb7ed11ec39dea74f78b258d39c72911af24da6f9eb891235ddc645df:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZTM5ZmZjYmJkMTg4NTFmYzEwMGIwNTVkYmVhNjFjYmI4NjMwM2FlMTI5NWVlM2QwNTkzZmMxNjZjMGJkZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4OWJmZTg3NTk3OGEyMTY1NDhkNTkxMDY0MjRlY2FhZjIwNmQ3NWUwM2Q3YmYzMDk3MzhmYWQxNjMzNzFlOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmZmIxOGY4NDRlYTBmNDcyNWI0Yzc3NDdiODMwZTM4YWQzZDE5ZGNjZDMyYmE0YjcwZWJhZjU2YWNiNWU2M2QifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-14T08:10:27.832Z"
+  }
+}

@@ -660,10 +660,11 @@ function isSameFingerprintRegularFile(
   // Windows can report different dev/ino values for the same file depending on
   // which stat API produced them. Keep the same-file guard, but use metadata
   // that is stable across lstat() and FileHandle.stat() on that platform.
+  // ctimeNs can change for the same file between those calls on Windows, so it
+  // cannot participate in this fallback identity check.
   return (
     openedStats.size === inspectedStats.size &&
     openedStats.mtimeNs === inspectedStats.mtimeNs &&
-    openedStats.ctimeNs === inspectedStats.ctimeNs &&
     openedStats.birthtimeNs === inspectedStats.birthtimeNs
   );
 }

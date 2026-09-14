@@ -17,6 +17,7 @@ import {
   isValidModelId,
   providerRequiresApiKey,
   providerRequiresBaseUrl,
+  providerHasFixedModel,
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
@@ -235,7 +236,9 @@ export function orderedSetupSteps(
     steps.push("region");
   }
 
-  steps.push("model");
+  if (!providerHasFixedModel(provider)) {
+    steps.push("model");
+  }
   steps.push("langsmith");
 
   // Personal mode's template is fixed by the run mode, so it skips the

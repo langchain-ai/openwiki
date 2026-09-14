@@ -1,5 +1,6 @@
+import { EvidenceSecurityError } from "../../core/errors.js";
 import { cacheEvidenceResolver } from "../../core/resolver-cache.js";
-import type { EvidenceResolver } from "../../core/types.js";
+import type { EvidenceResolver, ResolvedEvidence } from "../../core/types.js";
 import type { GroundingIssue, PageClaims } from "./types.js";
 import { ClaimsStore } from "./store.js";
 
@@ -28,6 +29,9 @@ export interface ClaimsPreflightResult {
  *
  * Each evidence resource and prior version resolves once per preflight.
  * Resolution errors propagate so they cannot be mistaken for deleted evidence.
+ * A containment refusal (`EvidenceSecurityError`) is the one exception: it is
+ * permanent for the cited resource rather than operational, so the claim is
+ * reported as unresolved for reconciliation instead of aborting the run.
  *
  * @param store - Repository claim persistence.
  * @param resolver - Repository evidence resolver.
@@ -57,10 +61,18 @@ export async function runClaimsPreflight(
       const unresolvedResources: string[] = [];
 
       for (const evidence of claim.evidence) {
-        const current = await cachedResolver.resolve(
-          evidence.resource,
-          evidence.version,
-        );
+        let current: ResolvedEvidence | null;
+        try {
+          current = await cachedResolver.resolve(
+            evidence.resource,
+            evidence.version,
+          );
+        } catch (error) {
+          if (!(error instanceof EvidenceSecurityError)) {
+            throw error;
+          }
+          current = null;
+        }
         if (!current) {
           unresolvedResources.push(evidence.resource);
         } else if (current.evidence.version !== evidence.version) {

@@ -388,6 +388,17 @@ afterEach(async () => {
 describe("host integration registry", () => {
   test("defines user and project destinations for all supported hosts", () => {
     expect(HOST_TARGETS).toMatchObject({
+      bob: {
+        producerActor: "bob",
+        user: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+        },
+        project: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+        },
+      },
       codex: {
         producerActor: "codex",
         user: {
@@ -444,19 +455,41 @@ describe("host integration registry", () => {
           mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
         },
       },
+      kiro: {
+        producerActor: "kiro",
+        user: {
+          skillDirectory: ".kiro/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".kiro/settings/mcp.json",
+          },
+        },
+        project: {
+          skillDirectory: ".kiro/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".kiro/settings/mcp.json",
+          },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
     expect(TARGETS.map((target) => target.id)).toEqual([
+      "bob",
       "codex",
       "claude",
       "opencode",
       "cursor",
+      "kiro",
     ]);
-    const userTargets = TARGETS.filter((target) => target.user !== null);
-    expect(
-      new Set(userTargets.map((target) => target.user?.skillDirectory)).size,
-    ).toBe(userTargets.length);
+    expect(HOST_TARGETS.bob.user.skillDirectory).toBe(
+      HOST_TARGETS.codex.user.skillDirectory,
+    );
+    const otherUserSkillDirs = TARGETS.filter(
+      (target) => target.user !== null && target.id !== "bob",
+    ).map((target) => target.user?.skillDirectory);
+    expect(new Set(otherUserSkillDirs).size).toBe(otherUserSkillDirs.length);
   });
 });
 

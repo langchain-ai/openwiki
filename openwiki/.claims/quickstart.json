@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e0f70ffe67f6e85b178ceef1750f1c1e9462e36d3a54359eac3509f1add03103",
+  "pageVersion": "sha256:c1e319ebdbeebfef7534c26bff7b2d947eea20f006f6fdaf6a76e1dd99463d5f",
   "claims": [
     {
       "id": "claim_5836585e22d244e79875961ea0a09258",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://package.json#L1-L12",
-          "version": "repo-lines-v1:sha256:f01ed6c33054ce68edc18a3f3c547f62e2160b47ca7982a569d2c3e7dd9c8b3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
+          "version": "repo-lines-v1:sha256:609e7d2e5d90a0641b7ca005f1822187424ec0155615adebeac2e5ad8b9a1137:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTZkODI3ZjYzOGU0NjRlYzQ2MTcwMDVjMjEyODhkODkzNzBlYTc3MDJiMjJhMDMxOTU1ZjZiMWMwNTFkNmYifQ"
         },
         {
           "resource": "repo://package.json#L37-L60",
@@ -215,10 +215,24 @@
           "version": "repo-lines-v1:sha256:53826e74ad07ada7f3d785f39f728852c33ab136aa787dc896fa89643c8bd518:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAzZGE0MWNlMTVmMTdmN2FhYThhODM1OGRhZjNlOTEzZDI5YTUyZTNhZDNkNzJhNjY2MGMxMTExNTRjZDY2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgyMDdhNTBkMjllMjEyODg2NDcyMDAyMzViYTdjNzQ5NmI1YzgwZjVhYmE2OGVhMzYwMGJlZjk4YTc2NDlhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM5NzFjMmY0ZmM3MmIyMTJjODkxNmQyODM2MmJhMzg0ODcyYjljZGY5YTMyN2NkNjBmMTc5MTQ1N2RkZDJhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTVjMTk2YTg5YzgwZmNiZmRkNDk1ODlmYTAxZGRhOGU1ZGEzNzhjZjhjZTc5ZDNjMTg4M2I3NmM3MmRiOWJlZiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_774be7a11d4a4dbd9674649bd67f6a0b",
+      "statement": "The 'Test your changes' task-routing table in the OpenWiki Quickstart routes a coding agent that wants to understand the LEDGER longitudinal evaluation framework and DeepSWE evaluation harness to the Evaluation Systems page at /openwiki/testing/evals.md.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md",
+          "version": "repo-file-v1:sha256:bfffb0acbed9d356d55811bceb9b9ce5c675e5bb28739c85994f081a71551852"
+        },
+        {
+          "resource": "repo://evals/ledger/README.md",
+          "version": "repo-file-v1:sha256:f513ebb0b7755e271a1dd5930c6eb4aa217bad4e6263065d4dd882b722d3e6a9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.5.1",
+    "at": "2026-09-14T08:10:27.832Z"
   }
 }

@@ -1,9 +1,14 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { runClaimsPreflight } from "../../../../src/claims/brains/code/preflight.ts";
 import { ClaimsStore } from "../../../../src/claims/brains/code/store.ts";
+import {
+  EvidenceResolutionError,
+  EvidenceSecurityError,
+} from "../../../../src/claims/core/errors.ts";
+import { RepositoryEvidenceResolver } from "../../../../src/claims/evidence/repository/resolver.ts";
 import { CODE_CLAIMS_SCHEMA_VERSION } from "../../../../src/claims/brains/code/types.ts";
 import type { PageClaims } from "../../../../src/claims/brains/code/types.ts";
 import type {
@@ -246,6 +251,135 @@ describe("runClaimsPreflight", () => {
     await expect(
       runClaimsPreflight(store, createResolver(new Map([[resource, failure]]))),
     ).rejects.toBe(failure);
+  });
+
+  test("classifies a containment refusal as unresolved instead of aborting", async () => {
+    const page = "/openwiki/page.md";
+    const refusedResource = "repo://lib/greeter.ts#L1-L3";
+    const healthyResource = "repo://src/healthy.ts";
+    await writePage(page, "# Page\n");
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(
+      page,
+      await pageClaims(store, page, [
+        {
+          id: "claim_refused",
+          statement: "A fact cited through a symbolic link.",
+          evidence: [
+            { resource: healthyResource, version: "current" },
+            { resource: refusedResource, version: "old" },
+          ],
+        },
+        {
+          id: "claim_healthy",
+          statement: "A fact that still resolves.",
+          evidence: [{ resource: healthyResource, version: "current" }],
+        },
+      ]),
+    );
+    const resolver = createResolver(
+      new Map([
+        [healthyResource, resolvedEvidence(healthyResource, "current")],
+        [
+          refusedResource,
+          new EvidenceSecurityError(
+            "Evidence path traverses a symbolic link or filesystem alias: lib/greeter.ts",
+          ),
+        ],
+      ]),
+    );
+
+    const result = await runClaimsPreflight(store, resolver);
+
+    expect(result.issues).toEqual([
+      {
+        page,
+        kind: "unresolved",
+        claimId: "claim_refused",
+        resources: [refusedResource],
+      },
+    ]);
+  });
+
+  test("still propagates operational resolution failures", async () => {
+    const page = "/openwiki/page.md";
+    const resource = "repo://src/unreadable.ts";
+    await writePage(page, "# Page\n");
+    const store = new ClaimsStore(rootDir);
+    await store.writePage(
+      page,
+      await pageClaims(store, page, [
+        {
+          id: "claim_unreadable",
+          statement: "A fact.",
+          evidence: [{ resource, version: "old" }],
+        },
+      ]),
+    );
+    const failure = new EvidenceResolutionError(
+      "Unable to read evidence src/unreadable.ts: EACCES",
+    );
+
+    await expect(
+      runClaimsPreflight(store, createResolver(new Map([[resource, failure]]))),
+    ).rejects.toBe(failure);
+  });
+
+  test("reports a claim whose evidence now traverses a symbolic link as unresolved", async () => {
+    const page = "/openwiki/page.md";
+    const resource = "repo://lib/greeter.txt";
+    const content = 'def greet(name):\n    return f"Hello, {name}!"\n';
+    const outsideDir = await mkdtemp(path.join(tmpdir(), "openwiki-outside-"));
+    try {
+      await mkdir(path.join(rootDir, "lib"));
+      await writeFile(
+        path.join(rootDir, "lib", "greeter.txt"),
+        content,
+        "utf8",
+      );
+      await writePage(page, "# Page\n");
+      const established = await new RepositoryEvidenceResolver({
+        rootDir,
+      }).resolve(resource);
+      if (!established) {
+        throw new Error("fixture evidence did not resolve");
+      }
+      const store = new ClaimsStore(rootDir);
+      await store.writePage(
+        page,
+        await pageClaims(store, page, [
+          {
+            id: "claim_greeter",
+            statement: "greet returns a greeting.",
+            evidence: [established.evidence],
+          },
+        ]),
+      );
+      const healthy = await runClaimsPreflight(
+        store,
+        new RepositoryEvidenceResolver({ rootDir }),
+      );
+
+      await writeFile(path.join(outsideDir, "greeter.txt"), content, "utf8");
+      await rm(path.join(rootDir, "lib"), { force: true, recursive: true });
+      await symlink(outsideDir, path.join(rootDir, "lib"), "dir");
+      const linked = await runClaimsPreflight(
+        store,
+        new RepositoryEvidenceResolver({ rootDir }),
+      );
+
+      expect(healthy.issues).toEqual([]);
+      expect(linked.issues).toEqual([
+        {
+          page,
+          kind: "unresolved",
+          claimId: "claim_greeter",
+          resources: [resource],
+        },
+      ]);
+    } finally {
+      await rm(outsideDir, { force: true, recursive: true });
+    }
   });
 
   test("inventories orphan sidecars without deleting them", async () => {
