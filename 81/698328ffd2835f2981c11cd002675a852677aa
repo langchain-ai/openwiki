@@ -1,0 +1,19 @@
+.changeset/openai-compatible-worker-streaming.md
+  s_0bd3edb645d41e::t_9483cdf7f96054 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "81698328ffd2835f2981c11cd002675a852677aa",
+  "prompts": {},
+  "sessions": {
+    "s_0bd3edb645d41e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0a122-4db5-73c2-9802-6ee13eae719f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
