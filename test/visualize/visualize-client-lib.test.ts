@@ -7,6 +7,7 @@ import {
   matchesFilter,
   nodeRadius,
   normalize,
+  shouldShowNodeLabel,
   signature,
   stripFrontmatter,
 } from "../../src/visualize/client-lib.ts";
@@ -61,6 +62,67 @@ describe("nodeRadius", () => {
 
   test("adds a bonus for the anchor page", () => {
     expect(nodeRadius(0, true)).toBe(8);
+  });
+});
+
+describe("shouldShowNodeLabel", () => {
+  test("shows only the hovered node when nothing is selected", () => {
+    expect(
+      shouldShowNodeLabel(
+        { id: "quickstart" },
+        {
+          selectedId: null,
+          hoveredId: "quickstart",
+          isInSelectedNeighborhood: false,
+        },
+      ),
+    ).toBe(true);
+    expect(
+      shouldShowNodeLabel(
+        { id: "overview" },
+        {
+          selectedId: null,
+          hoveredId: "quickstart",
+          isInSelectedNeighborhood: true,
+        },
+      ),
+    ).toBe(false);
+  });
+
+  test("shows the selected node and its immediate neighbours", () => {
+    expect(
+      shouldShowNodeLabel(
+        { id: "quickstart" },
+        {
+          selectedId: "quickstart",
+          hoveredId: null,
+          isInSelectedNeighborhood: false,
+        },
+      ),
+    ).toBe(true);
+    expect(
+      shouldShowNodeLabel(
+        { id: "overview" },
+        {
+          selectedId: "quickstart",
+          hoveredId: null,
+          isInSelectedNeighborhood: true,
+        },
+      ),
+    ).toBe(true);
+  });
+
+  test("hides unrelated nodes after selection", () => {
+    expect(
+      shouldShowNodeLabel(
+        { id: "operations" },
+        {
+          selectedId: "quickstart",
+          hoveredId: "operations",
+          isInSelectedNeighborhood: false,
+        },
+      ),
+    ).toBe(false);
   });
 });
 

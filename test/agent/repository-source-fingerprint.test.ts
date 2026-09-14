@@ -21,7 +21,8 @@ import {
 
 const fingerprintRace = vi.hoisted(() => ({
   replacementPath: null as string | null,
-  statIdentityMismatchPath: null as string | null,
+  openedStatMutationPath: null as string | null,
+  openedStatMutation: null as ((stats: BigIntStats) => void) | null,
   symlinkTarget: null as string | null,
 }));
 
@@ -46,15 +47,22 @@ vi.mock("node:fs/promises", async (importOriginal) => {
       const handle = await actual.open(filePath, flags, mode);
       if (
         typeof filePath === "string" &&
-        filePath === fingerprintRace.statIdentityMismatchPath
+        filePath === fingerprintRace.openedStatMutationPath
       ) {
+        const mutateStats = fingerprintRace.openedStatMutation;
+        fingerprintRace.openedStatMutationPath = null;
+        fingerprintRace.openedStatMutation = null;
+        if (!mutateStats) {
+          throw new Error(
+            "Expected an opened stat mutation for the injected race.",
+          );
+        }
         const originalStat = handle.stat.bind(handle) as (options: {
           bigint: true;
         }) => Promise<BigIntStats>;
         handle.stat = (async () => {
           const stats = await originalStat({ bigint: true });
-          stats.dev += 1n;
-          stats.ino += 1n;
+          mutateStats(stats);
           return stats;
         }) as typeof handle.stat;
       }
@@ -134,16 +142,41 @@ function stubPlatform(value: NodeJS.Platform): void {
   });
 }
 
+const WINDOWS_REPLACEMENT_STAT_MUTATIONS: Array<
+  [field: string, mutateStats: (stats: BigIntStats) => void]
+> = [
+  [
+    "size",
+    (stats) => {
+      stats.size += 1n;
+    },
+  ],
+  [
+    "mtimeNs",
+    (stats) => {
+      stats.mtimeNs += 1n;
+    },
+  ],
+  [
+    "birthtimeNs",
+    (stats) => {
+      stats.birthtimeNs += 1n;
+    },
+  ],
+];
+
 beforeEach(async () => {
   fingerprintRace.replacementPath = null;
-  fingerprintRace.statIdentityMismatchPath = null;
+  fingerprintRace.openedStatMutationPath = null;
+  fingerprintRace.openedStatMutation = null;
   fingerprintRace.symlinkTarget = null;
   await createRepository();
 });
 
 afterEach(async () => {
   fingerprintRace.replacementPath = null;
-  fingerprintRace.statIdentityMismatchPath = null;
+  fingerprintRace.openedStatMutationPath = null;
+  fingerprintRace.openedStatMutation = null;
   fingerprintRace.symlinkTarget = null;
   Object.defineProperty(process, "platform", {
     configurable: true,
@@ -275,15 +308,50 @@ describe("createRepositorySourceFingerprint", () => {
   });
 
   test("does not reject Windows file handles solely because dev and ino differ", async () => {
-    fingerprintRace.statIdentityMismatchPath = path.join(
+    fingerprintRace.openedStatMutationPath = path.join(
       repositoryRoot,
       "src",
       "tracked.ts",
     );
+    fingerprintRace.openedStatMutation = (stats) => {
+      stats.dev += 1n;
+      stats.ino += 1n;
+    };
     stubPlatform("win32");
 
     await expect(fingerprint()).resolves.toMatch(/^sha256:[a-f0-9]{64}$/u);
   });
+
+  test("does not reject Windows file handles solely because ctimeNs changes", async () => {
+    fingerprintRace.openedStatMutationPath = path.join(
+      repositoryRoot,
+      "src",
+      "tracked.ts",
+    );
+    fingerprintRace.openedStatMutation = (stats) => {
+      stats.ctimeNs += 1n;
+    };
+    stubPlatform("win32");
+
+    await expect(fingerprint()).resolves.toMatch(/^sha256:[a-f0-9]{64}$/u);
+  });
+
+  test.each(WINDOWS_REPLACEMENT_STAT_MUTATIONS)(
+    "rejects Windows file handles when %s changes",
+    async (_field, mutateStats) => {
+      fingerprintRace.openedStatMutationPath = path.join(
+        repositoryRoot,
+        "src",
+        "tracked.ts",
+      );
+      fingerprintRace.openedStatMutation = mutateStats;
+      stubPlatform("win32");
+
+      await expect(fingerprint()).rejects.toThrow(
+        "Source path changed while fingerprinting src/tracked.ts.",
+      );
+    },
+  );
 
   test("changes with .openwikiignore while excluding paths it ignores", async () => {
     const before = await fingerprint();

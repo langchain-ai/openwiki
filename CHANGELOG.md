@@ -1,5 +1,57 @@
 # openwiki
 
+## 0.5.1
+
+### Patch Changes
+
+- [#810](https://github.com/langchain-ai/openwiki/pull/810) [`65dbd57`](https://github.com/langchain-ai/openwiki/commit/65dbd575e078b1bece0e9220583cf13f4ea6f212) Thanks [@jkennedyvz](https://github.com/jkennedyvz)! - Modernize runtime and development dependencies, upgrade pnpm, and pin the patched `qs` transitive dependency.
+
+- [#794](https://github.com/langchain-ai/openwiki/pull/794) [`3e180e9`](https://github.com/langchain-ai/openwiki/commit/3e180e9b7d3eb98390e5f63c97a7fe256708b7d8) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: unescape .env values in a single atomic pass
+
+- [#796](https://github.com/langchain-ai/openwiki/pull/796) [`4364f25`](https://github.com/langchain-ai/openwiki/commit/4364f25ee1ebdf7f4439cc3618d22528fb958daf) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: allow the google fonts origins the visualizer page requests
+
+- [#832](https://github.com/langchain-ai/openwiki/pull/832) [`2a22e41`](https://github.com/langchain-ai/openwiki/commit/2a22e41dd1e8700e9d5d06f4b119c297b750e52a) Thanks [@smoochy](https://github.com/smoochy)! - feat: show the error stack in the debug diagnostics panel
+
+- [#838](https://github.com/langchain-ai/openwiki/pull/838) [`9a3a2d8`](https://github.com/langchain-ai/openwiki/commit/9a3a2d8725c5049c018917e48e7d8d07fdc26703) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - fix: accept empty-string env vars in MCP connector env resolution
+
+- [#806](https://github.com/langchain-ai/openwiki/pull/806) [`a0c864a`](https://github.com/langchain-ai/openwiki/commit/a0c864a8fc31e15c49ab96258e4851d9142b7baa) Thanks [@colifran](https://github.com/colifran)! - feat: declutter visualizer graph labels
+
+- [#841](https://github.com/langchain-ai/openwiki/pull/841) [`fb3c4c2`](https://github.com/langchain-ai/openwiki/commit/fb3c4c22e512c5e4df99f7013b2b34f04ba4fe0c) Thanks [@mdrxy](https://github.com/mdrxy)! - fix: preserve CLAUDE.md files that only import AGENTS.md
+
+- [#846](https://github.com/langchain-ai/openwiki/pull/846) [`b4a8045`](https://github.com/langchain-ai/openwiki/commit/b4a8045c57c68cb7156e21a984e1e52a0fb1291c) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - fix: render assistant text emitted from top-level model request streams
+
+- [#808](https://github.com/langchain-ai/openwiki/pull/808) [`83ece67`](https://github.com/langchain-ai/openwiki/commit/83ece673a6709e68e98e72cec318d77695fe066d) Thanks [@colifran](https://github.com/colifran)! - fix: update fast-uri to address high severity security vulnerabilities
+
+- [#817](https://github.com/langchain-ai/openwiki/pull/817) [`eb914e2`](https://github.com/langchain-ai/openwiki/commit/eb914e254137568737b130afb9cf7d63e0280129) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - fix: handle updates-mode stream chunks for openai-compatible provider
+
+## 0.5.0
+
+### Minor Changes
+
+- [#720](https://github.com/langchain-ai/openwiki/pull/720) [`6ba64c9`](https://github.com/langchain-ai/openwiki/commit/6ba64c9285384d00a9cea1d7f458261f57129a28) Thanks [@colifran](https://github.com/colifran)! - feat: add durable page-level resumability across local, CI, and host runs
+
+### Patch Changes
+
+- [#743](https://github.com/langchain-ai/openwiki/pull/743) [`0492b5e`](https://github.com/langchain-ai/openwiki/commit/0492b5eecee2e77a05a10f9c162635bdf8c4acf4) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - fix: set maxTokens on Bedrock Converse API calls to avoid 4096-token default cap
+
+- [#414](https://github.com/langchain-ai/openwiki/pull/414) [`e280c17`](https://github.com/langchain-ai/openwiki/commit/e280c1754eec1821e80796cd9ffae354d296f707) Thanks [@bikeusaland](https://github.com/bikeusaland)! - fix: correct git-repo incremental diff and isolate connector ingestion failures
+
+- [#744](https://github.com/langchain-ai/openwiki/pull/744) [`7c3a540`](https://github.com/langchain-ai/openwiki/commit/7c3a540f0feb069f448f662107783e521cc18830) Thanks [@Christian-Sidak](https://github.com/Christian-Sidak)! - fix: force streaming for GitHub Copilot non-GPT-5 models to prevent empty responses from DeepAgents internal invoke calls
+
+- [#748](https://github.com/langchain-ai/openwiki/pull/748) [`2d6a36c`](https://github.com/langchain-ai/openwiki/commit/2d6a36cbfecf01be6443b827604ce9f1941ae16f) Thanks [@easyhak](https://github.com/easyhak)! - feat: add cursor coding-agent integration target
+
+- [#416](https://github.com/langchain-ai/openwiki/pull/416) [`0bd0ac2`](https://github.com/langchain-ai/openwiki/commit/0bd0ac2e90015154d0a90483d588afe5928b4369) Thanks [@bikeusaland](https://github.com/bikeusaland)! - fix: make OpenRouter debug-fetch patch concurrency-safe
+
+- [#789](https://github.com/langchain-ai/openwiki/pull/789) [`84c8d6c`](https://github.com/langchain-ai/openwiki/commit/84c8d6cb14a6dfd899b8f62de3b9f556f3256314) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: allow the native repository planner to repeat an accepted plan without aborting the run.
+
+- [#769](https://github.com/langchain-ai/openwiki/pull/769) [`58a1358`](https://github.com/langchain-ai/openwiki/commit/58a1358e1f7d5b883db7405f56dcbdac3c4d7fe5) Thanks [@colifran](https://github.com/colifran)! - feat: reconcile page Claims sparsely so updates retain unaffected Claims without round-tripping their statements and evidence through the model, while exposing complete Claims through optional on-demand inspection
+
+- [#761](https://github.com/langchain-ai/openwiki/pull/761) [`97c6ef0`](https://github.com/langchain-ai/openwiki/commit/97c6ef0ce72912cb3ba70a238a94b2dbc6b3b190) Thanks [@easyhak](https://github.com/easyhak)! - fix: reject an unrecognized `--language` value instead of silently generating an English wiki
+
+- [#767](https://github.com/langchain-ai/openwiki/pull/767) [`06eedd1`](https://github.com/langchain-ai/openwiki/commit/06eedd1dd4ca11d190dd518703d816d873f932f4) Thanks [@forrinzhao](https://github.com/forrinzhao)! - fix: tolerate human-readable "not found" errors from DeepAgents backends when rolling back failed page workers and deleting non-existent pages, instead of aborting the whole run
+
+- [#781](https://github.com/langchain-ai/openwiki/pull/781) [`6be1e01`](https://github.com/langchain-ai/openwiki/commit/6be1e0148fa900cd5fae455d6f759380109a37e1) Thanks [@colifran](https://github.com/colifran)! - fix: tolerate windows stat identity drift while fingerprinting
+
 ## 0.4.3
 
 ### Patch Changes

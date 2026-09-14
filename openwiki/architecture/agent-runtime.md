@@ -1,17 +1,18 @@
 ---
 type: architecture
 title: Agent Runtime, Models, and Middleware
-description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, and running the OKF, translation, and crash-guard middleware around each run.
+description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, running the OKF, translation, and crash-guard middleware, and parsing the agent graph stream into display events.
 tags:
   - agent-runtime
   - model-providers
   - middleware
+  - stream-parsing
   - deepagents
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+  - by: openwiki/0.5.1
+    at: 2026-09-11T08:09:37.996Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -35,7 +36,11 @@ sources:
     resource: repo://src/config/reasoning.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+  - id: openwiki-source-21fe6d4741a8225393c37599
+    resource: repo://test/agent/create-model.test.ts
+  - id: openwiki-source-d485c898eb60ebb173072eab
+    resource: repo://test/agent/stream-redaction.test.ts
+generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -85,7 +90,7 @@ After model resolution, `resolveRunConfig` resolves three provider-neutral opera
 Each branch constructs a purpose-built client:
 
 - **Anthropic** builds `ChatAnthropic`, applying a modern-Claude default output-token limit (raised above LangChain's 4,096 fallback only for known Claude 4/5 families) unless an explicit provider-neutral limit is set.
-- **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns.
+- **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns; when `gemini-3.6-flash` declares a reasoning capability, the resolved effort is passed as `ChatGoogle`'s `thinkingLevel` option.
 - **Gemini Enterprise (Vertex)** delegates to `createGeminiEnterpriseModel`, which picks the client from the model family: Claude via the Anthropic Vertex SDK, partner/open-weight models over Vertex's OpenAI-compatible MaaS surface, and Gemini/Gemma over native `generateContent`. Auth is uniform ADC + project + region; only the transport differs.
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
@@ -95,7 +100,19 @@ Each branch constructs a purpose-built client:
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 
-`createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is sent either as a Responses-API `reasoning.effort` payload or as a chat-completions `reasoning_effort` kwarg depending on the model's declared transport; an unsupported provider/model or an invalid effort value throws.
+`createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is dispatched by the model's declared transport — a Responses-API `reasoning.effort` payload for `responses-reasoning`, a chat-completions `reasoning_effort` kwarg for `chat-completions-reasoning-effort`, and `ChatGoogle`'s `thinkingLevel` for `gemini-thinking-level`; an unsupported provider/model or an invalid effort value throws.
+
+### Reasoning capability table and transports
+
+`resolveReasoningConfig` returns a `ResolvedReasoningConfig` whose `transport` is one of three values, each mapped to the SDK field the model's provider accepts. The `REASONING_CAPABILITIES` table declares which (provider, model id) pairs expose a capability and which effort values each accepts:
+
+| Provider | Model id | Transport | Accepted effort values |
+| --- | --- | --- | --- |
+| `openai` / `openai-chatgpt` | `gpt-5.6-terra` / `gpt-5.6-luna` / `gpt-5.6-sol` | `responses-reasoning` | `none` / `low` / `medium` / `high` / `xhigh` / `max` |
+| `nvidia` | `nvidia/nemotron-3-super-120b-a12b` | `chat-completions-reasoning-effort` | `none` / `low` / `high` |
+| `gemini` | `gemini-3.6-flash` | `gemini-thinking-level` | `low` / `medium` / `high` |
+
+The `openai-compatible` provider has no static entry: its capability is gated by `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`. When that opt-in is set, `getOpenAiCompatibleReasoningCapability` returns a capability whose transport depends on `useResponsesApi` — `responses-reasoning` when the provider is configured to use the Responses API, `chat-completions-reasoning-effort` otherwise — and accepts the full effort range including `max`. Without the opt-in the capability is `undefined`, so any `OPENWIKI_REASONING_EFFORT` value throws "not supported" for `openai-compatible` (mirroring the behavior for any other provider/model pair that declares no capability).
 
 ### Vertex surface routing
 
@@ -107,7 +124,43 @@ For `gemini-enterprise`, the API surface is a function of the model id, not the 
 
 The composite backend (`createAgentBackend`) mounts two additional read-only virtual filesystems alongside the wiki backend: `/conversation_history/` for DeepAgents' history offload and `/skills/` for the bundled skills. A shared filesystem permission set additionally denies writes under both `/skills/**` and the conversation-history mount, and the composite backend converts a known upstream broad-glob recursion overflow into a bounded, model-facing "narrow your search" error instead of crashing the run.
 
-The agent is streamed with `subgraphs: true`. Stream mode is normally `messages` + `tools`, but the `openai-compatible` provider defaults to the safer `updates` + `tools` mode because arbitrary endpoints (e.g. GLM emitting reasoning deltas before the first assistant delta) can aggregate to a chunk the agent loop rejects; a known-good endpoint can opt back into `messages` mode with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`.
+The agent is streamed with `subgraphs: true`. Stream mode is normally `messages` + `tools`, but the `openai-compatible` provider defaults to the safer `updates` + `tools` mode because arbitrary endpoints (e.g. GLM emitting reasoning deltas before the first assistant delta) can aggregate to a chunk the agent loop rejects; a known-good endpoint can opt back into `messages` mode with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`. Regardless of mode, every raw LangGraph chunk emitted by `agent.stream` is reduced to a display event by the stream parsing pipeline described next.
+
+## Stream parsing pipeline
+
+The stream-consumption loop iterates `agent.stream` and hands each chunk to `parseAgentStreamChunk`, which returns an `OpenWikiRunEvent` (forwarded to the caller's `onEvent`) or `null` (logged as an unhandled chunk shape in debug, capped at three samples so a noisy provider cannot flood the log). Three runtime event types are produced: `text` (assistant prose), `tool_start`/`tool_end` (tool lifecycle), and `debug`.
+
+`parseAgentStreamChunk` first validates the chunk is a three-tuple `[namespace, mode, payload]` where `namespace` is a string array and `mode` is one of `messages`, `tools`, or `updates`; anything else is rejected as `null`. It then dispatches on mode:
+
+- **`tools`** delegates to `parseToolStreamEvent`, which normalizes the LangGraph tool lifecycle events `on_tool_start`, `on_tool_end`, and `on_tool_error` into `tool_start` and `tool_end` events. The tool-call display string is built from the tool name and sanitized input (`execute` is renamed `Execute`), and a tool-end carries a `finished` or `error` status keyed by the tool call id.
+- **`updates`** delegates to `parseUpdatesChunk`. This is the default mode for `openai-compatible` providers. LangGraph `updates` chunks carry a per-node state diff (`{ nodeName: { messages: [...] }, ... }`) rather than raw message tokens, so `parseUpdatesChunk` iterates the node outputs and returns the first non-empty assistant text extracted from any node's messages via `extractMessageText`. Without this handler, plain-text replies from openai-compatible endpoints are silently dropped and the TUI shows no assistant output.
+- **`messages`** (the default for every provider except `openai-compatible`) extracts assistant text directly from the message content blocks via `extractMessageText`.
+
+Both `messages` and `updates` paths tag the resulting `text` event with a `source` computed by `getStreamSource(namespace)`. DeepAgents wraps the primary model call in a single top-level `model_request:` namespace; a namespace that is exactly one element starting with `model_request:` is classified `main` (the assistant output that belongs in the transcript). A deeper namespace — a nested `task`/subgraph namespace — is classified `subgraph` (prose that should stay hidden from the main transcript), and an empty namespace falls back to `main`. This is how assistant text emitted from a top-level model-request stream is rendered as the main conversation while nested subgraph output is kept out of it.
+
+`extractMessageText` is a recursive, cycle-guarded walker that extracts text from the many shapes LangChain/LangGraph payloads can take: message tuples `[message, metadata]`, `chunk`/`message` wrappers, serialized message records (`kwargs`/`lc_kwargs`/`generations`), and content arrays. It only reads records whose role is `ai`/`assistant` (or untyped), skipping `human`/`system`/`tool` messages so user input and tool results are never echoed as assistant text.
+
+The content-block redaction layer is `extractContentBlockText`. Before returning any text from a content block, it checks the block's `type`: a type whose string includes `tool`, `reasoning`, `file`, or `image` is suppressed (returns an empty string). This ensures base64 `file`, `input_file`, `image`, and `image_url` payloads never reach the terminal, while adjacent `text` blocks in the same chunk stream through normally. A block that survives the type check yields text from its `text`/`content`/`output_text` field, recursing into `fields` (block deltas) and `delta` (content deltas such as `text-delta` and `block-delta`) as needed.
+
+```mermaid
+flowchart TD
+  Chunk["agent.stream chunk"] --> Valid{"isAgentStreamChunk: tuple namespace, mode, payload"}
+  Valid -->|no| Null1["return null, debug-log shape"]
+  Valid -->|yes| Mode{"mode"}
+  Mode -->|tools| Tool["parseToolStreamEvent: on_tool_start/end/error"]
+  Mode -->|updates| Updates["parseUpdatesChunk: iterate node state diff"]
+  Mode -->|messages| Msg["extractMessageText from payload"]
+  Updates --> Extract["extractMessageText from first node with text"]
+  Tool --> ToolEvt["tool_start or tool_end event"]
+  Extract --> Source["getStreamSource: main vs subgraph"]
+  Msg --> Source
+  Source --> TextEvt["text event with source tag"]
+  Null1 --> Forward["onEvent or skipped"]
+  ToolEvt --> Forward
+  TextEvt --> Forward
+```
+
+Stream-chunk classification by mode and namespace, reducing each raw LangGraph chunk to a display event or null.
 
 ## The docs-only filesystem backend
 

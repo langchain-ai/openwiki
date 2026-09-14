@@ -1,4 +1,10 @@
-import { ToolMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  AIMessageChunk,
+  ChatMessage,
+  ChatMessageChunk,
+  ToolMessage,
+} from "@langchain/core/messages";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 type HarnessPage = {
@@ -40,8 +46,8 @@ type ModelToolRequest = {
 type CapturedMiddleware = {
   wrapModelCall?: (
     request: ModelToolRequest,
-    handler: (request: ModelToolRequest) => Promise<ModelToolRequest>,
-  ) => Promise<ModelToolRequest>;
+    handler: (request: ModelToolRequest) => Promise<unknown>,
+  ) => Promise<unknown>;
 };
 
 type CapturedAgentOptions = {
@@ -67,6 +73,8 @@ const harness = vi.hoisted(() => ({
   changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
   driftOnce: false,
+  duplicatePlanSubmission: false,
+  duplicatePlanToolResults: [] as unknown[],
   filesystemTools: [] as string[][],
   finishCalls: 0,
   invalidPageSubmissions: 0,
@@ -231,6 +239,13 @@ vi.mock("deepagents", async (importOriginal) => {
             } else {
               await completionTool.invoke(input);
               if (
+                toolName === "submit_plan" &&
+                harness.duplicatePlanSubmission
+              ) {
+                const duplicate = await completionTool.invoke(input);
+                harness.duplicatePlanToolResults.push(duplicate);
+              }
+              if (
                 toolName === "submit_page" &&
                 harness.pageWorkerPostSubmitFailures > 0
               ) {
@@ -327,6 +342,51 @@ vi.mock("../../src/generation/repository-run.js", () => ({
         "Invalid or reserved OpenWiki page path: /openwiki/_plan.md",
       );
     }
+    if (run.state.plan) {
+      const proposed = {
+        pages: input.pages.map((page) => ({
+          path: page.path,
+          title: page.title,
+          purpose: page.purpose,
+          seedPaths: [],
+          relatedPages: [],
+          instructions: page.instructions ?? [],
+        })),
+        deletePages: input.deletePages ?? [],
+      };
+      const current = {
+        pages: run.state.plan.pages.map(
+          ({
+            path,
+            title,
+            purpose,
+            seedPaths,
+            relatedPages,
+            instructions,
+          }) => ({
+            path,
+            title,
+            purpose,
+            seedPaths,
+            relatedPages,
+            instructions,
+          }),
+        ),
+        deletePages: run.state.plan.deletePages,
+      };
+      if (JSON.stringify(proposed) !== JSON.stringify(current)) {
+        const { RepositoryRunError } =
+          await import("../../src/generation/errors.js");
+        throw new RepositoryRunError(
+          "invalid_state",
+          "This OpenWiki run already has a different persisted plan.",
+        );
+      }
+      return Promise.resolve({
+        status: "accepted",
+        totalPages: run.state.plan.pages.length,
+      });
+    }
     run.state.phase = "generating";
     run.state.plan = {
       pages: input.pages.map((page, index) => ({
@@ -416,12 +476,26 @@ async function runHarness(): Promise<OpenWikiRunEvent[]> {
   return events;
 }
 
+async function getNoDelegationWrapModelCall(): Promise<
+  NonNullable<CapturedMiddleware["wrapModelCall"]>
+> {
+  await runHarness();
+  const wrapModelCall =
+    harness.agentOptions[0]?.middleware.at(-1)?.wrapModelCall;
+  if (!wrapModelCall) {
+    throw new Error("Expected the no-delegation model-call middleware.");
+  }
+  return wrapModelCall;
+}
+
 beforeEach(() => {
   harness.agentOptions = [];
   harness.beginCalls = 0;
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
   harness.driftOnce = false;
+  harness.duplicatePlanSubmission = false;
+  harness.duplicatePlanToolResults = [];
   harness.filesystemTools = [];
   harness.finishCalls = 0;
   harness.invalidPageSubmissions = 0;
@@ -546,6 +620,21 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.finishCalls).toBe(1);
   });
 
+  test("continues when the planner repeats the same accepted plan", async () => {
+    harness.duplicatePlanSubmission = true;
+    harness.planPaths = ["/openwiki/quickstart.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.planSubmissionCalls).toBe(2);
+    expect(harness.duplicatePlanToolResults).toEqual([
+      '{"status":"accepted","totalPages":1}',
+    ]);
+    expect(harness.pageSubmissionCalls).toBe(1);
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
+    expect(harness.finishCalls).toBe(1);
+  });
+
   test("skips a failed page worker and continues the queue", async () => {
     harness.pageWorkerFailures = 1;
     harness.planPaths = ["/openwiki/failed.md", "/openwiki/later.md"];
@@ -570,22 +659,115 @@ describe("runNativeRepositoryGeneration", () => {
   });
 
   test("filters DeepAgents' automatic task capability at the model boundary", async () => {
-    await runHarness();
-    const noDelegation = harness.agentOptions[0]?.middleware.at(-1);
-    if (!noDelegation?.wrapModelCall) {
-      throw new Error("Expected the no-delegation model-call middleware.");
-    }
+    const wrapModelCall = await getNoDelegationWrapModelCall();
     const request = {
       tools: [{ name: "read_file" }, { name: "task" }, { name: "submit_plan" }],
     };
-    const filtered = await noDelegation.wrapModelCall(request, (next) =>
+    const filtered = await wrapModelCall(request, (next) =>
       Promise.resolve(next),
     );
 
-    expect(filtered.tools.map(({ name }) => name)).toEqual([
-      "read_file",
-      "submit_plan",
+    expect(
+      (filtered as ModelToolRequest).tools.map(({ name }) => name),
+    ).toEqual(["read_file", "submit_plan"]);
+  });
+
+  test("coerces roleless generic streaming aggregates before LangChain validates wrapModelCall", async () => {
+    const wrapModelCall = await getNoDelegationWrapModelCall();
+    const request = {
+      tools: [{ name: "read_file" }, { name: "task" }, { name: "submit_plan" }],
+    };
+    const genericAggregate = new ChatMessageChunk({
+      additional_kwargs: {
+        reasoning_content: "thinking before assistant role",
+        tool_calls: [
+          {
+            id: "call_submit_plan",
+            index: 0,
+            function: {
+              name: "submit_plan",
+              arguments: '{"pages":[]}',
+            },
+          },
+        ],
+      },
+      content: "planning complete",
+      response_metadata: { model_provider: "openai" },
+      role: undefined as unknown as string,
+    });
+
+    const coerced = await wrapModelCall(request, (next) => {
+      expect(next.tools.map(({ name }) => name)).toEqual([
+        "read_file",
+        "submit_plan",
+      ]);
+      return Promise.resolve(genericAggregate);
+    });
+
+    expect(AIMessage.isInstance(coerced)).toBe(true);
+    expect(coerced).toBeInstanceOf(AIMessageChunk);
+    const aiResponse = coerced as AIMessageChunk;
+    expect(aiResponse.text).toBe("planning complete");
+    expect(aiResponse.additional_kwargs.reasoning_content).toBe(
+      "thinking before assistant role",
+    );
+    expect(aiResponse.tool_calls).toEqual([
+      {
+        args: { pages: [] },
+        id: "call_submit_plan",
+        name: "submit_plan",
+        type: "tool_call",
+      },
     ]);
+  });
+
+  test("coerces generic assistant messages before LangChain validates wrapModelCall", async () => {
+    const wrapModelCall = await getNoDelegationWrapModelCall();
+    const genericMessage = new ChatMessage({
+      additional_kwargs: {
+        tool_calls: [
+          {
+            id: "call_submit_plan",
+            function: {
+              name: "submit_plan",
+              arguments: '{"pages":[]}',
+            },
+          },
+        ],
+      },
+      content: "planning complete",
+      role: "assistant",
+    });
+
+    const coerced = await wrapModelCall({ tools: [] }, () =>
+      Promise.resolve(genericMessage),
+    );
+
+    expect(AIMessage.isInstance(coerced)).toBe(true);
+    expect(coerced).toBeInstanceOf(AIMessage);
+    const aiResponse = coerced as AIMessage;
+    expect(aiResponse.text).toBe("planning complete");
+    expect(aiResponse.tool_calls).toEqual([
+      {
+        args: { pages: [] },
+        id: "call_submit_plan",
+        name: "submit_plan",
+      },
+    ]);
+  });
+
+  test("leaves non-assistant generic model responses untouched", async () => {
+    const wrapModelCall = await getNoDelegationWrapModelCall();
+    const genericUserResponse = new ChatMessageChunk({
+      content: "not assistant output",
+      role: "user",
+    });
+    const response = await wrapModelCall({ tools: [] }, () =>
+      Promise.resolve(genericUserResponse),
+    );
+
+    expect(response).toBe(genericUserResponse);
+    expect(AIMessage.isInstance(response)).toBe(false);
   });
 
   test("resumes a durable queue without recreating the planner", async () => {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0b468d917a18af0309a3ade77520af5ebdf89c8f46668322dde5d3aff242412f",
+  "pageVersion": "sha256:1da4500a0aab562bf4a252cf59d0ac172854b0013b2ca6c560d6b1adf74ca62a",
   "claims": [
     {
       "id": "claim_e161d3153b544232b9f17aa2f2838616",
@@ -443,10 +443,60 @@
           "version": "repo-lines-v1:sha256:230b9167781293aff83421eaaa450e07222cdbebf04c67a13bc2841b9bb44ac9:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcwZTUyNjE2NzQ4MGZjMTNhMTRjNGQyNmYyYTc1OWE0MDEzYmRiYWQxOGY4ZmQ2Yzc3ZGI0MDYzODUxNzNmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjgwNjFjYjhmNmYxNTRlNTUwNjM5ZGMxZDBiNDUyZDc4MzhhMjk5ZWUzNTU3Njg0MzE3YTdkM2MwZTYwYzZkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_76bb70285b104dfbb83edc3a1f2964f4",
+      "statement": "writePrintErrorDiagnostics renders ErrorDiagnostic entries from getErrorDiagnostics; OpenRouter metadata (provider_name, is_byok, finish_reason, raw, previous_errors capped at five) and any openRouterDebug payload are always extracted regardless of debug mode, and the final list is deduped by label:value.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L38-L80",
+          "version": "repo-lines-v1:sha256:5e76c01b858d8d30f34a89e145f60f5f1a92a69900df01d06af15cd939d7bdc4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMWYwYWJhZDc4ZGY0ZWRmZDYyYjNmMTU4MjlhYjc1YTc2YTE3ZWMwNDQ0YTEyMDlmMTU4YWM0NmM2NDA4Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyODkxMzkxNDQwM2UxYTBhNTk5YWRlZTQzNDdkOGE4NmYxYTk0MzkyZTcyYTNhNzk4YzI0OTNlNTNkZmNkZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZGFhMzBlZDJiMmNmNDAwNmM1YTAyOTZhN2EzMDdjM2MyYTBhNzM0NzU1MTRkOGY4NjlkNTU4ZGNlMDhlNGMifQ"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L366-L378",
+          "version": "repo-lines-v1:sha256:2c7ac0cffa4cefd0980479525e43ca5a47c825def5e4695dd61b2720522d78d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3NDQwNDQ4MDlkOWNlZjYwOTY0Mzc2MmJmYzA5ZTBiODhkMDIxNTE4YTcwMDRjODU3ODk4OTllNDg0OTgyZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMzRhNjY4OWU2NzMwOWMzMjdhZGY4OTJlZDVhNDEyZWIwZTE2MmQ4NDA3YTU5NjY1ZjMzZTFmYzRmYWM2YzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_99dafc91e2bf4c1bbd7fd141b2f67435",
+      "statement": "When OPENWIKI_DEBUG is set and the error is an Error instance, getErrorDiagnostics additionally emits the error name, a sanitized message, an httpStatusFromMessage diagnostic (the first 4xx/5xx value found in the message), and a stack diagnostic, and widens the walk to nested cause/error/response objects and other allowlisted fields.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L42-L77",
+          "version": "repo-lines-v1:sha256:cba29673d5298d8adae359345b4c9fd79e91ef4afbdc64c57cb7f1650fb26ec0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjI3YTEyYWQyODZkNWVkYjAzZTA1MTI5MTliYmM4ODUyN2UwZTY1MmM3MTg0NDVlNzUwZjQ3MmU5MTk5NmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMTg5ZTkzOTI2YzQ0M2QyM2U1ODNkY2U2MjdkM2E4MmZlMmQ1MTI5ZTgxYTMyOThjMDJiYzMzYzcwYzBkZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4ZmVkYzljZTM4NDQ0OGRlZGJhOGRlM2YzMjEwMzJkY2JjMDFmNmE4ZjVhYTE4MjdlZmM1YWM2ZjgyMDA3NWQifQ"
+        },
+        {
+          "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L36-L53",
+          "version": "repo-lines-v1:sha256:de3dab82b1b0db68ff0384eee60f96763bc8c725b83d1076549c95eb197ad6da:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMTA1YmNhZWE0ZDkyMjQzN2Q0MDYyN2Y1YWYyOGIzN2M1N2E3NWMxMjkzYzI2NDU3MGVhZDVlYWY5OTIyNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyYmQ0MzdiNzcyZWFjMGU0NDgzYmNjMWRmMTJjYzA2MjVlYmE5ZTI4YjQwNDFjYzAxY2FkNzY2ZTBmMzAxNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyZmQwMmNkODY4NThiYmNmNDUzMWFjMzhkZDQ3ZmU5NWJjOGUxYmYxMzRiZDBmMGNiODBlYzQ2OTNlM2JhZjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9dc5b258668e4fa9ac130bd5d2c72089",
+      "statement": "The stack diagnostic is sanitized via sanitizeDiagnosticText (which redacts live secret-bearing environment-variable values and bearer-token / known provider key patterns such as sk-or-v1-…) and truncated to 2,000 characters with a trailing ellipsis so a long trace cannot flood the terminal.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L252-L261",
+          "version": "repo-lines-v1:sha256:d15588b2cd080b6e905450ac64f2dc026cbd2eebaa2eacd1eea5332f735b6afe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTI0NjlmNjZiMTEwMDZkNTVhMDVmY2MyNTc5YWM5OTg3Y2Y3ZjQ5MDc4YmY1MWI5NzMwNWE4NDZiMThlMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZmFhN2JiNTRmYzkyZWZiYjA4NGI5Y2M0NWRjOGQwNzRhOTQyYWQxZTJmYTYxYmJjZThhMTc3ZDk4YTJkMzYifQ"
+        },
+        {
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L48-L53",
+          "version": "repo-lines-v1:sha256:381fcc821b9b3de34941420b8aae05968fc3e66f158085ed4b742fda38233919:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWU5MDFiN2I5YTdjYjMxOGNmZDc4MGYxOWYxZjE3ODExNDRkZWFhZWFlNjNhYmNkYmM2OGIxMmM0ZThjZWUwNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc0NWUwZTFhODU4MmU1Nzc2MjJmODdiNGRiNDdmMjNiZDJiM2VmYWUxYTdhY2M3N2Q2NWNkNGMxNTg2N2FiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE2ZjMxNzgyN2I1MjEyMTZkNGI4NWI5ODNjZjVmMDhjZTZmYTg3YjdlMDI2NDNjNTEyYzkzNmRiNDVmZmVmNSJ9"
+        },
+        {
+          "resource": "repo://src/platform/diagnostics.ts#L31-L71",
+          "version": "repo-lines-v1:sha256:e1332e25bb94126cf237c3f8846c0eaaa54016d950358e8a0166c8499867ad0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDc5MTRmNWVlYjI0Mjc0NTI5NmU2ODIwM2RjMDkzOGY1Zjc0ODkwNzcwNDQ2MzYyNTMzZTk2OGNmZjBiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwOGQyMzFkMDRiMmVhMzg0NThiMmYzZTY1NzIwYmVhNmM1NTU1MTczOGI3NzA4YWRlOTI4YjUzOTBmZWU4MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxOGVhOWRiYzhlMDdlZjZlMmEwNDY3MTY3OTY1YzJjMDVjYzJhZDk1YWFjZWRiYzVjMjcyNGM4MGNkNGRkNTIifQ"
+        },
+        {
+          "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L55-L65",
+          "version": "repo-lines-v1:sha256:2272fe56dbf1fb8b96953582887767a727776f88b0364cbebc545a96d087be88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZmM0MGUwYzJlYWYxNTA0MzRmZDEwOTdlNWZkZWUxMmU0M2E0YjA4N2ExY2M4OGJkOWY5NWQ4NWY0OTVhNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Zjc0ZDhkOGMyNjM5NjhhOTIxYjJkOWRmMTU2NTI1ZjNjMTQ1ZmEyNjVhMWFlYWMzZDk2ZjFmM2MxNDQ3OTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZDYyZTJiNTE1ODI5ZjgxNjBjMDkzYjEzYjE0ZTgwMjgwYTYzYjViYzg4NDBjMzhjZWJhNDEwODU0ZDQzNDQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-29T08:08:01.897Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-09T08:09:59.193Z"
   }
 }

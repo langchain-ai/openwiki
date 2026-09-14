@@ -1,11 +1,27 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
-tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
+description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem, and where the separate evals/ledger and evals/deepswe evaluation suites live.
+tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evals]
 sources:
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-6ad47cf13ce77f0839b358ec
+    resource: repo://evals/deepswe/tests/test_run.py
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-cbc766890230b3eb91e4f047
+    resource: repo://evals/ledger/run/runner.test.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-69abc6f0f641147820a274bc
+    resource: repo://src/agent/utils.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -22,6 +38,8 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-b6fe810a0cf7dea1a9e0eb8b
     resource: repo://test/agent/repository-source-fingerprint.test.ts
+  - id: openwiki-source-d485c898eb60ebb173072eab
+    resource: repo://test/agent/stream-redaction.test.ts
   - id: openwiki-source-f1b33b05f136bc4ed936d51d
     resource: repo://test/agent/update-noop.test.ts
   - id: openwiki-source-10e644b1d94ea2cd8435efb2
@@ -34,6 +52,10 @@ sources:
     resource: repo://test/claims/evidence/repository/resolver.test.ts
   - id: openwiki-source-61040321732e97cebb914633
     resource: repo://test/cli/components/markdown.test.tsx
+  - id: openwiki-source-f5f9f9512cc2874a9127f6e1
+    resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
+  - id: openwiki-source-507f854511667d512b3fa0ee
+    resource: repo://test/config/env.test.ts
   - id: openwiki-source-7813b7a34b04f73e9967e3c9
     resource: repo://test/connectors/fetch-with-resilience.test.ts
   - id: openwiki-source-3644b45ff9c47926aa74026e
@@ -50,6 +72,10 @@ sources:
     resource: repo://test/generation/repository-run.test.ts
   - id: openwiki-source-1adcdcd6832678e0e848f408
     resource: repo://test/generation/run-state.test.ts
+  - id: openwiki-source-a0cec66bd3bed0c13c668ff0
+    resource: repo://test/git-repo-connector.test.ts
+  - id: openwiki-source-caa199fea0a0f4f89151a0c8
+    resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
   - id: openwiki-source-1830eb3a15f412bf58d08bef
@@ -62,18 +88,24 @@ sources:
     resource: repo://test/mermaid/dom-shim.test.ts
   - id: openwiki-source-43240ab040106a6f63192176
     resource: repo://test/okf/frontmatter.test.ts
+  - id: openwiki-source-7ab91e61f234ef2c4b6b6258
+    resource: repo://test/openrouter-debug-fetch.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
   - id: openwiki-source-e3be493bc871948f42420690
     resource: repo://test/visualize/client-interaction.test.ts
   - id: openwiki-source-1904eaebd82125a3a3881dac
     resource: repo://test/visualize/page.test.ts
+  - id: openwiki-source-dbb4558a2e1f7159813c79c5
+    resource: repo://test/x-connector-stream-isolation.test.ts
+  - id: openwiki-source-98d5ddb014a0fd4d678f6f2a
+    resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.1
+    at: 2026-09-14T08:10:27.832Z
 ---
 
 # Testing Guide
@@ -161,6 +193,55 @@ that project's own `*.test.ts` files. Those belong to the fixture under test, no
 to OpenWiki, so the exclusion guarantees that a benchmark whose `repo/` happens
 to be present on disk cannot pollute this project's suite.
 
+## Evaluation subsystems (separate test suites)
+
+The `test/` tree documented on the rest of this page validates the OpenWiki
+application (`src/`). The two evaluation harnesses under `evals/` —
+[`evals/ledger/`](../testing/evals.md) (LEDGER) and
+[`evals/deepswe/`](../testing/evals.md) (DeepSWE) — are **not** part of that
+suite. They are self-contained subsystems with their own entry points, type
+config, and test runners, so changing an eval harness does not require the
+application `pnpm test` gate and vice versa. See the
+[Evaluation Systems](../testing/evals.md) page for the full architecture of
+both harnesses; this section covers only how each is tested.
+
+### LEDGER (`evals/ledger/`) — Vitest, with its own tsconfig
+
+LEDGER's test suite is Vitest, but the harness lives outside `test/` and is
+not driven by the root `vitest.config.ts` — that config only tunes discovery
+and `src/` coverage, so the `evals/ledger/**/*.test.ts` files run as ordinary
+Vitest tests that you invoke explicitly (the README documents
+`pnpm exec vitest run evals/ledger`). The suite is offline and substitutes
+deterministic evaluator and system implementations; live evaluator
+calibration is opt-in through `LEDGER_LIVE=1`.
+
+LEDGER ships its own TypeScript project: `evals/ledger/tsconfig.json` extends
+the root `tsconfig.json`, sets `noEmit`/`declaration: false`, and widens
+`include` to `**/*.ts` so it type-checks the eval source (which sits outside
+the application `src/` root). Two npm scripts wrap the harness:
+
+- `pnpm run eval:ledger` — runs `tsx evals/ledger/run.ts`, the live
+  checkpoint-replay evaluation (replays a benchmark's Git history through
+  OpenWiki and grades each frozen wiki snapshot).
+- `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
+  evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
+  (A `eval:ledger:reevaluate` script re-judges a completed run without
+  re-invoking OpenWiki.)
+
+These are separate from the application `typecheck`/`test` scripts and must
+be run explicitly when changing the LEDGER harness.
+
+### DeepSWE (`evals/deepswe/`) — Python unittest
+
+DeepSWE is a Python harness and has no TypeScript or Vitest footprint at all.
+Its tests are Python `unittest` modules under `evals/deepswe/tests/`
+(`test_run.py`, `test_analyze_openwiki_usage.py`) and must run inside the
+pinned Harbor/LiteLLM environment the harness itself uses, via
+`uvx --python 3.12 --from 'harbor[langsmith]==0.20.0' --with 'litellm==1.83.14'
+python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'`. The harness
+itself is driven by `python3 evals/deepswe/run.py` (no npm script is defined
+for it in `package.json`).
+
 ## Test layout maps to source subsystems
 
 `test/` mirrors `src/`. To find (or add) tests for a subsystem, go to the
@@ -174,7 +255,7 @@ matching path. The most important mappings:
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
 | `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, and packaged skill/protocol contracts |
-| `test/cli/`                                                                                                                                               | `src/cli/` — CLI wiring and Ink components                                                                    |
+| `test/cli/`                                                                                                                                               | `src/cli/` — CLI wiring, Ink components, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
 | `test/config/`, `test/mermaid/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
@@ -214,7 +295,15 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   `skipRepositoryPage` to restore the captured snapshot, marks that page
   `skipped`, finishes the run, and emits a `text` event telling the user the
   page will be "reconsidered on the next update" — leaving the skipped page to
-  be re-queued as `pending` on resume.
+  be re-queued as `pending` on resume. It also covers duplicate-plan tolerance
+  (`continues when the planner repeats the same accepted plan`, armed via
+  `duplicatePlanSubmission`, which repeats the accepted `submit_plan` call and
+  asserts the runner proceeds to page generation rather than treating the
+  repeat as a conflict) and post-submit page durability (`keeps a durably
+  completed page after a later worker failure`, armed via
+  `pageWorkerPostSubmitFailures`, which makes the worker throw *after*
+  `submit_page` succeeds and asserts the page is not rolled back —
+  `restoreCalls` stays `0` and the page remains `complete`).
 - `test/agent/update-noop.test.ts` is the dedicated suite for the update no-op
   fast-skip path: it builds a real committed Git repository with an OpenWiki
   tree and exercises `getUpdateNoopStatus` across the conditions that should and
@@ -230,10 +319,32 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   It pins fingerprint stability, sensitivity (tracked/staged/unstaged content,
   deletions, untracked files, executable-bit, symlink-target changes,
   `.openwikiignore` rules), the exclusion of generated pages/Claims
-  sidecars/run metadata, and a TOCTOU race where an inspected file becomes a
-  symlink before opening — it injects that race by wrapping `node:fs/promises`
-  with `vi.mock` and asserts the fingerprinter fails closed rather than
-  following the swapped target.
+  sidecars/run metadata, and two failure-mode races injected by wrapping
+  `node:fs/promises` with `vi.mock`: a TOCTOU race where an inspected file
+  becomes a symlink before opening (the fingerprinter fails closed rather than
+  following the swapped target), and a set of Windows stat-identity drift tests.
+  On non-Windows the same-file guard keys on `dev`/`ino`; on Windows it falls
+  back to `size`/`mtimeNs`/`birthtimeNs` and excludes `ctimeNs` (which can
+  change for the same file between `lstat` and `FileHandle.stat`). The tests
+  stub `process.platform` to `win32` and inject stat mutations via the mocked
+  `open`: a `dev`/`ino` drift and a `ctimeNs`-only drift both still resolve, a
+  `size`/`mtimeNs`/`birthtimeNs` change rejects with
+  `Source path changed while fingerprinting`, and on other platforms a
+  `dev`/`ino` change rejects.
+- `test/agent/stream-redaction.test.ts` exercises `parseAgentStreamChunk`,
+  pinning its suppression of `file`, `image`, `input_file`, and `image_url`
+  content blocks that carry base64 blobs (which must never reach the terminal)
+  while allowing adjacent text blocks in the same chunk to stream through
+  normally. It also covers plain-text streaming, nested task (`subgraph`)
+  output, `model_request` namespace classification (a top-level
+  `model_request:*` namespace is tagged `main` while a `task` +
+  `model_request:*` namespace is tagged `subgraph`), tool lifecycle
+  normalization (`on_tool_start`/`on_tool_end`/`on_tool_error`), the
+  `updates`-mode state-diff extraction (default for openai-compatible
+  providers, tagged `main` or `subgraph` by namespace), tool-call-only
+  messages in `updates` chunks returning `null` (a message carrying only
+  `tool_calls` has no renderable text), and rejection of malformed stream
+  chunks.
 
 ### Claims: nested layout
 
@@ -258,6 +369,61 @@ throwaway temp directory, feed controlled API responses through a stubbed
 dump it writes to disk — no real network call or OAuth token is involved. To add
 a new connector, use the `write-connector` skill and add a matching test under
 `test/connectors/sources/`.
+
+The cross-cutting `test/connectors/mcp-client.test.ts` exercises the MCP client
+surface. Its `buildChildEnv` suite drives the child-environment builder that
+filters the parent process env so OpenWiki credentials never leak to spawned MCP
+servers: it confirms secret keys are absent from the child env, allow-listed
+base variables (`PATH`, `APPDATA`, `LOCALAPPDATA`) pass through, only the
+credentials a transport explicitly declares are resolved, an unresolvable
+declared reference throws, and invalid child env key names are rejected. It now
+also pins the `mcp-empty-env-var` fix: a declared env var set to an empty string
+(`MCP_EMPTY=""`) is treated as **present** and resolves to `""`, not as missing —
+so empty-string env vars survive the child-env boundary rather than being
+dropped. The rest of the file validates the untrusted connector config
+**before** any subprocess spawns or network transport opens, exercising
+`executeMcpTool`/`listMcpTools`/`executeMcpReadOnlyOperations` against
+missing-transport, invalid-operation-name, and bad-command/URL pre-flight
+rejections with no real child process or connection involved.
+
+A small number of connector-related tests live at the `test/` root rather than
+under `test/connectors/sources/` because they cross the single-source boundary
+and exercise isolation contracts that only make sense across connectors or
+streams:
+
+- `test/git-repo-connector.test.ts` builds real throwaway git repos in temp
+  dirs and drives the git-repo connector across two runs. It asserts the
+  second-run manifest describes what was committed *since* the recorded head
+  (issue #409) — naming the file added in the new commit, not the file from the
+  already-ingested first commit, with the prior head carried as `previousHead`
+  — and that a first run reports the working-tree diff only with no
+  `previousHead`, and a second run against an unreachable recorded head (as
+  after a force-push or garbage-collected rewrite) falls back to the
+  working-tree diff rather than throwing.
+- `test/ingest-all-connectors.test.ts` pins `openwiki_ingest_all_connectors`
+  failure isolation (issue #412): it mocks the connector registry with two
+  fake connectors — one that resolves and one that rejects — and asserts the
+  tool still returns both outcomes, so a throwing connector does not discard a
+  succeeding connector's result (the failure is surfaced as an `error` status
+  with the message mirrored into `warnings`, while the success keeps its
+  `rawFiles`).
+- `test/x-connector-stream-isolation.test.ts` pins X-connector per-stream
+  failure isolation (issue #412): it stubs `fetch` so one stream
+  (`mentions`) returns 429 while another (`user_posts`) succeeds, and asserts
+  the run does not abort — the succeeding dump is kept, the failing stream's
+  failure is surfaced as a warning, both streams were still attempted, and state
+  is still written. A complementary case where every stream fails asserts the
+  run yields an `error` status (not a benign skip) with the per-stream warning.
+- `test/openrouter-debug-fetch.test.ts` pins the OpenRouter debug-fetch
+  concurrency contract (issue #411): `ChatOpenRouter` calls `globalThis.fetch`
+  directly, so `installOpenRouterDebugFetch` patches the global. The test
+  asserts that a single run restores the exact original `fetch` on detach, that
+  overlapping runs each keep their own captured failure and the real `fetch` is
+  restored exactly once — only after the last run detaches (reference-counted,
+  with a redundant `restore()` being a no-op that does not prematurely restore
+  while another run is still active) — that an OpenRouter failure fans out to
+  every active run's sink while each run can clear its own failure, and that
+  non-OpenRouter requests pass through untouched.
 
 ### OKF: frontmatter and index
 
@@ -314,10 +480,63 @@ concern, mirroring `src/generation/`:
 exercises `ensureCodeModeRepoSetup` and `runCodeModeConnectors` against temp
 repositories: it parses the generated GitHub Actions workflow YAML, pins the
 agent files and workflow/provider blocks, and asserts the OpenWiki
-`<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` snippet contract. Sibling files
+`<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` snippet contract. It also pins
+`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when both agent files are
+absent it creates `CLAUDE.md` as a simple `@AGENTS.md` reference rather than a
+copy of `AGENTS.md`'s content (it contains `@AGENTS.md`, not an inert Markdown
+link, and is shorter than `AGENTS.md`); when `CLAUDE.md` is a symlink to
+`AGENTS.md` it inlines the instructions instead of emitting an `@AGENTS.md`
+import (which would point the file at itself); and a pre-existing `CLAUDE.md`
+that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved unchanged rather
+than overwritten — so an import-only `CLAUDE.md` survives a re-setup. Sibling files
 (`test/ingestion/ingestion-run.test.ts`, `test/ingestion/ingestion.test.ts`,
 `test/ingestion/langsmith-modes.test.ts`) cover the ingestion run,
 `parseIngestionTarget`/`createConnectorSynthesisGuidance`, and connector modes.
+
+### CLI: error diagnostics
+
+`test/cli/` mirrors `src/cli/`, splitting CLI wiring (TypeScript entry points)
+from Ink components. The Ink components live under `test/cli/components/` and
+the credentials setup wizard's component tests live under `test/setup/credentials/`
+(see the tooling section above for the `ink-testing-library` pattern). The
+non-component CLI test worth knowing about:
+
+- `test/cli/diagnostics/error-diagnostics.test.ts` exercises
+  `getErrorDiagnostics`, the helper behind the `--debug` diagnostic surface. It
+  asserts that a plain `Error` returns nothing when debug is off, while debug
+  mode extracts the error `name`, `message`, and an inline HTTP status parsed
+  from the message (`httpStatusFromMessage`). The stack is only included when
+  `OPENWIKI_DEBUG` is set; when present it is sanitized — secret-like patterns
+  in the stack (e.g. a `bearer sk-or-v1-…` token) are replaced with a
+  `[REDACTED:OPENROUTER_API_KEY]` placeholder — and truncated to exactly 2000
+  characters with a trailing `...`. It also covers HTTP status and
+  case-insensitive header extraction from response-like errors, OpenRouter
+  metadata extraction (`metadata.provider_name`) which happens even with
+  debug off, redaction of secret-like keys inside stringified metadata
+  (`metadata.raw`), previous-errors capping (only the first five
+  `previous_errors` are kept, with a `metadata.previous_errors.more` note
+  counting the remainder), and nested response fields surfaced under a dotted
+  prefix (`response.status`/`response.statusText`).
+
+### Config: env parsing and formatting
+
+`test/config/env.test.ts` exercises `parseEnv` and `formatEnv` from
+`src/config/env.ts`, the `.env`-style loader and serializer behind the managed
+environment keys. `parseEnv` parses simple `KEY=value` lines, skips blanks and
+comments, ignores lines with no `=` or an empty key, rejects keys that are not
+`UPPER_SNAKE_CASE`, handles `export`-prefixed lines, and leaves unquoted values
+as-is. For double-quoted values it now includes tests for the **atomic
+single-pass unescaping** of backslash escapes: it unquotes and unescapes
+`"line1\nline2"`, `"a\"b\\c"`, and — newly — carriage returns (`"line1\rline2"`
+and `"line1\r\nline2"`), as well as the **Windows-path corruption regression**
+where a raw backslash escaped to `\\` immediately before a path segment
+starting with `n` or `r` (e.g. `C:\name\creds.json`) must not be misread as the
+`\n`/`\r` escape sequence on parse. The `formatEnv` suite mirrors this:
+quoting, escaping quotes/backslashes/newlines, escaping carriage returns, and
+ordering managed keys first (in `MANAGED_ENV_KEYS` order) then unknown keys
+sorted alphabetically. A `parseEnv <-> formatEnv` round-trip suite confirms
+values — including carriage returns and the Windows path regression — survive
+a `format → parse` round-trip.
 
 ### Visualize: page, graph, and client interaction
 
@@ -332,7 +551,12 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   review rather than silently trusting the CDN. It also guards the issue #670
   overlay-layout regression: the hint and legend must live inside the `#graph`
   panel (not direct children of `.main`) and the stylesheet must height-cap
-  `.graph-overlay` with a scrollable `.legend`.
+  `.graph-overlay` with a scrollable `.legend`. A CSP Google Fonts regression
+  test asserts that the page's Content Security Policy allows the very origins
+  the page itself requests: `style-src` must include `fonts.googleapis.com`
+  (the stylesheet the `<link>` tag loads) and `font-src` must include
+  `https://fonts.gstatic.com` (the font files that stylesheet references), so a
+  browser enforcing the CSP no longer silently blocks the Inter typeface.
 - `test/visualize/client-interaction.test.ts` is a `@vitest-environment jsdom`
   suite for the browser-only `src/visualize/client.ts` interaction wiring.
   Because `client.ts` touches the DOM and CDN globals at import time, the test
@@ -342,7 +566,14 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   `data-static-export`, and asserts on the handlers it registers. Its primary
   target is the issue #670 regression: background clicks must not be wired to
   any handler, so clicking blank graph space never clears the reader, while
-  node clicks select a page and highlight its sidebar entry.
+  node clicks select a page and highlight its sidebar entry. It also asserts
+  the graph-label decluttering feature driven by `shouldShowNodeLabel`: by
+  default no labels are painted, hovering a node draws only that node's label,
+  and clicking a node draws its label plus the labels of its directly
+  connected neighbours. These assertions call the registered
+  `onNodeHover`/`onNodeClick` handlers and then paint every node through the
+  recorded `nodeCanvasObject` handler, collecting the `fillText` calls to
+  verify exactly which labels appear.
 
 ### Integrations: protocol, session manager, and MCP server
 
@@ -483,10 +714,17 @@ file or directory, or `-t "<name>"` to scope by test name.
   matching directory from the table above).
 - **A single file:** `pnpm exec vitest run test/agent/repository-runner.test.ts`.
 - **A single connector source:** `pnpm exec vitest run test/connectors/sources/slack.test.ts`.
+- **MCP client child-env (incl. empty-string var):** `pnpm exec vitest run test/connectors/mcp-client.test.ts -t "buildChildEnv"`.
+- **Git-repo connector incremental diff:** `pnpm exec vitest run test/git-repo-connector.test.ts`.
+- **Connector failure isolation (ingest-all):** `pnpm exec vitest run test/ingest-all-connectors.test.ts`.
+- **X connector stream isolation:** `pnpm exec vitest run test/x-connector-stream-isolation.test.ts`.
+- **OpenRouter debug-fetch concurrency:** `pnpm exec vitest run test/openrouter-debug-fetch.test.ts`.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
 - **Agent worker-exit/skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
+- **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
+- **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.
 - **Source fingerprinting / changed paths:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts`.
 - **Page manifest persistence:** `pnpm exec vitest run test/generation/page-manifest.test.ts`.
@@ -497,6 +735,11 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
 - **Code-mode ingestion setup:** `pnpm exec vitest run test/ingestion/code-mode.test.ts`.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
+- **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
+- **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
+- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression).
+- **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
+- **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 
 Because tests import `src/` directly, a focused Vitest run does not require a
 prior `pnpm build`. Reserve the full `pnpm test` (typecheck + build + coverage)

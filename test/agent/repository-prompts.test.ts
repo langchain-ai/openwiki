@@ -105,6 +105,7 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("Populate relatedPages");
     expect(prompt).toContain("trace representative end-to-end control");
     expect(prompt).toContain("focused tests and neighboring");
+    expect(prompt).toContain("submit_plan directly.");
     expect(prompt).not.toContain("force flag");
   });
 

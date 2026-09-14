@@ -388,6 +388,17 @@ afterEach(async () => {
 describe("host integration registry", () => {
   test("defines user and project destinations for all supported hosts", () => {
     expect(HOST_TARGETS).toMatchObject({
+      bob: {
+        producerActor: "bob",
+        user: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+        },
+        project: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+        },
+      },
       codex: {
         producerActor: "codex",
         user: {
@@ -444,6 +455,23 @@ describe("host integration registry", () => {
           mcpConfig: { kind: "json", relativePath: ".cursor/mcp.json" },
         },
       },
+      kiro: {
+        producerActor: "kiro",
+        user: {
+          skillDirectory: ".kiro/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".kiro/settings/mcp.json",
+          },
+        },
+        project: {
+          skillDirectory: ".kiro/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".kiro/settings/mcp.json",
+          },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -453,17 +481,15 @@ describe("host integration registry", () => {
       "claude",
       "opencode",
       "cursor",
+      "kiro",
     ]);
-    const userTargets = TARGETS.filter((target) => target.user !== null);
-    // Bob and Codex intentionally share `.agents/skills/openwiki` — both
-    // follow the agents-convention skill directory, so co-installing them
-    // writes the same files to the same path (harmless). Expect one fewer
-    // unique directory than the number of user-scoped targets.
-    const uniqueSkillDirs = new Set(
-      userTargets.map((target) => target.user?.skillDirectory),
+    expect(HOST_TARGETS.bob.user.skillDirectory).toBe(
+      HOST_TARGETS.codex.user.skillDirectory,
     );
-    expect(uniqueSkillDirs.size).toBeLessThanOrEqual(userTargets.length);
-    expect(uniqueSkillDirs.size).toBeGreaterThanOrEqual(userTargets.length - 1);
+    const otherUserSkillDirs = TARGETS.filter(
+      (target) => target.user !== null && target.id !== "bob",
+    ).map((target) => target.user?.skillDirectory);
+    expect(new Set(otherUserSkillDirs).size).toBe(otherUserSkillDirs.length);
   });
 });
 

@@ -42,6 +42,28 @@ describe("getErrorDiagnostics", () => {
     expect(lookup.httpStatusFromMessage).toBe("503");
   });
 
+  test("extracts the stack in debug mode and omits it when debug is off", () => {
+    const error = new Error("boom");
+
+    expect(toLookup(getErrorDiagnostics(error)).stack).toBeUndefined();
+
+    process.env[DEBUG] = "1";
+
+    expect(toLookup(getErrorDiagnostics(error)).stack).toContain("at ");
+  });
+
+  test("redacts and truncates the stack", () => {
+    process.env[DEBUG] = "1";
+    const error = new Error("boom");
+    error.stack = `Error: boom\n    at call (bearer sk-or-v1-supersecret)\n${"    at frame\n".repeat(300)}`;
+    const stack = toLookup(getErrorDiagnostics(error)).stack;
+
+    expect(stack).not.toContain("sk-or-v1-supersecret");
+    expect(stack).toContain("[REDACTED:OPENROUTER_API_KEY]");
+    expect(stack).toHaveLength(2_000);
+    expect(stack.endsWith("...")).toBe(true);
+  });
+
   test("extracts status and case-insensitive headers in debug mode", () => {
     process.env[DEBUG] = "1";
     const lookup = toLookup(

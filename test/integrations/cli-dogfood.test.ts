@@ -84,10 +84,12 @@ describe("host integration CLI dogfood", () => {
       force: false,
     });
     expect(stdout.join("")).toBe(
-      "codex\tinstalled\tCodex\n" +
+      "bob\tmodified\tIBM Bob\n" +
+        "codex\tinstalled\tCodex\n" +
         "claude\tnot-installed\tClaude Code\n" +
         "opencode\tnot-installed\tOpenCode\n" +
-        "cursor\tnot-installed\tCursor\n",
+        "cursor\tnot-installed\tCursor\n" +
+        "kiro\tnot-installed\tKiro\n",
     );
 
     stdout = [];

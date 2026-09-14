@@ -45,6 +45,10 @@ const CURSOR_ENTRY: HostMcpServerCommand = {
   command: "openwiki",
   args: ["mcp", "--host", "cursor"],
 };
+const KIRO_ENTRY: HostMcpServerCommand = {
+  command: "openwiki",
+  args: ["mcp", "--host", "kiro"],
+};
 const OPENCODE_SHAPE = {
   type: "local",
   command: ["openwiki", "mcp", "--host", "opencode"],
@@ -223,6 +227,31 @@ describe("JSON MCP config ownership", () => {
       "utf8",
     );
     await expect(uninstallJsonMcpEntry(filePath, CURSOR_ENTRY)).resolves.toBe(
+      true,
+    );
+    expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
+      mcpServers: { other: { command: "other" } },
+    });
+  });
+
+  test("round-trips a Kiro entry in .kiro/settings/mcp.json", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, ".kiro", "settings", "mcp.json");
+    await mkdir(path.dirname(filePath), { recursive: true });
+    await writeFile(
+      filePath,
+      `${JSON.stringify({ mcpServers: { other: { command: "other" } } })}\n`,
+      "utf8",
+    );
+
+    await expect(installJsonMcpEntry(filePath, KIRO_ENTRY)).resolves.toBe(true);
+    expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
+      mcpServers: { other: { command: "other" }, openwiki: KIRO_ENTRY },
+    });
+    await expect(getJsonMcpEntryStatus(filePath, KIRO_ENTRY)).resolves.toBe(
+      "installed",
+    );
+    await expect(uninstallJsonMcpEntry(filePath, KIRO_ENTRY)).resolves.toBe(
       true,
     );
     expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
