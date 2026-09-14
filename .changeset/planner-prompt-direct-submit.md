@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-instruct repository planner to invoke submit_plan directly without conversational text
+fix: instruct repository planner to invoke submit_plan directly without conversational text
