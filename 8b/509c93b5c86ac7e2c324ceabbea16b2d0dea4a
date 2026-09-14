@@ -1,0 +1,173 @@
+openwiki/.claims/testing/evals.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-304
+openwiki/concepts/index.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 4
+openwiki/.page-manifest.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 5-9,15-16,19-23,29-30,33-37,43-44,50-51,57-58,64-65,71-72,75-79,85-86,89-93,99-100,103-114,117-121,127-128,131-135,139-140,146-147,153-154
+README.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 26,37,43,66,70-87,114,117,133,436-444,488,521-522
+openwiki/.claims/workflows/onboarding.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,233,236-237,240-249,341-342
+test/agent/repository-runner.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-7,49-50,479-490,662,666,670-720,724-771
+  s_0bd3edb645d41e::t_855eeece12f8c3 772
+openwiki/operations/configuration.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 16-17,30-34,36-37,215-216,224-227,249-284,293-294,303-308
+openwiki/testing/index.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3-4
+openwiki/.claims/testing/overview.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,391,394-395,398-399,402-403,459,462-471,613,616-617,620-621,624-625,670-765,769-770
+src/agent/repository-prompts.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 45-47
+.changeset/openai-compatible-vllm-content.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+.changeset/inert-claude-md-pointer.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+test/agent/repository-source-fingerprint.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 24-25,50,52-59,65,145-167,170-171,178-179,311-326,331-333,339-354
+  s_0bd3edb645d41e::t_f7368dda6a7610 355
+.changeset/fuzzy-dingos-smile.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+examples/openwiki-update-auto-merge.yml
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-95
+.changeset/add-claude-opus-5-model-options.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+openwiki/.claims/architecture/agent-runtime.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,116-117,137,140-141,144-145,148-149,168-169,172,179,182-183,186-187,432-433,436-437,476-575,579-580
+openwiki/quickstart.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 11-14,37-40,167
+package.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,8
+openwiki/.claims/operations/configuration.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,69,189,192-201,252-257,263,266-267,270-271,274-275,322-323,326-330,334-413,417-418
+test/cli/components/run-view.test.tsx
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 210
+.changeset/planner-prompt-direct-submit.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+test/ingestion/code-mode.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-8,156-160,167-188
+  s_0bd3edb645d41e::t_cc011b1286d9ff 189
+test/openrouter-debug-fetch.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 46-72,157-252
+.github/workflows/release.yml
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 59-62
+.changeset/openai-compatible-reasoning-effort.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+.changeset/soft-windows-fingerprint-ctime.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+openwiki/.claims/architecture/source-map.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,57,64-65,68-69,72-77,460-579,583-584
+openwiki/testing/overview.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 4-5,7-18,23-24,101-102,105,107-108,196-244,325-333,339-347,483-491,738,741-742
+src/agent/repository-runner.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3-14,103-104,107-110,118-219
+  s_0bd3edb645d41e::t_27e32367f7f48b 220
+test/agent/repository-prompts.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 108
+test/agent/create-model.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 16-20,39-48,171,176,179,185,214-221,257-439,520-521,526-529,533-534,539-546,648-685
+  s_0bd3edb645d41e::t_5da90cba8c3042 686
+openwiki/.claims/quickstart.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,11,218-231,235-236
+openwiki/.claims/concepts/model-providers.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,10,14,18-19,252-253,256-257,326-379,383-384
+src/config/reasoning.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3-4,20-22,34-37,43-47,67-69,75,77-80,92,108-115,131-146
+  s_0bd3edb645d41e::t_98c7e27c3c37e3 147
+openwiki/architecture/index.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3
+test/integrations/cli-dogfood.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 90-91
+openwiki/workflows/onboarding.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 33-35,37-38,208-226
+openwiki/architecture/source-map.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 7-24,45-48,87,89-90,102-104,129-143,295,298-301,303-308,310-314,381-425
+  s_0bd3edb645d41e::t_1cb573e6fec245 426
+openwiki/operations/ci-scheduling.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 20-21,39-41,174-175,177-181,184-189,231-266,283-284,286-294
+test/config/constants.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 37,407-410,415-418,433-444,450-457,468-497,509-513,573-598,1132-1139
+  s_0bd3edb645d41e::t_2d283d59f60ab9 1140
+src/agent/utils.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 663-664
+openwiki/concepts/model-providers.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 4-5,19-20,23-25,27-28,190,192-198,265-302
+  s_0bd3edb645d41e::t_da6efb554b823e 303
+DEVELOPMENT.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 7
+openwiki/testing/evals.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-286
+.changeset/gemini-thinking-level.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+scripts/install-local-integration.mjs
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 20
+openwiki/.claims/operations/ci-scheduling.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3,238-265,269-270
+test/config/env-behavior.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 20,65,648-686
+  s_0bd3edb645d41e::t_a28a9ca60e8b3d 687-691
+test/node-runtime.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-30
+openwiki/.last-update.json
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 2,4
+test/config/env.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 159-164
+.changeset/ninety-node-runtimes.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+CLAUDE.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 17
+openwiki/architecture/agent-runtime.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 4,9,14-15,39-43,93,103-115,127-163
+test/integrations/installer.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 447-463,472
+src/ingestion/code-mode.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1,25,194-202,220-222,230,245-251,440,443-447,454,458-473
+  s_0bd3edb645d41e::t_5ff13bec67c21d 474
+CONTRIBUTING.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 40,45,53
+test/agent/stream-redaction.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3-6,88-115
+  s_0bd3edb645d41e::t_d25d3a9417fde9 116
+src/integrations/install/types.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 4
+.changeset/openai-compatible-worker-streaming.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+.changeset/openrouter-provider-404-retry.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 1-5
+src/integrations/install/registry.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 79-92
+src/agent/index.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 187,252,1099-1110,1123-1126,1135,1246-1256,1260,1262,1275-1382,1974-1975,1977-1979,1982-1990,2077-2081,2123-2124,2129-2130,2153-2154,2156-2197,2200-2201,2220-2221,2223-2228,2255-2257,2261-2326,2453-2455,2460-2466,2468-2473,2477-2479
+  s_0bd3edb645d41e::t_ccca71b6754040 2480
+src/config/constants.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 22-23,372-373,396-397,475,478,1034-1040
+  s_0bd3edb645d41e::t_e0badf57d89d5c 1041-1043
+test/cli/integrations-runners.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 69,86-87,89
+CHANGELOG.md
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 3-26
+test/integrations/config-adapters.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 48-51,236-254,256-257,259
+  s_0bd3edb645d41e::t_ac5c2680407a80 255,258,260
+test/integrations/package-contents.test.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 61
+src/config/env.ts
+  s_0bd3edb645d41e::t_9e7dcde8f989b8 37,126,422-423,498
+  s_0bd3edb645d41e::t_dadbf66ca201b1 421
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8b509c93b5c86ac7e2c324ceabbea16b2d0dea4a",
+  "prompts": {},
+  "sessions": {
+    "s_0bd3edb645d41e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0a122-4db5-73c2-9802-6ee13eae719f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
