@@ -1489,8 +1489,9 @@ describe("finishRepositoryRun", () => {
     });
     await completeCurrentPage(first, "Quickstart at run 1");
     await finishRepositoryRun(first);
-    const quickstartAfterFirst = (await readRepositoryPageManifest(root))
-      .pages["/openwiki/quickstart.md"];
+    const quickstartAfterFirst = (await readRepositoryPageManifest(root)).pages[
+      "/openwiki/quickstart.md"
+    ];
     expect(quickstartAfterFirst).toBeDefined();
 
     // A disjoint run touching a different, unrelated page must not restamp
@@ -1523,6 +1524,78 @@ describe("finishRepositoryRun", () => {
     expect(
       manifestAfterSecond.pages["/openwiki/second.md"]?.sourceFingerprint,
     ).not.toBe(quickstartAfterFirst.sourceFingerprint);
+  });
+
+  test("refreshes an untouched page version changed by finalization", async () => {
+    const root = await createRepository();
+
+    const first = await beginForcedUpdate(root);
+    await submitRepositoryPlan(first, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh the entry point.",
+        },
+      ],
+    });
+    const next = await nextRepositoryPage(first);
+    if (next.status !== "pending") throw new Error("Expected a pending job.");
+    const write = await first.backend.write(
+      next.job.path,
+      `${validPage("Quickstart at run 1")}\n[Second](second.md)\n`,
+    );
+    if (write.error) throw new Error(write.error);
+    await submitRepositoryPage(first, {
+      jobId: next.job.id,
+      claims: [
+        {
+          statement: "The repository has a README.",
+          evidence: [{ resource: "repo://README.md" }],
+        },
+      ],
+    });
+    await finishRepositoryRun(first);
+
+    const quickstartAfterFirst = (await readRepositoryPageManifest(root)).pages[
+      "/openwiki/quickstart.md"
+    ];
+    expect(quickstartAfterFirst).toBeDefined();
+    expect(
+      await readFile(path.join(root, "openwiki/quickstart.md"), "utf8"),
+    ).toContain("openwiki: broken internal link");
+
+    await writeFile(path.join(root, "NOTES.md"), "# Notes\n", "utf8");
+    await git(root, ["add", "NOTES.md"]);
+    await git(root, ["commit", "--quiet", "-m", "unrelated source change"]);
+    const second = await beginForcedUpdate(root);
+    await submitRepositoryPlan(second, {
+      pages: [
+        {
+          path: "/openwiki/second.md",
+          title: "Second",
+          purpose: "Add the linked guide.",
+        },
+      ],
+    });
+    await completeCurrentPage(second, "Second at run 2");
+    await finishRepositoryRun(second);
+
+    const quickstartAfterSecond = (await readRepositoryPageManifest(root))
+      .pages["/openwiki/quickstart.md"];
+    expect(
+      await readFile(path.join(root, "openwiki/quickstart.md"), "utf8"),
+    ).not.toContain("openwiki: broken internal link");
+    expect(quickstartAfterSecond).toMatchObject({
+      gitHead: quickstartAfterFirst.gitHead,
+      sourceFingerprint: quickstartAfterFirst.sourceFingerprint,
+    });
+    expect(quickstartAfterSecond?.pageVersion).not.toBe(
+      quickstartAfterFirst.pageVersion,
+    );
+    expect(quickstartAfterSecond?.pageVersion).toBe(
+      await new ClaimsStore(root).hashPage("/openwiki/quickstart.md"),
+    );
   });
 
   test("preserves per-page provenance across producer handoffs", async () => {

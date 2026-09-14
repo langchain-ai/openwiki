@@ -245,13 +245,15 @@ export async function seedRepositoryPageManifest(
  * @param root - Absolute repository root.
  * @param pages - Complete surviving factual page set after finalization.
  * @param source - Source checkpoint proven by successful whole-run finish.
- * @param preservePages - Pages whose prior coverage must remain unchanged.
+ * @param preservePages - Restored pages whose exact prior coverage is retained.
+ * @param preserveSourcePages - Pages that retain their prior source checkpoint.
  */
 export async function replaceRepositoryPageManifest(
   root: string,
   pages: readonly string[],
   source: RepositorySourceCheckpoint,
   preservePages: ReadonlySet<string> = new Set(),
+  preserveSourcePages: ReadonlySet<string> = new Set(),
 ): Promise<void> {
   const next = createEmptyRepositoryPageManifest();
   const previous = await readRepositoryPageManifest(root);
@@ -259,12 +261,34 @@ export async function replaceRepositoryPageManifest(
     const canonicalPage = normalizeWikiPagePath(page);
     if (preservePages.has(canonicalPage)) {
       const previousEntry = previous.pages[canonicalPage];
-      // A page this run did not (re)complete keeps its exact prior stamp so
-      // disjoint runs on separate branches only diff pages they actually
-      // touched, instead of every tracked page restamped with this run's
-      // checkpoint.
+      if (previousEntry) next.pages[canonicalPage] = previousEntry;
+      continue;
+    }
+    if (preserveSourcePages.has(canonicalPage)) {
+      const previousEntry = previous.pages[canonicalPage];
+      // A page this run did not (re)complete keeps its prior source checkpoint.
+      // Deterministic finalization may still rewrite code-owned metadata on the
+      // page, so re-prove the final Markdown/Claims pair before deciding whether
+      // the exact prior entry can be retained.
       if (previousEntry) {
-        next.pages[canonicalPage] = previousEntry;
+        const refreshedEntry = await buildManifestEntry(
+          root,
+          canonicalPage,
+          {
+            ...(previousEntry.gitHead
+              ? { gitHead: previousEntry.gitHead }
+              : {}),
+            ...(previousEntry.sourceFingerprint
+              ? { sourceFingerprint: previousEntry.sourceFingerprint }
+              : {}),
+          },
+          previousEntry.completedBy,
+          previousEntry.completedRunId,
+        );
+        next.pages[canonicalPage] =
+          refreshedEntry.pageVersion === previousEntry.pageVersion
+            ? previousEntry
+            : refreshedEntry;
         continue;
       }
       // No prior coverage exists for this untouched page. Try to seed a

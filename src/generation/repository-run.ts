@@ -1557,20 +1557,21 @@ export async function finishRepositoryRun(
   // `producerActorsByPage`, keyed by `completedRunId === run.state.runId`)
   // may be restamped with this run's checkpoint. Every other tracked page —
   // formally skipped, left untouched because it was outside this run's plan,
-  // or already durable from an earlier run — keeps its prior manifest entry
-  // unchanged, so disjoint runs on separate branches only diff the pages they
-  // actually touched.
+  // or already durable from an earlier run — keeps its prior source checkpoint.
+  // Pages changed by deterministic finalization still refresh their pageVersion,
+  // so every retained manifest entry matches the final durable bytes.
   const regeneratedPages = new Set(producerActorsByPage.keys());
-  const preservePages = new Set(
+  const preserveSourcePages = new Set(
     currentPages
       .map((page) => normalizeWikiPagePath(page))
-      .filter((page) => !regeneratedPages.has(page)),
+      .filter((page) => !regeneratedPages.has(page) && !skippedPages.has(page)),
   );
   await replaceRepositoryPageManifest(
     run.root,
     currentPages,
     getRepositoryRunSourceCheckpoint(run.state),
-    preservePages,
+    skippedPages,
+    preserveSourcePages,
   );
   const sourceChanged =
     sourceChangedBeforeFinish || (await hasRepositorySourceChanged(run));
