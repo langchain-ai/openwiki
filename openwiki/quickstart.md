@@ -8,6 +8,10 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
@@ -30,10 +34,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
+    at: 2026-09-14T08:10:27.832Z
 ---
 
 # OpenWiki Quickstart
@@ -160,6 +164,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                | Read                                           |
 | --------------------------------------------------------- | ---------------------------------------------- |
 | Understand the test layout and how to run and scope tests | [Testing Guide](/openwiki/testing/overview.md) |
+| Understand the LEDGER longitudinal evaluation framework and DeepSWE evaluation harness | [Evaluation Systems](/openwiki/testing/evals.md) |
 
 ## Where OpenWiki keeps its state
 

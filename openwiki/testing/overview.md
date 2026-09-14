@@ -1,13 +1,27 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, and how to scope the narrowest validation that proves a change per subsystem.
-tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow]
+description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem, and where the separate evals/ledger and evals/deepswe evaluation suites live.
+tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evals]
 sources:
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-6ad47cf13ce77f0839b358ec
+    resource: repo://evals/deepswe/tests/test_run.py
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-cbc766890230b3eb91e4f047
+    resource: repo://evals/ledger/run/runner.test.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-69abc6f0f641147820a274bc
+    resource: repo://src/agent/utils.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -84,12 +98,14 @@ sources:
     resource: repo://test/visualize/page.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
+  - id: openwiki-source-98d5ddb014a0fd4d678f6f2a
+    resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
+    at: 2026-09-14T08:10:27.832Z
 ---
 
 # Testing Guide
@@ -177,6 +193,55 @@ that project's own `*.test.ts` files. Those belong to the fixture under test, no
 to OpenWiki, so the exclusion guarantees that a benchmark whose `repo/` happens
 to be present on disk cannot pollute this project's suite.
 
+## Evaluation subsystems (separate test suites)
+
+The `test/` tree documented on the rest of this page validates the OpenWiki
+application (`src/`). The two evaluation harnesses under `evals/` —
+[`evals/ledger/`](../testing/evals.md) (LEDGER) and
+[`evals/deepswe/`](../testing/evals.md) (DeepSWE) — are **not** part of that
+suite. They are self-contained subsystems with their own entry points, type
+config, and test runners, so changing an eval harness does not require the
+application `pnpm test` gate and vice versa. See the
+[Evaluation Systems](../testing/evals.md) page for the full architecture of
+both harnesses; this section covers only how each is tested.
+
+### LEDGER (`evals/ledger/`) — Vitest, with its own tsconfig
+
+LEDGER's test suite is Vitest, but the harness lives outside `test/` and is
+not driven by the root `vitest.config.ts` — that config only tunes discovery
+and `src/` coverage, so the `evals/ledger/**/*.test.ts` files run as ordinary
+Vitest tests that you invoke explicitly (the README documents
+`pnpm exec vitest run evals/ledger`). The suite is offline and substitutes
+deterministic evaluator and system implementations; live evaluator
+calibration is opt-in through `LEDGER_LIVE=1`.
+
+LEDGER ships its own TypeScript project: `evals/ledger/tsconfig.json` extends
+the root `tsconfig.json`, sets `noEmit`/`declaration: false`, and widens
+`include` to `**/*.ts` so it type-checks the eval source (which sits outside
+the application `src/` root). Two npm scripts wrap the harness:
+
+- `pnpm run eval:ledger` — runs `tsx evals/ledger/run.ts`, the live
+  checkpoint-replay evaluation (replays a benchmark's Git history through
+  OpenWiki and grades each frozen wiki snapshot).
+- `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
+  evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
+  (A `eval:ledger:reevaluate` script re-judges a completed run without
+  re-invoking OpenWiki.)
+
+These are separate from the application `typecheck`/`test` scripts and must
+be run explicitly when changing the LEDGER harness.
+
+### DeepSWE (`evals/deepswe/`) — Python unittest
+
+DeepSWE is a Python harness and has no TypeScript or Vitest footprint at all.
+Its tests are Python `unittest` modules under `evals/deepswe/tests/`
+(`test_run.py`, `test_analyze_openwiki_usage.py`) and must run inside the
+pinned Harbor/LiteLLM environment the harness itself uses, via
+`uvx --python 3.12 --from 'harbor[langsmith]==0.20.0' --with 'litellm==1.83.14'
+python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'`. The harness
+itself is driven by `python3 evals/deepswe/run.py` (no npm script is defined
+for it in `package.json`).
+
 ## Test layout maps to source subsystems
 
 `test/` mirrors `src/`. To find (or add) tests for a subsystem, go to the
@@ -257,12 +322,15 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   sidecars/run metadata, and two failure-mode races injected by wrapping
   `node:fs/promises` with `vi.mock`: a TOCTOU race where an inspected file
   becomes a symlink before opening (the fingerprinter fails closed rather than
-  following the swapped target), and a Windows stat-identity drift tolerance
-  test (`does not reject Windows file handles solely because dev and ino
-  differ`) that stubs `process.platform` to `win32` and injects a
-  stat-identity mismatch (`dev`/`ino += 1n`) via the mocked `open`, asserting
-  the fingerprinter still resolves rather than rejecting on Windows where
-  file handles can report inconsistent `dev`/`ino` values.
+  following the swapped target), and a set of Windows stat-identity drift tests.
+  On non-Windows the same-file guard keys on `dev`/`ino`; on Windows it falls
+  back to `size`/`mtimeNs`/`birthtimeNs` and excludes `ctimeNs` (which can
+  change for the same file between `lstat` and `FileHandle.stat`). The tests
+  stub `process.platform` to `win32` and inject stat mutations via the mocked
+  `open`: a `dev`/`ino` drift and a `ctimeNs`-only drift both still resolve, a
+  `size`/`mtimeNs`/`birthtimeNs` change rejects with
+  `Source path changed while fingerprinting`, and on other platforms a
+  `dev`/`ino` change rejects.
 - `test/agent/stream-redaction.test.ts` exercises `parseAgentStreamChunk`,
   pinning its suppression of `file`, `image`, `input_file`, and `image_url`
   content blocks that carry base64 blobs (which must never reach the terminal)
@@ -413,10 +481,14 @@ exercises `ensureCodeModeRepoSetup` and `runCodeModeConnectors` against temp
 repositories: it parses the generated GitHub Actions workflow YAML, pins the
 agent files and workflow/provider blocks, and asserts the OpenWiki
 `<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` snippet contract. It also pins
-that `CLAUDE.md` is a lightweight reference to `AGENTS.md` (not a full copy) and
-that a pre-existing `CLAUDE.md` that only imports `AGENTS.md` (e.g.
-`@AGENTS.md`) is preserved unchanged rather than overwritten — so an
-import-only `CLAUDE.md` survives a re-setup. Sibling files
+`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when both agent files are
+absent it creates `CLAUDE.md` as a simple `@AGENTS.md` reference rather than a
+copy of `AGENTS.md`'s content (it contains `@AGENTS.md`, not an inert Markdown
+link, and is shorter than `AGENTS.md`); when `CLAUDE.md` is a symlink to
+`AGENTS.md` it inlines the instructions instead of emitting an `@AGENTS.md`
+import (which would point the file at itself); and a pre-existing `CLAUDE.md`
+that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved unchanged rather
+than overwritten — so an import-only `CLAUDE.md` survives a re-setup. Sibling files
 (`test/ingestion/ingestion-run.test.ts`, `test/ingestion/ingestion.test.ts`,
 `test/ingestion/langsmith-modes.test.ts`) cover the ingestion run,
 `parseIngestionTarget`/`createConnectorSynthesisGuidance`, and connector modes.
@@ -666,6 +738,8 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
 - **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression).
+- **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
+- **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 
 Because tests import `src/` directly, a focused Vitest run does not require a
 prior `pnpm build`. Reserve the full `pnpm test` (typecheck + build + coverage)

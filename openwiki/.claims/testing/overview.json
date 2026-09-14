@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a13354521873dc2a8458227f46e12037d1414b8b273fe4ae821487339c3fce3e",
+  "pageVersion": "sha256:b2f81a91c55eb7e7a1ee7d671eb709371efe8ab84243cd4279201e9b1de62596",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -388,19 +388,19 @@
     },
     {
       "id": "claim_cd76ff3e81e64efab8da81f70e2b85b6",
-      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a committed Git repository in mkdtemp: it pins fingerprint stability and sensitivity (tracked/staged/unstaged content, deletions, untracked files, executable-bit, symlink-target changes, .openwikiignore rules), the exclusion of generated pages/Claims sidecars/run metadata, and two failure-mode races injected by wrapping node:fs/promises with vi.mock — a TOCTOU race where an inspected file becomes a symlink before opening (the fingerprinter fails closed rather than following the swapped target), and a Windows stat-identity drift tolerance test that stubs process.platform to win32 and injects a stat-identity mismatch (dev/ino += 1n) via the mocked open, asserting the fingerprinter still resolves rather than rejecting on Windows where file handles can report inconsistent dev/ino values.",
+      "statement": "test/agent/repository-source-fingerprint.test.ts exercises createRepositorySourceFingerprint/createRepositorySourceSnapshot and getRepositoryChangedPaths against a committed Git repository in mkdtemp: it pins fingerprint stability and sensitivity (tracked/staged/unstaged content, deletions, untracked files, executable-bit, symlink-target changes, .openwikiignore rules), the exclusion of generated pages/Claims sidecars/run metadata, and failure-mode races injected by wrapping node:fs/promises with vi.mock — a TOCTOU race where an inspected file becomes a symlink before opening (the fingerprinter fails closed rather than following the swapped target), plus Windows stat-identity drift tests. On non-Windows the same-file guard keys on dev/ino; on Windows it falls back to size/mtimeNs/birthtimeNs and excludes ctimeNs (which can change for the same file between lstat and FileHandle.stat). The tests stub process.platform to win32 and inject stat mutations via the mocked open: a dev/ino drift and a ctimeNs-only drift both still resolve, while a size/mtimeNs/birthtimeNs change rejects with 'Source path changed while fingerprinting'.",
       "evidence": [
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L22-L64",
-          "version": "repo-lines-v1:sha256:57edec939cc768b8ea0625a9b3d3c8bf79dff38bec01170dbcc23a9e5feb728e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMGM3ZjRiMmU2MDVjZWY4NjZmMjZjMmE5MTg4NGM4ZWM2MzU0MGU0ZDBhNWQ1ZDc0Yjc4YmYwNzFmZmFmNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhMDVkMmZhZjZlMzczNDM3NTE3ZDc3MDBjZjBkYmFkNWI0NmE5ZWRjOTM5YWEwZjU3MDU0MWRlNzQzNjY3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YzJhNjAzMjZkODcwN2ViZWE1ZWVkZWRmMTg4ZTY2MGZjMjljMWEwNzg0ODRlY2JkOTIxZGQ4YjQ0M2M5OGUifQ"
+          "resource": "repo://src/agent/utils.ts#L645-L670",
+          "version": "repo-lines-v1:sha256:5d788eb0c26e5a1070159c57f94ca777865366cba766b43aeef4b111d81efa8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YWMyNTg1ZGE4ZjZkMzA1NjkxMTUwNTUxNGM5NmM2ZTU2YTE4YTIyZjE2MTNmMzRmZThjYjdkM2E4ZGUzNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0N2Y5N2Q3MjkxN2Y5ZmIyNTdkZjIxOWJiYjVlZTI4OGE3NDQxMmFjNDE4MzRmMDA4OWJkM2I1ZjE4OTY1NjAifQ"
         },
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L254-L286",
-          "version": "repo-lines-v1:sha256:721166ad9aedb2012012667cc72ea57f17d58afde42856a4d32aa22217050e13:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MWJjZTcyYmQ4Y2I1YjQ3NzViMWNlNWIzMDU5MjI1ZDRjYzRiYzQxMjQwYzA4ZTY1NTNkNGQyMDMwZmU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGEzZmZiZmQyNWVkYzNiNjBiZTMyNTVjNjljNmQ4ODM1MDc0ZjUwY2YwZDUyYjBiNzU0ZjhmOWEyYzg3ZTYifQ"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L22-L72",
+          "version": "repo-lines-v1:sha256:9d997c169336167097fc834e707e5c59c82197d9200502c0a9bbd792fe71c005:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMGM3ZjRiMmU2MDVjZWY4NjZmMjZjMmE5MTg4NGM4ZWM2MzU0MGU0ZDBhNWQ1ZDc0Yjc4YmYwNzFmZmFmNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhMDVkMmZhZjZlMzczNDM3NTE3ZDc3MDBjZjBkYmFkNWI0NmE5ZWRjOTM5YWEwZjU3MDU0MWRlNzQzNjY3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YzJhNjAzMjZkODcwN2ViZWE1ZWVkZWRmMTg4ZTY2MGZjMjljMWEwNzg0ODRlY2JkOTIxZGQ4YjQ0M2M5OGUifQ"
         },
         {
-          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L306-L357",
-          "version": "repo-lines-v1:sha256:a7490e9b2d9ac53cbd0b59f0df806e770e5010a648cf3bfbc20d95ec4407adb4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGE5ZTVkMmMxNTRjMjIyMDUyZjNiYjcyMzg4ODgwNzllZGM2Mzc1ZDJhNjcxYTM4YTk4NTFiMWVmNDY0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MmRkNDliMDJjODJlMmJmYTFkNDgyMDljNmY3ZjhhNzllOTJhYjkwZjk2ZDAzZmI2MjhhZjdkNGZmYzJlZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMDQ0ZmFkMGFhYTVmYjBmYTgzNjM2NmY2OGQzM2Y3ZWQzZTkwNTQzOGFiYzIxZjRmNmM2ODk3NTY5MWY5MGIifQ"
+          "resource": "repo://test/agent/repository-source-fingerprint.test.ts#L287-L354",
+          "version": "repo-lines-v1:sha256:225b9fa523754284b34c3487c3c7c1533d3a861b4b6a243baac4cc87bfa170f0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MWJjZTcyYmQ4Y2I1YjQ3NzViMWNlNWIzMDU5MjI1ZDRjYzRiYzQxMjQwYzA4ZTY1NTNkNGQyMDMwZmU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGEzZmZiZmQyNWVkYzNiNjBiZTMyNTVjNjljNmQ4ODM1MDc0ZjUwY2YwZDUyYjBiNzU0ZjhmOWEyYzg3ZTYifQ"
         }
       ]
     },
@@ -456,11 +456,19 @@
       "evidence": [
         {
           "resource": "repo://test/ingestion/code-mode.test.ts#L1-L60",
-          "version": "repo-lines-v1:sha256:148609b4d21e5426446152b9be66197ce4d57930fe4ac502a025b3e97e2d5238:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ZWYzZWE0NGNhMWQ5YWQ2OThlNzY5MTk0ZDRlNzgyNDU5YjA3YWI3NGIzZDVjMDBjMzY3ZDgyZGQ2ZTE1MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYmM1Y2RiNzAyY2NkNzM3MGQzMjEyNTBlOTIxYzQyOTNlYTU0M2MyMmVjM2QwNzBiZjFkNmQzZmNkZTQzOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0Y2E0ODlmZjdiOGU5NWNhM2NlYWEzMGQ2OGQ5NDRkNGRiNGRkMzg0ZTI0ZTY2MTgzZWEyNDVmMzVmZTI3YjMifQ"
+          "version": "repo-lines-v1:sha256:5bb557c51540c5e83f9064ee51b62f6af665948dc2701f3046079e884c8442f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYjI3MTZkN2MzNGEzMmFiZDJiMGFlZmE0M2Y3Mzk3M2JhMDQ1NzlkMDdhZjRmOTUxZmEzNTZlZGIyZDhkMWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkZTVmODg4NjFiOGE2ZWRmY2YzYjQ5YzVhNWE0MmI3NjAzMGU2MDNkODM2NThkYTA0NDdhZWEwMDhiOTIzMWEifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L121-L130",
-          "version": "repo-lines-v1:sha256:b6f4e3098098d9ee2dc7d1dd6c9730780687303d6ad24ab89206b24c5a52e8a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMDE5MDRmNWU1OTAwYzkwYzA4Y2ZhZTMxNjYxNjAyZjMyYjAxNGU5YTA3NzE5ZjlkODNmMGE4NTBlMWI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMzg3ODU5ZTQ4MzkwMTdiZGRhOTg3MjM0Yzk1ZGQzYzg4ZDEzMjA3ZTVlMzA3YmFmN2I0ZWYwYmM3ZDk1ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxM2Y0OWI4ZDYzOGNkYzgwMjA1NDIyODI0NWI1Yjc5MWUxZDhjZmUzMWFlYjNlYWYzYzdjZmVmN2UyNTk5ZGYifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L128-L141",
+          "version": "repo-lines-v1:sha256:090a7f0b65374d3fa8eb4766c77238b10913614ec3f4b29cdc2b826608e7b0b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMDE5MDRmNWU1OTAwYzkwYzA4Y2ZhZTMxNjYxNjAyZjMyYjAxNGU5YTA3NzE5ZjlkODNmMGE4NTBlMWI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjgzMTE2OGJmNzQ5MTU0YWU4YmJkZWJhZTEyMTNmMWJjODdjZDNmMDZmY2Q4YTNkMzc5MmE0MzcwZGNmZDMifQ"
+        },
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L303-L322",
+          "version": "repo-lines-v1:sha256:5902fb28f1b7b83b46a6a34715bf4b36f63f47e879326a7886bf4f8a6a716e40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NmU3YmRkNTQ3ZmE0YzA0YjU4ZDkyNDM2OTY2ZDBiOWFhZjAwNjdlMWMxZjBlNzk0M2Q4Y2VkNDQ0MmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OWE5ZDZlYmViNmMwM2Y1ODA1Mjg3Zjg5Njk0ZjJkN2ZlN2I4ZmMxNjc1NDg1MTgxNDRkM2QxMmY1Y2Q4ZTUifQ"
+        },
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L435-L462",
+          "version": "repo-lines-v1:sha256:6d42d1163930e372047857dc3303e3c96f2b4894e77532bae3552fa485d3a811:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2E5MDZlZjQ4ZDJiOTg0ZjdjYzgyYTkwMGMzZmNjZWY1MmM4NjAwMWVmNTIwNzlkMTE5NmQzMTllMjNlZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0MmNjODE2YWE0NjQ0MjZlNmM1YjQ5NDdkMDVmOTNiYTcyZWNlZmE4MTE4YmI0ZWIzY2E2MjJjYzE5YTkxYjQifQ"
         }
       ]
     },
@@ -662,17 +670,103 @@
     },
     {
       "id": "claim_dc94c4699b8b48f481ff8b334a2896c9",
-      "statement": "test/ingestion/code-mode.test.ts pins that CLAUDE.md is a lightweight reference to AGENTS.md (not a full copy) and that a pre-existing CLAUDE.md that only imports AGENTS.md (e.g. @AGENTS.md) is preserved unchanged by ensureCodeModeRepoSetup rather than being overwritten, so an import-only CLAUDE.md survives a re-setup.",
+      "statement": "test/ingestion/code-mode.test.ts pins CLAUDE.md handling in ensureCodeModeRepoSetup: when both agent files are absent it creates CLAUDE.md as a simple @AGENTS.md reference rather than a copy of AGENTS.md's content (containing @AGENTS.md, not an inert Markdown link, and shorter than AGENTS.md); when CLAUDE.md is a symlink to AGENTS.md it inlines the instructions instead of emitting an @AGENTS.md import that would point the file at itself (resolvesToSameFile); and a pre-existing CLAUDE.md that only imports AGENTS.md (e.g. @AGENTS.md) is preserved unchanged rather than overwritten, so an import-only CLAUDE.md survives a re-setup.",
       "evidence": [
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L136-L163",
-          "version": "repo-lines-v1:sha256:8349ae2b4e5133d363584c5d55c736e70d52594b5d5ef5b91fb97c829ff62bce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L143-L188",
+          "version": "repo-lines-v1:sha256:314fe17badd46270abb57348d4d599e8b16529a9addeb5a47b2fbed93782319d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d34a06c7441147d5b173109dd78c31c0",
+      "statement": "The evals/ledger (LEDGER) and evals/deepswe (DeepSWE) evaluation harnesses under evals/ are self-contained subsystems outside the application test/ tree and the pnpm test gate, with their own entry points, type config, and test runners, so changing an eval harness does not require the application test gate and vice versa.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L55-L61",
+          "version": "repo-lines-v1:sha256:ef2287e917229a14f60951abb52bcd67f86bc88914fb55aab305ab9b586a1e54:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYyMjA4MGYyYTg5YmU1ZTQ3OWIxMDdhMjUwMzc0ODIzODNjMjg3MGFkMDI0NzU1NDBjODE0NWU2NTgwNmIyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGEzMjA5ZTAxZjMwMjE1MzkwNzBhZTQ5NjA5N2UzNDgzYjc5ZTIxNWJlNDI4Yjc0Mjk5OGRiYWZhZDk5OTBkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjBlNjUxOGZhMzJkZjlmMmU5ZjlhYzM3NTY0N2UyNGQ0ZjZiOGQyMDFjZTdlYTNjYWRhMTA1MWYyNTI4NjczYiJ9"
+        },
+        {
+          "resource": "repo://evals/ledger/tsconfig.json",
+          "version": "repo-file-v1:sha256:ad4def05ec7cc2b741abe8362f3cdb755bb387eecff932b6d1b21bf22cbd6271"
+        },
+        {
+          "resource": "repo://package.json#L44-L46",
+          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4cc4da7a4ee140d6b19e124c3d45862f",
+      "statement": "LEDGER ships its own TypeScript project: evals/ledger/tsconfig.json extends the root tsconfig.json, sets noEmit and declaration:false, and widens include to **/*.ts so it type-checks eval source that sits outside the application src/ root.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/tsconfig.json",
+          "version": "repo-file-v1:sha256:ad4def05ec7cc2b741abe8362f3cdb755bb387eecff932b6d1b21bf22cbd6271"
+        },
+        {
+          "resource": "repo://tsconfig.json",
+          "version": "repo-file-v1:sha256:48b8c4274e996fe57748c5dd85dc3f9e9cd8d20a63918013a03abb4c3a23fbc4"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbbfdc2486f24e51a53943ad8c29e69a",
+      "statement": "LEDGER's harness is wrapped by the npm scripts eval:ledger (runs `tsx evals/ledger/run.ts`, the live checkpoint-replay evaluation) and eval:ledger:typecheck (runs `tsc --noEmit -p evals/ledger/tsconfig.json`), plus eval:ledger:reevaluate which re-judges a completed run without re-invoking OpenWiki; these are separate from the application typecheck/test scripts.",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L219-L224",
+          "version": "repo-lines-v1:sha256:cb19c059e6d4bffd95da164be4c6311760626873c371987e0734b91450f9ff4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDRjNTU5MGRlMTlkNmJiMjU0ZDBmZGNjNDNmODdjNTE4NjE4OGIxZjdjNGFhNDEyODI4YTI4YjlmYjE2ODJkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjIzYmYzYzMwODhiZTBiMWVhYzFmZWE2ZWRiNzJmODA4MjVjOWU3ZDQ0YmUxNDFjODkxZmE4ZWZmMmY3MTFjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzdkOWIyOWNhODYzYzA5MzA4MGIzM2JlOWY1MDRkNWNhODE5Zjc2ODFiZWU1OTk2MzBjMjg1NmJjODNiNGM5MCJ9"
+        },
+        {
+          "resource": "repo://evals/ledger/run.ts#L1-L18",
+          "version": "repo-lines-v1:sha256:9203bfeed0eb541ceac6dea9a03d532f00df383bece7b68f4bbd156c5bd1fb6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwY2JiMzU4Mzk2MWRjMWRhZDc0YWMwNjZhOWQ1MDE5YWUxMTJiMDMwN2U4ODFkYTAxY2ZmYjZkYmUzYzNlMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5OTNjYThkNDVkZTM0ODRhNDQ0OWZkMDQ0YjNlZmQzODVjZTNlMWU2MGZmNGI3Zjg2YWZhOWI3MmEyODJlOTYifQ"
+        },
+        {
+          "resource": "repo://package.json#L44-L46",
+          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6835a065166545558efac37a08d349af",
+      "statement": "LEDGER's test suite is Vitest, but the evals/ledger/**/*.test.ts files are not driven by the root vitest.config.ts (which only tunes discovery and src/ coverage); they run as ordinary Vitest tests invoked explicitly via `pnpm exec vitest run evals/ledger`, and the normal suite is offline with deterministic evaluator/system implementations (live calibration opt-in via LEDGER_LIVE=1).",
+      "evidence": [
+        {
+          "resource": "repo://evals/ledger/README.md#L219-L227",
+          "version": "repo-lines-v1:sha256:2aeafbcde78f5b6e988a79431d5b015289dce34c9610c7209931d724c5322b84:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDRjNTU5MGRlMTlkNmJiMjU0ZDBmZGNjNDNmODdjNTE4NjE4OGIxZjdjNGFhNDEyODI4YTI4YjlmYjE2ODJkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2YwNjBiOTUzMDNmOGZkNmY3NjRlNTU1YTBkMTcwMTg5MWIzY2M2ZjhmMDRlYmM2Y2ZjMWMyYjBiZjI3MzUzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjIzYmYzYzMwODhiZTBiMWVhYzFmZWE2ZWRiNzJmODA4MjVjOWU3ZDQ0YmUxNDFjODkxZmE4ZWZmMmY3MTFjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://evals/ledger/run/runner.test.ts#L1-L9",
+          "version": "repo-lines-v1:sha256:656fb8a0afccb5b16fd7f47159802576cbee7805c29a2a2a8a6544cab5b96328:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdiMWJlMTg2ZDRkNWEyNGQxODIxNzZlNzEwZmMyMTMzMGUzYWVlMzIyMTY5NGE4MjRkNmM3MTE0YjVmNTEwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUwMTMxODY2ZTRhZDk5YWY3NDI3ZTMzZGFhMmQ4YWY0NGJmOTUyZTE5MDRkM2VhNDZhZDVhNDI0NzBkZTFjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ2ODJmY2RmOGY3YTIzNzAxODYyY2FhY2E1NjNjYWEwMjQ2NTM4NWM5Njk5ZmIwMTU5NjdlZjlhNTE5MzNkNiJ9"
+        },
+        {
+          "resource": "repo://vitest.config.ts#L18-L24",
+          "version": "repo-lines-v1:sha256:b31ab5a7e1c5e3d656e182ebdb5f1c60bd97d30e083b21c030520dff9301f96f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJjZWNiMTQ0YTQ2ZjVkY2YxMmE2MTY5ZmNlZWQ3Njk1ZTgyOTRiMDkwZGU3NmYzNjYxY2RkMDI0OTMwMDE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODVjOGU4ODZhZDVmZGM5NGMxMDI1ZGFmOTQwMWFiNTMxY2RkYWFlYWY5ZjQ2NjAxNGZhN2U3ZDgyNDU1Y2I4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI5ZTNjNGZkNjEyNzliNDlkOTg5OGEwODEzODUzNzdiYzIzMDc5M2JjZGRhNDdiMjM2YzFlNTQ1M2NhMWEzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDgxZTg5ZDE2MjcyOGVmNGY3OTNiN2FlMjkxMmRkZmQ2ZmViZTM2MmNjYzE5YzVlZTY1ZTYwYTc1MGZlNTdmOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0882af8076714eaa9ce47c467fbe66be",
+      "statement": "DeepSWE is a Python harness with no TypeScript/Vitest footprint: its tests are Python unittest modules under evals/deepswe/tests/ (test_run.py, test_analyze_openwiki_usage.py) run via `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor/LiteLLM environment, and the harness itself is driven by `python3 evals/deepswe/run.py` with no npm script defined for it in package.json.",
+      "evidence": [
+        {
+          "resource": "repo://evals/deepswe/README.md#L55-L61",
+          "version": "repo-lines-v1:sha256:ef2287e917229a14f60951abb52bcd67f86bc88914fb55aab305ab9b586a1e54:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYyMjA4MGYyYTg5YmU1ZTQ3OWIxMDdhMjUwMzc0ODIzODNjMjg3MGFkMDI0NzU1NDBjODE0NWU2NTgwNmIyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGEzMjA5ZTAxZjMwMjE1MzkwNzBhZTQ5NjA5N2UzNDgzYjc5ZTIxNWJlNDI4Yjc0Mjk5OGRiYWZhZDk5OTBkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjBlNjUxOGZhMzJkZjlmMmU5ZjlhYzM3NTY0N2UyNGQ0ZjZiOGQyMDFjZTdlYTNjYWRhMTA1MWYyNTI4NjczYiJ9"
+        },
+        {
+          "resource": "repo://evals/deepswe/tests/test_run.py#L1-L16",
+          "version": "repo-lines-v1:sha256:d98759bc2398df4be962470760708742e7620cd7255378a318c29f3cdaf6029c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzODRiZmRiMmRmMzgwYjY1NTdjYzdhNzFkMTY4OTE0MTViY2NhYTg3Njk5NDA2ZTIzNmY3NTJjNjQxNTM4OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkM2M5MTQ4OWE1ZmY5YzI2YzEwZDMwMzAzMzk2MjJhNDY5ZDAzYTVhMjY5YTBmNDExMGMxNTcwZWYxMTM1MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMWE1M2IyNzQ5OWFkYjE5N2IxNjk2ZmU2NjVlNzQyMmQzZTk3ZmM4OWZjNjE4YzhlYzE2MWJhZDc4ZDg2NDQifQ"
+        },
+        {
+          "resource": "repo://package.json#L37-L59",
+          "version": "repo-lines-v1:sha256:9eccf76d99849eb97c50d9f9a6b5704ab27b3faa8e5200cc29bf0885714bec19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYTk4NzI5NTI4MGUxNTgzMzAyMDZmMGQzOTkzNjY3MWQ3NGRlYTkzOTY3Zjg4Yjk3YmQ5ZTVjMjdiODFmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MmRhZjMzM2RlNTUyNTNiZGVjYjRiODMwZTNkODZiODdhYTJhZGU4NzhhMTVlNTA0ZGIxYTg5ZTVmN2FjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0NmQ1NDU2NzAzM2ZlODIwYjEyNTA4MTk5MzY1NjZiNGNlZDk1ZjYwMzgzYWQ4YTMxOWExMTc3ZGVlNmFlMzYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.1",
-    "at": "2026-09-10T08:09:53.024Z"
+    "at": "2026-09-14T08:10:27.832Z"
   }
 }

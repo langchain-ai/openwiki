@@ -32,10 +32,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
 verified:
   - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
+    at: 2026-09-11T08:09:37.996Z
 ---
 
 # Onboarding and Setup
@@ -205,15 +205,25 @@ repository runs (`beginRepositoryRun`). It:
   region between the `<!-- OPENWIKI:START -->` / `<!-- OPENWIKI:END -->` markers
   is replaced, so operator content outside the markers survives. Both files are
   prepared and validated before either is written, and malformed or duplicated
-  markers abort the update with the file left unchanged. The `CLAUDE.md` snippet
-  is deliberately minimal and just points to `AGENTS.md`.
-- **Import-only CLAUDE.md preservation.** A `CLAUDE.md` whose trimmed content is
-  exactly `@AGENTS.md` (the `CLAUDE_AGENTS_IMPORT` sentinel) is left entirely
-  unchanged — `prepareCodeModeAgentSnippet` returns `nextContent: undefined`, so
-  the file is neither created nor rewritten. This recognizes the common pattern
-  of a `CLAUDE.md` that only forwards to `AGENTS.md` and keeps it as the operator
-  wrote it. A `CLAUDE.md` containing marker regions or any other content is
-  refreshed in place like `AGENTS.md`.
+  markers abort the update with the file left unchanged. By default the
+  `CLAUDE.md` managed block is deliberately minimal and just points to
+  `AGENTS.md` via the `@AGENTS.md` import, so `AGENTS.md` stays the single
+  canonical source of agent instructions.
+- **Import-only CLAUDE.md preservation.** Two branches keep a forwarding
+  `CLAUDE.md` intact. First, a `CLAUDE.md` whose trimmed content is exactly
+  `@AGENTS.md` (the `CLAUDE_AGENTS_IMPORT` sentinel) is left entirely unchanged —
+  `prepareCodeModeAgentSnippet` returns `nextContent: undefined`, so the file is
+  neither created nor rewritten. This recognizes the common pattern of a
+  `CLAUDE.md` that only forwards to `AGENTS.md` and keeps it as the operator
+  wrote it. Second, `writeCodeModeAgentSnippets` calls `resolvesToSameFile` to
+  detect when `CLAUDE.md` and `AGENTS.md` resolve to the same file on disk
+  (e.g. `CLAUDE.md` is a symlink to `AGENTS.md`, sharing inode and device). In
+  that case the `@AGENTS.md` import would point the file at itself, so the
+  `CLAUDE.md` snippet instead carries the full instructions inline — the same
+  snippet written into `AGENTS.md` — rather than the minimal pointer. A
+  `CLAUDE.md` that is neither the bare import nor the same file as `AGENTS.md`,
+  but contains marker regions or any other content, is refreshed in place like
+  `AGENTS.md`.
 - Creates the scheduled-update GitHub Actions workflow
   (`.github/workflows/openwiki-update.yml`) **only** when `createWorkflow` is set,
   which is the case only for the `init` command. `--update` and chat runs leave
