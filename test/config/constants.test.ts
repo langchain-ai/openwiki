@@ -1129,6 +1129,15 @@ describe("isModelIdForOtherProvider", () => {
     );
   });
 
+  test("does not flag Claude Opus 5 on the providers that serve Claude", () => {
+    // Opus 5 was listed only under copilot, so both providers that serve Claude
+    // directly warned that it "belongs to GitHub Copilot" on every run.
+    expect(isModelIdForOtherProvider("claude-opus-5", "anthropic")).toBe(false);
+    expect(
+      isModelIdForOtherProvider("claude-opus-5", "gemini-enterprise"),
+    ).toBe(false);
+  });
+
   test("does not flag shared OpenAI models across openai / openai-chatgpt", () => {
     const [firstOpenAiModel] = getProviderModelOptions("openai");
     if (firstOpenAiModel) {

@@ -369,7 +369,8 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     modelOptions: [
       { id: "claude-haiku-4-5", label: "Haiku" },
       { id: "claude-sonnet-5", label: "Sonnet" },
-      { id: "claude-opus-4-8", label: "Opus" },
+      { id: "claude-opus-5", label: "Opus" },
+      { id: "claude-opus-4-8", label: "Opus 4.8" },
     ],
   },
   gemini: {
@@ -392,7 +393,8 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       ...GEMINI_MODELS,
       { id: "claude-haiku-4-5@20251001", label: "Claude Haiku" },
       { id: "claude-sonnet-5", label: "Claude Sonnet" },
-      { id: "claude-opus-4-8", label: "Claude Opus" },
+      { id: "claude-opus-5", label: "Claude Opus" },
+      { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
     ],
   },
   openrouter: {
