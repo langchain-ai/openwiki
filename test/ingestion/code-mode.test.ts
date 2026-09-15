@@ -1,7 +1,10 @@
 import {
+  lstat,
+  link,
   mkdir,
   mkdtemp,
   readFile,
+  readlink,
   rm,
   symlink,
   writeFile,
@@ -170,11 +173,71 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     await symlink("AGENTS.md", path.join(repo, "CLAUDE.md"));
 
     await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo);
 
-    const content = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    const claudePath = path.join(repo, "CLAUDE.md");
+    const content = await readIfPresent(claudePath);
     // Importing AGENTS.md here would point the file at itself.
     expect(content).not.toContain("@AGENTS.md");
     expect(content).toContain("generated `openwiki/` evidence index");
+    expect(content?.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    expect(content?.match(new RegExp(SNIPPET_END, "g"))).toHaveLength(1);
+    expect((await lstat(claudePath)).isSymbolicLink()).toBe(true);
+    expect(await readlink(claudePath)).toBe("AGENTS.md");
+  });
+
+  test("deduplicates a dangling CLAUDE.md link before creating AGENTS.md", async () => {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const repo = await createTempRepo();
+      const agentsPath = path.join(repo, "AGENTS.md");
+      const claudePath = path.join(repo, "CLAUDE.md");
+      await symlink("AGENTS.md", claudePath);
+
+      await ensureCodeModeRepoSetup(repo);
+      await ensureCodeModeRepoSetup(repo);
+
+      const content = await readFile(agentsPath, "utf8");
+      expect(content).toContain("generated `openwiki/` evidence index");
+      expect(content).not.toContain("@AGENTS.md");
+      expect(content.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+      expect(content.match(new RegExp(SNIPPET_END, "g"))).toHaveLength(1);
+      expect(await readFile(claudePath, "utf8")).toBe(content);
+    }
+  });
+
+  test("writes hard-linked agent files once", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await writeFile(agentsPath, "# Shared instructions\n", "utf8");
+    await link(agentsPath, claudePath);
+
+    await ensureCodeModeRepoSetup(repo);
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readFile(agentsPath, "utf8");
+    expect(await readFile(claudePath, "utf8")).toBe(content);
+    expect(content).toContain("generated `openwiki/` evidence index");
+    expect(content).not.toContain("@AGENTS.md");
+    expect(content.match(new RegExp(SNIPPET_START, "g"))).toHaveLength(1);
+    expect(content.match(new RegExp(SNIPPET_END, "g"))).toHaveLength(1);
+  });
+
+  test("rejects a symbolic link cycle without replacing either link", async () => {
+    const repo = await createTempRepo();
+    const agentsPath = path.join(repo, "AGENTS.md");
+    const claudePath = path.join(repo, "CLAUDE.md");
+    await symlink("CLAUDE.md", agentsPath);
+    await symlink("AGENTS.md", claudePath);
+
+    await expect(ensureCodeModeRepoSetup(repo)).rejects.toThrow(
+      /symbolic link chain contains a cycle/u,
+    );
+
+    expect((await lstat(agentsPath)).isSymbolicLink()).toBe(true);
+    expect((await lstat(claudePath)).isSymbolicLink()).toBe(true);
+    expect(await readlink(agentsPath)).toBe("CLAUDE.md");
+    expect(await readlink(claudePath)).toBe("AGENTS.md");
   });
 
   test("preserves CLAUDE.md when it only imports AGENTS.md", async () => {
