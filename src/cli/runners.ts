@@ -36,7 +36,11 @@ import type { CliCommand } from "./commands.js";
 import { isDebugMode } from "./debug.js";
 import { getAuthFix, getAuthFixSteps } from "./diagnostics/auth-fix.js";
 import { getErrorDiagnostics } from "./diagnostics/error-diagnostics.js";
-import { getRunModeCwd, getRunModeOutputMode } from "./run-mode.js";
+import {
+  getCodeModeRepoSetupOptions,
+  getRunModeCwd,
+  getRunModeOutputMode,
+} from "./run-mode.js";
 import { formatRepositoryPrintProgress } from "./run-log/progress.js";
 import {
   formatPowerScheduleStatus,
@@ -276,6 +280,7 @@ export async function runPrintCommand(
     };
 
     const runOptions: OpenWikiRunOptions = {
+      agentFilesPolicy: command.agentFilesPolicy,
       debug: isDebugMode(),
       isFollowup: command.command === "chat",
       language: command.language,
@@ -297,9 +302,10 @@ export async function runPrintCommand(
       telemetryContext,
       async () => {
         if (command.mode === "code") {
-          await ensureCodeModeRepoSetup(runtimeCwd, {
-            createWorkflow: command.command === "init",
-          });
+          await ensureCodeModeRepoSetup(
+            runtimeCwd,
+            getCodeModeRepoSetupOptions(command),
+          );
         }
 
         // Code-mode connectors (e.g. langsmith) pull their evidence and augment
