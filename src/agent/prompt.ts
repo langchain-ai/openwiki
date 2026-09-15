@@ -152,13 +152,13 @@ Diagram discipline:
 function formatGitHistoryHint(openWikiIgnore?: OpenWikiIgnore): string {
   return openWikiIgnore?.isActive
     ? "Git history is unavailable while .openwikiignore is active; rely on allowed source files and tests without bypassing the restriction. "
-    : "Read git history when it helps establish repository context or explain why code exists. ";
+    : "Use current source files and tests to establish repository context; shell execute cannot read git history. ";
 }
 
 function formatDiscoveryInstruction(openWikiIgnore?: OpenWikiIgnore): string {
   return openWikiIgnore?.isActive
     ? "- Do not call glob with **/* from the root. Use targeted ls, glob, and grep by directory and extension, skipping .git, node_modules, dist, build, cache directories, and existing generated wiki output."
-    : "- Do not call glob with **/* from the root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.";
+    : "- Do not call glob with **/* from the root. Use targeted ls, glob, and grep by directory and extension, skipping .git, node_modules, dist, build, cache directories, and existing generated wiki output.";
 }
 
 function formatOpenWikiIgnoreInstructions(
@@ -178,7 +178,7 @@ function formatOpenWikiIgnoreInstructions(
 .openwikiignore discipline:
 - This repository has .openwikiignore rules. Treat matching paths as out of scope.
 - Filesystem tools enforce these rules; if a tool reports an excluded path, do not retry through shell execute.
-- For repository discovery use ls, read_file, glob, and grep; these keep exclusions enforced. Shell execute is limited to a few maintenance commands while .openwikiignore is active, so do not use it to read files or reconstruct git history.
+- For repository discovery use ls, read_file, glob, and grep; these keep exclusions enforced. Shell execute is limited to a few maintenance commands, so do not use it to read files or reconstruct git history.
 - Do not document excluded paths or infer details about their contents.
 - Active patterns:
 ${patterns}`;
@@ -197,6 +197,6 @@ ${runtimeRoot}
 Runtime note:
 - ${formatRuntimeRootInstruction(outputMode)}
 - Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
-- Shell execute commands run on the host. For execute, use cd ${runtimeRoot} before commands that should run against this root.
+- Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, read_file, glob, and grep for repository inspection; do not rely on execute for it.
 - Do not search parent directories or unrelated directories.`;
 }
