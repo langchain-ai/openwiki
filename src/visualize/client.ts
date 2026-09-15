@@ -731,9 +731,10 @@ function rewriteLinks(node: WikiNode): void {
     .querySelectorAll<HTMLAnchorElement>(".md a")
     .forEach((a) => {
       const href = a.getAttribute("href") ?? "";
-      if (!href.endsWith(".md") && !href.includes(".md#")) return;
       const clean = href.split("#")[0];
-      const target = normalize(dir, clean).replace(/\.md$/, "");
+      const targetPath = clean.endsWith("/") ? `${clean}index.md` : clean;
+      if (!targetPath.endsWith(".md")) return;
+      const target = normalize(dir, targetPath).replace(/\.md$/, "");
       if (byId(target)) {
         a.classList.add("wikilink");
         a.addEventListener("click", (e) => {
