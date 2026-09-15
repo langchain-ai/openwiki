@@ -43,7 +43,10 @@ type ModelToolRequest = {
   tools: Array<{ name: string }>;
 };
 
+const BEDROCK_MODEL = { getName: () => "ChatBedrockConverse" };
+
 type CapturedMiddleware = {
+  name?: string;
   wrapModelCall?: (
     request: ModelToolRequest,
     handler: (request: ModelToolRequest) => Promise<unknown>,
@@ -456,6 +459,7 @@ import {
   parseWorkerToolEvent,
   runNativeRepositoryGeneration,
 } from "../../src/agent/repository-runner.ts";
+import { runModelCallChain } from "../helpers/model-call-chain.ts";
 import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 
 /**
@@ -463,13 +467,13 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
  *
  * @returns Complete ordered event stream emitted by the runner.
  */
-async function runHarness(): Promise<OpenWikiRunEvent[]> {
+async function runHarness(model: unknown = {}): Promise<OpenWikiRunEvent[]> {
   const events: OpenWikiRunEvent[] = [];
   await runNativeRepositoryGeneration({
     root: "/repo",
     mode: "update",
     modelId: "test-model",
-    model: {} as never,
+    model: model as never,
     planningContext: "User and connector context",
     onEvent: (event) => events.push(event),
   });
@@ -656,6 +660,36 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.restoreCalls).toBe(0);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
     expect(harness.finishCalls).toBe(1);
+  });
+
+  test("caches the prompt prefix on the planner and every page worker", async () => {
+    harness.planPaths = ["/openwiki/first.md", "/openwiki/second.md"];
+
+    await runHarness(BEDROCK_MODEL);
+
+    expect(harness.agentOptions).toHaveLength(3);
+    for (const { middleware } of harness.agentOptions) {
+      const sent = await runModelCallChain(middleware, {
+        model: BEDROCK_MODEL,
+      });
+
+      expect(sent.modelSettings).toMatchObject({
+        cache_control: { type: "ephemeral", ttl: "5m" },
+      });
+    }
+  });
+
+  test("caches nothing for a model from another provider", async () => {
+    harness.planPaths = ["/openwiki/first.md"];
+
+    await runHarness({ getName: () => "ChatOpenAI" });
+
+    expect(harness.agentOptions).toHaveLength(2);
+    for (const { middleware } of harness.agentOptions) {
+      const sent = await runModelCallChain(middleware, { model: {} });
+
+      expect(sent.modelSettings?.cache_control).toBeUndefined();
+    }
   });
 
   test("filters DeepAgents' automatic task capability at the model boundary", async () => {
