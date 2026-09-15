@@ -1,5 +1,0 @@
----
-"openwiki": patch
----
-
-fix: add OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY to MANAGED_ENV_KEYS

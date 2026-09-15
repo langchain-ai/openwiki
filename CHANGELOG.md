@@ -1,5 +1,43 @@
 # openwiki
 
+## 0.5.2
+
+### Patch Changes
+
+- [#780](https://github.com/langchain-ai/openwiki/pull/780) [`bf7b08b`](https://github.com/langchain-ai/openwiki/commit/bf7b08bea8479d5276131d168be28a1a349ee7a1) Thanks [@caseyg](https://github.com/caseyg)! - feat: add ibm bob as a provider and coding-agent host
+
+- [#869](https://github.com/langchain-ai/openwiki/pull/869) [`9b35620`](https://github.com/langchain-ai/openwiki/commit/9b3562049a9413dfc7f4793c4107c06c873b6e42) Thanks [@radekfojtik](https://github.com/radekfojtik)! - fix: add claude opus 5 to the anthropic and vertex model lists
+
+- [#870](https://github.com/langchain-ai/openwiki/pull/870) [`f71581b`](https://github.com/langchain-ai/openwiki/commit/f71581b28a4df45d017ce3fa3d550e2507afa8f9) Thanks [@pranaypolishetti26](https://github.com/pranaypolishetti26)! - feat: add kiro coding-agent integration
+
+- [#801](https://github.com/langchain-ai/openwiki/pull/801) [`2c90e13`](https://github.com/langchain-ai/openwiki/commit/2c90e13718534c924673bfc1e3c3358f39284969) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - feat: map gemini reasoning effort to thinking level
+
+- [#777](https://github.com/langchain-ai/openwiki/pull/777) [`cf0700f`](https://github.com/langchain-ai/openwiki/commit/cf0700f93c7348acf96cea4ad5fcf182a5fd12cb) Thanks [@danielsogl](https://github.com/danielsogl)! - fix: import AGENTS.md into the managed CLAUDE.md block
+
+- [#863](https://github.com/langchain-ai/openwiki/pull/863) [`fc62fb6`](https://github.com/langchain-ai/openwiki/commit/fc62fb60644f048e2b8b610695d59ad38d568d20) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: require Node.js 22.22.0 or newer
+
+- [#788](https://github.com/langchain-ai/openwiki/pull/788) [`4cd2e5f`](https://github.com/langchain-ai/openwiki/commit/4cd2e5f82a3c34ce44b1c0f60bbc61d543a5d8f4) Thanks [@HwangJohn](https://github.com/HwangJohn)! - feat: let openai-compatible opt into reasoning effort
+
+- [#861](https://github.com/langchain-ai/openwiki/pull/861) [`1692ebb`](https://github.com/langchain-ai/openwiki/commit/1692ebbb49cbf5be9c10571596ca5ba79ee758b0) Thanks [@HwangJohn](https://github.com/HwangJohn)! - Normalize redundant nested text content arrays for OpenAI-compatible Chat Completions requests so strict vLLM servers accept replayed tool output.
+
+- [#862](https://github.com/langchain-ai/openwiki/pull/862) [`3994b9a`](https://github.com/langchain-ai/openwiki/commit/3994b9af67fdd2f3074e9933d56f788f3c014df5) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: coerce roleless repository worker stream messages
+
+- [#864](https://github.com/langchain-ai/openwiki/pull/864) [`2c6367e`](https://github.com/langchain-ai/openwiki/commit/2c6367e14c4866653c1bac5061cf7b9885aa52ad) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: retry transient openrouter provider 404 errors
+
+- [#848](https://github.com/langchain-ai/openwiki/pull/848) [`054db7c`](https://github.com/langchain-ai/openwiki/commit/054db7c9785df7ab18843d10ed029430ecd899ee) Thanks [@kowshikdev](https://github.com/kowshikdev)! - fix: only restamp page-manifest entries a run actually regenerated
+
+- [#872](https://github.com/langchain-ai/openwiki/pull/872) [`11cc526`](https://github.com/langchain-ai/openwiki/commit/11cc52676bf056a3dbe8cbcdb9efa91ac9e14d83) Thanks [@tuandinh0801](https://github.com/tuandinh0801)! - fix: instruct repository planner to invoke submit_plan directly without conversational text
+
+- [#856](https://github.com/langchain-ai/openwiki/pull/856) [`590b1bb`](https://github.com/langchain-ai/openwiki/commit/590b1bb138ba81a63779a551efe3a4c974f9eb9c) Thanks [@radekfojtik](https://github.com/radekfojtik)! - fix: route Vertex AI xAI Grok model IDs to the OpenAI-compatible surface
+
+- [#859](https://github.com/langchain-ai/openwiki/pull/859) [`1b84ea8`](https://github.com/langchain-ai/openwiki/commit/1b84ea88e9ffab44c31939687798a43c05eed2ba) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: ignore windows ctime drift while fingerprinting
+
+- [#847](https://github.com/langchain-ai/openwiki/pull/847) [`f4ca24f`](https://github.com/langchain-ai/openwiki/commit/f4ca24f4568c3640fc1c282fdc2d991a06119c96) Thanks [@kowshikdev](https://github.com/kowshikdev)! - fix: add OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY to MANAGED_ENV_KEYS
+
+- [#881](https://github.com/langchain-ai/openwiki/pull/881) [`8175e29`](https://github.com/langchain-ai/openwiki/commit/8175e29068ab9eb3da942645180570721937c527) Thanks [@marliechorgan](https://github.com/marliechorgan)! - fix: report a claim whose evidence now traverses a symbolic link as unresolved instead of aborting the update
+
+- [#885](https://github.com/langchain-ai/openwiki/pull/885) [`7f81688`](https://github.com/langchain-ai/openwiki/commit/7f81688105272a9b5aa7ea1364899528fd62728e) Thanks [@green-creeper](https://github.com/green-creeper)! - fix: tighter redaction of API keys in CredentialDiagnosticsPanel
+
 ## 0.5.1
 
 ### Patch Changes
