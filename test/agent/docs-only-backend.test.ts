@@ -206,6 +206,28 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(mixedCaseInspection.output).toContain("Claims state");
   });
 
+  test("rejects arbitrary host shell commands without ignore rules", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const arbitraryCommand = await backend.execute("echo host-shell-access");
+    expect(arbitraryCommand.exitCode).toBe(1);
+    expect(arbitraryCommand.output).toContain("restricted");
+
+    const chainedCommand = await backend.execute(
+      "pwd && echo host-shell-access",
+    );
+    expect(chainedCommand.exitCode).toBe(1);
+
+    const allowed = await backend.execute("pwd");
+    expect(allowed.exitCode).toBe(0);
+    expect(allowed.output).toContain(rootDir);
+  });
+
   test("does not reserve personal-brain .claims paths", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
     const backend = new OpenWikiLocalShellBackend({
