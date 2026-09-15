@@ -26,18 +26,22 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
+  - id: openwiki-source-c194ba7f94bf86a83012a7b4
+    resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-14T08:10:27.832Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # OpenWiki Quickstart
@@ -53,12 +57,12 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package, a Node.js (22+) CLI whose
-binary resolves to `dist/cli/cli.js`. Its purpose, per the package manifest, is
-"a CLI that uses a DeepAgents documentation agent to generate and maintain an
-OpenWiki for a codebase." The runtime is a DeepAgents documentation agent driven
-by one of several model providers, wrapped by a CLI that can run interactively
-(an Ink TUI) or one-shot (print mode).
+OpenWiki is published as the `openwiki` npm package (v0.5.2), a Node.js
+(>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
+package manifest, is "a CLI that uses a DeepAgents documentation agent to
+generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
+documentation agent driven by one of fourteen model providers, wrapped by a CLI
+that can run interactively (an Ink TUI) or one-shot (print mode).
 
 The CLI has two operating modes:
 
@@ -204,9 +208,9 @@ drift.
 
 ## Host-driven generation
 
-OpenWiki can also run inside a host coding agent (Codex, Claude Code, OpenCode,
-or Cursor) instead of launching its own model. The integration shares one
-canonical skill and the same six MCP operations as native generation:
+OpenWiki can also run inside a host coding agent (IBM Bob, Codex, Claude Code,
+OpenCode, Cursor, or Kiro) instead of launching its own model. The integration
+shares one canonical skill and the same six MCP operations as native generation:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand
 `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. The
 host owns repository research, planning, and factual authoring; OpenWiki owns the

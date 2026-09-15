@@ -10,6 +10,8 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-d80f123259efa4712b198b63
     resource: repo://src/cli/startup.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-c2770ac037a7f4b0116a0dc5
     resource: repo://src/config/env.ts
   - id: openwiki-source-7d433875b0854d0b8b951be0
@@ -32,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Onboarding and Setup
@@ -125,8 +127,8 @@ by a controller state machine. The steps that apply to a given provider and run
 mode, in walk order, are produced by `orderedSetupSteps`: an optional run-mode
 chooser, the provider selection, the provider's primary credential step, any
 provider-specific steps (secret key, GCP project/location, base URL, region),
-then the model step, the LangSmith step, and finally — only in code mode — a
-`code-repo-confirm` step.
+then the model step (skipped for providers that pin a single `fixedModel`), the
+LangSmith step, and finally — only in code mode — a `code-repo-confirm` step.
 
 The primary credential step is chosen per provider by `credentialStep`: OAuth
 providers use `oauth-login`, AWS-SDK providers have no in-wizard step (they are
@@ -134,13 +136,22 @@ handled via AWS credentials), external-CLI providers use `external-cli-auth`,
 API-key providers use `api-key`, and keyless providers that require a GCP project
 use `gcp-project`.
 
+A provider with a `fixedModel` (checked by `providerHasFixedModel`) always uses
+that single model ID and skips the model-selection step entirely — the value is
+used verbatim rather than normalized. The IBM Bob provider is the fixed-model
+case: it pins `fixedModel: "premium"`, authenticates with an API key
+(`BOB_API_KEY`, via the `api-key` credential step), and exposes an optional
+`BOB_BASE_URL`, so its spine runs provider → api-key → langsmith →
+(code-repo-confirm in code mode) with no model step.
+
 ```mermaid
 stateDiagram-v2
   [*] --> run_mode
   run_mode --> provider
   provider --> credential
   credential --> extra_provider_steps
-  extra_provider_steps --> model
+  extra_provider_steps --> model: non-fixedModel provider
+  extra_provider_steps --> langsmith: fixedModel provider
   model --> langsmith
   langsmith --> code_repo_confirm: code mode
   langsmith --> [*]: personal mode
@@ -148,6 +159,9 @@ stateDiagram-v2
 ```
 
 Ordered setup steps for code vs. personal mode as returned by orderedSetupSteps.
+The model step is emitted only when the provider does not pin a fixedModel
+(providerHasFixedModel), so a fixedModel provider such as IBM Bob goes straight
+from the provider-specific steps to the LangSmith step.
 
 Two functions distinguish "which step to jump to" from "which steps exist".
 `getInitialStep` is a skip-based waterfall that lands on the first unsatisfied

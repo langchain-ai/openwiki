@@ -31,10 +31,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Configuration and Environment
@@ -291,6 +291,7 @@ for those models even though it is valid for OpenAI GPT-5.6.
 path, "process.env over <file>" when both are set, or `unset` — and a
 masked preview. Non-secret settings (provider, model, token limits, base URLs,
 region, Google project/location, and the boolean toggles, including
+`OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
 values).
@@ -299,11 +300,15 @@ Diagnostics surface per-key warnings through a dedicated validator per key:
 invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
 effort, invalid retry attempts, invalid stream idle timeout, base-URL provider
-mismatches, credential whitespace/newline/quote issues, and a warning that the
+mismatches (Anthropic, Baseten, Bob, Fireworks, NVIDIA, OpenAI, and the
+OpenAI-compatible `/chat/completions`-endpoint guard each validated through
+`getProviderBaseUrlWarnings`), credential whitespace/newline/quote issues, and a
+warning that the
 Bedrock stream watchdog is disabled when the idle timeout is `0`. The boolean
-validator `getBooleanWarnings` covers all three `openai-compatible` toggles —
+validator `getBooleanWarnings` covers all four `openai-compatible` toggles —
 `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`,
-`OPENWIKI_OPENAI_COMPATIBLE_STREAMING`, and
+`OPENWIKI_OPENAI_COMPATIBLE_STREAMING`,
+`OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`, and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED` — reporting "invalid
 boolean" for any value that does not trim to `true` or `false`.
 

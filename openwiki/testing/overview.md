@@ -1,7 +1,7 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem, and where the separate evals/ledger and evals/deepswe evaluation suites live.
+description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem (including the repository-runner tests covering OpenAI-compatible worker-response coercion), and where the separate evals/ledger and evals/deepswe evaluation suites live.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evals]
 sources:
   - id: openwiki-source-c45a528335f5cf7306567dc9
@@ -34,6 +34,8 @@ sources:
     resource: repo://test/agent/gemini-enterprise-claude.e2e.test.ts
   - id: openwiki-source-8826337e8c8799af4371a0e5
     resource: repo://test/agent/index-middleware.test.ts
+  - id: openwiki-source-d5f8bf1d374d40091b048814
+    resource: repo://test/agent/repository-prompts.test.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-b6fe810a0cf7dea1a9e0eb8b
@@ -42,6 +44,8 @@ sources:
     resource: repo://test/agent/stream-redaction.test.ts
   - id: openwiki-source-f1b33b05f136bc4ed936d51d
     resource: repo://test/agent/update-noop.test.ts
+  - id: openwiki-source-76662ef8eda6e868acc8fb1a
+    resource: repo://test/agent/vertex-surface.test.ts
   - id: openwiki-source-10e644b1d94ea2cd8435efb2
     resource: repo://test/agent/wiki-finalizer.test.ts
   - id: openwiki-source-60f74aa845439889d9b5e391
@@ -54,6 +58,8 @@ sources:
     resource: repo://test/cli/components/markdown.test.tsx
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
+  - id: openwiki-source-5fc87e9739dab52c4e447110
+    resource: repo://test/config/constants.test.ts
   - id: openwiki-source-507f854511667d512b3fa0ee
     resource: repo://test/config/env.test.ts
   - id: openwiki-source-7813b7a34b04f73e9967e3c9
@@ -102,10 +108,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-14T08:10:27.832Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Testing Guide
@@ -249,7 +255,7 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts, streaming, redaction, the repository runner, update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, and the wiki finalizer |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, and the wiki finalizer |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
@@ -269,7 +275,9 @@ Related architecture and subsystem pages: the
 ### Agent: middleware, frontmatter, and finalizer
 
 The agent subsystem directory holds a broad set of tests, including several that
-guard the OKF authoring pipeline added in the v0.4.0 cycle:
+guard the OKF authoring pipeline added in the v0.4.0 cycle, the repository
+runner and its worker-response coercion, the repository planner/page-worker
+prompts, and the Vertex AI surface dispatch:
 
 - `test/agent/frontmatter-validator.test.ts` exercises `validateOkfFrontmatter`
   in isolation, asserting which OKF frontmatter families are accepted (required
@@ -303,7 +311,59 @@ guard the OKF authoring pipeline added in the v0.4.0 cycle:
   completed page after a later worker failure`, armed via
   `pageWorkerPostSubmitFailures`, which makes the worker throw *after*
   `submit_page` succeeds and asserts the page is not rolled back —
-  `restoreCalls` stays `0` and the page remains `complete`).
+  `restoreCalls` stays `0` and the page remains `complete`). The suite also
+  covers `coerceRepositoryWorkerModelResponse`, the normalization the
+  repository-worker `NO_DELEGATION_MIDDLEWARE` applies before LangChain
+  validates each `wrapModelCall` response: OpenAI-compatible providers can emit
+  a first SSE delta without `role:"assistant"` (for example a reasoning-only
+  first delta), so the aggregated message arrives as a generic
+  `ChatMessage`/`ChatMessageChunk` instead of an `AIMessage`/`AIMessageChunk`
+  and LangChain would reject it. The `coerces roleless generic streaming
+  aggregates before LangChain validates wrapModelCall` test feeds a
+  role-undefined `ChatMessageChunk` carrying `additional_kwargs.reasoning_content`
+  and raw `tool_calls`, asserts the tool-filter still strips the `task`
+  capability from the downstream request, and asserts the result is an
+  `AIMessageChunk` preserving the text, `reasoning_content`, and parsed
+  `tool_calls` (collapsing the chunked tool-call into a `tool_call` with
+  `type:"tool_call"`). The `coerces generic assistant messages before LangChain
+  validates wrapModelCall` test feeds an explicit-role `assistant` `ChatMessage`
+  with raw `tool_calls` and asserts it becomes an `AIMessage` with parsed
+  `tool_calls`, while `leaves non-assistant generic model responses untouched`
+  asserts a `user`-role `ChatMessageChunk` is returned unchanged (not coerced)
+  so non-assistant output is never silently rewritten. The `filters DeepAgents'
+  automatic task capability at the model boundary` test pins the same
+  middleware's removal of the general-purpose `task` tool from the
+  model-facing request, so the non-delegating workers never advertise
+  delegation.
+- `test/agent/repository-prompts.test.ts` exercises the repository planner and
+  page-worker prompt builders (`createRepositoryPlannerPrompt`/
+  `createRepositoryPagePrompt` from `src/agent/repository-prompts.ts`) against
+  fully-shaped `ActiveBeginView`/`RepositoryPageWorkerJob` fixtures. It pins
+  that the planner prompt carries the actual user/connector context, the
+  per-page committed update windows (with `Baseline <head>` or
+  `Baseline unknown (full review required)`), the claim issues requiring
+  reconciliation, the wiki goal, and the planning instructions (hierarchical
+  paths, `relatedPages`, `submit_plan directly`), and that the page-worker
+  prompt propagates only the Claims requiring explicit reconciliation, stamps
+  the "You own exactly <path>" ownership line, and emits the sparse-Claim and
+  canonical-evidence (`repo://...`) guidance.
+- `test/agent/vertex-surface.test.ts` exercises the Vertex AI surface dispatch
+  in `src/agent/vertex-surface.ts`. `resolveVertexSurface` routes Claude ids to
+  the `anthropic` surface, partner/MaaS ids (meta, mistral, deepseek, qwen,
+  codellama) to the `openai-maas` surface, and xAI Grok ids (`xai/grok-…`,
+  bare `grok-…`, `publishers/xai/models/grok-…`) to the `openai-maas` surface —
+  Grok is served over the OpenAI-compatible endpoint like every other partner
+  model, and falling through to `gemini` would address it as a non-existent
+  `publishers/google/models/grok-…` path. Gemini/Gemma ids and unknown
+  publishers default to `gemini`, and the family-token boundary
+  (`^|/`) prevents a token embedded mid-word (e.g. `gemini-metallica`) from
+  being misclassified. The suite also pins `stripPublisherPath`/
+  `toVertexPublisherModel`, the regional vs. global `vertexOpenAIBaseUrl`
+  endpoint construction, `withAnthropicAuthEnvNeutralized` (hides
+  `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN` during construction and restores
+  the prior value — or prior absence — even if construction throws), and
+  `createVertexAuthFetch` (injects a fresh bearer token per request and throws
+  before the request when no access token is available).
 - `test/agent/update-noop.test.ts` is the dedicated suite for the update no-op
   fast-skip path: it builds a real committed Git repository with an OpenWiki
   tree and exercises `getUpdateNoopStatus` across the conditions that should and
@@ -536,7 +596,32 @@ quoting, escaping quotes/backslashes/newlines, escaping carriage returns, and
 ordering managed keys first (in `MANAGED_ENV_KEYS` order) then unknown keys
 sorted alphabetically. A `parseEnv <-> formatEnv` round-trip suite confirms
 values — including carriage returns and the Windows path regression — survive
-a `format → parse` round-trip.
+a `format → parse` round-trip. The `MANAGED_ENV_KEYS` suite pins which keys the
+managed-environment surface owns: the output-token limits
+(`OPENWIKI_MAX_OUTPUT_TOKENS`, `OPENWIKI_BEDROCK_MAX_TOKENS`), the stream idle
+timeout (`OPENWIKI_STREAM_IDLE_TIMEOUT`), the gemini-enterprise (Vertex)
+Google Cloud settings (`GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/
+`GOOGLE_APPLICATION_CREDENTIALS`), the AI-Studio `GEMINI_API_KEY`, the hosted
+OpenAI-compatible provider base URLs (`BASETEN_BASE_URL`, `BOB_BASE_URL`,
+`FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`), and the reasoning-effort settings
+(`OPENWIKI_REASONING_EFFORT`,
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`).
+
+`test/config/constants.test.ts` is the broad provider-constants suite for
+`src/config/constants.ts`. It pins model-id validation, provider normalization
+and resolution, the `resolveProviderBaseUrl` defaults and overrides — including
+the hosted OpenAI-compatible providers where `BOB_BASE_URL` (via
+`BOB_BASE_URL_ENV_KEY`) and the baseten/fireworks/nvidia keys override the
+built-in defaults while a whitespace-only override falls back to the default
+(`bob` is among the providers with a built-in default) — provider retry
+attempts, per-provider max-output-token ceilings, stream-idle-timeout
+resolution, reasoning capability flags, the Bedrock AWS-SDK credential/region
+surface, and provider API-key env-key resolution. Sibling files
+(`test/config/env-behavior.test.ts`, `test/config/copilot-provider.test.ts`,
+`test/config/openai-chatgpt-provider.test.ts`, `test/config/openwiki-home.test.ts`)
+cover `loadOpenWikiEnv`/`saveOpenWikiEnv`, credential preview/diagnostics (with
+the bob base URL surfaced in diagnostics), the GitHub Copilot and OpenAI-ChatGPT
+provider configs, and the OpenWiki home/connector path helpers.
 
 ### Visualize: page, graph, and client interaction
 
@@ -725,6 +810,9 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Agent worker-exit/skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
 - **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
 - **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
+- **Repository-worker response coercion:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "coerces roleless generic streaming aggregates before LangChain validates wrapModelCall"` (roleless `ChatMessageChunk` → `AIMessageChunk` with collapsed tool calls), `-t "coerces generic assistant messages before LangChain validates wrapModelCall"` (`ChatMessage` → `AIMessage`), or `-t "leaves non-assistant generic model responses untouched"`.
+- **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts`.
+- **Vertex AI surface dispatch (incl. Grok routing):** `pnpm exec vitest run test/agent/vertex-surface.test.ts` (Claude→anthropic, partner/Grok→openai-maas, Gemini/unknown→gemini, auth-fetch and env neutralization).
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.
 - **Source fingerprinting / changed paths:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts`.
 - **Page manifest persistence:** `pnpm exec vitest run test/generation/page-manifest.test.ts`.
@@ -737,7 +825,8 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
-- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression).
+- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, `MANAGED_ENV_KEYS` membership including `BOB_BASE_URL` and the hosted OpenAI-compatible base URLs).
+- **Provider constants (incl. Bob base-URL override):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia, retry/max-token/stream-timeout/reasoning surfaces).
 - **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
 - **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 

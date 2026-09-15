@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8a8c75d75016ad537c7dd0ffeb09b80602100baef6b702de5841824937cac2f0",
+  "pageVersion": "sha256:8639d1197380b9e7cdd7a9a000fb7cd445824a4e9e90da09e882371d1df66a6f",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -94,11 +94,11 @@
     },
     {
       "id": "claim_6639b83d4b33474c89d0061190db1bfd",
-      "statement": "orderedSetupSteps returns the wizard's steps in walk order for a given provider and run mode: an optional run-mode chooser, the provider, its primary credential step, provider-specific steps (secret key, GCP project/location, base URL, region), the model step, the LangSmith step, and a code-repo-confirm step only in code mode.",
+      "statement": "orderedSetupSteps returns the wizard's steps in walk order for a given provider and run mode: an optional run-mode chooser, the provider, its primary credential step, provider-specific steps (secret key, GCP project/location, base URL, region), the model step (skipped when providerHasFixedModel is true, e.g. for the IBM Bob provider), the LangSmith step, and a code-repo-confirm step only in code mode.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L201-L249",
-          "version": "repo-lines-v1:sha256:d2d4efdddeb2654bf359c3f4549927d416d50c3036b7c92d0513e92fd50a7c2b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NDZmZjgxZjEyYTMxNDA3ZGI0MTczMjFlNmJjNDlhZjdkOWEyMzI4NGNmMDA5NjQ3NzZiMWM2ZjRlZTlmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZjM4MTBjZGY5ZmViYTJiNmY3ZWFiMzQ1YmRmYzQ5NDA0YmM0Mjc2MDI5NWNkYTBjNWNmNWY2OGJhNWYwZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YjJkZDMwMmZlYWU5NjFjNjM5OTllNjlmNTgxZGUyYWJhMzYwYjE5MTllZmZlYzQwYWNiMWVlMDdhZDAxYzYifQ"
+          "resource": "repo://src/setup/credentials/steps.ts#L201-L252",
+          "version": "repo-lines-v1:sha256:5f74dccca36c88ea1f620ff6a72fbfaa981adb145a310f311a663dadc2b2a6c0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljMjk2Njk2MTQ3NTUwYWRkNmRlYzVjNWU2MThmM2FlNjI5YjM0Y2RhYjk2ZDc0Njg5ZTQxZTUwNzcxYmI0NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YjJkZDMwMmZlYWU5NjFjNjM5OTllNjlmNTgxZGUyYWJhMzYwYjE5MTllZmZlYzQwYWNiMWVlMDdhZDAxYzYifQ"
         }
       ]
     },
@@ -335,10 +335,28 @@
           "version": "repo-lines-v1:sha256:633d65cbdb437a58d2d3ba806f22b8b8a3c3123d30adef91159f6e8886d909d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlODcwMTQzOGYwNDEzYTI0ZTY5YmMwYWI3N2U2NzU2ZGVhNDQ4M2IwN2JlZjU0ZGVjOTVkNTUyZjM4ODU3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0N2ExYjkwYTQ0OWYzMGQ4MGRlMmY3NjJkZDJlOTEyNWUzNDRhMzQwOGFiMmQ5OWQzYjBkNTk0MGZhNjVkMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NzgwZGU1NTA2MDU3MjA1ZGU0M2YxOTc0ZTE5NmFiNWRkZDNiOGJiZjFlZGFkMjg0NWFhYWE2NmM4YzEwZjUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_79d74cd0029945cfaf7a4c2ffec16928",
+      "statement": "A provider with a fixedModel (checked by providerHasFixedModel) always uses that single model ID verbatim and the model-selection step is skipped entirely; the IBM Bob provider pins fixedModel 'premium', authenticates with an API key (BOB_API_KEY via the api-key credential step), and exposes an optional BOB_BASE_URL, so its spine omits the model step.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L276-L283",
+          "version": "repo-lines-v1:sha256:443b72749f82e90eec0419c6fc5ed3d2109d026f439c73854feee6af8ff502b1:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVkZTVjMjVlODIyZGI5YjcyYmY0OWMwYTUyYzAzYTZmYWQ2ZDU4ZWEzMmRmNjdjN2U4MmQwZmIyNmQ1MmU0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ2ZjI3MTBlODdjNzI2ZjBmMGFmZTFmZmU4OTA5NjM4NDZmMzljNTNmMDk1YTU1NjZkYWU3MjFjNWY2N2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ExYzViZmFjZmZkMDE5NzU1MDUwM2IxZmI5YzBjMzAyNDk4NGYyNWRhZjFhYjg3ZTIwNzNhZTRhYzViOTc2YiJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L684-L692",
+          "version": "repo-lines-v1:sha256:7d891d9d3ac5658ebd1b2581fe72115b139f550154e4f47e4b96beaf85f9a74f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxOWMwZGU4ZmY0NTYzNTRmYzRkODEzZjU5MzM1MjM5NWVjOTdlY2MxNTE3MTNmZmQ0Y2I2YzAxZmUyNWY3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJkMDVjNDE5NjRmODU0OWJhMTU4ZmUzMjc1OWVkOTBlZjQ3ZWNmYTc4Y2JlYTE3OGU1NjE3YzE3YmNmMTc2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZiMDA0YTc1OGM0NzRmNzE0YjY0ZTU4MDkyNTJjZWUwMmE4OWU4OWJjY2ZkYzY3ZjY3YjcyYThhN2QzZDQzMSJ9"
+        },
+        {
+          "resource": "repo://src/setup/credentials/steps.ts#L239-L241",
+          "version": "repo-lines-v1:sha256:b0cc9aa4ac6d1260bd9b0cfb60a35cc160265b6bbb04613fbb2d880fa37dadcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg0NWVmYzAyYmFkZTMzODQ3NWY0OWEyNjRjOGY5MzQ1ZGMxNDY4YzQzZGIzZWJmNDc1ZDBhYWQxNTU2ZTYxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZlOGJkZWViOTZjM2Y2NDAwOTE2YzZkYjRkMTZkNzU0OTA1YWJjNDM1ZGQxMDIzZThjNWJjNGNkNTk1NGU0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFhZTQxZGFkN2NmODU0MWEwMThhNzYyYTJiY2EyNDYwZjZkMzE0NzI3NzUzNWEyYjYzYzA1MjY4NDdhNDNhYyJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.1",
-    "at": "2026-09-11T08:09:37.996Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-15T08:09:47.649Z"
   }
 }

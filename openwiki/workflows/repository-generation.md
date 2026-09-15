@@ -13,6 +13,8 @@ tags:
     claims,
   ]
 sources:
+  - id: openwiki-source-8b316b2a9d744597bffd9c56
+    resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
@@ -35,10 +37,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-02T08:09:44.873Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-02T08:09:44.873Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Repository Generation Lifecycle
@@ -305,6 +307,33 @@ metadata instead of `complete` metadata, and then removes `openwiki/.run.json`
 last as usual. The run therefore completes deterministically, but the persisted
 `interrupted` status tells a later `begin` that work remains.
 
+### Restamping only pages the run regenerated
+
+Finish does not restamp every surviving page with the run's own source checkpoint.
+Before finalization it reads the page manifest and builds `producerActorsByPage`
+keyed by the pages whose manifest entry records `completedRunId === run.state.runId`
+— that is, only the pages this run actually (re)completed. After Claims finalization
+and the whole-run durability proof, finish partitions the surviving page inventory
+into three sets:
+
+- **Regenerated pages** (`producerActorsByPage` keys) are restamped with this run's
+  source checkpoint — they earned new coverage by completing a job.
+- **Skipped pages** are restored from their snapshots and, like other excluded
+  pages, are not required to carry durable Claims; they keep their prior coverage.
+- **Untouched pages** — pages outside this run's plan, or already durable from an
+  earlier run — keep their prior source checkpoint via `preserveSourcePages`, so a
+  disjoint run that touched an unrelated page never advances a neighbor's baseline.
+
+`replaceRepositoryPageManifest` receives the run checkpoint for regenerated pages,
+the `skippedPages` set, and the `preserveSourcePages` set. For a preserved-source
+page it re-proves the final Markdown/Claims pair: if deterministic finalization
+rewrote code-owned metadata (for example, repaired a broken internal link) the entry
+refreshes its `pageVersion` to match the final durable bytes while keeping the prior
+`gitHead` and `sourceFingerprint`; if nothing changed the exact prior entry is
+retained. This is why a later `begin` sees the correct per-page update window: a
+page a run did not regenerate is not advanced to this run's baseline, so a
+subsequent update only re-evaluates it against its own prior checkpoint.
+
 ### Resume resets skipped jobs to pending
 
 Because `skipped` is not terminal, resume treats it as work to retry. When
@@ -394,6 +423,10 @@ Claims sidecars for deleted pages, finalizes wiki artifacts (indexes and
 provenance), restores any skipped pages, finalizes Claims (excluding skipped
 pages), and proves the whole repository has no orphaned or partially durable
 Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages). It
+then rebuilds the page manifest so that only pages this run actually regenerated
+are restamped with this run's source checkpoint, while skipped and untouched
+pages retain their prior checkpoint via `preserveSourcePages` (a
+deterministic-finalization rewrite still refreshes `pageVersion`). It
 then persists completion metadata — `interrupted` when any page was skipped or
 source changed during the finish window, otherwise `complete` — and, last of
 all, removes `openwiki/.run.json`. The checkpoint is deleted last on purpose:
@@ -430,6 +463,23 @@ and source-fingerprint invalidation semantics. The host adapter does not, howeve
 participate in skipped-page handling: it calls `finishRepositoryRun` without
 `skippedPageSnapshots`, so a skipped job in a host-driven run makes finish report
 the missing-snapshot `invalid_state` unless the host supplies snapshots itself.
+
+## Planner and worker prompts
+
+The native runner bounds the planning agent with `createRepositoryPlannerPrompt`,
+which builds the complete planner system prompt from the durable begin/resume
+view and any user/connector planning context. The prompt instructs the planner
+that its only output action is `submit_plan`: it must not write documentation,
+delegate work, or emit narrative or conversational text, and must invoke
+`submit_plan` directly. It directs the planner to explore the repository first —
+manifests, major directories, entrypoints, and public surfaces — then trace
+representative end-to-end flows and inspect focused tests before submitting the
+smallest complete information architecture. Update-specific context appends the
+committed per-page update windows and Claims requiring attention, so the planner
+can decide which pages actually need work. The page-worker prompt
+(`createRepositoryPagePrompt`) bounds each worker to exactly its assigned page,
+injects the sparse-Claim reconciliation guidance, and requires
+`submit_page` with canonical `repo://` evidence resources.
 
 ## Failure semantics
 

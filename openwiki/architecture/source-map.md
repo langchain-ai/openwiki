@@ -22,6 +22,8 @@ sources:
     resource: repo://evals/ledger/tsconfig.json
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
+  - id: openwiki-source-f8b008ed89162a0e204fc02d
+    resource: repo://src/agent/bob.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -84,10 +86,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-14T08:10:27.832Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Source Map
@@ -126,20 +128,26 @@ before anything else.
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
-  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the
-  `openai-compatible` keys, and the connector OAuth keys) and the
-  `OpenWikiProvider` union. It also owns the output-token ceilings:
+  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the IBM Bob
+  keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the `openai-compatible`
+  keys — including the `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
+  `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` gates — and the
+  connector OAuth keys) and the `OpenWikiProvider` union (which includes the
+  `bob` provider). It also owns the output-token ceilings:
   `resolveConfiguredMaxOutputTokens` picks the right provider-specific setting
   (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
   `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls back to
   `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default does not
-  truncate long pages. It additionally gates reasoning effort for
-  `openai-compatible` providers: it exports
+  truncate long pages. It additionally gates reasoning effort and stream mode
+  for `openai-compatible` providers: it exports
   `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` and
   `resolveOpenAiCompatibleReasoningEffortSupported`, which `reasoning.ts` consults
   to decide whether an `openai-compatible` model advertises a reasoning
-  capability, and `providerUsesResponsesApi`, which selects the
-  `responses-reasoning` vs `chat-completions-reasoning-effort` transport.
+  capability, `providerUsesResponsesApi`, which selects the
+  `responses-reasoning` vs `chat-completions-reasoning-effort` transport, and
+  `resolveOpenAiCompatibleStreamMessages` (the
+  `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` resolver), which opts an
+  `openai-compatible` endpoint back into LangGraph's `"messages"` stream mode.
   Nearly every subsystem imports its identifiers from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow across a six-operation
@@ -182,7 +190,10 @@ by the generation lifecycle), `src/agent/docs-only-backend.ts`
 (`prompt.ts`, `repository-prompts.ts`), read-boundary enforcement
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
-surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
+surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), and the IBM Bob fetch
+adapter (`bob.ts`, whose `createBobFetch` rewrites `Authorization: Bearer …` to
+`Apikey <key>` and sets the `ibm-bob-openwiki-provider` `User-Agent` required by
+Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch).
 `runNativeRepositoryGeneration` drives the full loop: it begins the run, runs
 the planning agent, then calls `runPendingPageAgents` to spawn one fresh
 shell-free worker per pending page. Each `runPageAgent` worker is given an
@@ -295,22 +306,27 @@ Owns credential acquisition and storage. Principal entries: `src/auth/oauth.ts`
 ### config — environment, home directory, reasoning, and constants
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
-registry (path constants, provider env keys — including
-`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` and the
-`openai-compatible` streaming/responses-API gates — the `OpenWikiProvider`
-union, and defaults), and also owns the output-token resolution helpers
+registry (path constants, provider env keys — including the IBM Bob
+`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the `bob` provider in the
+`OpenWikiProvider` union, and the `openai-compatible` streaming/responses-API
+gates plus `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults), and
+also owns the output-token resolution helpers
 (`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
-`BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`
-and `providerUsesResponsesApi`, which gate reasoning effort for
+`BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`,
+`resolveOpenAiCompatibleStreamMessages`, and `providerUsesResponsesApi`, which
+gate reasoning effort, stream mode, and the responses API transport for
 `openai-compatible` providers; `env.ts` loads and saves the OpenWiki `.env` and
 is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
-now including `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), from
-which the credential-diagnostic and debug key lists derive;
-`openwiki-home.ts` resolves the home/wiki directories; `reasoning.ts` resolves
-reasoning settings, owning the three reasoning transports
-(`responses-reasoning`, `chat-completions-reasoning-effort`,
-`gemini-thinking-level`) and the `openai-compatible` capability resolution that
-consults `resolveOpenAiCompatibleReasoningEffortSupported` and
+now including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
+`OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`, and
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), from which the
+credential-diagnostic and debug key lists derive; `openwiki-home.ts` resolves the
+home/wiki directories; `reasoning.ts` resolves reasoning settings, owning the
+three reasoning transports (`responses-reasoning`,
+`chat-completions-reasoning-effort`, `gemini-thinking-level`) and the
+`openai-compatible` capability resolution that consults
+`resolveOpenAiCompatibleReasoningEffortSupported` and
 `providerUsesResponsesApi` from `constants.ts`.
 
 ### integrations — host-tool integration and MCP server surface

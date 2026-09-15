@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b2f81a91c55eb7e7a1ee7d671eb709371efe8ab84243cd4279201e9b1de62596",
+  "pageVersion": "sha256:eff796cb84cff3b941196d1de31f97564e17d8a85151472503956a862dcff533",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -118,7 +118,7 @@
       "evidence": [
         {
           "resource": "repo://test/agent/repository-runner.test.ts#L1-L6",
-          "version": "repo-lines-v1:sha256:6a9f82f99c99a0fe3ddceeeb5d2798dcd261f548b64db06e83858319a9433391:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUwZGE5ZWQ4NTFhMGU0YjJiMzI3ZDU3NTQyZWIwZDkxY2RiZWEyZGUwOWExYmEwMWMyZDc0OGRlYWIxYTdjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU5ODY3ZDM3ZjA2N2Q1M2U3ZmExMTFjNTliMWVlZjc0NjE2NDBmZDQ1NGZmYWZjOTU0YWI4MGE4YWZkNmIxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTE2ZTJiZDI4NDhjMTYwOTAzZGI3ZjM3NDUwOGQ3YWNjZDk4M2NmMTZlYTAzYzU1N2JkNDYzYTA3NGRiYmIyNCJ9"
+          "version": "repo-lines-v1:sha256:f4177f0ac29aafeb518afaaac10b800e3eb7000d93fe44cee026c516e05435c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1OTg2N2QzN2YwNjdkNTNlN2ZhMTExYzU5YjFlZWY3NDYxNjQwZmQ0NTRmZmFmYzk1NGFiODBhOGFmZDZiMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNmUyYmQyODQ4YzE2MDkwM2RiN2YzNzQ1MDhkN2FjY2Q5ODNjZjE2ZWEwM2M1NTdiZDQ2M2EwNzRkYmJiMjQifQ"
         },
         {
           "resource": "repo://test/generation/page-jobs.test.ts#L1-L12",
@@ -763,10 +763,78 @@
           "version": "repo-lines-v1:sha256:9eccf76d99849eb97c50d9f9a6b5704ab27b3faa8e5200cc29bf0885714bec19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhYTk4NzI5NTI4MGUxNTgzMzAyMDZmMGQzOTkzNjY3MWQ3NGRlYTkzOTY3Zjg4Yjk3YmQ5ZTVjMjdiODFmMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2MmRhZjMzM2RlNTUyNTNiZGVjYjRiODMwZTNkODZiODdhYTJhZGU4NzhhMTVlNTA0ZGIxYTg5ZTVmN2FjN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0NmQ1NDU2NzAzM2ZlODIwYjEyNTA4MTk5MzY1NjZiNGNlZDk1ZjYwMzgzYWQ4YTMxOWExMTc3ZGVlNmFlMzYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5ebc61a2ef76449eb275cdef6687851b",
+      "statement": "test/agent/repository-runner.test.ts covers coerceRepositoryWorkerModelResponse, the normalization the repository-worker NO_DELEGATION_MIDDLEWARE applies before LangChain validates each wrapModelCall response. OpenAI-compatible providers can emit a first SSE delta without role:\"assistant\" (e.g. a reasoning-only first delta), so the aggregated message arrives as a generic ChatMessage/ChatMessageChunk instead of an AIMessage/AIMessageChunk, which LangChain would reject. 'coerces roleless generic streaming aggregates before LangChain validates wrapModelCall' feeds a role-undefined ChatMessageChunk carrying additional_kwargs.reasoning_content and raw tool_calls and asserts the result is an AIMessageChunk preserving the text, reasoning_content, and collapsed tool_calls (type:\"tool_call\"); 'coerces generic assistant messages before LangChain validates wrapModelCall' feeds an explicit-role assistant ChatMessage and asserts it becomes an AIMessage with parsed tool_calls; 'leaves non-assistant generic model responses untouched' asserts a user-role ChatMessageChunk is returned unchanged so non-assistant output is never silently rewritten. The same 'filters DeepAgents automatic task capability at the model boundary' test pins the middleware's removal of the general-purpose task tool from the model-facing request.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L127-L177",
+          "version": "repo-lines-v1:sha256:743f6385fe85dad9b996b5c423686ac61a981887f0fa69080c91df1c3dd05ff1:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZjA4MzI4Mjg4NWFlODYxMGQzMGZlMTg3MjFiNWExMDg2OTI0YjBiNjhlN2E2ZTU0MzllZDg1NGYzN2U1YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2NTA4ZGRhYzA2YjA5MWUwYjkwMDYyMDBlYmQwMjJlOTY2NGExNTA0YmY0ZTJmZGI3MjZkNDBmY2FhMTAxODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5OTljZTcwMzcwODUzMWMxYjkyMmIyOTgwMmY2MDQwNzdhOWI2OTE4M2UwM2ViMmFkYTIwMGI2MGY4ZmE4NDAifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L98-L111",
+          "version": "repo-lines-v1:sha256:27db05a332b6f18293e104ddcbc0fb5d0275ce70163306d967db781f395eeb3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYzllYjYxMDliNTNlYmQwZTYwMjI3NDAyZWVkMWRjZTkxM2RjYjNjMTAwYTYwZjEzOTFjZTA3MTdlNzJiOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMGM5NWYxNDgyOGVjMGVjODEyNTc5YTNiNTllMzk5NDM5YjYzMjc2YmFmZWEwYTAyZmU4MWVjMTRiYjUyYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MjVjYTAwMmVjZjlhNjc4MTllYjViNzM3MjcyOTVlNzBhMWE0ZmQ3NTRlNDAzNjYzOThiODBlMTMwZDI1NWQifQ"
+        },
+        {
+          "resource": "repo://test/agent/repository-runner.test.ts#L661-L722",
+          "version": "repo-lines-v1:sha256:26b48be4cbb86ab818824b04d845c310217723b279b2c2f7e6cb107e24c093f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0ZDA1MTkzODMwZWE4YzVmYjA5MWZjMDI3Yzc0MGVhNzgwZWZiNGY4NTI4Y2EzOTU0NmZkZTdkNGQ5ODI0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExMzc3OGU4MTU1MzM1N2MwM2U0Mjc5YmQyZmNjOGRkZTZkNWI1MTBjMTYyMTg5ZWViOTVmMzUyMzY4Y2ZhOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0N2JhODNiZmQxODNmYWYwZTZjNzA2OGE5NDU4ZmEwOTQwMjgzOTdhNGZjYzdhZGQ5OGI1YTc1NTRmODQ2N2MifQ"
+        },
+        {
+          "resource": "repo://test/agent/repository-runner.test.ts#L724-L771",
+          "version": "repo-lines-v1:sha256:78e4171b015f726658dddbf7462dd01ddc056b44aeee7e0e7518c29c962997e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYmFiMzMzMjgzMjEwMmQwMDBmNzk0M2IyZjkxMDI1MDY3MWFjNWM5ZWM2YjBhMzc5YTY1NjYxMjY4OTkwYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZGJmMmE1NDcxNDIzNWI1N2ViNjg2YjI4NDhjYTk0MjU0YjhmZmE1ZjhkZDIzMjUwZTcyYzIxOTc0ZjE3ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjOWY2M2VmNzYxZDc5NDU0ZTZiYjgwOTdhMjRjNzA0M2M0NDJhZjdmNWRiYjMwOGU2OGI3OTFmZGJlODI1N2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07e8b211189c41c68939bb74b10a2719",
+      "statement": "test/agent/repository-prompts.test.ts exercises the repository planner and page-worker prompt builders (createRepositoryPlannerPrompt/createRepositoryPagePrompt from src/agent/repository-prompts.ts) against fully-shaped ActiveBeginView/RepositoryPageWorkerJob fixtures. It pins that the planner prompt carries the actual user/connector context, the per-page committed update windows (with 'Baseline <head>' or 'Baseline unknown (full review required)'), the claim issues requiring reconciliation, the wiki goal, and the planning instructions (hierarchical paths, relatedPages, submit_plan directly), and that the page-worker prompt propagates only the Claims requiring explicit reconciliation, stamps the 'You own exactly <path>' ownership line, and emits the sparse-Claim and canonical-evidence (repo://...) guidance.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/repository-prompts.test.ts#L130-L161",
+          "version": "repo-lines-v1:sha256:f3d5913bb4289313dbb744cf869b2add14d45fea36339cc07f2ebe3286ba263c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhOTRiNjliODY0M2ExMGUwNjBmZmU0ZmE2NGQwYjhiNTFhZGUwN2YxMzFiYmUzZTE2ODNkZmI2OTVjNjg5NmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YmUzZDg1MDAxZGQyNzk3ZDlmNWY3ODhhODgyMWFhYWQ1OGM4MGFhMjEzNzFiZTYyZTQzNjcyMGI3YzljYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjODBlYTNhNTgxNjRiMDI4NDkwODZhNmU4MTAzZWVjNTU0N2UyYjYwNTQ4YWI0MGUyYjk5YWZmNmY1ZGM0ZmEifQ"
+        },
+        {
+          "resource": "repo://test/agent/repository-prompts.test.ts#L87-L110",
+          "version": "repo-lines-v1:sha256:8c3d0f1eb1ee7c615448f1a46540cedbb41185400133ac652da4089456fb4ebf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYjZjNGNmN2I5ZDFmNmE3YmJiNzA1M2NjOTRlNTZlYWRjZjJlZmM4MmJhYTQ5NDQyMzBjZjU2YmE0MWI3NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4NGY0NWZjZjZmZWQ5YWZhNzc0ZjkzZDA1N2ZkMjExMGY1ODU5YjA1MTFmNjM0MGY1OGI1MDQ1YWRmMjFhNTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_73c5fab6e82b4077b32eb1bd4e484dca",
+      "statement": "test/agent/vertex-surface.test.ts exercises the Vertex AI surface dispatch in src/agent/vertex-surface.ts. resolveVertexSurface routes Claude ids to the anthropic surface, partner/MaaS ids (meta, mistral, deepseek, qwen, codellama) to the openai-maas surface, and xAI Grok ids (xai/grok-..., bare grok-..., publishers/xai/models/grok-...) to the openai-maas surface — Grok is served over the OpenAI-compatible endpoint like every other partner model, and falling through to gemini would address it as a non-existent publishers/google/models/grok-... path. Gemini/Gemma ids and unknown publishers default to gemini, and the family-token boundary (^|/) prevents a token embedded mid-word (e.g. gemini-metallica) from being misclassified. The suite also pins stripPublisherPath/toVertexPublisherModel, the regional vs. global vertexOpenAIBaseUrl endpoint construction, withAnthropicAuthEnvNeutralized (hides ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN during construction and restores the prior value — or prior absence — even if construction throws), and createVertexAuthFetch (injects a fresh bearer token per request and throws before the request when no access token is available).",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/vertex-surface.test.ts#L116-L203",
+          "version": "repo-lines-v1:sha256:9fb8e1263c1a66cc0d65c429d22e41c2db0b6eec78978778bb749f0b2f8009ae:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNDFjNGZhNjE1ZjAzMzk4ZDMxNDBhMjFmNjJhNmYxNjRjZGZlYmRhYjYxZGIzMTBlYjEyYjk4OTkyZTE4MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/agent/vertex-surface.test.ts#L20-L82",
+          "version": "repo-lines-v1:sha256:7721929336f555e768913d04a7dbaced31ee9d8b10230bbba8d02de06c949e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNWNiODVlMGI2ZDIyMzk5NjZmYjhjMWViNDA5NjA0NDhjMmZhNTIzNWZkNGRkN2RkYTRjNGQ1M2JiZjQ3ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjNDdjNzNlMzYwNWFiNDc2YjA2YTE2NWE0N2UzYWI4NDlkYTg4NzhiMWExNTMxY2U3NjYxYWJkOWJkNzVkOTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlMDQ2YTZjODljNDdjYTliZTVhNWU4NGNjMmZjNGViOTBhMmNkNDVhOTU4OWQ4ZDQwYWZmYThlMzUxZjgzMjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f74b9301ec134192a029d80790866ff1",
+      "statement": "test/config/env.test.ts pins the MANAGED_ENV_KEYS membership: the output-token limits (OPENWIKI_MAX_OUTPUT_TOKENS, OPENWIKI_BEDROCK_MAX_TOKENS), the stream idle timeout (OPENWIKI_STREAM_IDLE_TIMEOUT), the gemini-enterprise (Vertex) Google Cloud settings (GOOGLE_CLOUD_PROJECT/GOOGLE_CLOUD_LOCATION/GOOGLE_APPLICATION_CREDENTIALS), the AI-Studio GEMINI_API_KEY, the hosted OpenAI-compatible provider base URLs (BASETEN_BASE_URL, BOB_BASE_URL, FIREWORKS_BASE_URL, NVIDIA_BASE_URL), and the reasoning-effort settings (OPENWIKI_REASONING_EFFORT, OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED). test/config/constants.test.ts pins resolveProviderBaseUrl defaults and overrides for the hosted OpenAI-compatible providers, where BOB_BASE_URL (via BOB_BASE_URL_ENV_KEY) and the baseten/fireworks/nvidia keys override the built-in defaults while a whitespace-only override falls back to the default, alongside model-id validation, provider normalization/resolution, retry attempts, per-provider max-output-token ceilings, stream-idle-timeout resolution, reasoning capability flags, and the Bedrock AWS-SDK credential/region surface.",
+      "evidence": [
+        {
+          "resource": "repo://test/config/constants.test.ts#L231-L274",
+          "version": "repo-lines-v1:sha256:78cf239a4e39bd81bca0eef391b6f229e63daef494960a67b5bda55adc21fcf3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMWUyMzllOWNkODVmZjdhYWE0YTZkYmYxYTUzMzk5NTdhMTcyY2I0NWEzZjlkMzk5NTI0OTNlMzA0NzI3NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMzc1Y2JhYzdjNzJiYWYzMDQyNWQyNjNkYzM3MDhlOGRhNGViYzk3MTYxYjQwMGVkNzcwNGUwMmUzNDA0MmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMThkNzFiOTY0YzgzNjM0YWMwZGQzZjk0NDFlMzVkNjA1MDdlYmYxNGQyMmJjMWNiMTY3MmMxMzJiMGM0MmMifQ"
+        },
+        {
+          "resource": "repo://test/config/constants.test.ts#L834-L898",
+          "version": "repo-lines-v1:sha256:b350181d9399b1351726565d7537ab83d1a3c2b763da178323ed4b14104c9abc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MDkyYjQxZDM0ZTUwZDMzZjdkOGQ1MjQwNGU4NzliNjkxMmQ3MDk2OTczZTlhZGY5YjYyN2MyZjUwMWJkMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3Yjk3OWI3ODUzYTMzMGE1ZGMxY2Y2YWVmZGRlOWY5YzAyZWE2Zjk2MzIwNDRjNjFlNGY4MWQ0ZDEyMzRkMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNGM0MDJkMWIxNWNkZDJmNmQyYTA2NzY2NmE5OTdjMWQxZGNlMGI3MGU4NWM2MmM1YzUyZDhiNTQzMzNiYjYifQ"
+        },
+        {
+          "resource": "repo://test/config/env.test.ts#L132-L171",
+          "version": "repo-lines-v1:sha256:bcff12360970574e1f27beeaaade1c1b5764ec43a0356f91562348966cadc17d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkN2YwNDM4MmUwNzdlZTYwZTI2OTYyMzYxYWUxZGNkZWFiMDU4MDg2YjRiZGEzMDFkOGIzZDdhZGUwNzgzYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjYmE0YjNhYzE1ZWE2NTcxNThhNmIwYzczOGIzYWU1YWFhZjE3NTA5YjgzNGIzNTMwYjVjMWVkYzRlMzI3YmYifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.1",
-    "at": "2026-09-14T08:10:27.832Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-15T08:09:47.649Z"
   }
 }

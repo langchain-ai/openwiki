@@ -11,11 +11,13 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
+  - id: openwiki-source-f8b008ed89162a0e204fc02d
+    resource: repo://src/agent/bob.ts
   - id: openwiki-source-fcb06f91f699f462b4d84a90
     resource: repo://src/agent/crash-guard.ts
   - id: openwiki-source-12c17ed8ca9c89ec61f28df7
@@ -40,7 +42,7 @@ sources:
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -85,7 +87,7 @@ After model resolution, `resolveRunConfig` resolves three provider-neutral opera
 
 ## The provider matrix and model instantiation
 
-`createModel` maps the resolved provider and model id onto a concrete LangChain chat model. The provider enum spans direct API-key providers (`anthropic`, `openai`, `gemini`, plus OpenAI-compatible gateways `baseten`/`fireworks`/`nebius`/`nvidia`/`openai-compatible`), OAuth (`openai-chatgpt`, `copilot`), AWS-SDK (`bedrock`), a routing gateway (`openrouter`), and Google Vertex (`gemini-enterprise`).
+`createModel` maps the resolved provider and model id onto a concrete LangChain chat model. The provider enum spans direct API-key providers (`anthropic`, `openai`, `gemini`, the IBM `bob` inference gateway, plus OpenAI-compatible gateways `baseten`/`fireworks`/`nebius`/`nvidia`/`openai-compatible`), OAuth (`openai-chatgpt`, `copilot`), AWS-SDK (`bedrock`), a routing gateway (`openrouter`), and Google Vertex (`gemini-enterprise`).
 
 Each branch constructs a purpose-built client:
 
@@ -96,6 +98,7 @@ Each branch constructs a purpose-built client:
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
 - **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
 - **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
+- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires.
 - **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
@@ -116,7 +119,7 @@ The `openai-compatible` provider has no static entry: its capability is gated by
 
 ### Vertex surface routing
 
-For `gemini-enterprise`, the API surface is a function of the model id, not the provider: `resolveVertexSurface` classifies an id as `anthropic`, `openai-maas`, or (default) `gemini`. The Claude-on-Vertex bridge neutralizes any ambient `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN` around the synchronous `AnthropicVertex` constructor so a stray native Anthropic key cannot clobber the Google OAuth token, and the MaaS surface injects a fresh ADC bearer token per request via a `fetch` wrapper so long sessions survive token expiry while `createModel` stays synchronous.
+For `gemini-enterprise`, the API surface is a function of the model id, not the provider: `resolveVertexSurface` classifies an id as `anthropic`, `openai-maas`, or (default) `gemini`. IDs matching the Anthropic pattern (`anthropic`/`claude` family, whether bare or publisher-pathed) route to the Anthropic Vertex surface; IDs matching the MaaS pattern — including the `xai`/`grok` family in addition to `ai21`, `codellama`, `codestral`, `deepseek`, `jamba`, `llama`/`meta`, `mistral`, and `qwen` — route to the OpenAI-compatible MaaS surface; everything else defaults to native Gemini/Gemma. The Claude-on-Vertex bridge neutralizes any ambient `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN` around the synchronous `AnthropicVertex` constructor so a stray native Anthropic key cannot clobber the Google OAuth token, and the MaaS surface injects a fresh ADC bearer token per request via a `fetch` wrapper so long sessions survive token expiry while `createModel` stays synchronous.
 
 ## Building the agent graph
 

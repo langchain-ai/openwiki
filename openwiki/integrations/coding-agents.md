@@ -1,11 +1,18 @@
 ---
 type: integration guide
-title: Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
-description: How OpenWiki runs inside a host coding agent through the five-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
+title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro)
+description: How OpenWiki runs inside a host coding agent through the six-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-77c4fabfc00b27b92aa6311c
+    resource: repo://integrations/openwiki/agents/bob.yaml
+  - id: openwiki-source-da19cf14a1041f6d06ffc9a5
+    resource: repo://integrations/openwiki/agents/openai.yaml
   - id: openwiki-source-438fff4d79b8ab99f5c88c73
     resource: repo://integrations/openwiki/SKILL.md
   - id: openwiki-source-638173446de4138fa3a622a8
@@ -46,20 +53,18 @@ sources:
     resource: repo://src/integrations/mcp/stdio.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 ---
 
-# Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
+# Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro)
 
-OpenWiki can run _inside_ a host coding agent (Codex, Claude Code, OpenCode, or
-Cursor) instead of as a standalone process. The host agent supplies the model, native
-repository tools, and Markdown authoring; OpenWiki supplies a deterministic,
-resumable **page-job lifecycle** over the Model Context Protocol (MCP). The two
-sides communicate through exactly six MCP tools, and installation wires a local
-stdio MCP server plus a shared skill bundle into each host's own configuration.
+OpenWiki can run _inside_ a host coding agent (IBM Bob, Codex, Claude Code,
+OpenCode, Cursor, or Kiro) instead of as a standalone process. The host agent
+supplies the model, native repository tools, and Markdown authoring; OpenWiki
+supplies a deterministic, resumable **page-job lifecycle** over the Model Context
+Protocol (MCP). The two sides communicate through exactly six MCP tools, and
+installation wires a local stdio MCP server plus a shared skill bundle into each
+host's own configuration.
 
 This page documents the protocol operations, the divided ownership of research
 versus finalization, repository-root resolution, install/uninstall mechanics,
@@ -229,6 +234,11 @@ bundle) and a **managed MCP server entry** in the host's config file. The
 registry of supported hosts. Each entry declares its display name, provenance
 actor, per-scope skill directory and MCP config, and a documentation URL:
 
+- **IBM Bob** — `.bob/mcp.json` (`json`) at both user and project scope, skill
+  under `.agents/skills/openwiki` at both scopes; `producerActor` `bob`. IBM Bob
+  additionally ships an agent manifest at
+  `integrations/openwiki/agents/bob.yaml` (`display_name`, `short_description`,
+  `default_prompt`) consumed by the Bob host to surface the OpenWiki agent.
 - **Codex** — `.codex/config.toml` (`codex-toml`), skill under
   `.agents/skills/openwiki`, at both user and project scope; `producerActor`
   `codex`.
@@ -242,6 +252,8 @@ actor, per-scope skill directory and MCP config, and a documentation URL:
 - **Cursor** — `.cursor/mcp.json` (`json`), skill under
   `.cursor/skills/openwiki`, at both user and project scope;
   `producerActor` `cursor`.
+- **Kiro** — `.kiro/settings/mcp.json` (`json`) at both user and project scope,
+  skill under `.kiro/skills/openwiki` at both scopes; `producerActor` `kiro`.
 
 `defaultMcpServerCommand(target)` produces the published invocation
 `openwiki mcp --host <target>`, which is what installed configs launch.
@@ -267,9 +279,12 @@ Each adapter reports whether its entry is `not-installed`, `installed`, or
 The canonical bundle is resolved relative to the installer module
 (`resolveCanonicalSkillBundle`) and inventoried into a deterministic SHA-256
 hash map keyed by relative path (`inventorySkill`), which requires a `SKILL.md`
-at the root. On install, a `.openwiki-install.json` **receipt** records the
-owning package, OpenWiki version, host target, installed MCP command, and per-
-file hashes. `inspectInstallation` uses the receipt to classify a destination as
+at the root. The bundle root is restricted to `SKILL.md`, an `agents/` tree
+(host agent manifests such as `agents/bob.yaml` and `agents/openai.yaml`), and a
+`references/` tree; any other path is rejected. On install, a
+`.openwiki-install.json` **receipt** records the owning package, OpenWiki
+version, host target, installed MCP command, and per-file hashes.
+`inspectInstallation` uses the receipt to classify a destination as
 `not-installed`, `installed` (intact), or `modified` (present but altered or
 unmanaged).
 
@@ -295,12 +310,18 @@ requested scope does not exist for the host.
 ## User-level vs project scope
 
 Every host supports **project** scope; user scope is optional (`user` may be
-`null` in the registry, though all four current hosts support both). For
+`null` in the registry, though all six current hosts support both). For
 **project** scope the installer resolves the root through the same
 `resolveRepositoryRoot` used by runs, so a project install always lands at the
 Git worktree root; for **user** scope it anchors at the home directory. When a
 host does not support the requested scope, `resolveInstallContext` raises an
 `invalid_input` error directing the user to re-run with `--project`.
+
+User-scope destinations match each host's own conventions: IBM Bob writes the
+skill under `~/.agents` and the MCP entry under `~/.bob`, Codex writes under
+`~/.agents` and `~/.codex`, Claude Code under `~/.claude`, OpenCode under
+`~/.config/opencode` (OpenCode's global configuration directory on every
+supported platform), Cursor under `~/.cursor`, and Kiro under `~/.kiro`.
 
 ## Contributing a new host
 
@@ -309,12 +330,12 @@ the id to `HostTargetId`, add the entry to `HOST_TARGETS`, reuse an existing
 config adapter when possible (add a focused one only for a genuinely different
 format), and add focused registry/install/status/uninstall/config-conflict tests.
 The full procedure, including the local dogfooding command
-`pnpm integrations:dev <host>`, lives in `CONTRIBUTING.md` §"Adding a
-coding-agent integration". `pnpm integrations:dev` builds OpenWiki, refreshes
-the host skill, and records absolute paths to the current Node executable and
-`dist/cli/cli.js`; the four current hosts all install at user scope, and later
-source changes only require `pnpm build` unless the bundled skill itself
-changes.
+`pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro>`, lives in
+`CONTRIBUTING.md` §"Adding a coding-agent integration". `pnpm integrations:dev`
+builds OpenWiki, refreshes the host skill, and records absolute paths to the
+current Node executable and `dist/cli/cli.js`; all six current hosts install at
+user scope, and later source changes only require `pnpm build` unless the bundled
+skill itself changes.
 
 ## Focused tests
 
