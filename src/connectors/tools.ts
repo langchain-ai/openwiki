@@ -53,13 +53,13 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_list_mcp_tools",
-      description: `List live MCP tools for a configured MCP connector and write discovery under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"notion"}. Use exact returned tool names.`,
+      description: `List live MCP tools for a configured MCP connector and write discovery under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"github"}. Use exact returned tool names. MCP-backed connectors: custom-mcp, github, newrelic, notion, sentry.`,
       schema: {
         type: "object",
         properties: {
           connectorId: {
             type: "string",
-            enum: ["custom-mcp", "notion"],
+            enum: ["custom-mcp", "github", "newrelic", "notion", "sentry"],
           },
         },
         required: ["connectorId"],
@@ -72,7 +72,7 @@ export function createOpenWikiConnectorTools(
     }),
     new DynamicStructuredTool({
       name: "openwiki_call_mcp_tool",
-      description: `Call one exact discovered read-only MCP tool and write the result under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"notion","toolName":"exact_tool_name","args":{"query":"Applied AI"}}.`,
+      description: `Call one exact discovered read-only MCP tool and write the result under ${openWikiConnectorsDisplayPath}/<id>/raw. Input: {"connectorId":"github","toolName":"exact_tool_name","args":{"owner":"langchain-ai","repo":"openwiki"}}. MCP-backed connectors: custom-mcp, github, newrelic, notion, sentry.`,
       schema: {
         type: "object",
         properties: {
@@ -82,7 +82,7 @@ export function createOpenWikiConnectorTools(
           },
           connectorId: {
             type: "string",
-            enum: ["custom-mcp", "notion"],
+            enum: ["custom-mcp", "github", "newrelic", "notion", "sentry"],
           },
           toolName: {
             type: "string",
@@ -110,10 +110,13 @@ export function createOpenWikiConnectorTools(
             type: "string",
             enum: [
               "custom-mcp",
+              "github",
               "git-repo",
               "google",
               "hackernews",
+              "newrelic",
               "notion",
+              "sentry",
               "slack",
               "web-search",
               "x",
@@ -158,11 +161,14 @@ export function createOpenWikiConnectorTools(
             type: "string",
             enum: [
               "custom-mcp",
+              "github",
               "git-repo",
               "google",
               "hackernews",
               "langsmith",
+              "newrelic",
               "notion",
+              "sentry",
               "slack",
               "web-search",
               "x",
@@ -187,11 +193,14 @@ export function createOpenWikiConnectorTools(
             type: "string",
             enum: [
               "custom-mcp",
+              "github",
               "git-repo",
               "google",
               "hackernews",
               "langsmith",
+              "newrelic",
               "notion",
+              "sentry",
               "slack",
               "web-search",
               "x",

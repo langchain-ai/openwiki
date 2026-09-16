@@ -6,6 +6,7 @@ import {
   ensureOpenWikiHome,
   openWikiHomeDir,
 } from "../config/openwiki-home.js";
+import { isConnectorId } from "../connectors/registry.js";
 import type { ConnectorId } from "../connectors/types.js";
 
 export const openWikiOnboardingPath = path.join(
@@ -457,16 +458,7 @@ function normalizePowerManagementConfig(
 }
 
 function isKnownConnectorId(value: string): value is ConnectorId {
-  return (
-    value === "custom-mcp" ||
-    value === "git-repo" ||
-    value === "google" ||
-    value === "hackernews" ||
-    value === "notion" ||
-    value === "slack" ||
-    value === "web-search" ||
-    value === "x"
-  );
+  return isConnectorId(value);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
