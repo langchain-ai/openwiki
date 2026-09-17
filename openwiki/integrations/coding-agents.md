@@ -69,10 +69,10 @@ host's own configuration.
 This page documents the protocol operations, the divided ownership of research
 versus finalization, repository-root resolution, install/uninstall mechanics,
 and the scope model. For the internal generation engine these tools drive, see
-[Repository generation workflow](/openwiki/workflows/repository-generation.md)
-and [Architecture overview](/openwiki/architecture/overview.md). For the
+[Repository generation workflow](../workflows/repository-generation.md)
+and [Architecture overview](../architecture/overview.md). For the
 `openwiki mcp` and `openwiki integrations` commands, see the
-[CLI reference](/openwiki/operations/cli-reference.md).
+[CLI reference](../operations/cli-reference.md).
 
 > Note: This is the **host integration** path. It is unrelated to the
 > `write-connector` skill, which adds a new _source connector_ for ingesting

@@ -58,11 +58,11 @@ Both surfaces share the same cron parsing and validation code in
 lifecycle of a native schedule, and what the CI example files do.
 
 For the CLI surface that drives these flows see
-[CLI reference](/openwiki/operations/cli-reference.md); for what
+[CLI reference](./cli-reference.md); for what
 `code --update` actually regenerates see
-[repository generation](/openwiki/workflows/repository-generation.md); and for
+[repository generation](../workflows/repository-generation.md); and for
 the ingestion side used by native schedules see
-[personal ingestion](/openwiki/workflows/personal-ingestion.md).
+[personal ingestion](../workflows/personal-ingestion.md).
 
 ## Cron parsing and validation
 
@@ -306,9 +306,9 @@ plus full git history, as the only durable state carried between runs.
 
 ## Related pages
 
-- [CLI reference](/openwiki/operations/cli-reference.md) — the `cron`, `ingest`,
+- [CLI reference](./cli-reference.md) — the `cron`, `ingest`,
   and `code --update` commands invoked by these schedules.
-- [Repository generation](/openwiki/workflows/repository-generation.md) — what
+- [Repository generation](../workflows/repository-generation.md) — what
   `code --update` regenerates and its resumable page-job architecture.
-- [Personal ingestion](/openwiki/workflows/personal-ingestion.md) — the
+- [Personal ingestion](../workflows/personal-ingestion.md) — the
   ingestion run that native macOS schedules trigger.

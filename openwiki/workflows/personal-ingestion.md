@@ -38,15 +38,15 @@ configured source instances, deterministically pulls each source's recent data
 (or defers discovery to the agent), and then runs one OpenWiki agent _update_
 per source instance to merge new findings into canonical local-wiki pages.
 
-Unlike [code mode](/openwiki/concepts/two-modes.md) — which documents a codebase
+Unlike [code mode](../concepts/two-modes.md) — which documents a codebase
 and emits repository-grounded Claims — personal-mode ingestion writes to the
 local wiki (`outputMode: "local-wiki"`) and **does not turn connector-derived
 facts into grounded Claims**. Connector data is treated as untrusted evidence
 and synthesized under confidence labels (confirmed, source-backed, contested,
 watchlist, saved-context), not as verifiable repository-anchored propositions.
-See [connectors](/openwiki/integrations/connectors.md),
-[onboarding](/openwiki/workflows/onboarding.md), and
-[CI scheduling](/openwiki/operations/ci-scheduling.md) for related surfaces.
+See [connectors](../integrations/connectors.md),
+[onboarding](./onboarding.md), and
+[CI scheduling](../operations/ci-scheduling.md) for related surfaces.
 
 ## Entrypoint and orchestration
 
