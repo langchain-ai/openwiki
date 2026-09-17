@@ -20,6 +20,7 @@ import {
 } from "../okf/index-labels.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
 import type { OpenWikiOutputMode } from "./types.js";
+import { validateWikiSourceCitations } from "./source-citation-validator.js";
 import { validateWikiInternalLinks } from "./wiki-link-validator.js";
 
 /**
@@ -34,6 +35,7 @@ export type WikiFinalizerOperation =
   | "mermaid"
   | "index_sync"
   | "link_validation"
+  | "source_citation_validation"
   | "claims_sources"
   | "generated_provenance";
 
@@ -266,6 +268,11 @@ export async function finalizeWikiArtifacts({
   );
   await runOperation("link_validation", () =>
     validateWikiInternalLinks(backend, outputMode),
+  );
+  // Same contract as link validation: stamp prose citations of repository
+  // files that a move invalidates, without failing the run.
+  await runOperation("source_citation_validation", () =>
+    validateWikiSourceCitations(backend, outputMode),
   );
   if (claimSources) {
     await runOperation("claims_sources", () =>
