@@ -73,6 +73,7 @@ const harness = vi.hoisted(() => ({
   changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
   driftOnce: false,
+  emitFrontmatterSignal: false,
   duplicatePlanSubmission: false,
   duplicatePlanToolResults: [] as unknown[],
   filesystemTools: [] as string[][],
@@ -443,8 +444,18 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       remaining: 0,
     });
   },
-  finishRepositoryRun() {
+  finishRepositoryRun(
+    _run: unknown,
+    options?: { onEvent?: (event: OpenWikiRunEvent) => void },
+  ) {
     harness.finishCalls += 1;
+    if (harness.emitFrontmatterSignal) {
+      options?.onEvent?.({
+        type: "text",
+        source: "main",
+        text: "1 OpenWiki page(s) still carry code-derived frontmatter (openwiki_generated: true): legacy.md\n",
+      });
+    }
     if (harness.driftOnce && harness.finishCalls === 1) {
       return { status: "complete", sourceChanged: true };
     }
@@ -494,6 +505,7 @@ beforeEach(() => {
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
   harness.driftOnce = false;
+  harness.emitFrontmatterSignal = false;
   harness.duplicatePlanSubmission = false;
   harness.duplicatePlanToolResults = [];
   harness.filesystemTools = [];
@@ -831,6 +843,24 @@ describe("runNativeRepositoryGeneration", () => {
         (event) =>
           event.type === "text" &&
           event.text.includes("finalized without advancing"),
+      ),
+    ).toBe(true);
+  });
+
+  test("forwards its own onEvent to finishRepositoryRun so frontmatter signals surface", async () => {
+    // finishRepositoryRun computes the real frontmatter report (covered in
+    // generation/repository-run.test.ts); here the mock simulates it emitting
+    // a signal through the onEvent it was handed, proving
+    // runNativeRepositoryGeneration forwards its caller's onEvent through
+    // rather than swallowing it.
+    harness.emitFrontmatterSignal = true;
+
+    const events = await runHarness();
+
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" && event.text.includes("openwiki_generated"),
       ),
     ).toBe(true);
   });
