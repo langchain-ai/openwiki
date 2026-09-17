@@ -1,0 +1,23 @@
+test/linking/wiki-workspaces.test.ts
+  s_a3ad1fc1ea31be::t_336aa57da9ac4a 21,282-352
+  s_a3ad1fc1ea31be::t_6cc74233dbbfaf 353-354
+src/linking/wiki-workspaces.ts
+  s_a3ad1fc1ea31be::t_336aa57da9ac4a 636-642,664,687-694,700,752-755,759,776,798,841-845,861-878,884,889,892-893,917,922,925-926
+  s_a3ad1fc1ea31be::t_7cdc458008e01b 635
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "49183a9b30cfe3aa7276286bcc423cff21cd49a1",
+  "prompts": {},
+  "sessions": {
+    "s_a3ad1fc1ea31be": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0b199-6fbe-7010-80dc-2340187a43ea",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
