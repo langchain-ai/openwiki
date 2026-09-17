@@ -2,7 +2,10 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { OPENWIKI_TAVILY_API_KEY_ENV_KEY } from "../../../src/config/constants.ts";
+import {
+  OPENWIKI_OLLAMA_API_KEY_ENV_KEY,
+  OPENWIKI_TAVILY_API_KEY_ENV_KEY,
+} from "../../../src/config/constants.ts";
 
 // Tavily is the one network boundary; the constructor options and per-query
 // invoke calls are captured so we can assert query building without hitting the
@@ -26,15 +29,18 @@ vi.mock("@langchain/tavily", () => ({ TavilySearch: tavily.TavilySearch }));
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
 const originalApiKey = process.env[OPENWIKI_TAVILY_API_KEY_ENV_KEY];
+const originalOllamaApiKey = process.env[OPENWIKI_OLLAMA_API_KEY_ENV_KEY];
 const tempHomes: string[] = [];
 
 type WebSearchDump = {
   maxResults: number;
+  provider: string;
   queryCount: number;
   results: { query: string; response: unknown }[];
   searchDepth: string;
   timeRange?: string;
   topic: string;
+  urlCount: number;
 };
 
 type ConnectorStateDump = {
@@ -79,6 +85,7 @@ function restoreEnv(key: string, value: string | undefined): void {
 
 beforeEach(() => {
   tavily.constructed.splice(0);
+  tavily.TavilySearch.mockClear();
   tavily.invoke.mockClear();
   tavily.invoke.mockResolvedValue({
     answer: "an answer",
@@ -91,6 +98,8 @@ afterEach(async () => {
   restoreEnv("HOME", originalHome);
   restoreEnv("USERPROFILE", originalUserProfile);
   restoreEnv(OPENWIKI_TAVILY_API_KEY_ENV_KEY, originalApiKey);
+  restoreEnv(OPENWIKI_OLLAMA_API_KEY_ENV_KEY, originalOllamaApiKey);
+  vi.unstubAllGlobals();
 
   await Promise.all(
     tempHomes
@@ -137,6 +146,130 @@ describe("web-search connector gating", () => {
     expect(result.status).toBe("skipped");
     expect(result.message).toContain("No web search queries");
     expect(tavily.TavilySearch).not.toHaveBeenCalled();
+  });
+
+  test("errors when the Ollama API key is missing", async () => {
+    const home = await createTempHome();
+    await writeWebSearchConfig(home, {
+      enabled: true,
+      provider: "ollama",
+      queries: ["x"],
+    });
+    process.env[OPENWIKI_TAVILY_API_KEY_ENV_KEY] = "tvly-key";
+    delete process.env[OPENWIKI_OLLAMA_API_KEY_ENV_KEY];
+    const connector = await loadWebSearchConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain(OPENWIKI_OLLAMA_API_KEY_ENV_KEY);
+    expect(tavily.TavilySearch).not.toHaveBeenCalled();
+  });
+});
+
+describe("web-search connector ollama provider", () => {
+  function stubOllamaFetch(
+    handler: (url: string) => Record<string, unknown>,
+  ): ReturnType<typeof vi.fn> {
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify(handler(url))),
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  test("searches configured queries through the Ollama web_search API", async () => {
+    const home = await createTempHome();
+    await writeWebSearchConfig(home, {
+      enabled: true,
+      maxResults: 3,
+      provider: "ollama",
+      queries: ["openwiki", "ollama"],
+    });
+    process.env[OPENWIKI_OLLAMA_API_KEY_ENV_KEY] = "ollama-key";
+    const fetchMock = stubOllamaFetch(() => ({
+      results: [{ content: "c", title: "t", url: "https://example.com" }],
+    }));
+    const connector = await loadWebSearchConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    expect(result.message).toBe(
+      "Fetched Ollama results for 2 web search queries.",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
+      "https://ollama.com/api/web_search",
+      "https://ollama.com/api/web_search",
+    ]);
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      body: JSON.stringify({ max_results: 3, query: "openwiki" }),
+      headers: { Authorization: "Bearer ollama-key" },
+    });
+
+    const dump = JSON.parse(
+      await readFile(result.rawFiles[0] ?? "", "utf8"),
+    ) as WebSearchDump;
+    expect(dump.provider).toBe("ollama");
+    expect(dump.queryCount).toBe(2);
+    expect(dump.urlCount).toBe(0);
+  });
+
+  test("fetches configured URLs with Ollama web_fetch", async () => {
+    const home = await createTempHome();
+    await writeWebSearchConfig(home, {
+      enabled: true,
+      provider: "ollama",
+      queries: [],
+      urls: ["https://example.com", "https://ollama.com"],
+    });
+    process.env[OPENWIKI_OLLAMA_API_KEY_ENV_KEY] = "ollama-key";
+    const fetchMock = stubOllamaFetch(() => ({
+      content: "body",
+      links: [],
+      title: "t",
+    }));
+    const connector = await loadWebSearchConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    expect(result.message).toBe(
+      "Fetched Ollama results for 0 web search queries and 2 URLs.",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
+      "https://ollama.com/api/web_fetch",
+      "https://ollama.com/api/web_fetch",
+    ]);
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      body: JSON.stringify({ url: "https://example.com" }),
+      headers: { Authorization: "Bearer ollama-key" },
+    });
+  });
+
+  test("warns that URL fetching is ignored with the Tavily provider", async () => {
+    const home = await createTempHome();
+    await writeWebSearchConfig(home, {
+      enabled: true,
+      provider: "tavily",
+      queries: ["openwiki"],
+      urls: ["https://example.com"],
+    });
+    process.env[OPENWIKI_TAVILY_API_KEY_ENV_KEY] = "tvly-key";
+    const connector = await loadWebSearchConnector(home);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain("provider=ollama");
+    expect(tavily.invoke).toHaveBeenCalledTimes(1);
   });
 });
 

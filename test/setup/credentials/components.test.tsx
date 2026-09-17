@@ -697,7 +697,7 @@ describe("Prompt", () => {
       onboardingConfig: createEmptyOnboardingConfig(),
     });
     expect(frame).toContain("not configured yet");
-    expect(frame).toContain("Web Search (Tavily)");
+    expect(frame).toContain("Web Search (Tavily or Ollama)");
   });
 
   test("final uses code-mode copy for a code wiki", () => {
