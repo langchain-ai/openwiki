@@ -172,6 +172,11 @@ describe("MANAGED_ENV_KEYS", () => {
       "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED",
     );
   });
+
+  test("manages SAP AI Core settings", () => {
+    expect(MANAGED_ENV_KEYS).toContain("AICORE_SERVICE_KEY");
+    expect(MANAGED_ENV_KEYS).toContain("AICORE_RESOURCE_GROUP");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
