@@ -159,7 +159,7 @@ whichever home directory is in effect.
 
 ## Related pages
 
-- [Architecture overview](/openwiki/architecture/overview.md)
-- [Configuration](/openwiki/operations/configuration.md)
-- [Personal ingestion workflow](/openwiki/workflows/personal-ingestion.md)
-- [Repository generation workflow](/openwiki/workflows/repository-generation.md)
+- [Architecture overview](../architecture/overview.md)
+- [Configuration](../operations/configuration.md)
+- [Personal ingestion workflow](../workflows/personal-ingestion.md)
+- [Repository generation workflow](../workflows/repository-generation.md)

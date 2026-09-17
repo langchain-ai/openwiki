@@ -365,7 +365,7 @@ same rules reach every host integration and tool description.
 
 ## Related pages
 
-- [Source Map](/openwiki/architecture/source-map.md)
-- [OKF Output](/openwiki/concepts/okf-output.md)
-- [Claims Reconciliation](/openwiki/workflows/claims-reconciliation.md)
-- [Repository Generation](/openwiki/workflows/repository-generation.md)
+- [Source Map](../architecture/source-map.md)
+- [OKF Output](./okf-output.md)
+- [Claims Reconciliation](../workflows/claims-reconciliation.md)
+- [Repository Generation](../workflows/repository-generation.md)
