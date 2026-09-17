@@ -26,6 +26,7 @@
     "LICENSE"
   ],
   "keywords": [
+    "pi-package",
     "ai",
     "agents",
     "documentation",
@@ -34,6 +35,14 @@
     "langchain",
     "cli"
   ],
+  "pi": {
+    "extensions": [
+      "./dist/integrations/pi/openwiki.js"
+    ],
+    "skills": [
+      "./integrations/openwiki"
+    ]
+  },
   "scripts": {
     "openwiki": "node dist/cli/cli.js",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
