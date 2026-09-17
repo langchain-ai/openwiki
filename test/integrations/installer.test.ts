@@ -144,7 +144,9 @@ async function seedConfig(root: string, target: HostTarget): Promise<void> {
             "}",
             "",
           ].join("\n")
-        : `model = "${CONFIG_SENTINEL}"\n\n`;
+        : kind === "codex-toml"
+          ? `model = "${CONFIG_SENTINEL}"\n\n`
+          : `// ${CONFIG_SENTINEL}\n\n`;
   await writeFile(destination, content, { encoding: "utf8", mode: 0o600 });
   await chmod(destination, 0o600);
 }
@@ -184,9 +186,14 @@ async function expectManagedConfig(
         },
       },
     });
-  } else {
+  } else if (kind === "codex-toml") {
     expect(content).toContain('[mcp_servers.openwiki]\ncommand = "openwiki"');
     expect(content).toContain(`args = ["mcp", "--host", "${target.id}"]`);
+  } else {
+    expect(content).toContain('const MCP_COMMAND = "openwiki";');
+    expect(content).toContain(
+      `const MCP_ARGS = ["mcp","--host","${target.id}"];`,
+    );
   }
 }
 
@@ -332,7 +339,9 @@ async function writeMalformedConfig(
       ? "{ malformed json\n"
       : target.project.mcpConfig.kind === "opencode-json"
         ? "{ malformed jsonc\n"
-        : "# OPENWIKI:MCP:START\n";
+        : target.project.mcpConfig.kind === "codex-toml"
+          ? "# OPENWIKI:MCP:START\n"
+          : "// OPENWIKI:PI-EXTENSION:START\n";
   await mkdir(path.dirname(destination), { recursive: true });
   await writeFile(destination, content, "utf8");
   return content;
@@ -368,10 +377,19 @@ async function modifyManagedConfig(
       content.replace('"type": "local"', '"type": "custom"'),
       "utf8",
     );
-  } else {
+  } else if (kind === "codex-toml") {
     await writeFile(
       destination,
       content.replace('command = "openwiki"', 'command = "custom"'),
+      "utf8",
+    );
+  } else {
+    await writeFile(
+      destination,
+      content.replace(
+        'const MCP_COMMAND = "openwiki"',
+        'const MCP_COMMAND = "custom"',
+      ),
       "utf8",
     );
   }
@@ -472,6 +490,23 @@ describe("host integration registry", () => {
           },
         },
       },
+      pi: {
+        producerActor: "pi",
+        user: {
+          skillDirectory: ".pi/agent/skills/openwiki",
+          mcpConfig: {
+            kind: "pi-extension",
+            relativePath: ".pi/agent/extensions/openwiki.ts",
+          },
+        },
+        project: {
+          skillDirectory: ".pi/skills/openwiki",
+          mcpConfig: {
+            kind: "pi-extension",
+            relativePath: ".pi/extensions/openwiki.ts",
+          },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -482,6 +517,7 @@ describe("host integration registry", () => {
       "opencode",
       "cursor",
       "kiro",
+      "pi",
     ]);
     expect(HOST_TARGETS.bob.user.skillDirectory).toBe(
       HOST_TARGETS.codex.user.skillDirectory,
@@ -659,12 +695,19 @@ describe.each(TARGETS)("$displayName host integration", (target) => {
           },
         },
       });
-    } else {
+    } else if (kind === "codex-toml") {
       expect(content).toContain(
         `command = ${JSON.stringify(localCommand.command)}`,
       );
       expect(content).toContain(
         `args = [${localCommand.args.map((argument) => JSON.stringify(argument)).join(", ")}]`,
+      );
+    } else {
+      expect(content).toContain(
+        `const MCP_COMMAND = ${JSON.stringify(localCommand.command)};`,
+      );
+      expect(content).toContain(
+        `const MCP_ARGS = ${JSON.stringify(localCommand.args)};`,
       );
     }
 

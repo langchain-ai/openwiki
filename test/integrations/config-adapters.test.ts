@@ -27,6 +27,11 @@ import {
   installOpencodeMcpEntry,
   uninstallOpencodeMcpEntry,
 } from "../../src/integrations/install/config-opencode.ts";
+import {
+  getPiExtensionStatus,
+  installPiExtension,
+  uninstallPiExtension,
+} from "../../src/integrations/install/config-pi.ts";
 import type { HostMcpServerCommand } from "../../src/integrations/install/types.ts";
 
 const ENTRY: HostMcpServerCommand = {
@@ -48,6 +53,10 @@ const CURSOR_ENTRY: HostMcpServerCommand = {
 const KIRO_ENTRY: HostMcpServerCommand = {
   command: "openwiki",
   args: ["mcp", "--host", "kiro"],
+};
+const PI_ENTRY: HostMcpServerCommand = {
+  command: "openwiki",
+  args: ["mcp", "--host", "pi"],
 };
 const OPENCODE_SHAPE = {
   type: "local",
@@ -809,5 +818,111 @@ describe("OpenCode JSONC MCP entry ownership", () => {
       uninstallOpencodeMcpEntry(filePath, OPENCODE_ENTRY),
     ).rejects.toMatchObject({ code: "conflict" });
     expect(await readFile(filePath, "utf8")).toBe(commented);
+  });
+});
+
+describe("Pi extension ownership", () => {
+  test("preserves every byte outside the exact managed block", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, "openwiki.ts");
+    const prefix = "// custom preamble\nconst CUSTOM = 1;\n\n";
+    await writeFile(filePath, prefix, "utf8");
+
+    await expect(installPiExtension(filePath, PI_ENTRY)).resolves.toBe(true);
+    const installed = await readFile(filePath, "utf8");
+    expect(installed.startsWith(prefix)).toBe(true);
+    expect(installed).toContain('const MCP_COMMAND = "openwiki"');
+    expect(installed).toContain('const MCP_ARGS = ["mcp","--host","pi"]');
+    await expect(getPiExtensionStatus(filePath, PI_ENTRY)).resolves.toBe(
+      "installed",
+    );
+    await expect(installPiExtension(filePath, PI_ENTRY)).resolves.toBe(false);
+    await expect(uninstallPiExtension(filePath, PI_ENTRY)).resolves.toBe(true);
+    expect(await readFile(filePath, "utf8")).toBe(prefix);
+  });
+
+  test.each([
+    "// OPENWIKI:PI-EXTENSION:START\n",
+    "// OPENWIKI:PI-EXTENSION:END\n",
+    "// OPENWIKI:PI-EXTENSION:END\n// OPENWIKI:PI-EXTENSION:START\n",
+    "// OPENWIKI:PI-EXTENSION:START\n// OPENWIKI:PI-EXTENSION:START\n// OPENWIKI:PI-EXTENSION:END\n",
+  ])("rejects invalid marker structure byte-identically", async (content) => {
+    const root = await createRoot();
+    const filePath = path.join(root, "openwiki.ts");
+    await writeFile(filePath, content, "utf8");
+
+    await expect(installPiExtension(filePath, PI_ENTRY)).rejects.toMatchObject({
+      code: "invalid_input",
+    });
+    expect(await readFile(filePath, "utf8")).toBe(content);
+  });
+
+  test("rejects unmanaged and modified OpenWiki extensions", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, "openwiki.ts");
+    const unmanaged = "export default function() { /* openwiki_begin */ }\n";
+    await writeFile(filePath, unmanaged, "utf8");
+    await expect(installPiExtension(filePath, PI_ENTRY)).rejects.toMatchObject({
+      code: "conflict",
+    });
+    await expect(getPiExtensionStatus(filePath, PI_ENTRY)).resolves.toBe(
+      "modified",
+    );
+
+    await rm(filePath);
+    await installPiExtension(filePath, PI_ENTRY);
+    const installed = await readFile(filePath, "utf8");
+    const modified = installed.replace(
+      'const MCP_COMMAND = "openwiki"',
+      'const MCP_COMMAND = "custom"',
+    );
+    await writeFile(filePath, modified, "utf8");
+
+    await expect(getPiExtensionStatus(filePath, PI_ENTRY)).resolves.toBe(
+      "modified",
+    );
+    await expect(installPiExtension(filePath, PI_ENTRY)).rejects.toMatchObject({
+      code: "conflict",
+    });
+    await expect(
+      uninstallPiExtension(filePath, PI_ENTRY),
+    ).rejects.toMatchObject({ code: "conflict" });
+  });
+
+  test("replaces only an explicitly recognized prior block", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, "openwiki.ts");
+    const localEntry: HostMcpServerCommand = {
+      command: "/opt/node/bin/node",
+      args: ["/repo/dist/cli/cli.js", "mcp", "--host", "pi"],
+    };
+
+    await installPiExtension(filePath, PI_ENTRY);
+    await expect(
+      installPiExtension(filePath, localEntry, PI_ENTRY),
+    ).resolves.toBe(true);
+    const installed = await readFile(filePath, "utf8");
+    expect(installed).toContain('const MCP_COMMAND = "/opt/node/bin/node"');
+    expect(installed).toContain(
+      'const MCP_ARGS = ["/repo/dist/cli/cli.js","mcp","--host","pi"]',
+    );
+  });
+
+  test("round-trips a Pi extension in .pi/extensions/openwiki.ts", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, ".pi", "extensions", "openwiki.ts");
+    await mkdir(path.dirname(filePath), { recursive: true });
+
+    await expect(getPiExtensionStatus(filePath, PI_ENTRY)).resolves.toBe(
+      "not-installed",
+    );
+    await expect(installPiExtension(filePath, PI_ENTRY)).resolves.toBe(true);
+    await expect(getPiExtensionStatus(filePath, PI_ENTRY)).resolves.toBe(
+      "installed",
+    );
+    await expect(uninstallPiExtension(filePath, PI_ENTRY)).resolves.toBe(true);
+    await expect(getPiExtensionStatus(filePath, PI_ENTRY)).resolves.toBe(
+      "not-installed",
+    );
   });
 });

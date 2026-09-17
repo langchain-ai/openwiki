@@ -12,6 +12,7 @@ import {
   vi,
 } from "vitest";
 import { runIntegrationsCommand } from "../../src/cli/integrations.ts";
+import { renderPiExtension } from "../../src/integrations/install/config-pi.ts";
 import {
   defaultMcpServerCommand,
   listHostTargets,
@@ -89,7 +90,8 @@ describe("host integration CLI dogfood", () => {
         "claude\tnot-installed\tClaude Code\n" +
         "opencode\tnot-installed\tOpenCode\n" +
         "cursor\tnot-installed\tCursor\n" +
-        "kiro\tnot-installed\tKiro\n",
+        "kiro\tnot-installed\tKiro\n" +
+        "pi\tnot-installed\tPi\n",
     );
 
     stdout = [];
@@ -267,6 +269,12 @@ async function removeMcpEntry(target: HostTarget): Promise<void> {
     };
     delete parsed.mcp?.openwiki;
     await writeFile(configPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+    return;
+  }
+  if (target.project.mcpConfig.kind === "pi-extension") {
+    const block = renderPiExtension(command);
+    expect(content).toContain(block);
+    await writeFile(configPath, content.replace(block, ""), "utf8");
     return;
   }
 

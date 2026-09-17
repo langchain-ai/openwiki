@@ -105,6 +105,26 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://kiro.dev/docs/mcp/configuration/",
   },
+  pi: {
+    id: "pi",
+    displayName: "Pi",
+    producerActor: "pi",
+    user: {
+      skillDirectory: ".pi/agent/skills/openwiki",
+      mcpConfig: {
+        kind: "pi-extension",
+        relativePath: ".pi/agent/extensions/openwiki.ts",
+      },
+    },
+    project: {
+      skillDirectory: ".pi/skills/openwiki",
+      mcpConfig: {
+        kind: "pi-extension",
+        relativePath: ".pi/extensions/openwiki.ts",
+      },
+    },
+    documentationUrl: "https://github.com/earendil-works/pi",
+  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**

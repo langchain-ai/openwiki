@@ -19,6 +19,11 @@ import {
   uninstallOpencodeMcpEntry,
 } from "./config-opencode.js";
 import {
+  getPiExtensionStatus,
+  installPiExtension,
+  uninstallPiExtension,
+} from "./config-pi.js";
+import {
   assertNoSymlinkComponents,
   forcedBackupPath,
   removeEmptySkillParents,
@@ -581,6 +586,8 @@ async function installManagedConfig(
       return installCodexMcpBlock(filePath, entry, replaceableEntry);
     case "opencode-json":
       return installOpencodeMcpEntry(filePath, entry, replaceableEntry);
+    case "pi-extension":
+      return installPiExtension(filePath, entry, replaceableEntry);
   }
 }
 
@@ -604,6 +611,8 @@ async function uninstallManagedConfig(
       return uninstallCodexMcpBlock(filePath, entry);
     case "opencode-json":
       return uninstallOpencodeMcpEntry(filePath, entry);
+    case "pi-extension":
+      return uninstallPiExtension(filePath, entry);
   }
 }
 
@@ -627,6 +636,8 @@ async function getManagedConfigStatus(
       return getCodexMcpBlockStatus(filePath, entry);
     case "opencode-json":
       return getOpencodeMcpEntryStatus(filePath, entry);
+    case "pi-extension":
+      return getPiExtensionStatus(filePath, entry);
   }
 }
 
