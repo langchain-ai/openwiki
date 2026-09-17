@@ -83,6 +83,9 @@ const harness = vi.hoisted(() => ({
   pageSubmissionCalls: 0,
   pageToolResults: [] as unknown[],
   pageWorkerFailures: 0,
+  pageWorkerFailureError: undefined as Error | undefined,
+  pageGate: undefined as Promise<void> | undefined,
+  fatalPageSubmissions: [] as string[],
   pageWorkerPostSubmitFailures: 0,
   planSubmissionCalls: 0,
   planToolResults: [] as unknown[],
@@ -209,9 +212,16 @@ vi.mock("deepagents", async (importOriginal) => {
               harness.planToolResults.push(rejection);
             }
 
+            if (toolName === "submit_page" && harness.pageGate) {
+              await harness.pageGate;
+            }
+
             if (toolName === "submit_page" && harness.pageWorkerFailures > 0) {
               harness.pageWorkerFailures -= 1;
-              throw new Error("injected page worker failure");
+              throw (
+                harness.pageWorkerFailureError ??
+                new Error("injected page worker failure")
+              );
             }
 
             const input =
@@ -404,9 +414,13 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       totalPages: run.state.plan.pages.length,
     });
   },
-  nextRepositoryPage(run: HarnessRun) {
+  nextRepositoryPage(
+    run: HarnessRun,
+    options: { exclude?: ReadonlySet<string> } = {},
+  ) {
+    const exclude = options.exclude ?? new Set<string>();
     const job = run.state.plan?.pages.find(
-      ({ status }) => status === "pending",
+      ({ id, status }) => status === "pending" && !exclude.has(id),
     );
     return Promise.resolve(
       job
@@ -436,6 +450,14 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     }
     const job = run.state.plan?.pages.find(({ id }) => id === input.jobId);
     if (!job) throw new Error("Expected the current harness page job.");
+    if (harness.fatalPageSubmissions.includes(job.path)) {
+      const { RepositoryRunError } =
+        await import("../../src/generation/errors.js");
+      throw new RepositoryRunError(
+        "invalid_state",
+        `injected fatal submission failure for ${job.path}`,
+      );
+    }
     job.status = "complete";
     return Promise.resolve({
       status: "complete",
@@ -453,6 +475,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
 }));
 
 import {
+  isRateLimitError,
   parseWorkerToolEvent,
   runNativeRepositoryGeneration,
 } from "../../src/agent/repository-runner.ts";
@@ -463,7 +486,9 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
  *
  * @returns Complete ordered event stream emitted by the runner.
  */
-async function runHarness(): Promise<OpenWikiRunEvent[]> {
+async function runHarness(
+  options: { pageConcurrency?: number } = {},
+): Promise<OpenWikiRunEvent[]> {
   const events: OpenWikiRunEvent[] = [];
   await runNativeRepositoryGeneration({
     root: "/repo",
@@ -472,8 +497,34 @@ async function runHarness(): Promise<OpenWikiRunEvent[]> {
     model: {} as never,
     planningContext: "User and connector context",
     onEvent: (event) => events.push(event),
+    ...(options.pageConcurrency === undefined
+      ? {}
+      : {
+          pageConcurrency: options.pageConcurrency,
+          workerStartStaggerMs: 0,
+        }),
   });
   return events;
+}
+
+/**
+ * Creates a gate that holds every page worker before its submission.
+ *
+ * @returns The gate promise installed on the harness and its release.
+ */
+function holdPageWorkers(): () => void {
+  let release: () => void = () => undefined;
+  harness.pageGate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return () => {
+    release();
+    harness.pageGate = undefined;
+  };
+}
+
+function pagePrompt(index: number): string {
+  return String(harness.agentOptions[index]?.systemPrompt);
 }
 
 async function getNoDelegationWrapModelCall(): Promise<
@@ -504,6 +555,9 @@ beforeEach(() => {
   harness.pageSubmissionCalls = 0;
   harness.pageToolResults = [];
   harness.pageWorkerFailures = 0;
+  harness.pageWorkerFailureError = undefined;
+  harness.pageGate = undefined;
+  harness.fatalPageSubmissions = [];
   harness.pageWorkerPostSubmitFailures = 0;
   harness.planSubmissionCalls = 0;
   harness.planToolResults = [];
@@ -862,6 +916,207 @@ describe("runNativeRepositoryGeneration", () => {
 
     expect(harness.agentOptions).toHaveLength(0);
     expect(events).toEqual([{ type: "repository_progress", stage: "noop" }]);
+  });
+});
+
+describe("runNativeRepositoryGeneration with concurrent page workers", () => {
+  test("keeps the sequential event shape when concurrency is one", async () => {
+    const events = await runHarness({ pageConcurrency: 1 });
+
+    const progress = events.filter(
+      (event) =>
+        event.type === "repository_progress" && event.stage === "generating",
+    );
+    expect(progress).toHaveLength(2);
+    for (const event of progress) {
+      expect(event).not.toHaveProperty("inFlightPages");
+      expect(event).not.toHaveProperty("completedCount");
+    }
+  });
+
+  test("runs distinct pages at once and writes quickstart last", async () => {
+    harness.planPaths = [
+      "/openwiki/quickstart.md",
+      "/openwiki/a.md",
+      "/openwiki/b.md",
+      "/openwiki/c.md",
+      "/openwiki/d.md",
+    ];
+    const release = holdPageWorkers();
+
+    const running = runHarness({ pageConcurrency: 3 });
+    await vi.waitFor(() => expect(harness.agentOptions).toHaveLength(4));
+
+    // Planner plus three page workers exist before any page is submitted, and
+    // none of them owns quickstart.
+    expect(harness.pageSubmissionCalls).toBe(0);
+    const firstWave = [1, 2, 3].map(
+      (index) => pagePrompt(index).match(/You own exactly ([^\n]+)\./u)?.[1],
+    );
+    expect(new Set(firstWave).size).toBe(3);
+    expect(firstWave).not.toContain("/openwiki/quickstart.md");
+
+    release();
+    const events = await running;
+
+    expect(harness.agentOptions).toHaveLength(6);
+    expect(pagePrompt(5)).toContain("You own exactly /openwiki/quickstart.md");
+    expect(
+      harness.currentRun?.state.plan?.pages.map(({ status }) => status),
+    ).toEqual(["complete", "complete", "complete", "complete", "complete"]);
+    expect(harness.finishCalls).toBe(1);
+
+    const inFlightCounts = events
+      .filter(
+        (
+          event,
+        ): event is Extract<
+          OpenWikiRunEvent,
+          { type: "repository_progress" }
+        > => event.type === "repository_progress",
+      )
+      .map((event) => event.inFlightPages?.length ?? 0);
+    expect(Math.max(...inFlightCounts)).toBe(3);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "repository_progress",
+        stage: "generating",
+        page: "/openwiki/quickstart.md",
+        completedCount: 4,
+        inFlightPages: ["/openwiki/quickstart.md"],
+      }),
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "tool_start",
+        name: "write_file",
+        page: "/openwiki/a.md",
+      }),
+    );
+    expect(
+      events.some(
+        (event) =>
+          (event.type === "tool_start" || event.type === "tool_end") &&
+          event.name === "read_file" &&
+          event.page === undefined,
+      ),
+    ).toBe(true);
+  });
+
+  test("lowers concurrency after a rate-limited worker and continues", async () => {
+    harness.planPaths = [
+      "/openwiki/a.md",
+      "/openwiki/b.md",
+      "/openwiki/c.md",
+      "/openwiki/d.md",
+      "/openwiki/e.md",
+    ];
+    harness.pageWorkerFailures = 1;
+    harness.pageWorkerFailureError = Object.assign(
+      new Error("Request failed with status code 429"),
+      { status: 429 },
+    );
+
+    const events = await runHarness({ pageConcurrency: 3 });
+
+    // Which of the first three concurrent workers reaches the injected
+    // failure first depends on scheduling, so assert on counts, not positions.
+    expect(harness.restoreCalls).toBe(1);
+    const statuses =
+      harness.currentRun?.state.plan?.pages.map(({ status }) => status) ?? [];
+    expect(statuses.filter((status) => status === "skipped")).toHaveLength(1);
+    expect(statuses.filter((status) => status === "complete")).toHaveLength(4);
+    expect(harness.finishCalls).toBe(1);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("Reduced page concurrency to 2"),
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("does not lower concurrency for an ordinary worker failure", async () => {
+    harness.planPaths = ["/openwiki/a.md", "/openwiki/b.md", "/openwiki/c.md"];
+    harness.pageWorkerFailures = 1;
+
+    const events = await runHarness({ pageConcurrency: 2 });
+
+    expect(harness.restoreCalls).toBe(1);
+    expect(harness.finishCalls).toBe(1);
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("Reduced page concurrency"),
+      ),
+    ).toBe(false);
+  });
+
+  test("lets in-flight workers settle before rethrowing a fatal submission", async () => {
+    harness.planPaths = ["/openwiki/fatal.md", "/openwiki/other.md"];
+    harness.fatalPageSubmissions = ["/openwiki/fatal.md"];
+    const release = holdPageWorkers();
+
+    const running = runHarness({ pageConcurrency: 2 });
+    await vi.waitFor(() => expect(harness.agentOptions).toHaveLength(3));
+    release();
+
+    await expect(running).rejects.toThrow(
+      "injected fatal submission failure for /openwiki/fatal.md",
+    );
+    expect(harness.finishCalls).toBe(0);
+    expect(harness.restoreCalls).toBe(0);
+    expect(
+      harness.currentRun?.state.plan?.pages.map(({ path, status }) => [
+        path,
+        status,
+      ]),
+    ).toEqual([
+      ["/openwiki/fatal.md", "pending"],
+      ["/openwiki/other.md", "complete"],
+    ]);
+  });
+});
+
+describe("isRateLimitError", () => {
+  test("recognizes status fields, codes, messages, and causes", () => {
+    expect(
+      isRateLimitError(Object.assign(new Error("x"), { status: 429 })),
+    ).toBe(true);
+    expect(
+      isRateLimitError(Object.assign(new Error("x"), { statusCode: 429 })),
+    ).toBe(true);
+    expect(
+      isRateLimitError(
+        Object.assign(new Error("x"), { code: "rate_limit_exceeded" }),
+      ),
+    ).toBe(true);
+    expect(isRateLimitError(new Error("429 Too Many Requests"))).toBe(true);
+    expect(isRateLimitError(new Error("Rate limit reached for gpt"))).toBe(
+      true,
+    );
+    expect(
+      isRateLimitError(
+        new Error("wrapped", {
+          cause: Object.assign(new Error("inner"), { status: 429 }),
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  test("ignores unrelated failures and non-objects", () => {
+    expect(isRateLimitError(new Error("injected page worker failure"))).toBe(
+      false,
+    );
+    expect(
+      isRateLimitError(Object.assign(new Error("x"), { status: 500 })),
+    ).toBe(false);
+    expect(isRateLimitError("429")).toBe(false);
+    expect(isRateLimitError(undefined)).toBe(false);
+    const circular: { cause?: unknown; message: string } = { message: "loop" };
+    circular.cause = circular;
+    expect(isRateLimitError(circular)).toBe(false);
   });
 });
 

@@ -48,6 +48,23 @@ export interface RepositoryGenerationProgressEvent {
    * @default undefined until a plan is durable
    */
   pageCount?: number;
+
+  /**
+   * Number of page jobs already complete or skipped in this run.
+   *
+   * @default undefined outside page generation
+   */
+  completedCount?: number;
+
+  /**
+   * Canonical pages currently owned by in-flight workers, in start order.
+   *
+   * A single sequential worker reports at most one entry; consumers fall back
+   * to `page` and `pageIndex` in that case.
+   *
+   * @default undefined outside page generation
+   */
+  inFlightPages?: string[];
 }
 
 export type OpenWikiRunEvent =
@@ -63,11 +80,23 @@ export type OpenWikiRunEvent =
       id: string;
       input: unknown;
       name: string;
+      /**
+       * Canonical page owned by the worker that issued the call.
+       *
+       * @default undefined for the planner and non-repository runs
+       */
+      page?: string;
     }
   | {
       type: "tool_end";
       id: string;
       name: string;
+      /**
+       * Canonical page owned by the worker that issued the call.
+       *
+       * @default undefined for the planner and non-repository runs
+       */
+      page?: string;
       status: "error" | "finished";
     }
   | {
