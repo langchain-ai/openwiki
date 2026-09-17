@@ -37,13 +37,13 @@ typechecks, builds, and runs the Vitest suite with coverage.
 Install an integration backed by the current checkout with:
 
 ```sh
-pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro>
+pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp>
 ```
 
 The command builds OpenWiki, refreshes the host skill, and records absolute
 paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
-agent after installation. IBM Bob, Codex, Claude Code, OpenCode, Cursor, and
-Kiro install at user scope. Later source changes only require `pnpm build`
+agent after installation. IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro,
+and Oh My Pi install at user scope. Later source changes only require `pnpm build`
 unless the bundled skill itself changes. Rerun `integrations:dev` to refresh
 the skill or after switching Node installations.
 
@@ -51,7 +51,7 @@ User-scope destinations match each host's own conventions: IBM Bob writes under
 `~/.agents` and `~/.bob`, Codex writes under `~/.agents` and `~/.codex`, Claude
 Code under `~/.claude`, OpenCode under `~/.config/opencode` (OpenCode's global
 configuration directory on every supported platform), Cursor under `~/.cursor`,
-and Kiro under `~/.kiro`.
+Kiro under `~/.kiro`, and Oh My Pi under `~/.omp/agent` (default profile).
 
 ## Adding a coding-agent integration
 
