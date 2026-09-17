@@ -55,10 +55,21 @@ const graphPayload = {
       type: "Guide",
       description: "",
       tags: [],
-      body: "# Overview",
+      body: "# Overview\n\n[Design](design/)",
       size: 50,
       links: [],
       backlinks: ["quickstart"],
+    },
+    {
+      id: "design/index",
+      title: "Design",
+      type: "Guide",
+      description: "",
+      tags: [],
+      body: "# Design",
+      size: 50,
+      links: [],
+      backlinks: [],
     },
   ],
   edges: [{ source: "quickstart", target: "overview" }],
@@ -152,7 +163,8 @@ function stubGlobals(): void {
 
   vi.stubGlobal("ForceGraph", () => instance);
   vi.stubGlobal("marked", {
-    parse: (md: string) => `<p>${md}</p>`,
+    parse: (md: string) =>
+      `<p>${md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')}</p>`,
     setOptions: () => {},
   });
   vi.stubGlobal("DOMPurify", { sanitize: (dirty: string) => dirty });
@@ -219,7 +231,7 @@ async function importClient(): Promise<void> {
   await import("../../src/visualize/client.ts");
   // Wait for the bootstrap load(true) promise to populate the sidebar.
   await vi.waitFor(() => {
-    expect(document.querySelectorAll(".nav-item").length).toBe(2);
+    expect(document.querySelectorAll(".nav-item").length).toBe(3);
   });
 }
 
@@ -269,6 +281,19 @@ describe("visualizer client graph interaction", () => {
     handlers.onNodeClick!({ id: "overview" });
     const active = document.querySelector(".nav-item.active");
     expect(active?.textContent).toContain("Overview");
+  });
+
+  test("opens a directory link at its index page", async () => {
+    await importClient();
+    handlers.onNodeClick!({ id: "overview" });
+
+    document
+      .querySelector<HTMLAnchorElement>('#detail a[href="design/"]')!
+      .dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
+
+    expect(document.querySelector(".doc-title")?.textContent).toBe("Design");
   });
 
   test("does not draw graph labels by default", async () => {

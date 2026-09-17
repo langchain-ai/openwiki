@@ -109,6 +109,25 @@ describe("buildGraph", () => {
     expect(graph.edges).toEqual([]);
   });
 
+  test("resolves directory links to their index pages", async () => {
+    const root = await makeWiki({
+      "index.md": "# Home\n[Design](design/)\n",
+      "design/index.md": "# Design\n[Systems](systems/)\n",
+      "design/systems/index.md": "# Systems\n",
+    });
+
+    const graph = await buildGraph(root);
+
+    expect(graph.edges).toContainEqual({
+      source: "index",
+      target: "design/index",
+    });
+    expect(graph.edges).toContainEqual({
+      source: "design/index",
+      target: "design/systems/index",
+    });
+  });
+
   test("does not follow a symlink that escapes the wiki root", async () => {
     const secret = await mkdtemp(path.join(tmpdir(), "openwiki-secret-"));
     tempDirs.push(secret);
