@@ -105,6 +105,23 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://kiro.dev/docs/mcp/configuration/",
   },
+  omp: {
+    id: "omp",
+    displayName: "Oh My Pi",
+    producerActor: "omp",
+    // User scope targets omp's default agent dir (~/.omp/agent). Named profiles
+    // and PI_CODING_AGENT_DIR overrides use another directory; use --project
+    // for those setups.
+    user: {
+      skillDirectory: ".omp/agent/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".omp/agent/mcp.json" },
+    },
+    project: {
+      skillDirectory: ".omp/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".omp/mcp.json" },
+    },
+    documentationUrl: "https://omp.sh",
+  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**
