@@ -140,6 +140,19 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     }
   });
 
+  test("prefers progressive retrieval tools and keeps quickstart as fallback", async () => {
+    const repo = await createTempRepo();
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const agentsContent = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(agentsContent).toContain("use `openwiki_search`");
+    expect(agentsContent).toContain("`openwiki_read`");
+    expect(agentsContent).toContain("`workspace_required`");
+    expect(agentsContent).toContain("retrieval tools are unavailable");
+    expect(agentsContent).toContain("`openwiki/quickstart.md`");
+  });
+
   test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
     const repo = await createTempRepo();
 

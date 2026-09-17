@@ -118,6 +118,65 @@ openwiki integrations install kiro
 The supported targets are **IBM Bob**, **Codex**, **Claude Code**, **OpenCode**, **Cursor**, and **Kiro**. All install at user level by default, so one installation works from any Git repository. Project paths are resolved to their Git repository root. User-level OpenCode integrations live under `~/.config/opencode`, IBM Bob uses `~/.agents/skills` and `~/.bob/mcp.json`, and Kiro uses `~/.kiro/skills` and `~/.kiro/settings/mcp.json`. Restart the coding agent after installation, open the repository, and ask:
 
 ```text
+Search this repository's OpenWiki for how retry handling works, then read the
+relevant sections.
+```
+
+The integration exposes `openwiki_search` for compact, ranked repository-memory
+results and `openwiki_read` for exact sections selected from those results.
+`openwiki_list_workspaces` and `openwiki_list_wikis` provide progressive
+discovery when repositories are linked. All four are local, read-only,
+model-free operations that work independently of wiki generation.
+
+### Create wiki workspaces
+
+When one service or project spans multiple repositories, link their wikis into
+a named workspace. Run the manager from a directory such as `~/dev`:
+
+```sh
+cd ~/dev
+openwiki link
+```
+
+From an OpenWiki source checkout, run the same command as
+`pnpm run dev link ~/dev`.
+
+Create a workspace such as `Payments`, then select its control-plane, data-plane,
+infrastructure, or other repositories. The finder streams Git repositories below
+the editable path, which starts at the launch directory. Extend the path to narrow
+results, or Backspace toward `~` to broaden and rescan from the nearest existing
+directory. Each repository appears once by path: `○` marks an available OpenWiki
+repository and becomes `●` when selected, while repositories without OpenWiki
+documentation are dimmed. Selections remain pinned above the changing results and
+also remain in the finder. A repository can belong to more than one workspace.
+Repositories do not need to share a parent directory. The registry is stored
+privately under `~/.openwiki` (or `OPENWIKI_CONFIG_DIR`).
+
+Search chooses its scope predictably:
+
+1. A wiki in no workspace searches itself.
+2. A wiki in one workspace searches that workspace automatically.
+3. A wiki in multiple workspaces uses its active workspace.
+4. Without an active workspace, search returns `workspace_required` and the
+   agent asks which workspace to use.
+
+Set, inspect, or clear a repository's persistent active workspace from anywhere
+inside that repository:
+
+```sh
+openwiki workspace use payments
+openwiki workspace current
+openwiki workspace clear
+```
+
+Agents can call `openwiki_list_workspaces` to discover the current or another
+wiki's memberships and `openwiki_list_wikis` to inspect a workspace. Workspace
+search results identify their supplying `wiki`; pass that ID to `openwiki_read`
+with the result's page and section anchors.
+
+To generate a wiki, ask:
+
+```text
 Initialize this repository's OpenWiki from the current source and tests.
 ```
 
@@ -131,7 +190,7 @@ Host-driven runs currently support repository code wikis, not personal brains. T
 
 External coding-agent integrations currently use repository source and tests only. Connector-sourced context, including LangSmith, is not yet supported.
 
-The integration exposes the native generation lifecycle through `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. IBM Bob, Codex, Claude, OpenCode, Cursor, or Kiro submits only sparse Claim decisions for each page; OpenWiki automatically retains current unaffected Claims, applies explicit confirmations, revisions, additions, or retractions, and refuses to finish until the final state is durable.
+Alongside retrieval, the integration exposes the native generation lifecycle through `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. IBM Bob, Codex, Claude, OpenCode, Cursor, or Kiro submits only sparse Claim decisions for each page; OpenWiki automatically retains current unaffected Claims, applies explicit confirmations, revisions, additions, or retractions, and refuses to finish until the final state is durable.
 
 Use `openwiki integrations list` to inspect user-level installation status or `openwiki integrations uninstall <host>` to remove an integration safely. Add `--project [path]` to `list`, `install`, or `uninstall` for repository-scoped state.
 
@@ -255,7 +314,7 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 Your wiki stays in the repository as plain Markdown you own, with OpenWiki-managed grounding and run metadata versioned alongside it.
 
-- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root that point your coding agent at the wiki. It only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
+- **Agents read it as memory.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root. Their managed instructions prefer progressive `openwiki_search`/`openwiki_read` retrieval when available and use `openwiki/quickstart.md` as the fallback. OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
 - **Grounding stays with the wiki.** Versioned claim sidecars under `openwiki/.claims/` travel with the Markdown, so the evidence needed to maintain factual pages is inspectable and reviewable.
 - **You set the brief.** Repository-specific instructions live in `openwiki/INSTRUCTIONS.md`, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
 - **No-op runs do not churn docs.** A clean update skips model work and leaves wiki content untouched while refreshing `.last-update.json` to record that the check ran.
@@ -516,6 +575,9 @@ openwiki --init                  # initialize code docs (personal: openwiki pers
 openwiki --update                # update code docs (personal: openwiki personal --update)
 openwiki visualize               # interactive graph + live reader
 openwiki visualize openwiki --export docs/openwiki-visualizer  # static graph + reader
+openwiki link [directory]         # create and manage named wiki workspaces
+openwiki workspace use <name>     # set the current repository's active workspace
+openwiki workspace current|clear  # inspect or clear the active workspace
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki integrations list       # show installed coding-agent integrations

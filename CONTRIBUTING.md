@@ -55,9 +55,11 @@ and Kiro under `~/.kiro`.
 
 ## Adding a coding-agent integration
 
-OpenWiki host integrations share one canonical skill and five MCP tools:
-`openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, and `openwiki_finish`. Add host-specific behavior to the
+OpenWiki host integrations share one canonical skill, two read-only retrieval
+tools (`openwiki_search` and `openwiki_read`), and six generation lifecycle
+tools: `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
+`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`.
+Add host-specific behavior to the
 registry and config boundary rather than copying the skill or adding
 host-specific tools. The host model researches and authors only the current
 OpenWiki PageJob; OpenWiki owns durable run state, Claims reconciliation,
