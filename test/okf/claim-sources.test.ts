@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -6,6 +5,8 @@ import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
 import { synchronizeClaimSources } from "../../src/okf/claim-sources.ts";
 import { parseFrontmatterFields } from "../../src/okf/frontmatter.ts";
+
+const PRODUCER_ACTOR = "openwiki/0.5.2";
 
 /**
  * Creates one isolated repository wiki and its guarded backend.
@@ -19,13 +20,6 @@ async function setup() {
     virtualMode: true,
   });
   return { backend, rootDir };
-}
-
-/**
- * Mirrors the stable public ID expected for one projected resource.
- */
-function openWikiSourceId(resource: string): string {
-  return `openwiki-source-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
 }
 
 describe("synchronizeClaimSources", () => {
@@ -62,6 +56,7 @@ describe("synchronizeClaimSources", () => {
           ],
         ],
       ]),
+      PRODUCER_ACTOR,
     );
 
     const content = await readFile(
@@ -76,11 +71,11 @@ describe("synchronizeClaimSources", () => {
         resource: "https://example.com/policy",
       },
       {
-        id: openWikiSourceId("repo://src/a.ts"),
+        author: PRODUCER_ACTOR,
         resource: "repo://src/a.ts",
       },
       {
-        id: openWikiSourceId("repo://src/z.ts"),
+        author: PRODUCER_ACTOR,
         resource: "repo://src/z.ts",
       },
     ]);
@@ -94,13 +89,18 @@ describe("synchronizeClaimSources", () => {
     const { backend, rootDir } = await setup();
     await backend.write(
       "/openwiki/page.md",
-      "---\ntype: Reference\nsources:\n  - id: manual\n    resource: repo://manual.ts\n  - id: openwiki-source-old\n    resource: repo://old.ts\n---\n\n# Page\n",
+      "---\ntype: Reference\nsources:\n  - id: manual\n    resource: repo://manual.ts\n  - id: openwiki-source-old\n    resource: repo://old.ts\n  - author: openwiki/0.4.0\n    resource: repo://stale.ts\n---\n\n# Page\n",
     );
     const resources = new Map([
       ["/openwiki/page.md", ["repo://new.ts"] as const],
     ]);
 
-    await synchronizeClaimSources(backend, "repository", resources);
+    await synchronizeClaimSources(
+      backend,
+      "repository",
+      resources,
+      PRODUCER_ACTOR,
+    );
     const afterFirst = await readFile(
       path.join(rootDir, "openwiki/page.md"),
       "utf8",
@@ -108,10 +108,39 @@ describe("synchronizeClaimSources", () => {
     expect(afterFirst).toContain("repo://manual.ts");
     expect(afterFirst).toContain("repo://new.ts");
     expect(afterFirst).not.toContain("repo://old.ts");
+    expect(afterFirst).not.toContain("repo://stale.ts");
 
     const write = vi.spyOn(backend, "write");
-    await synchronizeClaimSources(backend, "repository", resources);
+    await synchronizeClaimSources(
+      backend,
+      "repository",
+      resources,
+      PRODUCER_ACTOR,
+    );
     expect(write).not.toHaveBeenCalled();
+  });
+
+  test("omits id on projected entries and tags them with the producer actor", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/page.md",
+      "---\ntype: Reference\n---\n\n# Page\n",
+    );
+
+    await synchronizeClaimSources(
+      backend,
+      "repository",
+      new Map([["/openwiki/page.md", ["repo://src/a.ts"] as const]]),
+      PRODUCER_ACTOR,
+    );
+
+    const content = await readFile(
+      path.join(rootDir, "openwiki/page.md"),
+      "utf8",
+    );
+    expect(parseFrontmatterFields(content)?.sources).toEqual([
+      { author: PRODUCER_ACTOR, resource: "repo://src/a.ts" },
+    ]);
   });
 
   test("leaves pages without Claims state untouched", async () => {
@@ -120,7 +149,12 @@ describe("synchronizeClaimSources", () => {
       "---\ntype: Reference\nsources:\n  - resource: https://example.com/manual\n---\n\n# Page\n";
     await backend.write("/openwiki/page.md", content);
 
-    await synchronizeClaimSources(backend, "repository", new Map());
+    await synchronizeClaimSources(
+      backend,
+      "repository",
+      new Map(),
+      PRODUCER_ACTOR,
+    );
 
     await expect(
       readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),

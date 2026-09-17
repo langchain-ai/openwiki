@@ -1,5 +1,4 @@
 import { ToolMessage } from "@langchain/core/messages";
-import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -28,13 +27,6 @@ const BROKEN_MERMAID = [
 
 function document(title: string, description: string): string {
   return `---\ntype: Reference\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(description)}\n---\n\n# ${title}\n`;
-}
-
-/**
- * Mirrors the stable public ID expected for one projected resource.
- */
-function openWikiSourceId(resource: string): string {
-  return `openwiki-source-${createHash("sha256").update(resource).digest("hex").slice(0, 24)}`;
 }
 
 async function setup(outputMode: "local-wiki" | "repository" = "repository") {
@@ -593,11 +585,11 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
     expect(parseFrontmatterFields(page)?.sources).toEqual([
       {
-        id: openWikiSourceId("repo://package.json"),
+        author: `openwiki/${OPENWIKI_VERSION}`,
         resource: "repo://package.json",
       },
       {
-        id: openWikiSourceId("repo://src/page.ts"),
+        author: `openwiki/${OPENWIKI_VERSION}`,
         resource: "repo://src/page.ts",
       },
     ]);
