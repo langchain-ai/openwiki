@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  AICORE_SERVICE_KEY_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
   BOB_BASE_URL_ENV_KEY,
   BEDROCK_DEFAULT_MAX_TOKENS,
@@ -24,10 +25,12 @@ import {
   isValidProvider,
   NEBIUS_BASE_URL,
   NVIDIA_BASE_URL_ENV_KEY,
+  PROVIDER_CONFIGS,
   normalizeModelId,
   normalizeProvider,
   providerRequiresApiKey,
   providerRequiresRegion,
+  providerRequiresBaseUrl,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveBedrockMaxTokens,
@@ -879,6 +882,17 @@ describe("bedrock provider (AWS SDK credentials + region)", () => {
 
   test("has no preset model list (Bedrock model availability is account/region specific)", () => {
     expect(getProviderModelOptions("bedrock")).toEqual([]);
+  });
+});
+
+describe("sap-ai-core provider", () => {
+  test("configures api-key auth with AICORE_SERVICE_KEY and empty preset model list", () => {
+    const config = PROVIDER_CONFIGS["sap-ai-core"];
+    expect(config.authMethod).toBe("api-key");
+    expect(config.apiKeyEnvKey).toBe(AICORE_SERVICE_KEY_ENV_KEY);
+    expect(config.modelOptions).toEqual([]);
+    expect(providerRequiresApiKey("sap-ai-core")).toBe(true);
+    expect(providerRequiresBaseUrl("sap-ai-core")).toBe(false);
   });
 });
 
