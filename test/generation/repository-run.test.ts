@@ -95,6 +95,7 @@ vi.mock("../../src/generation/run-state.js", async (importOriginal) => {
   };
 });
 
+import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 import { ensureCodeModeRepoSetup } from "../../src/ingestion/code-mode.ts";
 import { ClaimsPersistenceError } from "../../src/claims/core/errors.ts";
 import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
@@ -1524,6 +1525,42 @@ describe("finishRepositoryRun", () => {
     expect(
       manifestAfterSecond.pages["/openwiki/second.md"]?.sourceFingerprint,
     ).not.toBe(quickstartAfterFirst.sourceFingerprint);
+  });
+
+  test("surfaces frontmatter signals as a run-completion text event", async () => {
+    const root = await createRepository();
+    // No OKF front matter at all: the deterministic finalize pass migrates
+    // this page and stamps it `openwiki_generated: true`, in addition to the
+    // baseline `quickstart.md` page (from `createRepository`/`validPage`)
+    // that already has no `description`. Both should be reported.
+    await writeWikiPage(root, "legacy.md", "# Legacy\n\nBody.\n");
+    await git(root, ["add", "."]);
+    await git(root, ["commit", "--quiet", "-m", "add legacy page"]);
+
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh the entry point.",
+        },
+      ],
+    });
+    await completeCurrentPage(run, "Quickstart");
+
+    const events: OpenWikiRunEvent[] = [];
+    await finishRepositoryRun(run, { onEvent: (event) => events.push(event) });
+
+    const reportText = events
+      .filter((event) => event.type === "text")
+      .map((event) => event.text)
+      .find((text) => text.includes("openwiki_generated"));
+
+    expect(reportText).toBeDefined();
+    expect(reportText).toContain("legacy.md");
+    expect(reportText).toContain("no description yet");
+    expect(reportText).toContain("quickstart.md");
   });
 
   test("refreshes an untouched page version changed by finalization", async () => {

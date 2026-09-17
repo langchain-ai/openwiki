@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
-import type { RunContext } from "../agent/types.js";
+import type { OpenWikiRunEvent, RunContext } from "../agent/types.js";
 import type { UpdateNoopStatus } from "../agent/utils.js";
 import {
   createOpenWikiContentSnapshot,
@@ -17,6 +17,7 @@ import {
   finalizeWikiArtifacts,
   prepareWikiForAuthoring,
   serializePreparedWikiState,
+  type WikiFinalizerOperationRunner,
 } from "../agent/wiki-finalizer.js";
 import { beginRepositoryWikiReplacement } from "../agent/wiki-replacement.js";
 import {
@@ -39,6 +40,7 @@ import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
 } from "../okf/index-labels.js";
+import type { WikiFrontmatterReport } from "../okf/index-sync.js";
 import {
   getPrimaryLanguageSubtag,
   requireResolvedLanguage,
@@ -1487,6 +1489,7 @@ export async function finishRepositoryRun(
   run: ActiveRepositoryRun,
   options: {
     skippedPageSnapshots?: readonly RepositoryPageSnapshot[];
+    onEvent?: (event: OpenWikiRunEvent) => void;
   } = {},
 ): Promise<{ status: "complete"; sourceChanged?: true }> {
   const plan = run.state.plan;
@@ -1533,6 +1536,24 @@ export async function finishRepositoryRun(
   await applyPlannedDeletions(run, plan.deletePages);
   await reconcileDeletedClaimPages(run);
 
+  // Captures the deterministic index-sync pass's frontmatter signals so they
+  // can be surfaced to the operator below, without changing what
+  // `finalizeWikiArtifacts` itself returns.
+  let frontmatterReport: WikiFrontmatterReport = {
+    generatedPages: [],
+    missingDescriptionPages: [],
+  };
+  const captureFrontmatterReport: WikiFinalizerOperationRunner = (
+    operation,
+    task,
+  ) => {
+    if (operation !== "index_sync") return task();
+    return task().then((result) => {
+      frontmatterReport = result as WikiFrontmatterReport;
+      return result;
+    });
+  };
+
   await finalizeWikiArtifacts({
     backend: run.backend,
     outputMode: "repository",
@@ -1543,6 +1564,7 @@ export async function finishRepositoryRun(
     producerActor: run.state.actor.producerActor,
     producerActorsByPage,
     claimSources: run.claimsRuntime.session.getEvidenceResourcesByPage(),
+    runOperation: captureFrontmatterReport,
   });
 
   for (const snapshot of snapshots) {
@@ -1600,9 +1622,40 @@ export async function finishRepositoryRun(
   // Delete this LAST. If anything above fails, begin() can reconstruct and retry.
   await removeRepositoryRunState(run.root);
 
+  emitFrontmatterReportEvent(frontmatterReport, options.onEvent);
+
   return sourceChanged
     ? { status: "complete", sourceChanged: true }
     : { status: "complete" };
+}
+
+/**
+ * Surfaces which pages this run left with code-derived frontmatter or no
+ * description, via the same operator-visible text-event channel already used
+ * for other non-fatal run advisories (see the source-changed notice emitted
+ * by `runNativeRepositoryGeneration` after this function returns). Neither
+ * signal changes what this run persisted; it only reports it.
+ */
+function emitFrontmatterReportEvent(
+  report: WikiFrontmatterReport,
+  onEvent?: (event: OpenWikiRunEvent) => void,
+): void {
+  if (!onEvent) return;
+
+  const lines: string[] = [];
+  if (report.generatedPages.length > 0) {
+    lines.push(
+      `${report.generatedPages.length} OpenWiki page(s) still carry code-derived frontmatter (openwiki_generated: true) and await enrichment on a later run: ${report.generatedPages.join(", ")}`,
+    );
+  }
+  if (report.missingDescriptionPages.length > 0) {
+    lines.push(
+      `${report.missingDescriptionPages.length} OpenWiki page(s) have no description yet, so their index link shows none: ${report.missingDescriptionPages.join(", ")}`,
+    );
+  }
+  if (lines.length === 0) return;
+
+  onEvent({ type: "text", source: "main", text: `${lines.join("\n")}\n` });
 }
 
 /**

@@ -271,7 +271,7 @@ describe("synchronizeWikiIndexes", () => {
       "---\ntype: Reference\ntitle: Page\n---\n",
     );
 
-    await synchronizeWikiIndexes(backend, "repository");
+    const report = await synchronizeWikiIndexes(backend, "repository");
 
     const index = await readFile(
       path.join(rootDir, "openwiki/index.md"),
@@ -279,6 +279,33 @@ describe("synchronizeWikiIndexes", () => {
     );
     expect(index).toContain("- [Page](page.md)\n");
     expect(index).not.toContain("undefined");
+    // Report-only signal: the page is fine (`type`/`title` are authored, not
+    // derived) but the index above has no description to show for it.
+    expect(report.missingDescriptionPages).toEqual(["page.md"]);
+    expect(report.generatedPages).toEqual([]);
+  });
+
+  test("reports authored, description-less, and code-derived pages separately", async () => {
+    const { backend } = await setup();
+    await backend.write(
+      "/openwiki/authored.md",
+      document("Authored", "Fully authored page."),
+    );
+    await backend.write(
+      "/openwiki/undescribed.md",
+      "---\ntype: Reference\ntitle: Undescribed\n---\n",
+    );
+    // No front matter at all: migration derives `type`/`title` and stamps
+    // `openwiki_generated: true`, so this page lands in both signals.
+    await backend.write("/openwiki/legacy.md", "# Legacy\n\nBody.\n");
+
+    const report = await synchronizeWikiIndexes(backend, "repository");
+
+    expect(report.missingDescriptionPages.sort()).toEqual([
+      "legacy.md",
+      "undescribed.md",
+    ]);
+    expect(report.generatedPages).toEqual(["legacy.md"]);
   });
 
   test("parses quoted and folded YAML descriptions", async () => {
@@ -312,9 +339,8 @@ describe("synchronizeWikiIndexes", () => {
       const { backend, rootDir } = await setup();
       await backend.write("/openwiki/page.md", `---\n${frontmatter}\n---\n`);
 
-      await expect(
-        synchronizeWikiIndexes(backend, "repository"),
-      ).resolves.toBeUndefined();
+      const report = await synchronizeWikiIndexes(backend, "repository");
+      expect(report.generatedPages).toEqual(["page.md"]);
 
       const page = await readFile(
         path.join(rootDir, "openwiki/page.md"),

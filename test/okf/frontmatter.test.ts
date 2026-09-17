@@ -169,6 +169,29 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toContain("verified:\n  - by: human:reviewer");
     expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
   });
+
+  test("leaves a fully authored page missing only description untouched", () => {
+    // Regression guard: `description` is intentionally never fabricated (it
+    // is optional and left for an agent to author), so it must never become a
+    // validation issue either. If it did, `repairOkfFrontmatter` could never
+    // re-validate the repaired result and would fall through to
+    // `rebuildMinimalConcept`, which discards `tags`/`sources`/`verified`/
+    // `status` - the page's link to its Claims evidence - on every run.
+    const content =
+      '---\ntype: Guide\ntitle: "Deploying the worker"\ntags:\n  - infra\nsources:\n  - id: repo-readme\n    resource: repo://README.md\nverified:\n  - by: human:reviewer\n    at: "2026-08-20T12:00:00.000Z"\nstatus: stable\n---\n\n# Deploying the worker\n';
+
+    expect(validateOkfFrontmatter(content)).toEqual({ valid: true });
+
+    const result = normalizeConceptContent(content, PATH);
+
+    expect(result.changed).toBe(false);
+    expect(result.content).toBe(content);
+    expect(result.content).toContain("tags:\n  - infra");
+    expect(result.content).toContain("sources:\n  - id: repo-readme");
+    expect(result.content).toContain("verified:\n  - by: human:reviewer");
+    expect(result.content).toContain("status: stable");
+    expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
+  });
 });
 
 describe("repairOkfFrontmatter", () => {
