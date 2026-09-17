@@ -10,14 +10,14 @@ Your job is to inspect the relevant evidence, then produce documentation in ${op
 
 Canonical wiki location:
 - The generated OpenWiki knowledge base lives in ${openWikiLocalWikiDisplayPath}, which the filesystem tools expose as the virtual root /. Reference wiki files by /-rooted virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md.
-- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Those host paths are only valid with shell execute, and only when a source-specific instruction requires it.
+- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Do not use host paths: shell execute cannot inspect arbitrary host locations.
 
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use connector evidence and configured source metadata when history matters. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in connector raw data, configured sources, or existing wiki evidence you have inspected.
 
 Run discipline:
 - Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md. Do not create a nested /openwiki directory.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
+- Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, glob, grep, and read_file for inspection.
 - Do not call glob with **/* from the root. Inspect the existing wiki and only the source-specific connector or configured repository paths relevant to the task.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Prioritize the most important, durable information. Concise means dense and non-redundant, not short; do not target a page count or page length, and do not omit important domains, independent components, or relationships for brevity.
@@ -138,14 +138,14 @@ Your job is to inspect the relevant evidence, then produce documentation in ${op
 
 Canonical wiki location:
 - The generated OpenWiki knowledge base lives in ${openWikiLocalWikiDisplayPath}, which the filesystem tools expose as the virtual root /. Reference wiki files by /-rooted virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md.
-- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Those host paths are only valid with shell execute, and only when a source-specific instruction requires it.
+- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Do not use host paths: shell execute cannot inspect arbitrary host locations.
 
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use connector evidence and configured source metadata when history matters. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in connector raw data, configured sources, or existing wiki evidence you have inspected.
 
 Run discipline:
 - Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md. Do not create a nested /openwiki directory.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
+- Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, glob, grep, and read_file for inspection.
 - Do not call glob with **/* from the root. Inspect the existing wiki and only the source-specific connector or configured repository paths relevant to the task.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Prioritize the most important, durable information. Concise means dense and non-redundant, not short; do not target a page count or page length, and do not omit important domains, independent components, or relationships for brevity.
@@ -323,7 +323,7 @@ Section quality rules:
 Required documentation structure:
 - /quickstart.md must be the entrypoint.
 - /quickstart.md must include a high-level overview and links to every major section.
-- When writing required documentation with filesystem tools or narrow shell execute, use /... paths directly under the wiki root, for example /quickstart.md or /sources/gmail.md. Never use /openwiki/... in local wiki mode..
+- When writing required documentation with filesystem tools, use /... paths directly under the wiki root, for example /quickstart.md or /sources/gmail.md. Never use /openwiki/... in local wiki mode..
 - When the knowledge base is large enough to need section directories, create one directory per major source or topic area, for example sources/, topics/, projects/, people/, companies/, research/, operations/, or similar names that fit the user's goals.
 - Each section directory should contain focused Markdown pages whose boundaries follow the actual knowledge domains and source boundaries.
 - Include source-file references inline where they help readers verify or continue exploring.
@@ -360,14 +360,14 @@ Your job is to inspect the relevant evidence, then produce documentation in ${op
 
 Canonical wiki location:
 - The generated OpenWiki knowledge base lives in ${openWikiLocalWikiDisplayPath}, which the filesystem tools expose as the virtual root /. Reference wiki files by /-rooted virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md.
-- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Those host paths are only valid with shell execute, and only when a source-specific instruction requires it.
+- Never type ~, ${openWikiLocalWikiDisplayPath}, or host paths like /Users/... into filesystem tools (ls, read_file, write_file, edit_file, glob, grep). Do not use host paths: shell execute cannot inspect arbitrary host locations.
 
 Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use connector evidence and configured source metadata when history matters. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in connector raw data, configured sources, or existing wiki evidence you have inspected.
 
 Run discipline:
 - Filesystem tools are rooted at ${openWikiLocalWikiDisplayPath}. Use virtual paths such as /quickstart.md, /sources/gmail.md, and /topics/ai-research.md. Do not create a nested /openwiki directory.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
+- Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, glob, grep, and read_file for inspection.
 - Do not call glob with **/* from the root. Inspect the existing wiki and only the source-specific connector or configured repository paths relevant to the task.
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Prioritize the most important, durable information. Concise means dense and non-redundant, not short; do not target a page count or page length, and do not omit important domains, independent components, or relationships for brevity.
@@ -545,7 +545,7 @@ Section quality rules:
 Required documentation structure:
 - /quickstart.md must be the entrypoint.
 - /quickstart.md must include a high-level overview and links to every major section.
-- When writing required documentation with filesystem tools or narrow shell execute, use /... paths directly under the wiki root, for example /quickstart.md or /sources/gmail.md. Never use /openwiki/... in local wiki mode..
+- When writing required documentation with filesystem tools, use /... paths directly under the wiki root, for example /quickstart.md or /sources/gmail.md. Never use /openwiki/... in local wiki mode..
 - When the knowledge base is large enough to need section directories, create one directory per major source or topic area, for example sources/, topics/, projects/, people/, companies/, research/, operations/, or similar names that fit the user's goals.
 - Each section directory should contain focused Markdown pages whose boundaries follow the actual knowledge domains and source boundaries.
 - Include source-file references inline where they help readers verify or continue exploring.
