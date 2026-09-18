@@ -9,6 +9,7 @@ import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import { OrchestrationClient } from "@sap-ai-sdk/langchain";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
 import { createDeepAgent } from "deepagents";
@@ -75,6 +76,7 @@ import type {
   RunContext,
 } from "./types.js";
 import {
+  AICORE_RESOURCE_GROUP_ENV_KEY,
   ANTHROPIC_BASE_URL_ENV_KEY,
   BASETEN_BASE_URL_ENV_KEY,
   BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
@@ -1247,6 +1249,24 @@ export function createModel(
       ...streamIdleTimeoutOptions,
       ...retryOptions,
     });
+  }
+
+  if (provider === "sap-ai-core") {
+    const resourceGroup = process.env[AICORE_RESOURCE_GROUP_ENV_KEY];
+    return new OrchestrationClient(
+      {
+        promptTemplating: {
+          model: {
+            name: modelId,
+            ...(configuredMaxOutputTokens === undefined
+              ? {}
+              : { params: { max_tokens: configuredMaxOutputTokens } }),
+          },
+        },
+      },
+      { maxRetries: providerRetryAttempts },
+      resourceGroup ? { resourceGroup } : undefined,
+    );
   }
 
   const baseURL = resolveProviderBaseUrl(provider);

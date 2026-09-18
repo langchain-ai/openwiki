@@ -104,6 +104,8 @@ export const OPENWIKI_X_CLIENT_ID_ENV_KEY = "OPENWIKI_X_CLIENT_ID";
 export const OPENWIKI_X_CLIENT_SECRET_ENV_KEY = "OPENWIKI_X_CLIENT_SECRET";
 export const OPENWIKI_X_REFRESH_TOKEN_ENV_KEY = "OPENWIKI_X_REFRESH_TOKEN";
 export const OPENWIKI_TAVILY_API_KEY_ENV_KEY = "TAVILY_API_KEY";
+export const AICORE_SERVICE_KEY_ENV_KEY = "AICORE_SERVICE_KEY";
+export const AICORE_RESOURCE_GROUP_ENV_KEY = "AICORE_RESOURCE_GROUP";
 export const DEFAULT_PROVIDER = "openai";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -121,7 +123,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "sap-ai-core";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -260,6 +263,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "baseten",
   "nebius",
   "nvidia",
+  "sap-ai-core",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -428,6 +432,14 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
     ],
+  },
+  "sap-ai-core": {
+    apiKeyEnvKey: AICORE_SERVICE_KEY_ENV_KEY,
+    authMethod: "api-key",
+    label: "SAP AI Core",
+    // AI Core models are account/deployment-specific; no safe preset list.
+    // Empty options route the wizard to custom model-name input (bedrock pattern).
+    modelOptions: [],
   },
 };
 

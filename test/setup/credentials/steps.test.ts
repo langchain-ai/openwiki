@@ -109,6 +109,7 @@ const SPINE_BY_PROVIDER: Record<string, string[]> = {
   baseten: ["provider", "api-key", "model", "langsmith"],
   nebius: ["provider", "api-key", "model", "langsmith"],
   nvidia: ["provider", "api-key", "model", "langsmith"],
+  "sap-ai-core": ["provider", "api-key", "model", "langsmith"],
 };
 
 /** Every environment key any test in this file reads or writes. */
@@ -124,6 +125,7 @@ const MANAGED_KEYS = [
   "OPENAI_CHATGPT_EXPIRES_AT",
   getProviderApiKeyEnvKey("openai"),
   getProviderApiKeyEnvKey("openai-compatible"),
+  getProviderApiKeyEnvKey("sap-ai-core"),
   getProviderApiKeyEnvKey("bedrock"),
   getProviderSecretKeyEnvKey("bedrock"),
   getProviderRegionEnvKey("bedrock"),
