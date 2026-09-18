@@ -8,6 +8,7 @@ import { describe, expect, test } from "vitest";
 const execFileAsync = promisify(execFile);
 const PACKAGE_ROOT = process.cwd();
 const SKILL_ROOT = path.join(PACKAGE_ROOT, "integrations/openwiki");
+const PI_EXTENSION_PATH = "dist/integrations/pi/openwiki.js";
 
 /**
  * One file reported by `npm pack --dry-run --json`.
@@ -42,12 +43,24 @@ describe("published host integration bundle", () => {
       expect(reports).toHaveLength(1);
 
       const packedPaths = reports[0].files.map((file) => file.path);
+      const manifest = JSON.parse(
+        await readFile(path.join(PACKAGE_ROOT, "package.json"), "utf8"),
+      ) as {
+        keywords?: string[];
+        pi?: { extensions?: string[]; skills?: string[] };
+      };
       const canonicalFiles = await listFiles(SKILL_ROOT);
       for (const relative of canonicalFiles) {
         expect(packedPaths).toContain(`integrations/openwiki/${relative}`);
       }
 
       expect(packedPaths).toContain("package.json");
+      expect(manifest.keywords).toContain("pi-package");
+      expect(manifest.pi).toEqual({
+        extensions: [`./${PI_EXTENSION_PATH}`],
+        skills: ["./integrations/openwiki"],
+      });
+      expect(packedPaths).toContain(PI_EXTENSION_PATH);
       expect(packedPaths.some((file) => path.isAbsolute(file))).toBe(false);
       expect(
         packedPaths.filter(

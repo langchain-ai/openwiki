@@ -53,15 +53,14 @@ Code under `~/.claude`, OpenCode under `~/.config/opencode` (OpenCode's global
 configuration directory on every supported platform), Cursor under `~/.cursor`,
 and Kiro under `~/.kiro`.
 
+Pi uses the package system and is not installed by the OpenWiki integration CLI. For local development, build the package and install it with `pi install /absolute/path/to/openwiki`; do not use a local-install flag. Published users install `pi install npm:openwiki`. The package includes `dist/integrations/pi/openwiki.js` and `integrations/openwiki`; the extension starts its package-local `dist/cli/cli.js` through Node.
+
 ## Adding a coding-agent integration
 
-OpenWiki host integrations share one canonical skill and five MCP tools:
+OpenWiki host integrations share one canonical skill and six MCP tools:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, and `openwiki_finish`. Add host-specific behavior to the
-registry and config boundary rather than copying the skill or adding
-host-specific tools. The host model researches and authors only the current
-OpenWiki PageJob; OpenWiki owns durable run state, Claims reconciliation,
-finalization, metadata, provenance, and managed setup files.
+`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`.
+Add host-specific behavior to the registry and config boundary rather than copying the skill or adding host-specific tools. The host model researches and authors only the current OpenWiki PageJob; OpenWiki owns durable run state, Claims reconciliation, finalization, metadata, provenance, and managed setup files.
 
 1. Confirm the host discovers repository skills and local stdio MCP servers.
    Document the supported user and project paths; use `null` for an unsupported
