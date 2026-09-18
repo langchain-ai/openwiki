@@ -72,6 +72,8 @@ const harness = vi.hoisted(() => ({
   beginCalls: 0,
   changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
+  differentDuplicatePlanSubmission: false,
+  differentDuplicatePlanToolResults: [] as unknown[],
   driftOnce: false,
   duplicatePlanSubmission: false,
   duplicatePlanToolResults: [] as unknown[],
@@ -244,6 +246,24 @@ vi.mock("deepagents", async (importOriginal) => {
               ) {
                 const duplicate = await completionTool.invoke(input);
                 harness.duplicatePlanToolResults.push(duplicate);
+              }
+              if (
+                toolName === "submit_plan" &&
+                harness.differentDuplicatePlanSubmission
+              ) {
+                const duplicate = await completionTool.invoke({
+                  name: toolName,
+                  id: `${toolName}-different-duplicate`,
+                  type: "tool_call",
+                  args: {
+                    ...input,
+                    pages: input.pages.map((page) => ({
+                      ...page,
+                      purpose: `${page.purpose} with a conflicting revision`,
+                    })),
+                  },
+                });
+                harness.differentDuplicatePlanToolResults.push(duplicate);
               }
               if (
                 toolName === "submit_page" &&
@@ -493,6 +513,8 @@ beforeEach(() => {
   harness.beginCalls = 0;
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
+  harness.differentDuplicatePlanSubmission = false;
+  harness.differentDuplicatePlanToolResults = [];
   harness.driftOnce = false;
   harness.duplicatePlanSubmission = false;
   harness.duplicatePlanToolResults = [];
@@ -632,6 +654,35 @@ describe("runNativeRepositoryGeneration", () => {
     ]);
     expect(harness.pageSubmissionCalls).toBe(1);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("keeps the accepted plan when the planner submits a different plan", async () => {
+    harness.differentDuplicatePlanSubmission = true;
+    harness.planPaths = ["/openwiki/quickstart.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.planSubmissionCalls).toBe(2);
+    const [rejection] = harness.differentDuplicatePlanToolResults;
+    expect(ToolMessage.isInstance(rejection)).toBe(true);
+    if (!ToolMessage.isInstance(rejection)) {
+      throw new Error(
+        "Expected duplicate submit_plan to return a ToolMessage.",
+      );
+    }
+    expect(rejection.name).toBe("submit_plan");
+    expect(rejection.status).toBe("error");
+    expect(rejection.text).toContain(
+      '"message":"This OpenWiki run already has a different persisted plan."',
+    );
+    expect(rejection.text).toContain(
+      '"retry":"A plan is already installed. Stop planning and do not call submit_plan again."',
+    );
+    expect(harness.currentRun?.state.plan?.pages[0]?.purpose).toBe(
+      "Document /openwiki/quickstart.md",
+    );
+    expect(harness.pageSubmissionCalls).toBe(1);
     expect(harness.finishCalls).toBe(1);
   });
 
