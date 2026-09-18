@@ -78,12 +78,17 @@ function expectFailurePreservingWorkflow(workflow: string): void {
     steps,
     "Create OpenWiki update pull request",
   );
+  const annotation = requireWorkflowStep(
+    steps,
+    "Annotate OpenWiki update pull request",
+  );
   const propagate = requireWorkflowStep(steps, "Propagate OpenWiki failure");
 
   expect(run.id).toBe("openwiki");
   expect(run["continue-on-error"]).toBe(true);
   expect(cleanup.if).toBe("${{ !cancelled() }}");
   expect(cleanup.run).toBe("rm -f -- openwiki/.run.json");
+  expect(pullRequest.id).toBe("create-pr");
   expect(pullRequest.if).toBe("${{ !cancelled() }}");
   expect(pullRequest.uses).toMatch(
     /^peter-evans\/create-pull-request@[a-f0-9]{40}$/u,
@@ -103,12 +108,19 @@ function expectFailurePreservingWorkflow(workflow: string): void {
   expect(pullRequest.with?.body).toContain(
     "baseline for the next scheduled run",
   );
+  expect(annotation.if).toBe(
+    "${{ !cancelled() && steps.create-pr.outputs.pull-request-url != '' }}",
+  );
+  expect(annotation.run).toBe(
+    'echo "::notice title=OpenWiki update pull request::${{ steps.create-pr.outputs.pull-request-url }}"',
+  );
   expect(propagate.if).toBe("${{ steps.openwiki.outcome == 'failure' }}");
   expect(propagate.run).toBe("exit 1");
 
   expect(steps.indexOf(run)).toBeLessThan(steps.indexOf(cleanup));
   expect(steps.indexOf(cleanup)).toBeLessThan(steps.indexOf(pullRequest));
-  expect(steps.indexOf(pullRequest)).toBeLessThan(steps.indexOf(propagate));
+  expect(steps.indexOf(pullRequest)).toBeLessThan(steps.indexOf(annotation));
+  expect(steps.indexOf(annotation)).toBeLessThan(steps.indexOf(propagate));
   expect(
     steps
       .map((step) => step.run)
