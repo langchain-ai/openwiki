@@ -14,6 +14,7 @@ import {
 const INDEX_FILE = "index.md";
 const LOG_FILE = "log.md";
 const EXCLUDED_FILES = new Set([INDEX_FILE, LOG_FILE, "INSTRUCTIONS.md"]);
+const README_ALIAS_FILE = "readme.md";
 
 /**
  * A wiki directory paired with the entries it directly contains.
@@ -105,7 +106,7 @@ export async function listWikiConceptPaths(
           name &&
           !name.startsWith(".") &&
           path.posix.extname(name).toLowerCase() === ".md" &&
-          !EXCLUDED_FILES.has(name)
+          !isStructuralMarkdownFile(name)
           ? [path.posix.join(directory.path, name)]
           : [];
       }),
@@ -188,7 +189,7 @@ async function synchronizeDirectory(
     }
     if (
       path.posix.extname(name).toLowerCase() !== ".md" ||
-      EXCLUDED_FILES.has(name)
+      isStructuralMarkdownFile(name)
     ) {
       continue;
     }
@@ -223,6 +224,13 @@ async function synchronizeDirectory(
   if (result.error) {
     throw new Error(`Unable to write ${indexPath}: ${result.error}`);
   }
+}
+
+/**
+ * Identifies Markdown documents owned by wiki structure rather than concepts.
+ */
+function isStructuralMarkdownFile(name: string): boolean {
+  return EXCLUDED_FILES.has(name) || name.toLowerCase() === README_ALIAS_FILE;
 }
 
 /**
