@@ -1086,6 +1086,26 @@ export async function captureRepositoryPageSnapshot(
 }
 
 /**
+ * Rolls one page's Markdown and Claims back to what its pre-run snapshot
+ * captured, leaving the pending checkpoint and run metadata untouched. Used to
+ * reset a page between worker attempts; `skipRepositoryPage` reuses it when the
+ * page is finally given up on.
+ */
+export async function restoreRepositoryPage(
+  run: ActiveRepositoryRun,
+  snapshot: RepositoryPageSnapshot,
+): Promise<void> {
+  await restoreRepositoryPageMarkdown(run, snapshot);
+
+  const store = new ClaimsStore(run.root);
+  if (snapshot.claims) {
+    await store.writePage(snapshot.path, snapshot.claims);
+  } else {
+    await store.deletePage(snapshot.path);
+  }
+}
+
+/**
  * Rolls a failed page worker back without advancing its pending checkpoint.
  */
 export async function skipRepositoryPage(
@@ -1106,14 +1126,7 @@ export async function skipRepositoryPage(
     );
   }
 
-  await restoreRepositoryPageMarkdown(run, snapshot);
-
-  const store = new ClaimsStore(run.root);
-  if (snapshot.claims) {
-    await store.writePage(snapshot.path, snapshot.claims);
-  } else {
-    await store.deletePage(snapshot.path);
-  }
+  await restoreRepositoryPage(run, snapshot);
 
   const claimsRuntime = await prepareClaimsRuntime(
     run.state.mode,
