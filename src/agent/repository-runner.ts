@@ -23,6 +23,7 @@ import {
   finishRepositoryRun,
   inspectRepositoryPageClaims,
   nextRepositoryPage,
+  restoreRepositoryPage,
   skipRepositoryPage,
   submitRepositoryPage,
   submitRepositoryPlan,
@@ -513,12 +514,16 @@ async function runPendingPageAgents(
   }
 }
 
+/** Worker attempts per pending page before it is skipped. */
+const PAGE_WORKER_ATTEMPT_LIMIT = 2;
+
 /**
- * Runs one shell-free worker bounded to its assigned page and Claim submission.
+ * Runs one page job with a fresh bounded worker per attempt, retrying a worker
+ * that exits without submitting once before the page is skipped.
  *
  * @param run - Active durable repository run.
  * @param job - Current pending ordered page job.
- * @param model - Initialized model used only for this worker.
+ * @param model - Initialized model reused across attempts.
  * @param onEvent - Optional bounded worker event consumer.
  */
 async function runPageAgent(
@@ -528,6 +533,39 @@ async function runPageAgent(
   onEvent?: (event: OpenWikiRunEvent) => void,
 ): Promise<RepositoryPageSnapshot | null> {
   const snapshot = await captureRepositoryPageSnapshot(run, job.id);
+
+  for (let attempt = 1; attempt <= PAGE_WORKER_ATTEMPT_LIMIT; attempt += 1) {
+    const submitted = await runPageWorkerAttempt(run, job, model, onEvent);
+    if (submitted) return null;
+
+    if (attempt < PAGE_WORKER_ATTEMPT_LIMIT) {
+      // A worker that exits without submitting never banked its page edits, so
+      // reset the page and its Claims to the pre-run snapshot before the retry.
+      // Both attempts then start from the same state.
+      await restoreRepositoryPage(run, snapshot);
+    }
+  }
+
+  await skipRepositoryPage(run, snapshot);
+  emitDeferredPageWarning(job.path, onEvent);
+  return snapshot;
+}
+
+/**
+ * Runs one bounded worker attempt for the current page job.
+ *
+ * @param run - Active durable repository run.
+ * @param job - Current pending ordered page job.
+ * @param model - Initialized model used only for this attempt.
+ * @param onEvent - Optional bounded worker event consumer.
+ * @returns Whether the attempt submitted the page.
+ */
+async function runPageWorkerAttempt(
+  run: ActiveRepositoryRun,
+  job: PendingPageJob,
+  model: BaseChatModel,
+  onEvent?: (event: OpenWikiRunEvent) => void,
+): Promise<boolean> {
   const ignore = await OpenWikiIgnore.load(run.root);
   const wikiBackend = new OpenWikiLocalShellBackend({
     docsOnly: true,
@@ -620,18 +658,12 @@ async function runPageAgent(
       onEvent,
     );
   } catch (error) {
-    if (submitted) return null;
+    if (submitted) return true;
     if (fatalSubmissionFailure) throw error;
-    await skipRepositoryPage(run, snapshot);
-    emitDeferredPageWarning(job.path, onEvent);
-    return snapshot;
+    return false;
   }
 
-  if (submitted) return null;
-
-  await skipRepositoryPage(run, snapshot);
-  emitDeferredPageWarning(job.path, onEvent);
-  return snapshot;
+  return submitted;
 }
 
 function emitDeferredPageWarning(

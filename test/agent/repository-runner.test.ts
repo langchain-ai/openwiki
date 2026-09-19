@@ -75,11 +75,13 @@ const harness = vi.hoisted(() => ({
   driftOnce: false,
   duplicatePlanSubmission: false,
   duplicatePlanToolResults: [] as unknown[],
+  fatalPageSubmissions: 0,
   filesystemTools: [] as string[][],
   finishCalls: 0,
   invalidPageSubmissions: 0,
   invalidPlanSubmissions: 0,
   noop: false,
+  pageRestoreCalls: 0,
   pageSubmissionCalls: 0,
   pageToolResults: [] as unknown[],
   pageWorkerFailures: 0,
@@ -89,7 +91,7 @@ const harness = vi.hoisted(() => ({
   planPaths: ["/openwiki/quickstart.md", "/openwiki/architecture.md"],
   resumed: false,
   restoreCalls: 0,
-  workerExitsWithoutSubmit: false,
+  workerExitsWithoutSubmit: 0,
 }));
 
 vi.mock("deepagents", async (importOriginal) => {
@@ -233,9 +235,10 @@ vi.mock("deepagents", async (importOriginal) => {
                     ],
                   };
             const exitWithoutSubmit =
-              toolName === "submit_page" && harness.workerExitsWithoutSubmit;
+              toolName === "submit_page" &&
+              harness.workerExitsWithoutSubmit > 0;
             if (exitWithoutSubmit) {
-              harness.workerExitsWithoutSubmit = false;
+              harness.workerExitsWithoutSubmit -= 1;
             } else {
               await completionTool.invoke(input);
               if (
@@ -275,6 +278,10 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     const job = run.state.plan?.pages.find(({ id }) => id === snapshot.jobId);
     if (!job) throw new Error("Expected skipped harness page job.");
     job.status = "skipped";
+    return Promise.resolve();
+  },
+  restoreRepositoryPage() {
+    harness.pageRestoreCalls += 1;
     return Promise.resolve();
   },
   beginRepositoryRun() {
@@ -425,6 +432,15 @@ vi.mock("../../src/generation/repository-run.js", () => ({
   },
   async submitRepositoryPage(run: HarnessRun, input: { jobId: string }) {
     harness.pageSubmissionCalls += 1;
+    if (harness.fatalPageSubmissions > 0) {
+      harness.fatalPageSubmissions -= 1;
+      const { RepositoryRunError } =
+        await import("../../src/generation/errors.js");
+      throw new RepositoryRunError(
+        "invalid_state",
+        "Submission store unavailable",
+      );
+    }
     if (harness.invalidPageSubmissions > 0) {
       harness.invalidPageSubmissions -= 1;
       const { RepositoryRunError } =
@@ -496,11 +512,13 @@ beforeEach(() => {
   harness.driftOnce = false;
   harness.duplicatePlanSubmission = false;
   harness.duplicatePlanToolResults = [];
+  harness.fatalPageSubmissions = 0;
   harness.filesystemTools = [];
   harness.finishCalls = 0;
   harness.invalidPageSubmissions = 0;
   harness.invalidPlanSubmissions = 0;
   harness.noop = false;
+  harness.pageRestoreCalls = 0;
   harness.pageSubmissionCalls = 0;
   harness.pageToolResults = [];
   harness.pageWorkerFailures = 0;
@@ -510,7 +528,7 @@ beforeEach(() => {
   harness.planPaths = ["/openwiki/quickstart.md", "/openwiki/architecture.md"];
   harness.resumed = false;
   harness.restoreCalls = 0;
-  harness.workerExitsWithoutSubmit = false;
+  harness.workerExitsWithoutSubmit = 0;
 });
 
 describe("runNativeRepositoryGeneration", () => {
@@ -635,16 +653,42 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.finishCalls).toBe(1);
   });
 
-  test("skips a failed page worker and continues the queue", async () => {
+  test("retries a failed page worker once before completing the page", async () => {
     harness.pageWorkerFailures = 1;
+    harness.planPaths = ["/openwiki/flaky.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
+    expect(harness.agentOptions).toHaveLength(3);
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("skips a page worker that fails every attempt and continues the queue", async () => {
+    harness.pageWorkerFailures = 2;
     harness.planPaths = ["/openwiki/failed.md", "/openwiki/later.md"];
 
     await expect(runHarness()).resolves.toBeDefined();
 
+    expect(harness.pageRestoreCalls).toBe(1);
     expect(harness.restoreCalls).toBe(1);
+    expect(harness.agentOptions).toHaveLength(4);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
     expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
     expect(harness.finishCalls).toBe(1);
+  });
+
+  test("does not retry a fatal submission failure", async () => {
+    harness.fatalPageSubmissions = 1;
+    harness.planPaths = ["/openwiki/fatal.md"];
+
+    await expect(runHarness()).rejects.toThrow("Submission store unavailable");
+
+    expect(harness.agentOptions).toHaveLength(2);
+    expect(harness.pageRestoreCalls).toBe(0);
+    expect(harness.restoreCalls).toBe(0);
   });
 
   test("keeps a durably completed page after a later worker failure", async () => {
@@ -835,17 +879,44 @@ describe("runNativeRepositoryGeneration", () => {
     ).toBe(true);
   });
 
-  test("restores and leaves a page pending when its worker does not submit", async () => {
-    harness.workerExitsWithoutSubmit = true;
+  test("retries once when a worker exits without submitting and completes the page", async () => {
+    harness.workerExitsWithoutSubmit = 1;
+    harness.planPaths = ["/openwiki/retry.md"];
+
+    const events = await runHarness();
+
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
+    expect(harness.agentOptions).toHaveLength(3);
+    expect(String(harness.agentOptions[1]?.systemPrompt)).toContain(
+      "You own exactly /openwiki/retry.md",
+    );
+    expect(String(harness.agentOptions[2]?.systemPrompt)).toContain(
+      "You own exactly /openwiki/retry.md",
+    );
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("reconsidered on the next update"),
+      ),
+    ).toBe(false);
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("restores and skips a page when every worker attempt exits without submitting", async () => {
+    harness.workerExitsWithoutSubmit = 2;
     harness.planPaths = ["/openwiki/testing.md", "/openwiki/later.md"];
 
     const events = await runHarness();
 
+    expect(harness.pageRestoreCalls).toBe(1);
     expect(harness.restoreCalls).toBe(1);
     expect(harness.finishCalls).toBe(1);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
     expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
-    expect(harness.agentOptions).toHaveLength(3);
+    expect(harness.agentOptions).toHaveLength(4);
     expect(
       events.some(
         (event) =>
