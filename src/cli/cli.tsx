@@ -27,6 +27,7 @@ import {
   runVisualizeCommand,
 } from "./runners.js";
 import { runIntegrationsCommand, runMcpCommand } from "./integrations.js";
+import { declaresColorSupport, stabilizeColorLevel } from "./terminal-color.js";
 
 /**
  * Commands handled by the native OpenWiki startup and rendering pipeline.
@@ -40,6 +41,12 @@ type StandardCliCommand = Exclude<
 // escapes every catch (e.g. a subagent error surfacing on the microtask queue) is
 // recorded and stamped instead of hard-killing the process with no telemetry.
 installCrashGuard();
+
+// Normalize the process-wide color level before any TUI renders. Without a
+// declared color capability this pins chalk to plain output, so muted gray
+// runs cannot end up drawn in the background color of a terminal that never
+// declared color support.
+stabilizeColorLevel();
 
 const argv = process.argv.slice(2);
 const parsedCommand = parseCommand(argv);
@@ -92,9 +99,13 @@ async function runStandardCommand(
     process.exitCode = command.exitCode;
   } else if (shouldRunNonInteractively(command, process.stdin.isTTY === true)) {
     // Non-TTY / print mode: framed text on stderr so piped stdout stays clean;
-    // gray only when stderr is a real terminal.
+    // gray only when stderr is a real terminal that declares color support.
     if (showFirstRunNotice) {
-      console.error(renderFirstRunNoticeText(process.stderr.isTTY === true));
+      console.error(
+        renderFirstRunNoticeText(
+          process.stderr.isTTY === true && declaresColorSupport(),
+        ),
+      );
     }
     await runPrintCommand(command);
   } else {
