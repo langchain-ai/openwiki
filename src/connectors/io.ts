@@ -1,4 +1,5 @@
-import { chmod, readFile, writeFile } from "node:fs/promises";
+import { chmod, readFile, rename, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import {
   ensureConnectorHome,
@@ -56,6 +57,33 @@ export async function writeConnectorState(
   await writePrivateJson(getConnectorStatePath(connectorId), state);
 }
 
+const stateUpdateQueues = new Map<ConnectorId, Promise<void>>();
+
+/** Read, transform, and atomically commit connector state as one local transaction. */
+export async function updateConnectorState(
+  connectorId: ConnectorId,
+  updater: (state: ConnectorState) => ConnectorState | Promise<ConnectorState>,
+): Promise<ConnectorState> {
+  const previous = stateUpdateQueues.get(connectorId) ?? Promise.resolve();
+  let release!: () => void;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  stateUpdateQueues.set(connectorId, current);
+
+  await previous;
+  try {
+    const nextState = await updater(await readConnectorState(connectorId));
+    await writeConnectorState(connectorId, nextState);
+    return nextState;
+  } finally {
+    release();
+    if (stateUpdateQueues.get(connectorId) === current) {
+      stateUpdateQueues.delete(connectorId);
+    }
+  }
+}
+
 export async function writeRawJson(
   connectorId: ConnectorId,
   runId: string,
@@ -70,7 +98,7 @@ export async function writeRawJson(
 }
 
 export function createRunId(): string {
-  return new Date().toISOString().replace(/[:.]/gu, "-");
+  return `${new Date().toISOString().replace(/[:.]/gu, "-")}-${randomUUID()}`;
 }
 
 export function updateStateWithRun(
@@ -92,11 +120,13 @@ async function writePrivateJson(
   await import("node:fs/promises").then(({ mkdir }) =>
     mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 }),
   );
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, {
+  const temporaryPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
+  await writeFile(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, {
     encoding: "utf8",
     mode: 0o600,
   });
-  await chmod(filePath, 0o600);
+  await chmod(temporaryPath, 0o600);
+  await rename(temporaryPath, filePath);
 }
 
 function isFileNotFoundError(error: unknown): boolean {
