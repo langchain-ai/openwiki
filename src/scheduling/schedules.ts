@@ -32,7 +32,7 @@ export type CronValidationResult =
 export type ScheduleInstallResult = {
   description: string;
   expression: string;
-  launchAgentPath?: string;
+  nativeJobPath?: string;
   warning?: string;
 };
 
@@ -41,9 +41,9 @@ export type ConnectorScheduleStatus = {
   description: string;
   displayName?: string;
   expression: string;
-  launchAgentLoaded: boolean;
-  launchAgentPath?: string;
-  launchAgentPlistExists: boolean;
+  nativeJobInstalled: boolean;
+  nativeJobPath?: string;
+  nativeJobPathExists: boolean;
   pausedAt?: string;
   sourceInstanceId: string;
   updatedAt: string;
@@ -198,7 +198,7 @@ export async function installConnectorSchedule({
   return {
     description: validation.description,
     expression: validation.expression,
-    launchAgentPath: plistPath,
+    nativeJobPath: plistPath,
   };
 }
 
@@ -210,18 +210,18 @@ export async function listConnectorSchedules(
     return [];
   }
 
-  const launchAgentPath = schedule.launchAgentPath;
+  const nativeJobPath = schedule.nativeJobPath;
   return [
     {
       description: schedule.description,
       displayName: "All ingestion",
       expression: schedule.expression,
-      launchAgentLoaded: schedule.pausedAt
+      nativeJobInstalled: schedule.pausedAt
         ? false
         : await isLaunchAgentLoaded(),
-      launchAgentPath,
-      launchAgentPlistExists: launchAgentPath
-        ? await pathExists(launchAgentPath)
+      nativeJobPath,
+      nativeJobPathExists: nativeJobPath
+        ? await pathExists(nativeJobPath)
         : false,
       pausedAt: schedule.pausedAt,
       sourceInstanceId: "all",
@@ -303,7 +303,7 @@ export async function resumeConnectorSchedules({
     ingestionSchedule: {
       description: result.description,
       expression: result.expression,
-      launchAgentPath: result.launchAgentPath,
+      nativeJobPath: result.nativeJobPath,
       updatedAt: new Date().toISOString(),
       warning: result.warning,
     },

@@ -101,7 +101,7 @@ describe("installConnectorSchedule", () => {
     });
 
     expect(result.expression).toBe("*/15 2 * * *");
-    expect(result.launchAgentPath).toBeUndefined();
+    expect(result.nativeJobPath).toBeUndefined();
     expect(result.warning).toMatch(/too complex/i);
     expect(result.description.length).toBeGreaterThan(0);
   });
@@ -116,7 +116,7 @@ describe("installConnectorSchedule", () => {
     });
 
     expect(result.expression).toBe("0 2 * * *");
-    expect(result.launchAgentPath).toBeUndefined();
+    expect(result.nativeJobPath).toBeUndefined();
     expect(result.warning).toMatch(/macOS-only/i);
   });
 });
@@ -260,16 +260,16 @@ describe("listConnectorSchedules", () => {
     expect(status).toMatchObject({
       displayName: "All ingestion",
       expression: "0 2 * * *",
-      launchAgentLoaded: false,
-      launchAgentPlistExists: false,
+      nativeJobInstalled: false,
+      nativeJobPathExists: false,
       pausedAt: "2026-01-02T00:00:00.000Z",
       sourceInstanceId: "all",
       warning: "some warning",
     });
-    expect(status.launchAgentPath).toBeUndefined();
+    expect(status.nativeJobPath).toBeUndefined();
   });
 
-  test("checks plist existence on disk and treats non-Darwin as never loaded", async () => {
+  test("checks job file existence on disk and treats non-Darwin as never loaded", async () => {
     stubPlatform("linux");
 
     const dir = await mkdtemp(path.join(os.tmpdir(), "openwiki-sched-"));
@@ -278,17 +278,17 @@ describe("listConnectorSchedules", () => {
     await writeFile(plistPath, "<plist/>", "utf8");
 
     const present = await listConnectorSchedules(
-      configWithSchedule("0 2 * * *", { launchAgentPath: plistPath }),
+      configWithSchedule("0 2 * * *", { nativeJobPath: plistPath }),
     );
-    expect(present[0].launchAgentLoaded).toBe(false);
-    expect(present[0].launchAgentPlistExists).toBe(true);
+    expect(present[0].nativeJobInstalled).toBe(false);
+    expect(present[0].nativeJobPathExists).toBe(true);
 
     const absent = await listConnectorSchedules(
       configWithSchedule("0 2 * * *", {
-        launchAgentPath: path.join(dir, "missing.plist"),
+        nativeJobPath: path.join(dir, "missing.plist"),
       }),
     );
-    expect(absent[0].launchAgentPlistExists).toBe(false);
+    expect(absent[0].nativeJobPathExists).toBe(false);
   });
 });
 
