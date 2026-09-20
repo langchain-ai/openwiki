@@ -486,6 +486,15 @@ The OpenRouter-specific setting takes precedence over `OPENWIKI_MAX_OUTPUT_TOKEN
 
 **Bedrock stream idle timeout.** For the Bedrock provider, set `OPENWIKI_STREAM_IDLE_TIMEOUT` to control how long the client waits for the first or next streamed response chunk, for example `OPENWIKI_STREAM_IDLE_TIMEOUT=300000`. The value is milliseconds and must be an integer from `0` to `2147483647`. Set it to `0` to disable the watchdog. If unset, OpenWiki preserves the `@langchain/aws` provider default. Prefer a sufficiently long finite timeout over disabling the watchdog so a stalled stream cannot hang forever.
 
+**Bedrock prompt caching.** For the Bedrock provider, OpenWiki asks Bedrock to cache the stable prefix of every model request — the system prompt, the tool definitions, and the conversation so far — so a long run stops paying full input price to reprocess it on each call. Cached reads are billed at a fraction of the input rate; each cache write carries a one-time surcharge. The default lifetime is five minutes, which spans consecutive calls in a run. Change or disable it with:
+
+```bash
+OPENWIKI_BEDROCK_CACHE_TTL=1h
+OPENWIKI_BEDROCK_CACHE_TTL=off
+```
+
+`5m` and `1h` are the lifetimes Bedrock supports; `off` sends no cache points at all. The setting is read only on a Bedrock run, so it cannot affect any other provider. Bedrock caches a prefix only once it exceeds the model's minimum cacheable length, so short runs may show no cache reads. Amazon Nova models cache fewer breakpoints than Claude models and ignore `1h`, falling back to the five-minute lifetime.
+
 **Reasoning effort.** Set `OPENWIKI_REASONING_EFFORT` to configure reasoning for a supported provider and model. OpenAI GPT-5.6 models use the Responses API values `none`, `low`, `medium`, `high`, `xhigh`, and `max`. Gemini 3.6 Flash maps `low`, `medium`, and `high` to Gemini's thinking level. NVIDIA NIM's Nemotron 3 Super supports `none`, `low`, and `high`. In an interactive chat, use `/effort` to choose an available value or `/effort default` to restore the provider default. Leave the variable unset to preserve the provider default; invalid provider, model, or effort combinations fail before a request is sent.
 
 </details>

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   BASETEN_BASE_URL_ENV_KEY,
   BOB_BASE_URL_ENV_KEY,
+  BEDROCK_DEFAULT_CACHE_TTL,
   BEDROCK_DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL_ID,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
@@ -30,6 +31,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  resolveBedrockCacheTtl,
   resolveBedrockMaxTokens,
   resolveConfiguredMaxOutputTokens,
   providerUsesStreaming,
@@ -711,6 +713,39 @@ describe("resolveBedrockMaxTokens", () => {
       expect(() =>
         resolveBedrockMaxTokens({ OPENWIKI_BEDROCK_MAX_TOKENS: value }),
       ).toThrow(/OPENWIKI_BEDROCK_MAX_TOKENS/u);
+    }
+  });
+});
+
+describe("resolveBedrockCacheTtl", () => {
+  test("returns the default TTL (5m) when the env var is unset", () => {
+    expect(resolveBedrockCacheTtl({})).toBe(BEDROCK_DEFAULT_CACHE_TTL);
+    expect(resolveBedrockCacheTtl({})).toBe("5m");
+  });
+
+  test("parses both supported TTLs, case- and space-insensitively", () => {
+    expect(resolveBedrockCacheTtl({ OPENWIKI_BEDROCK_CACHE_TTL: "1h" })).toBe(
+      "1h",
+    );
+    expect(resolveBedrockCacheTtl({ OPENWIKI_BEDROCK_CACHE_TTL: " 5M " })).toBe(
+      "5m",
+    );
+  });
+
+  test("returns undefined when caching is turned off", () => {
+    expect(
+      resolveBedrockCacheTtl({ OPENWIKI_BEDROCK_CACHE_TTL: "off" }),
+    ).toBeUndefined();
+    expect(
+      resolveBedrockCacheTtl({ OPENWIKI_BEDROCK_CACHE_TTL: " OFF " }),
+    ).toBeUndefined();
+  });
+
+  test("rejects any other value", () => {
+    for (const value of ["", "  ", "10m", "1", "true", "5 m", "ephemeral"]) {
+      expect(() =>
+        resolveBedrockCacheTtl({ OPENWIKI_BEDROCK_CACHE_TTL: value }),
+      ).toThrow(/OPENWIKI_BEDROCK_CACHE_TTL/u);
     }
   });
 });

@@ -43,6 +43,10 @@ export const OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY =
 export const OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY =
   "OPENWIKI_BEDROCK_MAX_TOKENS";
 export const BEDROCK_DEFAULT_MAX_TOKENS = 16000;
+export const OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY = "OPENWIKI_BEDROCK_CACHE_TTL";
+// Bedrock exposes two prompt-cache lifetimes; "off" disables cache points.
+export type BedrockCacheTtl = "5m" | "1h";
+export const BEDROCK_DEFAULT_CACHE_TTL: BedrockCacheTtl = "5m";
 export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
@@ -1238,6 +1242,36 @@ export function resolveBedrockMaxTokens(
   }
 
   return parsedMaxTokens;
+}
+
+// Selects the Bedrock prompt-cache lifetime. A wiki run re-sends one large
+// stable prefix on every model call, so the default caches it for the 5 minutes
+// that span consecutive calls.
+// Override via OPENWIKI_BEDROCK_CACHE_TTL: "1h" for runs whose calls are spaced
+// further apart, "off" for models or accounts where cache writes are not worth
+// their surcharge.
+export function resolveBedrockCacheTtl(
+  env: NodeJS.ProcessEnv = process.env,
+): BedrockCacheTtl | undefined {
+  const rawCacheTtl = env[OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY];
+
+  if (rawCacheTtl === undefined) {
+    return BEDROCK_DEFAULT_CACHE_TTL;
+  }
+
+  const cacheTtl = rawCacheTtl.trim().toLowerCase();
+
+  if (cacheTtl === "off") {
+    return undefined;
+  }
+
+  if (cacheTtl !== "5m" && cacheTtl !== "1h") {
+    throw new Error(
+      `Invalid ${OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY}. Expected "5m", "1h", or "off".`,
+    );
+  }
+
+  return cacheTtl;
 }
 
 export function normalizeModelId(value: string): string {
