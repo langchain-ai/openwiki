@@ -1,0 +1,19 @@
+.changeset/parallel-page-workers.md
+  s_e95d4d020796ff::t_f2b4e6a045f51d 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f18bb65a83e6688b5ec74864ca66648b93af6bcc",
+  "prompts": {},
+  "sessions": {
+    "s_e95d4d020796ff": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c4fb-8347-7d10-a83b-113e205c50d5",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
