@@ -140,9 +140,9 @@ type RawMeta = Record<string, string | string[]>;
 const EXCLUDED_FILES = new Set(["INSTRUCTIONS.md", "log.md"]);
 
 /**
- * Matches a relative markdown link target (`foo.md`, optionally with an `#anchor`).
+ * Matches a relative markdown page or directory link target, optionally with an anchor.
  */
-const MARKDOWN_LINK = /\]\(([^)\s]+\.md)(?:#[^)]*)?\)/g;
+const MARKDOWN_LINK = /\]\(([^)\s]+(?:\.md|\/))(?:#[^)]*)?\)/g;
 
 /**
  * Strip a single pair of surrounding single or double quotes.
@@ -306,7 +306,8 @@ function linkNodes(nodes: WikiNode[], wikiRoot: string): WikiEdge[] {
   for (const node of nodes) {
     const fileDir = path.dirname(path.join(wikiRoot, `${node.id}.md`));
     for (const link of markdownLinks(node.body)) {
-      const target = toId(wikiRoot, path.resolve(fileDir, link));
+      const targetPath = link.endsWith("/") ? `${link}index.md` : link;
+      const target = toId(wikiRoot, path.resolve(fileDir, targetPath));
       const targetNode = byId.get(target);
       const key = `${node.id}\n${target}`;
       if (!targetNode || target === node.id || seen.has(key)) continue;
