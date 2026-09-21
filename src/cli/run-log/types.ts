@@ -64,6 +64,20 @@ export interface RunRepositoryProgressLogItem extends RunLogItemBase {
    * @default undefined until planning completes
    */
   pageCount?: number;
+
+  /**
+   * Page jobs already complete or skipped in this run.
+   *
+   * @default undefined outside generation
+   */
+  completedCount?: number;
+
+  /**
+   * Canonical pages currently owned by in-flight workers, in start order.
+   *
+   * @default undefined outside generation
+   */
+  inFlightPages?: string[];
 }
 
 /**

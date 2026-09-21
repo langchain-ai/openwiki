@@ -294,6 +294,72 @@ export type BeginRepositoryRunResult =
   { view: ActiveBeginView; run: ActiveRepositoryRun } | { view: NoopBeginView };
 
 /**
+ * Process-local serialization of durable run mutations, keyed by run identity.
+ *
+ * Page workers may run concurrently, but every read-modify-write of the run
+ * checkpoint, the page manifest, and the shared Claims session must observe
+ * the previous mutation's result. Keying by object identity keeps the durable
+ * state shape unchanged and lets the drivers stay unaware of the lock.
+ */
+const runMutations = new WeakMap<ActiveRepositoryRun, Promise<void>>();
+
+/**
+ * Runs one durable mutation after every earlier mutation on the same run.
+ *
+ * The model-owned work of a page worker happens outside this lock; only the
+ * bookkeeping that advances shared state is serialized, so concurrent workers
+ * cost nothing here while still never losing a completion.
+ *
+ * @param run - Active run whose shared state the operation mutates.
+ * @param operation - Mutation that reads `run.state` only once it holds the lock.
+ * @returns The operation's result.
+ */
+async function withRunMutation<T>(
+  run: ActiveRepositoryRun,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const previous = runMutations.get(run) ?? Promise.resolve();
+  let release: () => void = () => undefined;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  runMutations.set(run, current);
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    release();
+  }
+}
+
+/**
+ * Finds one page job that a worker may still act on.
+ *
+ * Any pending job qualifies, not only the first one in queue order, so several
+ * workers can own distinct jobs at the same time. Ownership is process-local;
+ * the durable checkpoint only records `pending`, `skipped`, and `complete`.
+ *
+ * @param run - Active run with a durably installed plan.
+ * @param jobId - Page job identifier supplied by the worker.
+ * @param action - Past-tense verb named in the rejection message.
+ * @returns The pending page job.
+ */
+function requirePendingJob(
+  run: ActiveRepositoryRun,
+  jobId: string,
+  action: string,
+): PageJob {
+  const job = run.state.plan?.pages.find(({ id }) => id === jobId);
+  if (!job || job.status !== "pending") {
+    throw new RepositoryRunError(
+      "invalid_state",
+      `Only a pending OpenWiki page job may be ${action}.`,
+    );
+  }
+  return job;
+}
+
+/**
  * Projects the active run's immutable source identity into page coverage.
  *
  * @param state - Durable active repository run state.
@@ -954,7 +1020,7 @@ function samePlanIgnoringJobIds(
 }
 
 /**
- * First pending job with current page context, or queue completion.
+ * Next pending job with current page context, or queue completion.
  */
 export type NextRepositoryPageResult =
   | {
@@ -969,13 +1035,31 @@ export type NextRepositoryPageResult =
   | { status: "complete" };
 
 /**
- * Returns the first pending job without reserving or mutating it.
+ * Options for selecting the next pending page job.
+ */
+export interface NextRepositoryPageOptions {
+  /**
+   * Job ids already owned by in-flight workers and therefore not offered.
+   *
+   * A driver running several workers passes the ids it has handed out so each
+   * call yields a distinct job. Ownership stays process-local: the durable
+   * checkpoint never records who is working on a pending job.
+   *
+   * @default empty
+   */
+  exclude?: ReadonlySet<string>;
+}
+
+/**
+ * Returns the first pending job not excluded, without reserving or mutating it.
  *
  * @param run - Active run with a durably installed plan.
- * @returns Current pending job context or queue completion.
+ * @param options - Optional in-flight job ids to skip.
+ * @returns Next available pending job context, or completion when none remains.
  */
 export async function nextRepositoryPage(
   run: ActiveRepositoryRun,
+  options: NextRepositoryPageOptions = {},
 ): Promise<NextRepositoryPageResult> {
   const plan = run.state.plan;
   if (!plan || run.state.phase !== "generating") {
@@ -985,7 +1069,10 @@ export async function nextRepositoryPage(
     );
   }
 
-  const job = plan.pages.find(({ status }) => status === "pending");
+  const exclude = options.exclude ?? new Set<string>();
+  const job = plan.pages.find(
+    ({ id, status }) => status === "pending" && !exclude.has(id),
+  );
   if (!job) return { status: "complete" };
 
   let existing = false;
@@ -1010,29 +1097,21 @@ export async function nextRepositoryPage(
 }
 
 /**
- * Returns the complete compact Claim set for the current pending page on demand.
+ * Returns the complete compact Claim set for one pending page on demand.
  *
  * Normal focused updates do not need this payload: current issue-free Claims
  * are retained deterministically. Workers use this only when they intentionally
  * revise or remove otherwise-current page content and need the owning Claim ids.
  *
  * @param run - Active run with a durably installed plan.
- * @param jobId - Current pending page job identifier.
+ * @param jobId - Pending page job identifier owned by the caller.
  * @returns Complete model-facing Claims without opaque evidence versions.
  */
 export function inspectRepositoryPageClaims(
   run: ActiveRepositoryRun,
   jobId: string,
 ): { page: string; claims: InspectedClaim[] } {
-  const current = run.state.plan?.pages.find(
-    ({ status }) => status === "pending",
-  );
-  if (!current || current.id !== jobId) {
-    throw new RepositoryRunError(
-      "invalid_state",
-      "Only the current pending OpenWiki page job's Claims may be inspected.",
-    );
-  }
+  const current = requirePendingJob(run, jobId, "inspected");
   return {
     page: current.path,
     claims: run.claimsRuntime.session.inspectClaims(current.path),
@@ -1040,21 +1119,13 @@ export function inspectRepositoryPageClaims(
 }
 
 /**
- * Captures the current pending page and Claims sidecar before model-owned work.
+ * Captures one pending page and its Claims sidecar before model-owned work.
  */
 export async function captureRepositoryPageSnapshot(
   run: ActiveRepositoryRun,
   jobId: string,
 ): Promise<RepositoryPageSnapshot> {
-  const current = run.state.plan?.pages.find(
-    ({ status }) => status === "pending",
-  );
-  if (!current || current.id !== jobId) {
-    throw new RepositoryRunError(
-      "invalid_state",
-      "Only the current pending OpenWiki page job may be snapshotted.",
-    );
-  }
+  const current = requirePendingJob(run, jobId, "snapshotted");
 
   let markdown: string | null = null;
   try {
@@ -1087,70 +1158,79 @@ export async function captureRepositoryPageSnapshot(
 
 /**
  * Rolls a failed page worker back without advancing its pending checkpoint.
+ *
+ * The restore, Claims runtime rebuild, and checkpoint write run under the run
+ * mutation lock so a concurrent worker's submission is fully durable before
+ * the shared Claims session is rebuilt from disk.
  */
 export async function skipRepositoryPage(
   run: ActiveRepositoryRun,
   snapshot: RepositoryPageSnapshot,
 ): Promise<void> {
-  const plan = run.state.plan;
-  const current = plan?.pages.find(({ status }) => status === "pending");
-  if (
-    !plan ||
-    !current ||
-    current.id !== snapshot.jobId ||
-    current.path !== snapshot.path
-  ) {
+  const owned = run.state.plan?.pages.find(({ id }) => id === snapshot.jobId);
+  if (!owned || owned.status !== "pending" || owned.path !== snapshot.path) {
     throw new RepositoryRunError(
       "invalid_state",
-      "The failed page worker no longer owns the current pending job.",
+      "The failed page worker no longer owns a pending job.",
     );
   }
 
-  await restoreRepositoryPageMarkdown(run, snapshot);
+  await withRunMutation(run, async () => {
+    const plan = run.state.plan;
+    const current = plan?.pages.find(({ id }) => id === snapshot.jobId);
+    if (!plan || !current || current.status !== "pending") {
+      throw new RepositoryRunError(
+        "invalid_state",
+        "The failed page worker no longer owns a pending job.",
+      );
+    }
 
-  const store = new ClaimsStore(run.root);
-  if (snapshot.claims) {
-    await store.writePage(snapshot.path, snapshot.claims);
-  } else {
-    await store.deletePage(snapshot.path);
-  }
+    await restoreRepositoryPageMarkdown(run, snapshot);
 
-  const claimsRuntime = await prepareClaimsRuntime(
-    run.state.mode,
-    "repository",
-    run.root,
-    run.ignore,
-    () => undefined,
-    { resumeInit: run.state.mode === "init" },
-  );
-  if (!claimsRuntime) {
-    throw new Error("Repository Claims runtime was not restored.");
-  }
-  run.claimsRuntime = claimsRuntime;
+    const store = new ClaimsStore(run.root);
+    if (snapshot.claims) {
+      await store.writePage(snapshot.path, snapshot.claims);
+    } else {
+      await store.deletePage(snapshot.path);
+    }
 
-  await writeLastUpdateMetadata(
-    run.state.mode,
-    run.root,
-    run.state.actor.metadataModel,
-    "repository",
-    "interrupted",
-    run.state.language,
-    run.state.baseGitHead ?? null,
-  );
+    const claimsRuntime = await prepareClaimsRuntime(
+      run.state.mode,
+      "repository",
+      run.root,
+      run.ignore,
+      () => undefined,
+      { resumeInit: run.state.mode === "init" },
+    );
+    if (!claimsRuntime) {
+      throw new Error("Repository Claims runtime was not restored.");
+    }
+    run.claimsRuntime = claimsRuntime;
 
-  const nextState: RepositoryRunState = {
-    ...run.state,
-    plan: {
-      ...plan,
-      pages: plan.pages.map((page) =>
-        page.id === snapshot.jobId
-          ? { ...page, status: "skipped" as const }
-          : page,
-      ),
-    },
-  };
-  await writeRepositoryRunState(run.root, nextState);
-  run.state = nextState;
+    await writeLastUpdateMetadata(
+      run.state.mode,
+      run.root,
+      run.state.actor.metadataModel,
+      "repository",
+      "interrupted",
+      run.state.language,
+      run.state.baseGitHead ?? null,
+    );
+
+    const nextState: RepositoryRunState = {
+      ...run.state,
+      plan: {
+        ...plan,
+        pages: plan.pages.map((page) =>
+          page.id === snapshot.jobId
+            ? { ...page, status: "skipped" as const }
+            : page,
+        ),
+      },
+    };
+    await writeRepositoryRunState(run.root, nextState);
+    run.state = nextState;
+  });
 }
 
 async function restoreRepositoryPageMarkdown(
@@ -1173,12 +1253,16 @@ async function restoreRepositoryPageMarkdown(
 }
 
 /**
- * Persists and proves one page's Claims before completing its current job.
+ * Persists and proves one page's Claims before completing its job.
  *
- * The in-memory checkpoint changes only after the complete next state is durable.
+ * Page-local validation and front matter repair run without the run mutation
+ * lock because they touch only the submitted page. Claim reconciliation, the
+ * manifest entry, and the checkpoint write run under the lock so concurrent
+ * workers never lose each other's completions. The in-memory checkpoint
+ * changes only after the complete next state is durable.
  *
  * @param run - Active generation run owning the ordered queue.
- * @param input - Current job identifier and complete page Claim set.
+ * @param input - Pending job identifier and sparse page Claim decisions.
  * @returns Completed page and remaining queue length.
  */
 export async function submitRepositoryPage(
@@ -1206,13 +1290,7 @@ export async function submitRepositoryPage(
     };
   }
 
-  const current = plan.pages.find(({ status }) => status === "pending");
-  if (!current || current.id !== requested.id) {
-    throw new RepositoryRunError(
-      "invalid_state",
-      "Only the current pending OpenWiki page job may be submitted.",
-    );
-  }
+  const current = requirePendingJob(run, requested.id, "submitted");
 
   let pageReadable = false;
   try {
@@ -1248,54 +1326,88 @@ export async function submitRepositoryPage(
     );
   }
 
-  try {
-    await reconcilePageClaims(run.claimsRuntime.session, current.path, input);
-    // Persist the page's dirty Claim state before recording job completion.
-    // Prove this page is durable before advancing the queue; the strict
-    // whole-run proof waits until every PageJob is complete.
-    await run.claimsRuntime.finalize(run.state.startedAt);
-    await assertPageClaimsDurable(run, current.path);
-  } catch (error) {
-    if (error instanceof RepositoryRunError) throw error;
-    throw new RepositoryRunError(
-      "invalid_input",
-      error instanceof Error ? error.message : "Claims validation failed.",
+  return withRunMutation(run, async () => {
+    // Re-read shared state: another worker may have advanced the checkpoint
+    // while this submission waited for the lock.
+    const latestPlan = run.state.plan;
+    const latest = latestPlan?.pages.find(({ id }) => id === current.id);
+    if (!latestPlan || !latest) {
+      throw new RepositoryRunError("not_found", "Unknown OpenWiki page job.");
+    }
+    if (latest.status === "complete") {
+      return {
+        status: "complete" as const,
+        page: latest.path,
+        remaining: latestPlan.pages.filter(({ status }) => status === "pending")
+          .length,
+      };
+    }
+    if (latest.status !== "pending") {
+      throw new RepositoryRunError(
+        "invalid_state",
+        "Only a pending OpenWiki page job may be submitted.",
+      );
+    }
+
+    try {
+      await reconcilePageClaims(run.claimsRuntime.session, current.path, input);
+      // Persist the page's dirty Claim state before recording job completion.
+      // Prove this page is durable before advancing the queue; the strict
+      // whole-run proof waits until every PageJob is complete.
+      //
+      // Pages still owned by other pending jobs are excluded: a concurrent
+      // worker may be mid-edit on them, so projecting a verification stamp
+      // into their front matter or rehashing their sidecar here would record
+      // transient bytes. Their own submit (or finish) finalizes them.
+      const otherPendingPages = new Set(
+        latestPlan.pages
+          .filter(({ id, status }) => status === "pending" && id !== current.id)
+          .map(({ path }) => path),
+      );
+      await run.claimsRuntime.finalize(run.state.startedAt, otherPendingPages);
+      await assertPageClaimsDurable(run, current.path);
+    } catch (error) {
+      if (error instanceof RepositoryRunError) throw error;
+      throw new RepositoryRunError(
+        "invalid_input",
+        error instanceof Error ? error.message : "Claims validation failed.",
+      );
+    }
+
+    await recordRepositoryPageCompletion(
+      run.root,
+      current.path,
+      getRepositoryRunSourceCheckpoint(run.state),
+      run.state.actor.producerActor,
+      run.state.runId,
     );
-  }
 
-  await recordRepositoryPageCompletion(
-    run.root,
-    current.path,
-    getRepositoryRunSourceCheckpoint(run.state),
-    run.state.actor.producerActor,
-    run.state.runId,
-  );
+    const nextPlan = {
+      ...latestPlan,
+      pages: latestPlan.pages.map((page) =>
+        page.id === current.id
+          ? {
+              ...page,
+              status: "complete" as const,
+              completedBy: run.state.actor.producerActor,
+            }
+          : page,
+      ),
+    };
+    const nextState: RepositoryRunState = {
+      ...run.state,
+      plan: nextPlan,
+    };
+    await writeRepositoryRunState(run.root, nextState);
+    run.state = nextState;
 
-  const nextPlan = {
-    ...plan,
-    pages: plan.pages.map((page) =>
-      page.id === current.id
-        ? {
-            ...page,
-            status: "complete" as const,
-            completedBy: run.state.actor.producerActor,
-          }
-        : page,
-    ),
-  };
-  const nextState: RepositoryRunState = {
-    ...run.state,
-    plan: nextPlan,
-  };
-  await writeRepositoryRunState(run.root, nextState);
-  run.state = nextState;
-
-  return {
-    status: "complete",
-    page: current.path,
-    remaining: nextPlan.pages.filter(({ status }) => status === "pending")
-      .length,
-  };
+    return {
+      status: "complete" as const,
+      page: current.path,
+      remaining: nextPlan.pages.filter(({ status }) => status === "pending")
+        .length,
+    };
+  });
 }
 
 /**

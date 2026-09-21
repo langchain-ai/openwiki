@@ -128,6 +128,7 @@ import {
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
+  resolvePageConcurrency,
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeoutForProvider,
   type OpenWikiProvider,
@@ -210,6 +211,7 @@ export async function runOpenWikiAgent(
             planningContext: options.userMessage,
             modelId: config.modelId,
             model,
+            pageConcurrency: config.pageConcurrency,
             onEvent: options.onEvent,
           }),
         { errorClass: "agent_error" },
@@ -291,6 +293,7 @@ async function resolveRunConfig(
   provider: OpenWikiProvider;
   modelId: string;
   providerRetryAttempts: number;
+  pageConcurrency: number;
   maxOutputTokens: number | undefined;
   streamIdleTimeout: number | undefined;
 }> {
@@ -349,7 +352,11 @@ async function resolveRunConfig(
         }`,
       );
     }
-    const providerRetryAttempts = resolveProviderRetryAttempts();
+    const pageConcurrency = resolvePageConcurrency();
+    emitDebug(options, `generation.pageConcurrency=${pageConcurrency}`);
+    const providerRetryAttempts = resolveProviderRetryAttempts(process.env, {
+      pageConcurrency,
+    });
     emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
     const maxOutputTokens = resolveConfiguredMaxOutputTokens(provider);
     emitDebug(
@@ -366,6 +373,7 @@ async function resolveRunConfig(
       provider,
       modelId,
       providerRetryAttempts,
+      pageConcurrency,
       maxOutputTokens,
       streamIdleTimeout,
     };

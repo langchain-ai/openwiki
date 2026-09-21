@@ -19,6 +19,24 @@ const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
 
+// The heading and opening sentence every pre-marker (0.0.x) release wrote
+// straight into AGENTS.md / CLAUDE.md, before the managed markers existed. A
+// bare `## OpenWiki` heading only counts as that legacy section when the next
+// non-blank line is exactly this sentence, so a section someone wrote by hand
+// that merely shares the heading is never touched.
+const OPENWIKI_LEGACY_HEADING = "## OpenWiki";
+const OPENWIKI_LEGACY_SENTENCE =
+  "This repository has documentation located in the /openwiki directory.";
+// The remaining lines of that template, matched exactly. Matching a prefix here
+// would delete a line a user appended text to (their edit and everything below
+// it), so every template line stops the removal unless it is untouched.
+const OPENWIKI_LEGACY_TEMPLATE_LINES = [
+  "Start here:",
+  "- [OpenWiki quickstart](openwiki/quickstart.md)",
+  "OpenWiki includes repository overview, architecture notes, workflows, domain concepts, operations, integrations, testing guidance, and source maps.",
+  "When working in this repository, read the OpenWiki quickstart first, then follow its links to the relevant architecture, workflow, domain, operation, and testing notes.",
+];
+
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
 // Each is created when missing and refreshed in place when already present.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
@@ -238,29 +256,62 @@ async function prepareCodeModeAgentSnippet(
     }
   }
 
-  const startIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
-  const endIndex = currentContent.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
-  const hasNoMarkers = startIndex === -1 && endIndex === -1;
+  const isClaude = path.basename(agentsPath) === "CLAUDE.md";
 
-  if (
-    path.basename(agentsPath) === "CLAUDE.md" &&
-    currentContent.trim() === CLAUDE_AGENTS_IMPORT
-  ) {
+  // A CLAUDE.md that is nothing but the AGENTS.md import is already canonical:
+  // leave it byte-for-byte so we never rewrite a file that has nothing to fix.
+  if (isClaude && currentContent.trim() === CLAUDE_AGENTS_IMPORT) {
     return { agentsPath, nextContent: undefined };
   }
 
+  // Strip any legacy pre-marker `## OpenWiki` sections before deciding where the
+  // managed block goes. Without this, a file that a 0.0.x release wrote a bare
+  // section into keeps that section forever: no markers are found, a fresh block
+  // is appended, and every later run only refreshes the block, so the old
+  // section and the new block sit side by side as two `## OpenWiki` headings.
+  const legacySections = findLegacyOpenWikiSections(currentContent);
+  const withoutLegacy = removeRanges(currentContent, legacySections);
+
+  // Marker validation runs on the content we are actually about to write, i.e.
+  // after the legacy section has been removed, not on the original.
+  const startIndex = withoutLegacy.indexOf(OPENWIKI_AGENTS_SNIPPET_START);
+  const endIndex = withoutLegacy.indexOf(OPENWIKI_AGENTS_SNIPPET_END);
+  const hasNoMarkers = startIndex === -1 && endIndex === -1;
+
   if (hasNoMarkers) {
-    return {
-      agentsPath,
-      nextContent: `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`,
-    };
+    // Removing a legacy section from an import-style CLAUDE.md can leave only
+    // the AGENTS.md import behind. Keep just that import rather than adding a
+    // managed block, since AGENTS.md already carries the instructions.
+    if (isClaude && withoutLegacy.trim() === CLAUDE_AGENTS_IMPORT) {
+      return { agentsPath, nextContent: `${CLAUDE_AGENTS_IMPORT}\n` };
+    }
+
+    if (legacySections.length === 0) {
+      // No markers and no legacy section: append a fresh block, the original
+      // behavior for a file OpenWiki has not managed before.
+      return {
+        agentsPath,
+        nextContent: `${currentContent.trimEnd()}${currentContent.trim().length > 0 ? "\n\n" : ""}${snippet}\n`,
+      };
+    }
+
+    // Put the managed block where the legacy section was, so the file keeps its
+    // shape instead of the block jumping to the end. Any additional legacy
+    // sections are removed; content the user wrote below survives untouched.
+    const anchor = legacySections[0].startChar;
+    const before = withoutLegacy.slice(0, anchor).replace(/\s+$/u, "");
+    const after = withoutLegacy.slice(anchor).replace(/^[\r\n]+/u, "");
+    const body = [before, snippet, after]
+      .filter((part) => part.length > 0)
+      .join("\n\n");
+    return { agentsPath, nextContent: `${body.replace(/\s+$/u, "")}\n` };
   }
 
   const hasOneOrderedPair =
     startIndex !== -1 &&
     endIndex > startIndex &&
-    startIndex === currentContent.lastIndexOf(OPENWIKI_AGENTS_SNIPPET_START) &&
-    endIndex === currentContent.lastIndexOf(OPENWIKI_AGENTS_SNIPPET_END);
+    startIndex === withoutLegacy.lastIndexOf(OPENWIKI_AGENTS_SNIPPET_START) &&
+    endIndex === withoutLegacy.lastIndexOf(OPENWIKI_AGENTS_SNIPPET_END);
 
   if (!hasOneOrderedPair) {
     throw new Error(
@@ -270,8 +321,131 @@ async function prepareCodeModeAgentSnippet(
 
   return {
     agentsPath,
-    nextContent: `${currentContent.slice(0, startIndex)}${snippet}${currentContent.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`,
+    nextContent: `${withoutLegacy.slice(0, startIndex)}${snippet}${withoutLegacy.slice(endIndex + OPENWIKI_AGENTS_SNIPPET_END.length)}`,
   };
+}
+
+/**
+ * Character ranges of every legacy pre-marker `## OpenWiki` section in the file.
+ *
+ * A heading only qualifies when its next non-blank line is the released template
+ * sentence; a same-named section someone wrote by hand, or a heading quoted
+ * inside a fenced code block, is left alone. Each range covers the heading and
+ * the run of known template lines beneath it (the sentence, "Start here:", the
+ * quickstart link, the "OpenWiki includes…" and "When working…" lines, and the
+ * blank lines between them), stopping at the first line that is not one of those
+ * so hand-edited content underneath the old section survives.
+ */
+function findLegacyOpenWikiSections(
+  content: string,
+): Array<{ startChar: number; endChar: number }> {
+  const lines = content.match(/[^\n]*\n|[^\n]+$/gu) ?? [];
+  const offsets: number[] = [];
+  let running = 0;
+  for (const line of lines) {
+    offsets.push(running);
+    running += line.length;
+  }
+
+  const bodyOf = (line: string): string => line.replace(/\r?\n$/u, "");
+
+  const sections: Array<{ startChar: number; endChar: number }> = [];
+  // An unterminated opening fence leaves `fence` set to the end of the file, so
+  // any `## OpenWiki` heading after it is treated as fenced and skipped. That is
+  // deliberately conservative: it can miss a real legacy section, but it never
+  // deletes content that only looked fenced.
+  let fence: { char: string; length: number } | undefined;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const body = bodyOf(lines[i]);
+    const marker = parseFenceMarker(body);
+    if (fence !== undefined) {
+      // Only a fence of the same character and at least the opener's length,
+      // with no info string, closes it (CommonMark). A `~~~` line inside a
+      // ``` block therefore does not toggle, so the quoted snippet stays quoted.
+      if (
+        marker !== undefined &&
+        marker.char === fence.char &&
+        marker.length >= fence.length &&
+        marker.info.trim() === ""
+      ) {
+        fence = undefined;
+      }
+      continue;
+    }
+    if (marker !== undefined) {
+      fence = { char: marker.char, length: marker.length };
+      continue;
+    }
+    // The released template started at column zero. Do not trim: four spaces
+    // start an indented Markdown code block, which may document this snippet.
+    if (body !== OPENWIKI_LEGACY_HEADING) {
+      continue;
+    }
+
+    let next = i + 1;
+    while (next < lines.length && bodyOf(lines[next]) === "") {
+      next += 1;
+    }
+    if (
+      next >= lines.length ||
+      bodyOf(lines[next]) !== OPENWIKI_LEGACY_SENTENCE
+    ) {
+      continue;
+    }
+
+    let end = i + 1;
+    while (end < lines.length && isLegacyTemplateLine(bodyOf(lines[end]))) {
+      end += 1;
+    }
+    sections.push({
+      startChar: offsets[i],
+      endChar: end < lines.length ? offsets[end] : content.length,
+    });
+    i = end - 1;
+  }
+
+  return sections;
+}
+
+/**
+ * Whether a trimmed line is one of the known lines from the legacy template,
+ * i.e. safe to remove as part of the old section. Everything else stops the
+ * removal, which is what keeps hand-edited content beneath the section intact.
+ */
+function isLegacyTemplateLine(line: string): boolean {
+  return (
+    line === "" ||
+    line === OPENWIKI_LEGACY_SENTENCE ||
+    OPENWIKI_LEGACY_TEMPLATE_LINES.includes(line)
+  );
+}
+
+/**
+ * Parse a Markdown code-fence marker from a line: a run of at least three
+ * backticks or tildes, optionally indented, with whatever follows it as the
+ * info string. Returns undefined for any other line.
+ */
+function parseFenceMarker(
+  body: string,
+): { char: string; length: number; info: string } | undefined {
+  const match = /^\s{0,3}(`{3,}|~{3,})(.*)$/u.exec(body);
+  if (match === null) {
+    return undefined;
+  }
+  return { char: match[1][0], length: match[1].length, info: match[2] };
+}
+
+/** Splice a set of character ranges out of a string, highest offset first. */
+function removeRanges(
+  content: string,
+  ranges: ReadonlyArray<{ startChar: number; endChar: number }>,
+): string {
+  let result = content;
+  for (const range of [...ranges].sort((a, b) => b.startChar - a.startChar)) {
+    result = result.slice(0, range.startChar) + result.slice(range.endChar);
+  }
+  return result;
 }
 
 /**
@@ -394,6 +568,7 @@ jobs:
         run: rm -f -- openwiki/.run.json
 
       - name: Create OpenWiki update pull request
+        id: create-pr
         if: \${{ !cancelled() }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
@@ -413,6 +588,10 @@ jobs:
             When the result is \`failure\`, this PR intentionally preserves only the
             pages completed before the failure. Merge it to make that progress the
             baseline for the next scheduled run.
+
+      - name: Annotate OpenWiki update pull request
+        if: \${{ !cancelled() && steps.create-pr.outputs.pull-request-url != '' }}
+        run: echo "::notice title=OpenWiki update pull request::\${{ steps.create-pr.outputs.pull-request-url }}"
 
       - name: Propagate OpenWiki failure
         if: \${{ steps.openwiki.outcome == 'failure' }}
