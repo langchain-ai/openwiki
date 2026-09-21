@@ -366,6 +366,6 @@ for the ChatGPT provider — expands the collected `CodexTokens` through
 
 ## Related pages
 
-- [Agent runtime](/openwiki/architecture/agent-runtime.md) — how `createModel` builds and drives the selected provider.
-- [Configuration](/openwiki/operations/configuration.md) — operational configuration and the full env variable surface.
-- [Onboarding](/openwiki/workflows/onboarding.md) — the interactive setup that collects and persists provider credentials.
+- [Agent runtime](../architecture/agent-runtime.md) — how `createModel` builds and drives the selected provider.
+- [Configuration](../operations/configuration.md) — operational configuration and the full env variable surface.
+- [Onboarding](../workflows/onboarding.md) — the interactive setup that collects and persists provider credentials.

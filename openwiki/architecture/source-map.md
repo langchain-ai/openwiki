@@ -99,11 +99,11 @@ responsibility, not as a file listing: each subsystem gets a one-line role and
 its principal entry file(s). Use it to find where a concern lives before diving
 into a subsystem's own page.
 
-Related reading: [architecture overview](/openwiki/architecture/overview.md),
-[agent runtime](/openwiki/architecture/agent-runtime.md),
-[grounded claims](/openwiki/concepts/grounded-claims.md),
-[connectors](/openwiki/integrations/connectors.md), and
-[evaluation subsystem](/openwiki/testing/evals.md).
+Related reading: [architecture overview](./overview.md),
+[agent runtime](./agent-runtime.md),
+[grounded claims](../concepts/grounded-claims.md),
+[connectors](../integrations/connectors.md), and
+[evaluation subsystem](../testing/evals.md).
 
 ## The central files
 
@@ -437,7 +437,7 @@ solves the unchanged task. The harness pins the DeepSWE commit, Harbor, litellm,
 and Codex CLI versions for reproducibility, and uses Harbor's official LangSmith
 plugin so both conditions record their trials in the same shared dataset.
 
-See the full [evaluation subsystem](/openwiki/testing/evals.md) page for the
+See the full [evaluation subsystem](../testing/evals.md) page for the
 benchmark contract, claim-state definitions, and run instructions.
 
 ## How the central subsystems connect

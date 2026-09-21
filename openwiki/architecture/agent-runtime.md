@@ -51,7 +51,7 @@ OpenWiki drives documentation generation through a [DeepAgents](https://github.c
 
 `runOpenWikiAgent` is the top-level entrypoint for a run. It loads persisted environment, resolves the run configuration, builds the model and agent, opens the graph stream, and consumes it while a run record is registered with the crash guard.
 
-For provider setup and credentials see [Model Providers](/openwiki/concepts/model-providers.md) and [Configuration](/openwiki/operations/configuration.md); for the repository init/update flow that bypasses the shared agent graph see [Repository Generation](/openwiki/workflows/repository-generation.md).
+For provider setup and credentials see [Model Providers](../concepts/model-providers.md) and [Configuration](../operations/configuration.md); for the repository init/update flow that bypasses the shared agent graph see [Repository Generation](../workflows/repository-generation.md).
 
 ## Two execution paths
 
