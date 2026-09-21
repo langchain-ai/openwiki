@@ -63,6 +63,12 @@ describe("repository retrieval tool contracts", () => {
     expect(tools.get("openwiki_search")?.description).toContain(
       "status=workspace_required",
     );
+    expect(tools.get("openwiki_search")?.description).toContain(
+      "Do not call at task start or preload linked wikis",
+    );
+    expect(tools.get("openwiki_search")?.description).toContain(
+      "stop once grounded",
+    );
     expect(tools.get("openwiki_read")?.description).toContain(
       "result's wiki ID",
     );

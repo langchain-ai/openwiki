@@ -9,6 +9,10 @@ import type { ProtocolTool } from "../core/protocol.js";
  * Host guidance advertised during MCP initialization.
  */
 const INSTRUCTIONS = `OpenWiki exposes read-only repository memory and a deterministic resumable page-job lifecycle.
+Do not enumerate, preload, or search wikis at task start. Use retrieval when the
+user asks for it, when unfamiliar architecture or dependency behavior materially
+affects the task, or when source inspection leaves an important uncertainty.
+Stop once the question is grounded.
 Use openwiki_search when repository context could help locate code, understand
 behavior or relationships, choose an approach, or find a testing procedure.
 OpenWiki link creates named workspaces of related repository wikis. A repository

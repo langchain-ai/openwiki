@@ -178,6 +178,11 @@ describe("OpenWiki MCP adapter", () => {
         "openwiki_finish",
       ]);
       const instructions = fixture.client.getInstructions();
+      expect(instructions).toContain(
+        "Do not enumerate, preload, or search wikis at task start",
+      );
+      expect(instructions).toContain("when the\nuser asks for it");
+      expect(instructions).toContain("Stop once the question is grounded");
       expect(instructions).toContain("openwiki_list_workspaces");
       expect(instructions).toContain("openwiki_list_wikis");
       expect(instructions).toContain("Use openwiki_search");

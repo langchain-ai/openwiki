@@ -156,6 +156,7 @@ export function createRetrievalTools(): ProtocolTool[] {
       name: "openwiki_search",
       description: [
         "Search an existing repository OpenWiki without a model call or generation run.",
+        "Do not call at task start or preload linked wikis; use retrieval when requested or when unfamiliar architecture, dependency behavior, or unresolved source uncertainty materially affects the task, then stop once grounded.",
         "A standalone wiki searches locally; one containing workspace is automatic; an active workspace resolves overlaps.",
         "When multiple workspaces remain ambiguous, returns status=workspace_required with choices so the agent can ask the user and retry with workspace.",
         "Returns compact ranked results; split each ref at # into the page and exact heading anchor for openwiki_read.",

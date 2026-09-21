@@ -54,6 +54,11 @@ describe("canonical OpenWiki host skill", () => {
   test("contains retrieval and the sequential lifecycle", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
     const retrieval = section(skill, "Read repository memory");
+    expect(retrieval).toContain(
+      "Do not enumerate, preload, or search wikis at task start",
+    );
+    expect(retrieval).toContain("when the\nuser asks for it");
+    expect(retrieval).toContain("Stop once the question is grounded");
     expect(retrieval).toContain("`openwiki_search");
     expect(retrieval).toContain("`openwiki_read");
     expect(retrieval).toContain("`openwiki_list_workspaces");

@@ -146,6 +146,10 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     await ensureCodeModeRepoSetup(repo);
 
     const agentsContent = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(agentsContent).toContain(
+      "Do not enumerate, preload, or search wikis at task start",
+    );
+    expect(agentsContent).toContain("Stop once the question is grounded");
     expect(agentsContent).toContain("use `openwiki_search`");
     expect(agentsContent).toContain("`openwiki_read`");
     expect(agentsContent).toContain("`workspace_required`");
