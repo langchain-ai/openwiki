@@ -1,0 +1,35 @@
+scripts/install-local-integration.mjs
+  s_004f01766035cd::t_dc71c7df09b129 20
+test/integrations/installer.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 475-491,502
+test/integrations/package-contents.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 62
+README.md
+  s_004f01766035cd::t_dc71c7df09b129 26,37,116,119,135,525-526
+src/integrations/install/types.ts
+  s_004f01766035cd::t_89adc636a67314 5
+CONTRIBUTING.md
+  s_004f01766035cd::t_dc71c7df09b129 40,45-46,54,58,60
+test/cli/integrations-runners.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 71,90-91,93,224
+src/integrations/install/registry.ts
+  s_004f01766035cd::t_dc71c7df09b129 108-124
+test/integrations/cli-dogfood.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 92-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9eb1467771cc54f7d857e5b4bffb9ee1e4f56061",
+  "prompts": {},
+  "sessions": {
+    "s_004f01766035cd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c5f8-146f-7c32-b2e7-35121a62d032",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
