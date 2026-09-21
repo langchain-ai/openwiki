@@ -19,6 +19,26 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 const SNIPPET_START = "<!-- OPENWIKI:START -->";
 const SNIPPET_END = "<!-- OPENWIKI:END -->";
 
+// The bare `## OpenWiki` section a pre-marker (0.0.x) release wrote directly
+// into AGENTS.md / CLAUDE.md, before the managed markers existed.
+const LEGACY_SENTENCE =
+  "This repository has documentation located in the /openwiki directory.";
+const LEGACY_SECTION = `## OpenWiki
+
+${LEGACY_SENTENCE}
+
+Start here:
+
+- [OpenWiki quickstart](openwiki/quickstart.md)
+
+OpenWiki includes repository overview, architecture notes, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
+
+When working in this repository, read the OpenWiki quickstart first, then follow its links to the relevant architecture, workflow, domain, operation, and testing notes.`;
+
+function countOccurrences(haystack: string, needle: string): number {
+  return haystack.split(needle).length - 1;
+}
+
 const tempRepos: string[] = [];
 
 interface WorkflowStep {
@@ -78,12 +98,17 @@ function expectFailurePreservingWorkflow(workflow: string): void {
     steps,
     "Create OpenWiki update pull request",
   );
+  const annotation = requireWorkflowStep(
+    steps,
+    "Annotate OpenWiki update pull request",
+  );
   const propagate = requireWorkflowStep(steps, "Propagate OpenWiki failure");
 
   expect(run.id).toBe("openwiki");
   expect(run["continue-on-error"]).toBe(true);
   expect(cleanup.if).toBe("${{ !cancelled() }}");
   expect(cleanup.run).toBe("rm -f -- openwiki/.run.json");
+  expect(pullRequest.id).toBe("create-pr");
   expect(pullRequest.if).toBe("${{ !cancelled() }}");
   expect(pullRequest.uses).toMatch(
     /^peter-evans\/create-pull-request@[a-f0-9]{40}$/u,
@@ -103,12 +128,19 @@ function expectFailurePreservingWorkflow(workflow: string): void {
   expect(pullRequest.with?.body).toContain(
     "baseline for the next scheduled run",
   );
+  expect(annotation.if).toBe(
+    "${{ !cancelled() && steps.create-pr.outputs.pull-request-url != '' }}",
+  );
+  expect(annotation.run).toBe(
+    'echo "::notice title=OpenWiki update pull request::${{ steps.create-pr.outputs.pull-request-url }}"',
+  );
   expect(propagate.if).toBe("${{ steps.openwiki.outcome == 'failure' }}");
   expect(propagate.run).toBe("exit 1");
 
   expect(steps.indexOf(run)).toBeLessThan(steps.indexOf(cleanup));
   expect(steps.indexOf(cleanup)).toBeLessThan(steps.indexOf(pullRequest));
-  expect(steps.indexOf(pullRequest)).toBeLessThan(steps.indexOf(propagate));
+  expect(steps.indexOf(pullRequest)).toBeLessThan(steps.indexOf(annotation));
+  expect(steps.indexOf(annotation)).toBeLessThan(steps.indexOf(propagate));
   expect(
     steps
       .map((step) => step.run)
@@ -237,6 +269,327 @@ Trailing notes that must survive.
     const second = await readIfPresent(path.join(repo, "CLAUDE.md"));
 
     expect(second).toEqual(first);
+  });
+
+  test("replaces a legacy unmarked OpenWiki section in place and stays idempotent", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      `${LEGACY_SECTION}\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const first = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(first).toContain(SNIPPET_START);
+    expect(first).toContain(SNIPPET_END);
+    // The old section is gone, so only the managed block's heading remains.
+    expect(first).not.toContain(LEGACY_SENTENCE);
+    expect(countOccurrences(first ?? "", "## OpenWiki")).toBe(1);
+
+    await ensureCodeModeRepoSetup(repo);
+    const second = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(second).toBe(first);
+  });
+
+  for (const [name, trailing, marker] of [
+    [
+      "a ### subsection",
+      "### My notes\n\nKeep this subsection.\n",
+      "Keep this subsection.",
+    ],
+    [
+      "a plain paragraph",
+      "Keep this hand-written paragraph.\n",
+      "Keep this hand-written paragraph.",
+    ],
+    [
+      "a setext heading",
+      "My Notes\n--------\n\nKeep this setext body.\n",
+      "Keep this setext body.",
+    ],
+    [
+      "an Nx-style comment block",
+      "<!-- nx configuration -->\n\nKeep this tool block.\n",
+      "Keep this tool block.",
+    ],
+  ] as const) {
+    test(`preserves ${name} written below a legacy section`, async () => {
+      const repo = await createTempRepo();
+      await writeFile(
+        path.join(repo, "AGENTS.md"),
+        `${LEGACY_SECTION}\n\n${trailing}`,
+        "utf8",
+      );
+
+      await ensureCodeModeRepoSetup(repo);
+      const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+      // The template lines go; the user's content underneath does not.
+      expect(content).not.toContain(LEGACY_SENTENCE);
+      expect(content).toContain(marker);
+      expect(content).toContain(SNIPPET_START);
+      // The block lands where the section was, above the preserved content.
+      expect(content?.indexOf(SNIPPET_START)).toBeLessThan(
+        content?.indexOf(marker) ?? -1,
+      );
+    });
+  }
+
+  test("replaces a legacy section that sits at the end of the file", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      `# My Project\n\nSome intro that must survive.\n\n${LEGACY_SECTION}\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).toContain("Some intro that must survive.");
+    expect(content).not.toContain(LEGACY_SENTENCE);
+    expect(content).toContain(SNIPPET_START);
+    expect(content?.indexOf("Some intro that must survive.")).toBeLessThan(
+      content?.indexOf(SNIPPET_START) ?? -1,
+    );
+  });
+
+  test("handles a legacy section written with CRLF line endings", async () => {
+    const repo = await createTempRepo();
+    const crlf = `${LEGACY_SECTION}\n\nKeep this CRLF line.\n`.replace(
+      /\n/gu,
+      "\r\n",
+    );
+    await writeFile(path.join(repo, "AGENTS.md"), crlf, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).not.toContain(LEGACY_SENTENCE);
+    expect(content).toContain("Keep this CRLF line.");
+    expect(content).toContain(SNIPPET_START);
+    expect(countOccurrences(content ?? "", "## OpenWiki")).toBe(1);
+  });
+
+  test("removes every legacy section when a file has more than one", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      `${LEGACY_SECTION}\n\n${LEGACY_SECTION}\n\nKeep this trailer.\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).not.toContain(LEGACY_SENTENCE);
+    expect(content).toContain("Keep this trailer.");
+    // Both old sections collapse into the single managed block.
+    expect(countOccurrences(content ?? "", "## OpenWiki")).toBe(1);
+    expect(countOccurrences(content ?? "", SNIPPET_START)).toBe(1);
+  });
+
+  test("removes a legacy section that sits beside an existing managed block", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      `${LEGACY_SECTION}\n\n${SNIPPET_START}\nstale managed block\n${SNIPPET_END}\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).not.toContain(LEGACY_SENTENCE);
+    expect(content).not.toContain("stale managed block");
+    expect(countOccurrences(content ?? "", SNIPPET_START)).toBe(1);
+    expect(countOccurrences(content ?? "", "## OpenWiki")).toBe(1);
+  });
+
+  test("reduces an @AGENTS.md CLAUDE.md with a legacy section to just the import", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "CLAUDE.md"),
+      `@AGENTS.md\n\n${LEGACY_SECTION}\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+
+    // AGENTS.md carries the managed block, so CLAUDE.md is left as the import.
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBe(
+      "@AGENTS.md\n",
+    );
+  });
+
+  test("leaves a fenced quote of the old snippet untouched", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      `# Docs\n\nExample of the old snippet:\n\n\`\`\`markdown\n${LEGACY_SECTION}\n\`\`\`\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    // A heading inside a code fence is not a real section, so it survives and
+    // the block is simply appended after it.
+    expect(content).toContain(LEGACY_SENTENCE);
+    expect(content).toContain("```markdown");
+    expect(content).toContain(SNIPPET_START);
+    expect(content?.indexOf("```markdown")).toBeLessThan(
+      content?.indexOf(SNIPPET_START) ?? -1,
+    );
+  });
+
+  test("leaves a hand-written OpenWiki section without the template sentence", async () => {
+    const repo = await createTempRepo();
+    const handWritten =
+      "## OpenWiki\n\nOur own notes about the OpenWiki feature, unrelated to the generated wiki.\n";
+    await writeFile(path.join(repo, "AGENTS.md"), handWritten, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    // No template sentence means it is not ours to remove.
+    expect(content).toContain(
+      "Our own notes about the OpenWiki feature, unrelated to the generated wiki.",
+    );
+    expect(content).toContain(SNIPPET_START);
+  });
+
+  test("leaves an indented legacy snippet shown as a Markdown code block", async () => {
+    const repo = await createTempRepo();
+    const indented = LEGACY_SECTION.replace(/^/gmu, "    ");
+    await writeFile(path.join(repo, "AGENTS.md"), `${indented}\n`, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).toContain(`    ${LEGACY_SENTENCE}`);
+    expect(content).toContain(SNIPPET_START);
+  });
+
+  test("stops at a customized quickstart link", async () => {
+    const repo = await createTempRepo();
+    const customized = LEGACY_SECTION.replace(
+      "- [OpenWiki quickstart](openwiki/quickstart.md)",
+      "- [Team OpenWiki guide](openwiki/quickstart.md)",
+    );
+    await writeFile(path.join(repo, "AGENTS.md"), `${customized}\n`, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).toContain(
+      "- [Team OpenWiki guide](openwiki/quickstart.md)",
+    );
+    expect(content).toContain(SNIPPET_START);
+  });
+
+  test("stops at a template line the user appended text to, keeping it and everything below", async () => {
+    const repo = await createTempRepo();
+    // The "When working…" line is edited, so it is no longer a template line and
+    // must halt the removal instead of being deleted with the user's addition.
+    const edited = `## OpenWiki
+
+${LEGACY_SENTENCE}
+
+Start here:
+
+- [OpenWiki quickstart](openwiki/quickstart.md)
+
+OpenWiki includes repository overview, architecture notes, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
+
+When working in this repository, and ALSO CHECK OUR INTERNAL WIKI at https://wiki.example.com.
+
+More hand-written notes below.
+`;
+    await writeFile(path.join(repo, "AGENTS.md"), edited, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    // The pristine template lines are gone, but the edited line and the notes
+    // under it survive in full.
+    expect(content).not.toContain(LEGACY_SENTENCE);
+    expect(content).toContain(
+      "When working in this repository, and ALSO CHECK OUR INTERNAL WIKI at https://wiki.example.com.",
+    );
+    expect(content).toContain("More hand-written notes below.");
+    expect(content).toContain(SNIPPET_START);
+  });
+
+  test("leaves a snippet quoted in a ``` fence that itself contains a ~~~ line", async () => {
+    const repo = await createTempRepo();
+    // The nested `~~~` must not close the outer ``` fence, or the quoted heading
+    // and sentence would be mistaken for a real section and removed.
+    const existing = `# Docs
+
+The old snippet, shown with a tilde block inside it:
+
+\`\`\`md
+~~~
+## OpenWiki
+
+${LEGACY_SENTENCE}
+
+Start here:
+
+- [OpenWiki quickstart](openwiki/quickstart.md)
+~~~
+\`\`\`
+`;
+    await writeFile(path.join(repo, "AGENTS.md"), existing, "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    // Everything inside the fence survives; the block is merely appended after.
+    expect(content).toContain(LEGACY_SENTENCE);
+    expect(content).toContain("~~~");
+    expect(content).toContain(SNIPPET_START);
+    expect(content?.indexOf("~~~")).toBeLessThan(
+      content?.indexOf(SNIPPET_START) ?? -1,
+    );
+  });
+
+  test("reducing an @AGENTS.md CLAUDE.md with a legacy section is idempotent", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "CLAUDE.md"),
+      `@AGENTS.md\n\n${LEGACY_SECTION}\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const first = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    await ensureCodeModeRepoSetup(repo);
+    const second = await readIfPresent(path.join(repo, "CLAUDE.md"));
+
+    expect(first).toBe("@AGENTS.md\n");
+    // The second run sees a bare import and leaves it byte-for-byte alone.
+    expect(second).toBe(first);
+  });
+
+  test("removes a legacy section that follows an existing managed block", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      `${SNIPPET_START}\nstale managed block\n${SNIPPET_END}\n\n${LEGACY_SECTION}\n`,
+      "utf8",
+    );
+
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+
+    expect(content).not.toContain(LEGACY_SENTENCE);
+    expect(content).not.toContain("stale managed block");
+    expect(countOccurrences(content ?? "", SNIPPET_START)).toBe(1);
+    expect(countOccurrences(content ?? "", "## OpenWiki")).toBe(1);
   });
 
   for (const [name, existing] of [
