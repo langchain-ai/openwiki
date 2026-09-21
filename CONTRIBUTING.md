@@ -37,13 +37,14 @@ typechecks, builds, and runs the Vitest suite with coverage.
 Install an integration backed by the current checkout with:
 
 ```sh
-pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp>
+pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity>
 ```
 
 The command builds OpenWiki, refreshes the host skill, and records absolute
 paths to the current Node executable and `dist/cli/cli.js`. Restart the coding
 agent after installation. IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro,
-and Oh My Pi install at user scope. Later source changes only require `pnpm build`
+Oh My Pi, and Antigravity CLI install at user scope. Later source changes only
+require `pnpm build`
 unless the bundled skill itself changes. Rerun `integrations:dev` to refresh
 the skill or after switching Node installations.
 
@@ -51,13 +52,14 @@ User-scope destinations match each host's own conventions: IBM Bob writes under
 `~/.agents` and `~/.bob`, Codex writes under `~/.agents` and `~/.codex`, Claude
 Code under `~/.claude`, OpenCode under `~/.config/opencode` (OpenCode's global
 configuration directory on every supported platform), Cursor under `~/.cursor`,
-Kiro under `~/.kiro`, and Oh My Pi under `~/.omp/agent` (default profile).
+Kiro under `~/.kiro`, Oh My Pi under `~/.omp/agent` (default profile), and
+Antigravity CLI under `~/.gemini`.
 
 ## Adding a coding-agent integration
 
-OpenWiki host integrations share one canonical skill and five MCP tools:
+OpenWiki host integrations share one canonical skill and six MCP tools:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_submit_page`, and `openwiki_finish`. Add host-specific behavior to the
+`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. Add host-specific behavior to the
 registry and config boundary rather than copying the skill or adding
 host-specific tools. The host model researches and authors only the current
 OpenWiki PageJob; OpenWiki owns durable run state, Claims reconciliation,

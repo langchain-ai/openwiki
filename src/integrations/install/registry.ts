@@ -122,6 +122,23 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://omp.sh",
   },
+  antigravity: {
+    id: "antigravity",
+    displayName: "Antigravity CLI",
+    producerActor: "antigravity",
+    user: {
+      skillDirectory: ".gemini/antigravity-cli/skills/openwiki",
+      mcpConfig: {
+        kind: "json",
+        relativePath: ".gemini/config/mcp_config.json",
+      },
+    },
+    project: {
+      skillDirectory: ".agents/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".agents/mcp_config.json" },
+    },
+    documentationUrl: "https://antigravity.google/docs/mcp?tab=cli",
+  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**
