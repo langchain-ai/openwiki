@@ -672,6 +672,9 @@ async function runWorkerLoop(
 
   while (!pool.fatal && slot < pool.size) {
     const next = await acquireNextJob(run, pool, heldBack);
+    // Another worker can fail fatally while this loop waits for serialized job
+    // acquisition. Do not start model work for that newly claimed page.
+    if (pool.fatal || slot >= pool.size) return;
     if (next.status === "complete") return;
 
     pool.inFlight.push(next.job.path);

@@ -85,7 +85,11 @@ const harness = vi.hoisted(() => ({
   pageWorkerFailures: 0,
   pageWorkerFailureError: undefined as Error | undefined,
   pageGate: undefined as Promise<void> | undefined,
+  gatedPage: undefined as string | undefined,
   fatalPageSubmissions: [] as string[],
+  nextPageCalls: 0,
+  nextPageGate: undefined as Promise<void> | undefined,
+  nextPageGateAfter: Number.POSITIVE_INFINITY,
   pageWorkerPostSubmitFailures: 0,
   planSubmissionCalls: 0,
   planToolResults: [] as unknown[],
@@ -119,6 +123,12 @@ vi.mock("deepagents", async (importOriginal) => {
       if (toolName !== "submit_plan" && toolName !== "submit_page") {
         throw new Error(`Unexpected completion tool: ${toolName}`);
       }
+      const page =
+        toolName === "submit_page"
+          ? String(options.systemPrompt).match(
+              /You own exactly ([^\n]+)\./u,
+            )?.[1]
+          : undefined;
       const stream = vi.fn(() =>
         Promise.resolve({
           async *[Symbol.asyncIterator]() {
@@ -148,9 +158,6 @@ vi.mock("deepagents", async (importOriginal) => {
             ];
 
             if (toolName === "submit_page") {
-              const page = String(options.systemPrompt).match(
-                /You own exactly ([^\n]+)\./u,
-              )?.[1];
               yield [
                 [],
                 "tools",
@@ -212,7 +219,11 @@ vi.mock("deepagents", async (importOriginal) => {
               harness.planToolResults.push(rejection);
             }
 
-            if (toolName === "submit_page" && harness.pageGate) {
+            if (
+              toolName === "submit_page" &&
+              harness.pageGate &&
+              (harness.gatedPage === undefined || harness.gatedPage === page)
+            ) {
               await harness.pageGate;
             }
 
@@ -418,14 +429,15 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     run: HarnessRun,
     options: { exclude?: ReadonlySet<string> } = {},
   ) {
-    const exclude = options.exclude ?? new Set<string>();
-    const job = run.state.plan?.pages.find(
-      ({ id, status }) => status === "pending" && !exclude.has(id),
-    );
-    return Promise.resolve(
-      job
+    harness.nextPageCalls += 1;
+    const next = () => {
+      const exclude = options.exclude ?? new Set<string>();
+      const job = run.state.plan?.pages.find(
+        ({ id, status }) => status === "pending" && !exclude.has(id),
+      );
+      return job
         ? {
-            status: "pending",
+            status: "pending" as const,
             job: {
               ...job,
               mode: run.state.mode,
@@ -434,8 +446,15 @@ vi.mock("../../src/generation/repository-run.js", () => ({
               claimsRequiringAttention: [],
             },
           }
-        : { status: "complete" },
-    );
+        : { status: "complete" as const };
+    };
+    if (
+      harness.nextPageGate !== undefined &&
+      harness.nextPageCalls >= harness.nextPageGateAfter
+    ) {
+      return harness.nextPageGate.then(next);
+    }
+    return Promise.resolve(next());
   },
   async submitRepositoryPage(run: HarnessRun, input: { jobId: string }) {
     harness.pageSubmissionCalls += 1;
@@ -512,14 +531,29 @@ async function runHarness(
  *
  * @returns The gate promise installed on the harness and its release.
  */
-function holdPageWorkers(): () => void {
+function holdPageWorkers(page?: string): () => void {
   let release: () => void = () => undefined;
   harness.pageGate = new Promise<void>((resolve) => {
     release = resolve;
   });
+  harness.gatedPage = page;
   return () => {
     release();
     harness.pageGate = undefined;
+    harness.gatedPage = undefined;
+  };
+}
+
+function holdNextPageAcquisition(after: number): () => void {
+  let release: () => void = () => undefined;
+  harness.nextPageGate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  harness.nextPageGateAfter = after;
+  return () => {
+    release();
+    harness.nextPageGate = undefined;
+    harness.nextPageGateAfter = Number.POSITIVE_INFINITY;
   };
 }
 
@@ -557,7 +591,11 @@ beforeEach(() => {
   harness.pageWorkerFailures = 0;
   harness.pageWorkerFailureError = undefined;
   harness.pageGate = undefined;
+  harness.gatedPage = undefined;
   harness.fatalPageSubmissions = [];
+  harness.nextPageCalls = 0;
+  harness.nextPageGate = undefined;
+  harness.nextPageGateAfter = Number.POSITIVE_INFINITY;
   harness.pageWorkerPostSubmitFailures = 0;
   harness.planSubmissionCalls = 0;
   harness.planToolResults = [];
@@ -1075,6 +1113,41 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
     ).toEqual([
       ["/openwiki/fatal.md", "pending"],
       ["/openwiki/other.md", "complete"],
+    ]);
+  });
+
+  test("does not start a newly acquired page after a sibling fails fatally", async () => {
+    harness.planPaths = [
+      "/openwiki/fatal.md",
+      "/openwiki/other.md",
+      "/openwiki/later.md",
+    ];
+    harness.fatalPageSubmissions = ["/openwiki/fatal.md"];
+    const releaseFatal = holdPageWorkers("/openwiki/fatal.md");
+    // The third acquisition belongs to the worker that completed `other`.
+    const releaseAcquisition = holdNextPageAcquisition(3);
+
+    const running = runHarness({ pageConcurrency: 2 });
+    await vi.waitFor(() => expect(harness.agentOptions).toHaveLength(3));
+    await vi.waitFor(() => expect(harness.nextPageCalls).toBe(3));
+
+    releaseFatal();
+    await vi.waitFor(() => expect(harness.pageSubmissionCalls).toBe(2));
+    releaseAcquisition();
+
+    await expect(running).rejects.toThrow(
+      "injected fatal submission failure for /openwiki/fatal.md",
+    );
+    expect(harness.agentOptions).toHaveLength(3);
+    expect(
+      harness.currentRun?.state.plan?.pages.map(({ path, status }) => [
+        path,
+        status,
+      ]),
+    ).toEqual([
+      ["/openwiki/fatal.md", "pending"],
+      ["/openwiki/other.md", "complete"],
+      ["/openwiki/later.md", "pending"],
     ]);
   });
 });
