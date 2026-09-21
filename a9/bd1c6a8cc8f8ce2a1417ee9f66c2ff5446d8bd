@@ -4,14 +4,22 @@ test/integrations/package-contents.test.ts
   s_004f01766035cd::t_dc71c7df09b129 63
 README.md
   s_004f01766035cd::t_dc71c7df09b129 117
+  s_004f01766035cd::t_3cfcbbe288e987 26,37,120,136,526-527
 CONTRIBUTING.md
   s_004f01766035cd::t_dc71c7df09b129 45,60,62
+  s_004f01766035cd::t_3cfcbbe288e987 40,46-47,55-56
 test/cli/integrations-runners.test.ts
   s_004f01766035cd::t_dc71c7df09b129 71,90,92,225
+  s_004f01766035cd::t_3cfcbbe288e987 91,94
 src/integrations/install/registry.ts
   s_004f01766035cd::t_dc71c7df09b129 125-141
 test/integrations/cli-dogfood.test.ts
   s_004f01766035cd::t_dc71c7df09b129 92,94
+  s_004f01766035cd::t_3cfcbbe288e987 93
+scripts/install-local-integration.mjs
+  s_004f01766035cd::t_3cfcbbe288e987 20
+src/integrations/install/types.ts
+  s_004f01766035cd::t_3cfcbbe288e987 5-12
 ---
 {
   "schema_version": "authorship/3.0.0",
