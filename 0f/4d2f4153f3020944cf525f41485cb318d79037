@@ -1,0 +1,57 @@
+test/agent/prompt.test.ts
+  s_80539b98ae26ca::t_55d341ac86ee61 88
+  s_80539b98ae26ca::t_76eb1eaff09fe7 70-87
+src/agent/docs-only-backend.ts
+  s_80539b98ae26ca::t_e0f315448f04b8 490-501
+  s_80539b98ae26ca::t_ff5833128a148c 151,162,164,483-484
+src/agent/index.ts
+  s_80539b98ae26ca::t_e0f315448f04b8 14,490-497,506-509,548-549
+  s_80539b98ae26ca::t_76eb1eaff09fe7 498-505
+src/agent/prompts/personal.ts
+  s_80539b98ae26ca::t_0a0ade7efaa71b 96,264,486
+  s_80539b98ae26ca::t_8a1b0832e3509d 13,141,363
+  s_80539b98ae26ca::t_69b923a6c9dd00 24,152,374
+  s_80539b98ae26ca::t_d57dae6c0cbc78 25,153,375
+  s_80539b98ae26ca::t_8e92a82bdb7ef8 40,168,390
+  s_80539b98ae26ca::t_d3c3cf1a8850f9 326,548
+  s_80539b98ae26ca::t_babdab6515545e 89
+  s_80539b98ae26ca::t_5ef1bd7b37dcac 20,148,370
+  s_80539b98ae26ca::t_0068a91982ff4e 351
+  s_80539b98ae26ca::t_16f7a8eebda529 247,469
+test/agent/personal-shell-boundary.test.ts
+  s_80539b98ae26ca::t_36acd574ca9d70 109-138,140-144,194-216,220-225,227-228,232-237,240-242
+  s_80539b98ae26ca::t_55d341ac86ee61 1-2,10-14,22-25,29,32-38,52-58,75,93,164,244
+  s_80539b98ae26ca::t_3df0387606a492 15-18
+  s_80539b98ae26ca::t_e0c4a6d593ceea 9,39-41,49-51,108,188-193,217-219,230-231,238-239,243
+  s_80539b98ae26ca::t_76eb1eaff09fe7 19-21,26,28,59-74,76-82,86-92,94-107,139,145-150,152-162,165-187
+  s_80539b98ae26ca::t_ff5833128a148c 27,30-31,83-85
+  s_80539b98ae26ca::t_be41b736067f79 3-8,42-48,151,163,226,229
+src/agent/prompt.ts
+  s_80539b98ae26ca::t_e0f315448f04b8 200
+test/ingestion/ingestion-run.test.ts
+  s_80539b98ae26ca::t_76eb1eaff09fe7 74-77,219-221,270-291,296-298,305-321
+  s_80539b98ae26ca::t_55d341ac86ee61 2,108,180-182,217-218,222-223,264-269,292-295,299-304,322-324
+src/ingestion/ingestion.ts
+  s_80539b98ae26ca::t_e0f315448f04b8 1,20,23,311,315,329
+  s_80539b98ae26ca::t_76eb1eaff09fe7 450-453,458-469
+README.md
+  s_80539b98ae26ca::t_e0f315448f04b8 209-210
+.changeset/tidy-readers-rest.md
+  s_80539b98ae26ca::t_e0f315448f04b8 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0f4d2f4153f3020944cf525f41485cb318d79037",
+  "prompts": {},
+  "sessions": {
+    "s_80539b98ae26ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c468-e0ea-7aa1-8bd4-9fb57f57fb66",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
