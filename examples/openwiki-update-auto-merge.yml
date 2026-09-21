@@ -90,6 +90,10 @@ jobs:
           GH_TOKEN: ${{ secrets.OPENWIKI_PR_TOKEN }}
           PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
 
+      - name: Annotate OpenWiki update pull request
+        if: ${{ !cancelled() && steps.create-pr.outputs.pull-request-url != '' }}
+        run: echo "::notice title=OpenWiki update pull request::${{ steps.create-pr.outputs.pull-request-url }}"
+
       - name: Propagate OpenWiki failure
         if: ${{ steps.openwiki.outcome == 'failure' }}
         run: exit 1
