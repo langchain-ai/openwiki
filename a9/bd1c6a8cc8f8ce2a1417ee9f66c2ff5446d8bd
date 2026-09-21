@@ -1,0 +1,31 @@
+test/integrations/installer.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 486-502,514
+test/integrations/package-contents.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 63
+README.md
+  s_004f01766035cd::t_dc71c7df09b129 117
+CONTRIBUTING.md
+  s_004f01766035cd::t_dc71c7df09b129 45,60,62
+test/cli/integrations-runners.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 71,90,92,225
+src/integrations/install/registry.ts
+  s_004f01766035cd::t_dc71c7df09b129 125-141
+test/integrations/cli-dogfood.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 92,94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a9bd1c6a8cc8f8ce2a1417ee9f66c2ff5446d8bd",
+  "prompts": {},
+  "sessions": {
+    "s_004f01766035cd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c5f8-146f-7c32-b2e7-35121a62d032",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
