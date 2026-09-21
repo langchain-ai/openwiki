@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d8cc8026dc76e3e9b9812945197030063a10b5b731bb2573176dbdddf1d8d063",
+  "pageVersion": "sha256:a62d9d6cf2eaa1f998c614e2bf87586ffb66cc9cfe879d1a971beadc43b41d2f",
   "claims": [
     {
       "id": "claim_9fea18d761f54f39a632b03243af4a9d",
@@ -362,15 +362,15 @@
     },
     {
       "id": "claim_8ae9615d4bc04620b9cc26b8a903d108",
-      "statement": "After the whole-run durability proof, finishRepositoryRun rebuilds the page manifest via replaceRepositoryPageManifest, preserving the prior coverage for skipped pages so a later update can fast-forward them, while anchoring the rebuilt entries to the current run's source checkpoint.",
+      "statement": "After the whole-run durability proof, finishRepositoryRun rebuilds the page manifest via replaceRepositoryPageManifest, partitioning surviving pages into regeneratedPages (completedRunId === run.state.runId, restamped with the current run's source checkpoint), preserveSourcePages (other tracked current pages that keep their prior gitHead/sourceFingerprint but re-prove pageVersion against the final bytes, refreshing the entry only when it changed), and preservePages/skippedPages (copied verbatim so a later update can fast-forward them); only regenerated pages are anchored to the current run's source checkpoint, so a stale manifest entry can never promote a page this run did not re-prove.",
       "evidence": [
         {
-          "resource": "repo://src/generation/page-manifest.ts#L250-L274",
-          "version": "repo-lines-v1:sha256:0a5692bb07c3aa8708e50553d6d03d32097baa12c1e1cb262b45d451328ff3ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOWZjZTZjMTkwZWM2YmQyYTEzZWJiYTFlNmY5MWRhNWM2OTQxOGYwNjhjODJlMThmOGNjYmMzYWM0MjlmYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYjMyZTJmMjY3Y2MyMDk3NTdmNzBhN2MwOTlkNjYzZWRmMjIwNWJjMDU5OWY0OWQ4N2FhMWRkNDA4MzQ1OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYjQ4MjNjMTA0YTBhNDY1OGM3ZjYwMjI1MjdiYjQ2NWMwMTljMTQ4ZjdmMGViNDFhM2U4ZjlhZTFlYzU4ZGIifQ"
+          "resource": "repo://src/generation/page-manifest.ts#L250-L319",
+          "version": "repo-lines-v1:sha256:5aee8b42761c055ba87a1578cbc7dac348bd35cd844b40ed009ca7a2ad6fb246:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmM2Q2OThhYmNhODFjMDIwODY0YjM2NTYyNDEyMzhkODkzNzhmNWNkZGM0YTE1N2MwMWQ1YWJjYTE3ODMyNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYjQ4MjNjMTA0YTBhNDY1OGM3ZjYwMjI1MjdiYjQ2NWMwMTljMTQ4ZjdmMGViNDFhM2U4ZjlhZTFlYzU4ZGIifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1505-L1511",
-          "version": "repo-lines-v1:sha256:60e929b89a92ccba0fc36e756e557cb0fd02e2526d80389ad5af1649232af16b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzRiNzI1MDAzNTFiYjM2NzM0ODNkNDgwYWZjODVjMjRjNjFhMmE4OTJiZWJhMzVhYTgwY2MxYzU2ZThhNDhlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODhmMjRjYzA3NTdjNDJlN2M2MzJjMWY3NTI1NDYwZjU2NzMxZTk1ZTAzZTAxNzgwOTkxOTQ3ZTJjM2NmZmQwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ4NDQ5MmY5ODAwMjAwOGY4NGQ3ODgwODI1OTQyNzE3OWVmY2U0MDFjOTk0ZjFkZTYzMzAyZGI5MTg5M2QxOCJ9"
+          "resource": "repo://src/generation/repository-run.ts#L1553-L1575",
+          "version": "repo-lines-v1:sha256:6913acff9966d1acd296ec3f7381df43bca9326f497642899a0362d88ad47c0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMmRjMmE4NzllM2FjM2IyZTMyNTE3ZjY5NzliZjg1MDA2Nzc4M2JhNGMxMWI0ZDFmNWY1NTUwOWM4OWZmZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZTVmM2FmZWYwZTQ4ZWJkMmNjZjk0MzE4OGNhMzk4YjBkMTI3NzE5OWQ3NjNkOTcyZTU1OTdjY2YyNzgyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ODQ0OTJmOTgwMDIwMDhmODRkNzg4MDgyNTk0MjcxNzllZmNlNDAxYzk5NGYxZGU2MzMwMmRiOTE4OTNkMTgifQ"
         }
       ]
     },
@@ -394,7 +394,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T10:21:48.925Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-15T08:09:47.649Z"
   }
 }

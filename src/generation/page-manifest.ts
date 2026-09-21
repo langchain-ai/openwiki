@@ -245,13 +245,15 @@ export async function seedRepositoryPageManifest(
  * @param root - Absolute repository root.
  * @param pages - Complete surviving factual page set after finalization.
  * @param source - Source checkpoint proven by successful whole-run finish.
- * @param preservePages - Pages whose prior coverage must remain unchanged.
+ * @param preservePages - Restored pages whose exact prior coverage is retained.
+ * @param preserveSourcePages - Pages that retain their prior source checkpoint.
  */
 export async function replaceRepositoryPageManifest(
   root: string,
   pages: readonly string[],
   source: RepositorySourceCheckpoint,
   preservePages: ReadonlySet<string> = new Set(),
+  preserveSourcePages: ReadonlySet<string> = new Set(),
 ): Promise<void> {
   const next = createEmptyRepositoryPageManifest();
   const previous = await readRepositoryPageManifest(root);
@@ -260,6 +262,49 @@ export async function replaceRepositoryPageManifest(
     if (preservePages.has(canonicalPage)) {
       const previousEntry = previous.pages[canonicalPage];
       if (previousEntry) next.pages[canonicalPage] = previousEntry;
+      continue;
+    }
+    if (preserveSourcePages.has(canonicalPage)) {
+      const previousEntry = previous.pages[canonicalPage];
+      // A page this run did not (re)complete keeps its prior source checkpoint.
+      // Deterministic finalization may still rewrite code-owned metadata on the
+      // page, so re-prove the final Markdown/Claims pair before deciding whether
+      // the exact prior entry can be retained.
+      if (previousEntry) {
+        const refreshedEntry = await buildManifestEntry(
+          root,
+          canonicalPage,
+          {
+            ...(previousEntry.gitHead
+              ? { gitHead: previousEntry.gitHead }
+              : {}),
+            ...(previousEntry.sourceFingerprint
+              ? { sourceFingerprint: previousEntry.sourceFingerprint }
+              : {}),
+          },
+          previousEntry.completedBy,
+          previousEntry.completedRunId,
+        );
+        next.pages[canonicalPage] =
+          refreshedEntry.pageVersion === previousEntry.pageVersion
+            ? previousEntry
+            : refreshedEntry;
+        continue;
+      }
+      // No prior coverage exists for this untouched page. Try to seed a
+      // first coverage entry from its current durable state, but never fail
+      // the whole run over a page it did not touch; leave it uncovered for
+      // full review instead, matching legacy/never-covered page handling.
+      try {
+        next.pages[canonicalPage] = await buildManifestEntry(
+          root,
+          canonicalPage,
+          source,
+        );
+      } catch (error) {
+        if (error instanceof RepositoryRunError) continue;
+        throw error;
+      }
       continue;
     }
     next.pages[canonicalPage] = await buildManifestEntry(

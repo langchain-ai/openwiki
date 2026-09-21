@@ -1,9 +1,11 @@
 ---
 type: reference
 title: Model Providers and Credentials
-description: Reference for OpenWiki's supported model providers, their environment keys, base URLs, and authentication methods (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, and external CLI), and where credentials and OAuth tokens are persisted.
-tags: [model-providers, credentials, oauth, authentication, configuration, env]
+description: Reference for OpenWiki's supported model providers (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, external CLI, and the IBM Bob Apikey adapter), their environment keys, base URLs, authentication methods, the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
+tags: [model-providers, credentials, oauth, authentication, configuration, env, reasoning]
 sources:
+  - id: openwiki-source-f8b008ed89162a0e204fc02d
+    resource: repo://src/agent/bob.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-91bd3ea533c00a8366f8d420
@@ -16,12 +18,18 @@ sources:
     resource: repo://src/config/constants.ts
   - id: openwiki-source-c2770ac037a7f4b0116a0dc5
     resource: repo://src/config/env.ts
+  - id: openwiki-source-f1dd0edb129e50f253618ff4
+    resource: repo://src/config/reasoning.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+  - id: openwiki-source-a302ab67124df4839d320111
+    resource: repo://test/agent/bob.test.ts
+  - id: openwiki-source-21fe6d4741a8225393c37599
+    resource: repo://test/agent/create-model.test.ts
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Model Providers and Credentials
@@ -61,6 +69,7 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `openai`                       | OpenAI                        | api-key       | `OPENAI_API_KEY`                            | (SDK default) / `OPENAI_BASE_URL`                              |
 | `openai-chatgpt`               | OpenAI (ChatGPT login)        | oauth         | `OPENAI_CHATGPT_ACCESS_TOKEN` (+ token set) | Codex backend (fixed)                                          |
 | `anthropic`                    | Anthropic                     | api-key       | `ANTHROPIC_API_KEY`                         | (SDK default) / `ANTHROPIC_BASE_URL`                           |
+| `bob`                          | IBM Bob                       | api-key       | `BOB_API_KEY`                               | `https://api.us-east.bob.ibm.com/inference/v1` / `BOB_BASE_URL` |
 | `copilot`                      | GitHub Copilot                | external-cli  | `COPILOT_API_KEY`                           | `https://api.githubcopilot.com` / `COPILOT_BASE_URL`           |
 | `gemini`                       | Gemini (AI Studio)            | api-key       | `GEMINI_API_KEY`                            | (SDK default)                                                  |
 | `gemini-enterprise`            | Gemini Enterprise (Vertex AI) | ADC (keyless) | none — `GOOGLE_CLOUD_PROJECT`               | derived from project/location                                  |
@@ -73,7 +82,9 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `nvidia`                       | NVIDIA NIM                    | api-key       | `NVIDIA_API_KEY`                            | `https://integrate.api.nvidia.com/v1` / `NVIDIA_BASE_URL`      |
 
 `SELECTABLE_OPENWIKI_PROVIDERS` fixes the order these providers appear in the
-setup wizard.
+setup wizard. The `bob` provider is the only one that sets `fixedModel`
+(`"premium"`): `resolveModelId` returns it verbatim and skips model selection
+entirely, so Bob's model step never appears in the wizard.
 
 ## Authentication methods
 
@@ -94,6 +105,26 @@ self-hosted or proxied endpoints can be pointed at without code changes. The
 `OPENAI_COMPATIBLE_BASE_URL` (`requiresBaseUrl`); its base-URL validation rejects
 a URL that already ends in `/chat/completions`, since the SDK appends that path
 itself.
+
+### IBM Bob (`bob`)
+
+`bob` is an api-key provider that targets IBM Bob's inference endpoint at
+`https://api.us-east.bob.ibm.com/inference/v1` (overridable via `BOB_BASE_URL`).
+It is the only provider with a `fixedModel` — `"premium"` — so `resolveModelId`
+returns that ID verbatim and the model-selection step is skipped entirely (see
+`providerHasFixedModel` / `getProviderFixedModel`). `createModel` builds a
+`ChatOpenAI` chat-completions client with a placeholder `apiKey`
+(`"bob-placeholder"`), which only satisfies the constructor's missing-key check;
+the real credential is injected per request by a custom fetch wrapper.
+
+The adapter is `createBobFetch` (`src/agent/bob.ts`), which wraps `fetch` at the
+final request boundary to satisfy Bob's two non-standard requirements:
+
+- It rewrites the `Authorization: Bearer <placeholder>` header that
+  `ChatOpenAI` emits to `Authorization: Apikey <key>`, reading `BOB_API_KEY` from
+  the environment at call time so a hot-reloaded `.env` value is always used.
+- It sets `User-Agent: ibm-bob-openwiki-provider` (the `BOB_USER_AGENT` constant),
+  which Bob's Cloudflare WAF requires to admit the request.
 
 ### ChatGPT OAuth (`openai-chatgpt`)
 
@@ -181,18 +212,24 @@ surface; `createGeminiEnterpriseModel` selects the transport per model ID via
 
 - `gemini` — Google's own Gemini/Gemma models over native `generateContent`, via `ChatGoogle`.
 - `anthropic` — Claude over Anthropic's wire protocol, bridged through `ChatAnthropic`'s `createClient` hook and the `AnthropicVertex` SDK, which authenticates via ADC.
-- `openai-maas` — partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …) over Vertex's OpenAI-compatible endpoint, whose base URL is built by `vertexOpenAIBaseUrl`.
+- `openai-maas` — partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, Grok, …) over Vertex's OpenAI-compatible endpoint, whose base URL is built by `vertexOpenAIBaseUrl`.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 2: ... Model["modelId"] -> Resolve["resolveV Expecting 'SEMI', 'NEWLINE', 'EOF', 'AMP', 'START_LINK', 'LINK', 'LINK_ID', got 'MINUS' -->
-```text
+`resolveVertexSurface` classifies the model ID by family, not provider: an
+`anthropic`/`claude` token routes to the Anthropic surface, and an
+`xai`/`grok` token (alongside `llama`, `meta`, `mistral`, `qwen`, `deepseek`,
+`ai21`, `jamba`, and `codellama`) routes to the openai-maas surface; anything
+else defaults to `gemini`. The patterns tolerate both bare IDs and
+publisher-pathed IDs.
+
+```mermaid
 flowchart TD
-    Model["modelId"] -> Resolve["resolveVertexSurface"]
-    Resolve -->|anthropic / claude| Claude["ChatAnthropic createClient + AnthropicVertex (ADC)"]
-    Resolve -->|openai-maas / llama, mistral, ...| MaaS["ChatOpenAI at vertexOpenAIBaseUrl (createVertexAuthFetch ADC bearer)"]
-    Resolve -->|gemini / default| Gemini["ChatGoogle generateContent (ADC)"]
-    Claude -> Project["GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION"]
-    MaaS -> Project
-    Gemini -> Project
+    Model["modelId"] --> Resolve["resolveVertexSurface"]
+    Resolve -->|anthropic / claude| Claude["ChatAnthropic createClient plus AnthropicVertex ADC"]
+    Resolve -->|openai-maas / llama, mistral, grok, ...| MaaS["ChatOpenAI at vertexOpenAIBaseUrl, createVertexAuthFetch ADC bearer"]
+    Resolve -->|gemini / default| Gemini["ChatGoogle generateContent ADC"]
+    Claude --> Project["GOOGLE_CLOUD_PROJECT plus GOOGLE_CLOUD_LOCATION"]
+    MaaS --> Project
+    Gemini --> Project
 ```
 
 Diagram: How `createGeminiEnterpriseModel` routes one ADC credential to three Vertex surfaces by model family.
@@ -258,6 +295,45 @@ rationale that forces streaming on the openai-chatgpt Codex backend. For GPT-5
 models that use the Responses API (`responsesApi: /^gpt-5/u`), `streaming: true`
 is redundant but harmless, matching the openai-chatgpt provider pattern.
 `createModel` applies this with a conditional spread (`...(providerUsesStreaming(provider) ? { streaming: true } : {})`) rather than assigning `streaming: false`, because LangChain turns an explicit `false` into `disableStreaming`, which is not equivalent to omitting the key.
+
+## Reasoning effort
+
+`OPENWIKI_REASONING_EFFORT` selects a reasoning effort for models that expose
+one. `resolveReasoningConfig` (`src/config/reasoning.ts`) reads it, validates it
+against the permitted `REASONING_EFFORT_VALUES` (`none`, `low`, `medium`, `high`,
+`xhigh`, `max`), and — only when a capability is declared for the
+provider+model pair — returns a `{ effort, transport }` resolution that
+`createModel` turns into the right client option. When the variable is unset,
+no reasoning option is applied; when it is set but no capability matches the
+provider/model, the run throws `OPENWIKI_REASONING_EFFORT is not supported for
+provider "..." and model "..."`.
+
+The transport determines where the effort lands:
+
+- `responses-reasoning` — `reasoning: { effort }` on `ChatOpenAI` (the OpenAI Responses API payload). Used by `openai` and `openai-chatgpt` for the `gpt-5.6-terra`/`gpt-5.6-luna`/`gpt-5.6-sol` models, and by `openai-compatible` when it opts into the Responses API.
+- `chat-completions-reasoning-effort` — `modelKwargs: { reasoning_effort }` on `ChatOpenAI`, for endpoints that take the effort as a chat-completions field. Used by `nvidia` for `nvidia/nemotron-3-super-120b-a12b` (values `none`/`low`/`high`) and by `openai-compatible` when it does not opt into the Responses API.
+- `gemini-thinking-level` — the `thinkingLevel` option on `ChatGoogle`, for Gemini models that expose a thinking budget. `gemini-3.6-flash` supports it with values `low`/`medium`/`high`.
+
+`createModel` spreads exactly one of these three option sets (`responsesReasoningOptions`, `chatCompletionsReasoningOptions`, or `geminiThinkingLevelOptions`) depending on the resolved transport, so a single `OPENWIKI_REASONING_EFFORT` value is routed to the correct wire field per provider and model.
+
+### OpenAI-compatible reasoning opt-in
+
+The `openai-compatible` provider points at arbitrary third-party endpoints, so
+reasoning effort is off by default: without an explicit opt-in,
+`resolveReasoningConfig` returns no capability for `openai-compatible`, and
+because the effort was set, `createModel` throws `not supported`.
+
+Setting `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED=true` opts in.
+The transport then depends on the same Responses-API flag that selects the wire
+transport for the provider:
+
+- with `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true`, the capability is `responses-reasoning` and the effort is sent as `reasoning: { effort }`;
+- otherwise the capability is `chat-completions-reasoning-effort` and the effort is sent as `modelKwargs: { reasoning_effort }`.
+
+`getOpenAiCompatibleReasoningCapability` derives the transport from
+`providerUsesResponsesApi("openai-compatible", modelId, env)` (which itself reads
+`OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`), so the reasoning transport and
+the request transport always agree.
 
 ## Credential persistence and env file
 

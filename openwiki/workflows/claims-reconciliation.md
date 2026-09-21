@@ -13,9 +13,6 @@ tags:
     provenance,
     repository,
   ]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
 sources:
   - id: openwiki-source-8b316b2a9d744597bffd9c56
     resource: repo://src/agent/repository-prompts.ts
@@ -35,10 +32,14 @@ sources:
     resource: repo://src/claims/core/mutations.ts
   - id: openwiki-source-962367b575276437455942cc
     resource: repo://src/claims/core/types.ts
+  - id: openwiki-source-75ba41da829774fe72b7a0af
+    resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-638173446de4138fa3a622a8
     resource: repo://src/claims/guidance.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
+  - id: openwiki-source-674d6e5badef7368ab04f064
+    resource: repo://src/generation/page-manifest.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-eab9328975981f427c4218d0
@@ -47,7 +48,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Claims Reconciliation on Update
@@ -99,7 +103,14 @@ resource yields one of three outcomes:
 A Claim with any unresolved resource emits an `unresolved` `GroundingIssue`; a
 Claim with only changed resources emits a `stale` issue. Resolution _errors_
 propagate rather than being swallowed, so a transient failure is never mistaken
-for deleted evidence. Preflight also inventories orphan sidecars whose generated
+for deleted evidence — with one deliberate exception. A containment refusal
+(`EvidenceSecurityError`) is permanent for the cited resource rather than
+operational, so preflight catches it and records the resource as **unresolved**
+instead of aborting the run. The resolver raises `EvidenceSecurityError` when an
+evidence path traverses a symbolic link or filesystem alias outside the
+repository root, so a Claim whose evidence crosses a symlink is reported as
+unresolved and routed to the page worker for reconciliation rather than crashing
+the whole update. Preflight also inventories orphan sidecars whose generated
 Markdown pages no longer exist. Its issues are sorted deterministically by page,
 kind, and claim id.
 
@@ -110,13 +121,16 @@ flowchart TD
   C -->|"undefined"| D["record unresolved resource"]
   C -->|"different version"| E["record changed resource"]
   C -->|"same version"| F["Claim still current, no issue"]
+  B -->|"EvidenceSecurityError"| D
   D --> G["emit unresolved GroundingIssue"]
   E --> H{"any unresolved on this Claim?"}
   H -->|"yes"| G
   H -->|"no"| I["emit stale GroundingIssue"]
 ```
 
-Preflight classifies each persisted Claim as current, stale, or unresolved.
+Preflight classifies each persisted Claim as current, stale, or unresolved; a
+symlinked-evidence containment refusal is folded into the unresolved
+classification so the worker can reconcile it.
 
 ## No-op detection and how stale Claims override it
 
@@ -403,6 +417,9 @@ The finish path runs its steps in a deliberate order:
    restore, so skipped pages are excluded from persistence but their restored
    Markdown is already in place when the durability proof reads the working
    tree.
+5. **Restamp the page manifest** — only pages the current run actually
+   regenerated are restamped with this run's source checkpoint; skipped and
+   untouched pages retain their prior checkpoint (see below).
 
 This ordering matters because `assertRepositoryClaimsDurable` discovers current
 pages from the working tree: by restoring skipped-page Markdown first, the
@@ -416,7 +433,32 @@ path passes the set of skipped page paths as `excludedPages`, and passes the
 same set to `assertRepositoryClaimsDurable`, so skipped pages are excluded from
 both final Claims persistence and the whole-run durability proof.
 
-Within a non-excluded page, finalization persists only pages whose Claim state
+### Restamping only regenerated pages
+
+The manifest restamp at the end of `finishRepositoryRun` no longer stamps every
+surviving page with the current run's source checkpoint. Before restamping, the
+finish path computes a `producerActorsByPage` map by reading the existing page
+manifest and keeping only entries whose `completedRunId` equals the current
+run's id — that is, exactly the pages this run actually regenerated (each
+recorded by `recordRepositoryPageCompletion` with `run.state.runId`). The
+regenerated-page set becomes the only set restamped with
+`getRepositoryRunSourceCheckpoint(run.state)`.
+
+Every other tracked page falls into a `preserveSourcePages` set and keeps its
+prior checkpoint through `replaceRepositoryPageManifest`'s
+`preserveSourcePages` branch: a page this run did not (re)complete — formally
+skipped, left untouched because it was outside this run's plan, or already
+durable from an earlier run — retains its previous `gitHead` and
+`sourceFingerprint`, and its `completedBy`/`completedRunId` provenance is carried
+forward unchanged. Because deterministic finalization (`finalizeWikiArtifacts`)
+may still rewrite code-owned metadata on such a page, the restamp re-proves the
+final Markdown/Claims pair and compares the resulting `pageVersion` against the
+prior entry; only if the page bytes actually changed is a refreshed entry
+written, otherwise the exact prior entry is retained. A page with no prior
+coverage is best-effort seeded from its current durable state, and a seeding
+failure is swallowed so a page the run never touched cannot fail the whole run.
+
+Within a regenerated page, finalization persists only pages whose Claim state
 actually changed (`dirty`), refuses to persist a page that still carries
 unresolved evidence debt, and rechecks every dirty page's evidence against
 current source and re-hashes its Markdown before writing the sidecar. Orphan

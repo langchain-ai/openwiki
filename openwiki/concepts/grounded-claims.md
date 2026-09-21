@@ -42,10 +42,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Grounded Claims
@@ -133,14 +133,15 @@ references to `.git` or `openwiki/`.
 
 Resolution is fully deterministic and never involves the model. The
 `RepositoryEvidenceResolver` reads the file through a containment gate that
-refuses symbolic links and filesystem aliases, then produces an opaque
-`version` token. Whole-file evidence is versioned by a SHA-256 hash of the entire
-file (`repo-file-v1:sha256:...`). Line-range evidence is versioned by a hash of
-the selected content plus resolver-owned relocation anchors
-(`repo-lines-v1:sha256:...`), so that when edits move or resize a range the
-resolver can relocate the same selected text using its first and last selected
-lines and surrounding context, keeping the version stable when the content did
-not actually change.
+refuses symbolic links and filesystem aliases — raising an
+`EvidenceSecurityError` when the resolved path escapes the physical repository
+root — then produces an opaque `version` token. Whole-file evidence is versioned
+by a SHA-256 hash of the entire file (`repo-file-v1:sha256:...`). Line-range
+evidence is versioned by a hash of the selected content plus resolver-owned
+relocation anchors (`repo-lines-v1:sha256:...`), so that when edits move or
+resize a range the resolver can relocate the same selected text using its first
+and last selected lines and surrounding context, keeping the version stable when
+the content did not actually change.
 
 Because versions are content-derived, a version mismatch is exactly a content
 change. Resolution returns `null` when a file or range no longer exists, which is
@@ -159,7 +160,11 @@ resource against its recorded prior version and classifies the Claim:
 Unresolved takes precedence over stale for a given Claim. Issues are produced in
 a deterministic sorted order and carried into the session as `GroundingIssue`
 records attached to the owning page. Resolution errors (as opposed to a missing
-file) propagate rather than being mistaken for deleted evidence.
+file) propagate so they cannot be mistaken for deleted evidence, with one
+exception: an `EvidenceSecurityError` — a permanent containment refusal raised
+when evidence traverses a symbolic link or filesystem alias — is caught and
+treated as `null` (unresolved) for that resource, so the owning Claim is reported
+for reconciliation rather than aborting the run.
 
 A stale or unresolved marker is a **requirement to recheck current source**, not
 an instruction to retract. When a Claim is inspected, its issue is surfaced to

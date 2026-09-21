@@ -29,7 +29,9 @@ export interface ErrorDiagnostic {
  * Extracts a deduped list of allowlisted, non-secret diagnostic fields from an
  * arbitrary (often untrusted) error object for the `--debug` diagnostics panel.
  * Only known-safe keys are read; every value is sanitized and secret-like keys
- * are redacted, so raw secret material never leaves. Walks the error, its
+ * are redacted, so raw secret material never leaves. In debug mode this
+ * includes the error's stack, sanitized and truncated like every other
+ * long value. Walks the error, its
  * OpenRouter metadata, any attached debug payload, and (in debug mode) its
  * `cause`/`error`/`response` nesting.
  */
@@ -42,6 +44,13 @@ export function getErrorDiagnostics(error: unknown): ErrorDiagnostic[] {
       { label: "name", value: error.name },
       { label: "message", value: sanitizeDiagnosticText(error.message) },
     );
+
+    if (error.stack) {
+      diagnostics.push({
+        label: "stack",
+        value: truncateDiagnosticValue(sanitizeDiagnosticText(error.stack)),
+      });
+    }
 
     const messageStatus = error.message.match(/\b([45]\d{2})\b/)?.[1];
 

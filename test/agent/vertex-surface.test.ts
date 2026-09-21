@@ -38,6 +38,17 @@ describe("resolveVertexSurface", () => {
     expect(resolveVertexSurface("qwen/qwen3-235b")).toBe("openai-maas");
   });
 
+  test("routes xAI Grok ids to the openai-maas surface", () => {
+    // Grok is served over the OpenAI-compatible endpoint like every other
+    // partner model. Falling through to gemini would address it as
+    // `publishers/google/models/grok-…:generateContent`, which does not exist.
+    expect(resolveVertexSurface("xai/grok-4.6")).toBe("openai-maas");
+    expect(resolveVertexSurface("grok-4.1-fast-reasoning")).toBe("openai-maas");
+    expect(resolveVertexSurface("publishers/xai/models/grok-4.6")).toBe(
+      "openai-maas",
+    );
+  });
+
   test("defaults Gemini and Gemma ids to the gemini surface", () => {
     expect(resolveVertexSurface("gemini-3.1-pro")).toBe("gemini");
     expect(resolveVertexSurface("gemma-3-27b-it")).toBe("gemini");

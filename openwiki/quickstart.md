@@ -3,14 +3,15 @@ type: orientation-guide
 title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-04T08:13:11.978Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-949522a1dfce74920badb2b6
+    resource: repo://evals/ledger/README.md
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
@@ -25,15 +26,22 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
+  - id: openwiki-source-c194ba7f94bf86a83012a7b4
+    resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-04T08:13:11.978Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # OpenWiki Quickstart
@@ -49,12 +57,12 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package, a Node.js (22+) CLI whose
-binary resolves to `dist/cli/cli.js`. Its purpose, per the package manifest, is
-"a CLI that uses a DeepAgents documentation agent to generate and maintain an
-OpenWiki for a codebase." The runtime is a DeepAgents documentation agent driven
-by one of several model providers, wrapped by a CLI that can run interactively
-(an Ink TUI) or one-shot (print mode).
+OpenWiki is published as the `openwiki` npm package (v0.5.2), a Node.js
+(>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
+package manifest, is "a CLI that uses a DeepAgents documentation agent to
+generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
+documentation agent driven by one of fourteen model providers, wrapped by a CLI
+that can run interactively (an Ink TUI) or one-shot (print mode).
 
 The CLI has two operating modes:
 
@@ -144,6 +152,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                                   | Read                                                         |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Look up CLI commands and flags (init/update, mode, print, integrations, visualize, schedule) | [CLI Reference](/openwiki/operations/cli-reference.md)        |
+| Understand environment loading, the `~/.openwiki` state directory, provider/token/reasoning settings, and secret sanitization | [Configuration and Environment](/openwiki/operations/configuration.md) |
 | Set up scheduled self-update in CI and the docs-PR workflow                                  | [CI Scheduling and Self-Update](/openwiki/operations/ci-scheduling.md) |
 
 ### Integrate with other tools
@@ -151,6 +160,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                  | Read                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------ |
 | Run OpenWiki inside Codex, Claude Code, OpenCode, or Cursor                 | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
+| Understand the built-in source connectors, the ConnectorRuntime contract, and how to add a new one | [Source Connectors](/openwiki/integrations/connectors.md) |
 | Explore the interactive graph visualizer (live server and static export)    | [Interactive Visualizer](/openwiki/integrations/visualizer.md) |
 
 ### Test your changes
@@ -158,6 +168,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                | Read                                           |
 | --------------------------------------------------------- | ---------------------------------------------- |
 | Understand the test layout and how to run and scope tests | [Testing Guide](/openwiki/testing/overview.md) |
+| Understand the LEDGER longitudinal evaluation framework and DeepSWE evaluation harness | [Evaluation Systems](/openwiki/testing/evals.md) |
 
 ## Where OpenWiki keeps its state
 
@@ -197,9 +208,9 @@ drift.
 
 ## Host-driven generation
 
-OpenWiki can also run inside a host coding agent (Codex, Claude Code, OpenCode,
-or Cursor) instead of launching its own model. The integration shares one
-canonical skill and the same six MCP operations as native generation:
+OpenWiki can also run inside a host coding agent (IBM Bob, Codex, Claude Code,
+OpenCode, Cursor, or Kiro) instead of launching its own model. The integration
+shares one canonical skill and the same six MCP operations as native generation:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand
 `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. The
 host owns repository research, planning, and factual authoring; OpenWiki owns the

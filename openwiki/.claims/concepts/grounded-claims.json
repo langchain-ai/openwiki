@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f521d712cb6f460db8cf74165ea505c0603df3e002acbd0bcf03eadf55256e9a",
+  "pageVersion": "sha256:96be9ce585c734374fd5c13d0743e84a93ad04c4072c68fd9ee30298df66a2fc",
   "claims": [
     {
       "id": "claim_35bcc7d94294470cbce1e5d06f9fb26f",
@@ -176,11 +176,15 @@
     },
     {
       "id": "claim_e464022335de4c989303123408318649",
-      "statement": "Preflight classifies each persisted Claim by re-resolving its evidence against the recorded prior version, marking a Claim unresolved when any resource no longer resolves and stale when a resource resolves at a different version, with unresolved taking precedence.",
+      "statement": "Preflight classifies each persisted Claim by re-resolving its evidence against the recorded prior version, marking a Claim unresolved when any resource no longer resolves and stale when a resource resolves at a different version, with unresolved taking precedence; an EvidenceSecurityError (symbolic-link or filesystem-alias containment refusal) is caught and treated as unresolved for that resource rather than aborting the run.",
       "evidence": [
         {
-          "resource": "repo://src/claims/brains/code/preflight.ts#L49-L96",
-          "version": "repo-lines-v1:sha256:bcc242060f76da740614188c4d6a30e8ea9d8e617bffe1b9927701b3aad12cc9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwN2YzNjBjOTZmMTEzNGM1N2RlMDZhYjk2NDI4MjYxM2I0MTQxYWM4ZDkwYzAzMzBkOThjMjBlYmE1NDZlZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiMzdiZTJkNTY5YjJhZjcxZDAwMWZlYWI0YTM5ZGM1MGM0MGU4OTdjZDdjMDZmMjU0ODBlYThkMGFhN2YyYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiODczOTlhMmJjMTJhODc2YjE2ODUxM2JjYTg3YjQ1NWViZGY3MjMzZTU4MTk2OTg1Mjg1ZjdiYmY4YjFhMGQifQ"
+          "resource": "repo://src/claims/brains/code/preflight.ts#L59-L98",
+          "version": "repo-lines-v1:sha256:7af3b6ac5bb6a4f8f511fb8ad7773fdbe2a9ea331155e5a7479322adbf02db8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMmI5ZDdhYzQxYWI3NzM3MjFkYzI1M2Y4ODEyZTJkZDdkYjc3ZmIzMDViYjViNGFhMmJjMTIxMmEwMThmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMjUxNWI4ZWU3ZjhiMGMyYzE0MTBlN2UzNzZjOThkNGEzODBkMWI1YjQ1YjU4YmQ1OGY4ODc1Y2Q3NjBkOTYifQ"
+        },
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L70-L75",
+          "version": "repo-lines-v1:sha256:38165f778fb8fecfc60b2055bc09dfc2eeb7fe59248d2c6fa9cc94c63a54a0de:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzZDYxNzUxY2VjNDJhZjY2N2I5ZDIwYmNjNDQyYWU1M2VlM2VlZTgzYjNiMzQxN2IyOGQ2MzI3ODA0M2ViNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzljMDFlMzI5MWVlMTQ4YmY1OWM1NTcwNTJlMGU5Nzc2Njg3YTU5MjYzMWYwYWVmNWIzMjUzZWNmOGEzZDAwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmYyMjQ5M2YyMDBiYzhhNWJkZjRiNzAyYzE5NzkwZGE3ZTFiODZiZDBkYTIyYTBmYzEzMjNlOWIzNWRkYWIxZSJ9"
         },
         {
           "resource": "repo://src/claims/brains/code/types.ts#L114-L142",
@@ -190,11 +194,15 @@
     },
     {
       "id": "claim_7fcbcac3a03247818e74a36c2d8ad6e3",
-      "statement": "Preflight freshness checks do not create mandatory agent work and propagate resolution errors so they cannot be mistaken for deleted evidence.",
+      "statement": "Preflight freshness checks do not create mandatory agent work and propagate resolution errors so they cannot be mistaken for deleted evidence, with the single exception of EvidenceSecurityError, which is caught and reported as an unresolved issue for reconciliation rather than aborting the update.",
       "evidence": [
         {
-          "resource": "repo://src/claims/brains/code/preflight.ts#L26-L47",
-          "version": "repo-lines-v1:sha256:26503db940cb04e427915cc13c00cd07a6702a81ec8708be8149e808181e8d8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNTA1M2YxMTIyMDllYTg1MGQ0MzNkOWZjNDZhNDIzNDY1N2JjMzc1YmQ3NzBmZGIxYzk5OTg4MWM2N2EzMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNjVjNDkzNWViZDczYmY3NzM2OTM5ZjdkY2M5MzZhMDMzZTk1MWFlYzdjZDRkZmFjMGNiN2JhZTE2NDYyNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxY2MyZWUwM2E3NTRjZmM4ZTNlMjg2YzU4OWE2Y2Y5ZWY4ODM3YzkzM2UyMjljZTVjY2M1NTQyMDAwYTYwMDQifQ"
+          "resource": "repo://src/claims/brains/code/preflight.ts#L27-L43",
+          "version": "repo-lines-v1:sha256:9d8c8c73ac616fc69f1799004c000d1d0ae40be0ca1266d18f3b5fb154652405:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZDkzZTVhOTE1ZmQ5NDJmNDY1NTVhZTJkMDA5OGFiOGM4ZTQ5NWI0MTA2N2YwNWZjMzY4Y2EyMTRhOWIwOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNjVjNDkzNWViZDczYmY3NzM2OTM5ZjdkY2M5MzZhMDMzZTk1MWFlYzdjZDRkZmFjMGNiN2JhZTE2NDYyNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MWU4Y2UxMDQ0ZTQwZDZjMDljOGIyYTM0YmI2ZTQxMTNhMmYzNDE2MTlmODU1YjFjOGI2YjQ3MjBiZDJhN2UifQ"
+        },
+        {
+          "resource": "repo://src/claims/brains/code/preflight.ts#L70-L75",
+          "version": "repo-lines-v1:sha256:38165f778fb8fecfc60b2055bc09dfc2eeb7fe59248d2c6fa9cc94c63a54a0de:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzZDYxNzUxY2VjNDJhZjY2N2I5ZDIwYmNjNDQyYWU1M2VlM2VlZTgzYjNiMzQxN2IyOGQ2MzI3ODA0M2ViNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzljMDFlMzI5MWVlMTQ4YmY1OWM1NTcwNTJlMGU5Nzc2Njg3YTU5MjYzMWYwYWVmNWIzMjUzZWNmOGEzZDAwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmYyMjQ5M2YyMDBiYzhhNWJkZjRiNzAyYzE5NzkwZGE3ZTFiODZiZDBkYTIyYTBmYzEzMjNlOWIzNWRkYWIxZSJ9"
         }
       ]
     },
@@ -554,7 +562,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T10:21:48.925Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-15T08:09:47.649Z"
   }
 }

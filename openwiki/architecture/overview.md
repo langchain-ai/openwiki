@@ -23,6 +23,8 @@ sources:
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-4abcc99d4dad36b191736bb7
+    resource: repo://src/claims/brains/code/paths.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
@@ -39,10 +41,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Architecture Overview
@@ -68,10 +70,11 @@ selects the personal brain. See [Two modes](../concepts/two-modes.md).
 **Driver** decides which model and tools do the authoring. In _native_
 generation, OpenWiki resolves a configured provider, builds its own chat model,
 and runs its own DeepAgents workers. In _host-driven_ generation, a coding agent
-(Codex, Claude Code, OpenCode, or Cursor) uses its own authenticated model and
-native repository tools, while OpenWiki exposes the durable page-job lifecycle
-over MCP and owns validation and finalization. Host-driven runs currently
-support only repository code wikis, not personal brains.
+(IBM Bob, Codex, Claude Code, OpenCode, Cursor, or Kiro) uses its own
+authenticated model and native repository tools, while OpenWiki exposes the
+durable page-job lifecycle over MCP and owns validation and finalization.
+Host-driven runs currently support only repository code wikis, not personal
+brains.
 
 ```mermaid
 flowchart TD

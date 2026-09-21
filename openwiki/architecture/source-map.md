@@ -4,6 +4,26 @@ title: Source Map
 description: Maps the OpenWiki /src directory to its owned subsystems, giving each one a responsibility and its principal entry files, and identifies the largest, most central files that anchor agent execution, configuration, and repository generation.
 tags: [source-map, architecture, subsystems, entrypoints, src-layout]
 sources:
+  - id: openwiki-source-c45a528335f5cf7306567dc9
+    resource: repo://evals/deepswe/README.md
+  - id: openwiki-source-a0ae0064681def9d035f11b2
+    resource: repo://evals/deepswe/run.py
+  - id: openwiki-source-92ae12d8c88734df7ebc7663
+    resource: repo://evals/ledger/core/types.ts
+  - id: openwiki-source-8fe49b679bb29b6d5403548c
+    resource: repo://evals/ledger/reevaluate.ts
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
+  - id: openwiki-source-97ffedc1258986c2ef57fb85
+    resource: repo://evals/ledger/run/runner.ts
+  - id: openwiki-source-2dc719639f40452478188d6b
+    resource: repo://evals/ledger/system/openwiki-system.ts
+  - id: openwiki-source-33844b1c2c98eca457fd6142
+    resource: repo://evals/ledger/tsconfig.json
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-f8b008ed89162a0e204fc02d
+    resource: repo://src/agent/bob.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -24,6 +44,10 @@ sources:
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
+  - id: openwiki-source-c2770ac037a7f4b0116a0dc5
+    resource: repo://src/config/env.ts
+  - id: openwiki-source-f1dd0edb129e50f253618ff4
+    resource: repo://src/config/reasoning.ts
   - id: openwiki-source-3632bcf6292cc01fef69c5b7
     resource: repo://src/connectors/registry.ts
   - id: openwiki-source-1197594de038075f3570340c
@@ -60,10 +84,12 @@ sources:
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+  - id: openwiki-source-d485c898eb60ebb173072eab
+    resource: repo://test/agent/stream-redaction.test.ts
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Source Map
@@ -75,8 +101,9 @@ into a subsystem's own page.
 
 Related reading: [architecture overview](/openwiki/architecture/overview.md),
 [agent runtime](/openwiki/architecture/agent-runtime.md),
-[grounded claims](/openwiki/concepts/grounded-claims.md), and
-[connectors](/openwiki/integrations/connectors.md).
+[grounded claims](/openwiki/concepts/grounded-claims.md),
+[connectors](/openwiki/integrations/connectors.md), and
+[evaluation subsystem](/openwiki/testing/evals.md).
 
 ## The central files
 
@@ -90,19 +117,38 @@ before anything else.
   checkpoint thread and its history (`createOpenWikiThreadId`,
   `pruneCheckpointHistory`, `resolveCheckpointTarget`), and parses streamed
   agent events into `OpenWikiRunEvent`s (`parseStreamEvent`,
-  `parseAgentStreamChunk`).
+  `parseAgentStreamChunk`, and the `parseUpdatesChunk` helper it dispatches to
+  for `'updates'`-mode LangGraph state-delta chunks, which extracts the first
+  non-empty assistant text from the per-node output objects). While streaming,
+  `parseAgentStreamChunk` suppresses content blocks whose `type` includes
+  `file` or `image` (notably `file`, `input_file`, and `image_url` base64
+  blobs) so they never reach the terminal — behavior pinned by
+  `test/agent/stream-redaction.test.ts`.
 - **`src/config/constants.ts`** is the single large registry of stable strings:
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
-  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, and the
-  connector OAuth keys) and the `OpenWikiProvider` union. It also owns the
-  output-token ceilings: `resolveConfiguredMaxOutputTokens` picks the right
-  provider-specific setting (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS`
-  first, then `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls
-  back to `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default
-  does not truncate long pages. Nearly every subsystem imports its identifiers
-  from here.
+  Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the IBM Bob
+  keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the `openai-compatible`
+  keys — including the `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
+  `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` gates — and the
+  connector OAuth keys) and the `OpenWikiProvider` union (which includes the
+  `bob` provider). It also owns the output-token ceilings:
+  `resolveConfiguredMaxOutputTokens` picks the right provider-specific setting
+  (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
+  `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls back to
+  `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default does not
+  truncate long pages. It additionally gates reasoning effort and stream mode
+  for `openai-compatible` providers: it exports
+  `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` and
+  `resolveOpenAiCompatibleReasoningEffortSupported`, which `reasoning.ts` consults
+  to decide whether an `openai-compatible` model advertises a reasoning
+  capability, `providerUsesResponsesApi`, which selects the
+  `responses-reasoning` vs `chat-completions-reasoning-effort` transport, and
+  `resolveOpenAiCompatibleStreamMessages` (the
+  `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` resolver), which opts an
+  `openai-compatible` endpoint back into LangGraph's `"messages"` stream mode.
+  Nearly every subsystem imports its identifiers from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow across a six-operation
   surface: `beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
@@ -144,7 +190,10 @@ by the generation lifecycle), `src/agent/docs-only-backend.ts`
 (`prompt.ts`, `repository-prompts.ts`), read-boundary enforcement
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
-surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`).
+surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), and the IBM Bob fetch
+adapter (`bob.ts`, whose `createBobFetch` rewrites `Authorization: Bearer …` to
+`Apikey <key>` and sets the `ibm-bob-openwiki-provider` `User-Agent` required by
+Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch).
 `runNativeRepositoryGeneration` drives the full loop: it begins the run, runs
 the planning agent, then calls `runPendingPageAgents` to spawn one fresh
 shell-free worker per pending page. Each `runPageAgent` worker is given an
@@ -254,15 +303,31 @@ Owns credential acquisition and storage. Principal entries: `src/auth/oauth.ts`
 `oauth-discovery.ts`, `providers.ts`, `configure.ts`, `external-cli-auth.ts`, and
 `ngrok.ts` for discovery, provider selection, and tunneling.
 
-### config — environment, home directory, and constants
+### config — environment, home directory, reasoning, and constants
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
-registry (path constants, provider env keys, the `OpenWikiProvider` union, and
-defaults), and also owns the output-token resolution helpers
+registry (path constants, provider env keys — including the IBM Bob
+`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the `bob` provider in the
+`OpenWikiProvider` union, and the `openai-compatible` streaming/responses-API
+gates plus `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults), and
+also owns the output-token resolution helpers
 (`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
-`BEDROCK_DEFAULT_MAX_TOKENS`); `env.ts` loads and saves the OpenWiki `.env`;
-`openwiki-home.ts` resolves the home/wiki directories; `reasoning.ts` resolves
-reasoning settings.
+`BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`,
+`resolveOpenAiCompatibleStreamMessages`, and `providerUsesResponsesApi`, which
+gate reasoning effort, stream mode, and the responses API transport for
+`openai-compatible` providers; `env.ts` loads and saves the OpenWiki `.env` and
+is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
+now including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
+`OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`, and
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), from which the
+credential-diagnostic and debug key lists derive; `openwiki-home.ts` resolves the
+home/wiki directories; `reasoning.ts` resolves reasoning settings, owning the
+three reasoning transports (`responses-reasoning`,
+`chat-completions-reasoning-effort`, `gemini-thinking-level`) and the
+`openai-compatible` capability resolution that consults
+`resolveOpenAiCompatibleReasoningEffortSupported` and
+`providerUsesResponsesApi` from `constants.ts`.
 
 ### integrations — host-tool integration and MCP server surface
 
@@ -328,6 +393,52 @@ Owns Mermaid handling in generated wikis: `fences.ts` extracts fences,
 `validate.ts` parses/validates them (degrading invalid diagrams), `wiki.ts`
 applies the policy to pages, and `dom-shim.ts` provides the headless render
 environment.
+
+### evals — longitudinal documentation evaluation
+
+Owns the offline evaluation harnesses that measure whether generated wikis stay
+accurate as their source of truth evolves, and whether OpenWiki improves a
+coding agent. Unlike every other subsystem, the evals live under `evals/`
+(not `src/`) and are invoked via `pnpm` scripts — `eval:ledger` and
+`eval:ledger:reevaluate` — rather than the main CLI binary, with their own
+TypeScript project (`evals/ledger/tsconfig.json`). It is split into two
+independent sub-harnesses.
+
+**LEDGER** (`evals/ledger/`) — the Longitudinal Evaluation of Documentation
+Grounding, Evolution, and Revision — replays a benchmark's Git checkpoints, runs
+OpenWiki at each checkpoint, and judges the frozen wiki snapshot. Principal
+entry: `evals/ledger/run.ts` (`eval:ledger`), which loads the benchmark,
+constructs the `OpenWikiSystem` adapter, runs `runBenchmark`, and persists the
+fully auditable result. `evals/ledger/reevaluate.ts` (`eval:ledger:reevaluate`)
+re-runs the evaluator over a completed run without invoking the system under
+test. `evals/ledger/run/runner.ts` (`runBenchmark`) owns the benchmark
+lifecycle: it preflight-validates the trace (every checkpoint SHA resolves,
+each is an ancestor of the next, and none tracks the wiki directory), then
+walks it running `init` then `update`, captures an immutable artifact at each
+checkpoint, and evaluates it; the workspace and worktree are always torn down.
+`evals/ledger/core/types.ts` owns the benchmark and claim types
+(`LedgerBenchmark`, `LedgerTrace`, `LedgerCheckpoint`, `SemanticEvidenceMap`,
+`KnowledgeArtifact`, `EvidenceCorpus`, `SystemUnderTest`) and the claim-state
+model (`supported`/`stale`/`invented`/`unverified`). `evals/ledger/system/openwiki-system.ts`
+(`OpenWikiSystem`) is the baseline System Under Test: it drives OpenWiki through
+its single `runOpenWikiAgent` entrypoint with `outputMode: "repository"` and no
+user message, so update change-detection is driven purely by the real source
+deltas between checkpoints.
+
+**DeepSWE** (`evals/deepswe/`) is a Python paired-evaluation harness that
+measures whether OpenWiki improves a coding agent on DeepSWE SWE-bench tasks.
+Principal entry: `evals/deepswe/run.py`, which exposes the `prepare`,
+`baseline`, `openwiki`, `paired`, and `summarize` subcommands. The `paired`
+command runs both conditions with the same tasks, seed, model, reasoning effort,
+and Harbor environment: `baseline` gives Codex only the task and repository,
+while `openwiki` restores or generates OpenWiki in an isolated clone and merges
+its managed instructions into the root `AGENTS.md` before the same Codex adapter
+solves the unchanged task. The harness pins the DeepSWE commit, Harbor, litellm,
+and Codex CLI versions for reproducibility, and uses Harbor's official LangSmith
+plugin so both conditions record their trials in the same shared dataset.
+
+See the full [evaluation subsystem](/openwiki/testing/evals.md) page for the
+benchmark contract, claim-state definitions, and run instructions.
 
 ## How the central subsystems connect
 

@@ -28,6 +28,12 @@ export function appendRunLogEvent(
       ...(event.page === undefined ? {} : { page: event.page }),
       ...(event.pageIndex === undefined ? {} : { pageIndex: event.pageIndex }),
       ...(event.pageCount === undefined ? {} : { pageCount: event.pageCount }),
+      ...(event.completedCount === undefined
+        ? {}
+        : { completedCount: event.completedCount }),
+      ...(event.inFlightPages === undefined
+        ? {}
+        : { inFlightPages: [...event.inFlightPages] }),
     };
 
     return existing

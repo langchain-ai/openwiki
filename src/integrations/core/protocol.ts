@@ -114,7 +114,7 @@ export const SubmitPlanInput = z
 export const NextPageInput = RunInput;
 
 /**
- * Strict MCP schema for inspecting the current pending page's Claims on demand.
+ * Strict MCP schema for inspecting a pending page job's Claims on demand.
  */
 export const InspectPageClaimsInput = z
   .object({
@@ -157,7 +157,7 @@ export type SubmitPlanRequest = z.infer<typeof SubmitPlanInput>;
  */
 export type NextPageRequest = z.infer<typeof NextPageInput>;
 
-/** Validated request for the current pending page's complete Claims. */
+/** Validated request for a pending page job's complete Claims. */
 export type InspectPageClaimsRequest = z.infer<typeof InspectPageClaimsInput>;
 
 /**

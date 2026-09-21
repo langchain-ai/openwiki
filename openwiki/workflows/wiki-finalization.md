@@ -22,10 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T08:09:47.649Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -89,7 +89,7 @@ sequenceDiagram
     Caller->>Caller: restore skipped page Markdown from snapshots
     Caller->>Caller: finalize Claims with excludedPages=skippedPages
     Caller->>Caller: assertRepositoryClaimsDurable (excludes skipped)
-    Caller->>Caller: replaceRepositoryPageManifest (preserve skipped)
+    Caller->>Caller: replaceRepositoryPageManifest (regenerated / preserveSource / preserve skipped)
     Caller->>Caller: hasRepositorySourceChanged again
     Caller->>Caller: write interrupted or complete metadata
     Caller->>Caller: remove .run.json last
@@ -246,10 +246,38 @@ At finish, the sequence is:
 8. **`assertRepositoryClaimsDurable`** (also excluding the skipped pages) confirms
    no orphaned Claims sidecars remain and that every non-empty Claim set matches
    a durable sidecar and the final Markdown bytes exactly.
-9. **Rebuild the page manifest.** `replaceRepositoryPageManifest` rebuilds the
-   manifest from the surviving pages discovered by the Claims store, preserving
-   skipped pages' prior coverage so a later update can fast-forward them. The
-   current run's source checkpoint anchors the rebuilt entries.
+9. **Rebuild the page manifest.** After the durability proof,
+   `finishRepositoryRun` discovers the surviving factual pages from the Claims
+   store (`store.discoverPages()`) and partitions them before calling
+   `replaceRepositoryPageManifest`. It computes two sets from that inventory:
+
+   - **`regeneratedPages`** — pages this run actually (re)completed, taken from
+     `producerActorsByPage.keys()` (manifest entries whose
+     `completedRunId === run.state.runId`). These are the only pages restamped with
+     the current run's source checkpoint
+     (`getRepositoryRunSourceCheckpoint(run.state)`), so a stale manifest entry can
+     never promote a page this run did not re-prove.
+   - **`preserveSourcePages`** — every other tracked current page: pages left
+     untouched because they were outside this run's plan, plus pages already
+     durable from an earlier run, minus the skipped pages. These keep their _prior_
+     `gitHead`/`sourceFingerprint` checkpoint rather than being advanced to the
+     current run's, but deterministic finalization may have rewritten code-owned
+     metadata on their body, so their final Markdown/Claims pair is re-proved and
+     `pageVersion` is refreshed only when the final bytes actually changed.
+
+   `skippedPages` is passed as `preservePages`. Inside
+   `replaceRepositoryPageManifest`, each surviving page falls into exactly one of
+   three branches: a `preservePages` entry is copied verbatim from the previous
+   manifest (so a later update can fast-forward a skipped page from its intact
+   prior coverage); a `preserveSourcePages` entry re-invokes `buildManifestEntry`
+   against the entry's _own_ prior checkpoint (re-hashing the final Markdown and
+   re-checking the Claims sidecar) and keeps the previous entry when the refreshed
+   `pageVersion` is identical, otherwise writes the refreshed entry — or, if no
+   prior coverage exists, attempts to seed a first entry from the current run's
+   checkpoint and tolerates a `RepositoryRunError` by leaving the page uncovered for
+   full review; every other page is restamped with the current run's source
+   checkpoint. The net effect is that untouched pages keep their prior source
+   coverage while every retained entry still matches the final durable bytes.
 10. **Recompute source drift after finalization.** `hasRepositorySourceChanged`
     runs a second time; the final `sourceChanged` is
     `sourceChangedBeforeFinish || <changed after finalization>`. Source drift

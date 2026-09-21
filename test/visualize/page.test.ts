@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { PAGE, STATIC_PAGE } from "../../src/visualize/page.ts";
+import { CSP, PAGE, STATIC_PAGE } from "../../src/visualize/page.ts";
 
 /**
  * The browser libraries the page loads from the jsdelivr CDN, pinned to exact
@@ -94,6 +94,33 @@ describe("visualizer PAGE", () => {
       expect(doc.indexOf('id="legend"')).toBeGreaterThan(overlayStart);
       expect(doc.indexOf('id="hint"')).toBeGreaterThan(overlayStart);
     }
+  });
+
+  // Regression: the page requests Inter from Google Fonts (a
+  // fonts.googleapis.com stylesheet, whose CSS in turn references font files
+  // on fonts.gstatic.com), but the CSP previously allowed neither origin —
+  // style-src was "'self' 'unsafe-inline'" and font-src was "'self'". Every
+  // browser enforcing this CSP (as an HTTP header for the live server, or as
+  // a <meta> tag for a static export) silently blocked the font request, so
+  // the visualizer never actually rendered in the Inter typeface it ships.
+  test("the CSP allows the Google Fonts origins the page itself requests", () => {
+    const directives = Object.fromEntries(
+      CSP.split("; ").map((directive) => {
+        const [name, ...sources] = directive.split(" ");
+        return [name, sources];
+      }),
+    );
+
+    const fontsStylesheetMatch = PAGE.match(
+      /<link href="(https:\/\/fonts\.googleapis\.com\/[^"]+)" rel="stylesheet" \/>/u,
+    );
+    expect(fontsStylesheetMatch).toBeTruthy();
+    const fontsStylesheetOrigin = new URL(fontsStylesheetMatch![1]).origin;
+
+    expect(directives["style-src"]).toContain(fontsStylesheetOrigin);
+    // fonts.googleapis.com's CSS response references the actual font files on
+    // fonts.gstatic.com, so font-src must allow that origin too.
+    expect(directives["font-src"]).toContain("https://fonts.gstatic.com");
   });
 
   test("the overlay stack is capped to the graph panel and scrolls", () => {

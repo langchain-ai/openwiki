@@ -66,6 +66,8 @@ describe("runIntegrationsCommand", () => {
       .mockResolvedValueOnce("installed")
       .mockResolvedValueOnce("modified")
       .mockResolvedValueOnce("not-installed")
+      .mockResolvedValueOnce("not-installed")
+      .mockResolvedValueOnce("not-installed")
       .mockResolvedValueOnce("not-installed");
 
     await runIntegrationsCommand({
@@ -79,12 +81,14 @@ describe("runIntegrationsCommand", () => {
     });
 
     expect(stdout.join("")).toBe(
-      "codex\tinstalled\tCodex\n" +
-        "claude\tmodified\tClaude Code\n" +
+      "bob\tinstalled\tIBM Bob\n" +
+        "codex\tmodified\tCodex\n" +
+        "claude\tnot-installed\tClaude Code\n" +
         "opencode\tnot-installed\tOpenCode\n" +
-        "cursor\tnot-installed\tCursor\n",
+        "cursor\tnot-installed\tCursor\n" +
+        "kiro\tnot-installed\tKiro\n",
     );
-    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(4);
+    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(6);
     expect(getHostIntegrationStatus).toHaveBeenCalledWith(
       expect.objectContaining({ id: "codex" }),
       { scope: "user", root: os.homedir() },

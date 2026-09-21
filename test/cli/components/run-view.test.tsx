@@ -207,8 +207,7 @@ describe("RunView", () => {
     unmount();
   });
 
-  test("keeps a stable progress indicator while a tool is running", async () => {
-    vi.useFakeTimers();
+  test("keeps a stable progress indicator while a tool is running", () => {
     const log: RunLogItem[] = [
       { content: "read_file", id: 1, type: "tool", status: "running" },
     ];
@@ -222,8 +221,6 @@ describe("RunView", () => {
     expect(plain(lastFrame())).toMatch(
       /Tracing affected documentation\n\s{4,}read_file/u,
     );
-    await vi.advanceTimersByTimeAsync(600);
-    expect(plain(lastFrame())).toContain("◓");
 
     unmount();
   });

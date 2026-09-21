@@ -13,6 +13,11 @@ const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
 const GEMINI_KEY = "GEMINI_API_KEY";
 const MAX_OUTPUT_TOKENS_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 const REASONING_EFFORT_KEY = "OPENWIKI_REASONING_EFFORT";
+const OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED";
+const OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY =
+  "OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API";
+const OPENAI_COMPATIBLE_STREAMING_KEY = "OPENWIKI_OPENAI_COMPATIBLE_STREAMING";
 const CHATGPT_TOKEN_KEYS = [
   "OPENAI_CHATGPT_ACCESS_TOKEN",
   "OPENAI_CHATGPT_REFRESH_TOKEN",
@@ -29,6 +34,16 @@ function googleMaxOutputTokens(model: ChatGoogle): number | undefined {
       generationConfig?: { maxOutputTokens?: number };
     }
   ).generationConfig?.maxOutputTokens;
+}
+
+function googleThinkingLevel(model: ChatGoogle): string | undefined {
+  return (
+    model.invocationParams({}) as {
+      generationConfig?: {
+        thinkingConfig?: { thinkingLevel?: string };
+      };
+    }
+  ).generationConfig?.thinkingConfig?.thinkingLevel;
 }
 
 describe("createModel gemini-enterprise surface dispatch", () => {
@@ -153,17 +168,21 @@ describe("createModel gemini-enterprise surface dispatch", () => {
 describe("createModel gemini (AI Studio)", () => {
   let savedGeminiKey: string | undefined;
   let savedMaxOutputTokens: string | undefined;
+  let savedReasoningEffort: string | undefined;
 
   beforeEach(() => {
     savedGeminiKey = process.env[GEMINI_KEY];
     savedMaxOutputTokens = process.env[MAX_OUTPUT_TOKENS_KEY];
+    savedReasoningEffort = process.env[REASONING_EFFORT_KEY];
     process.env[GEMINI_KEY] = "test-gemini-key";
     delete process.env[MAX_OUTPUT_TOKENS_KEY];
+    delete process.env[REASONING_EFFORT_KEY];
   });
 
   afterEach(() => {
     restoreEnv(GEMINI_KEY, savedGeminiKey);
     restoreEnv(MAX_OUTPUT_TOKENS_KEY, savedMaxOutputTokens);
+    restoreEnv(REASONING_EFFORT_KEY, savedReasoningEffort);
   });
 
   test("builds a ChatGoogle AI Studio client with v0 output pinned", () => {
@@ -191,6 +210,14 @@ describe("createModel gemini (AI Studio)", () => {
     const model = createModel("gemini", "gemini-3.1-pro", 0) as ChatGoogle;
 
     expect(googleMaxOutputTokens(model)).toBe(12_000);
+  });
+
+  test("maps reasoning effort to Gemini thinkingLevel", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+
+    const model = createModel("gemini", "gemini-3.6-flash", 0) as ChatGoogle;
+
+    expect(googleThinkingLevel(model)).toBe("HIGH");
   });
 });
 
@@ -227,6 +254,189 @@ describe("createModel Anthropic output-token limit", () => {
 });
 
 describe("createModel OpenAI-compatible transport selection", () => {
+  test("normalizes redundant OpenAI-compatible content array wrappers before Chat Completions", async () => {
+    const savedApiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+    const savedBaseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
+    const savedUseResponsesApi =
+      process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
+    const savedStreaming = process.env[OPENAI_COMPATIBLE_STREAMING_KEY];
+    process.env.OPENAI_COMPATIBLE_API_KEY = "test-compatible-key";
+    process.env.OPENAI_COMPATIBLE_BASE_URL = "https://vllm.example/v1";
+    delete process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
+    delete process.env[OPENAI_COMPATIBLE_STREAMING_KEY];
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 0,
+            model: "local-model",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "ok" },
+                finish_reason: "stop",
+              },
+            ],
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("openai-compatible", "local-model", 0);
+
+      await model.invoke([
+        {
+          role: "user",
+          content: [[[{ type: "text", text: "     1\t# Tech Stack" }]]],
+        },
+      ]);
+
+      const [url, init] = fetchMock.mock.calls[0] as [
+        string | URL,
+        { body: string },
+      ];
+      expect(String(url)).toBe("https://vllm.example/v1/chat/completions");
+      expect(JSON.parse(init.body)).toMatchObject({
+        messages: [
+          {
+            content: [{ type: "text", text: "     1\t# Tech Stack" }],
+          },
+        ],
+      });
+    } finally {
+      restoreEnv("OPENAI_COMPATIBLE_API_KEY", savedApiKey);
+      restoreEnv("OPENAI_COMPATIBLE_BASE_URL", savedBaseUrl);
+      restoreEnv(OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY, savedUseResponsesApi);
+      restoreEnv(OPENAI_COMPATIBLE_STREAMING_KEY, savedStreaming);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("does not install content normalization for other ChatOpenAI providers", () => {
+    const savedApiKey = process.env.NVIDIA_API_KEY;
+    process.env.NVIDIA_API_KEY = "test-nvidia-key";
+
+    try {
+      const model = createModel(
+        "nvidia",
+        "nvidia/nemotron-3-super-120b-a12b",
+        0,
+      ) as { clientConfig?: { fetch?: typeof fetch } };
+
+      expect(model.clientConfig?.fetch).toBeUndefined();
+    } finally {
+      restoreEnv("NVIDIA_API_KEY", savedApiKey);
+    }
+  });
+
+  test("passes through non-target OpenAI-compatible fetch bodies unchanged", async () => {
+    const savedApiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+    const savedBaseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
+    const savedUseResponsesApi =
+      process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
+    process.env.OPENAI_COMPATIBLE_API_KEY = "test-compatible-key";
+    process.env.OPENAI_COMPATIBLE_BASE_URL = "https://vllm.example/v1";
+    delete process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("openai-compatible", "local-model", 0) as {
+        clientConfig?: { fetch?: typeof fetch };
+      };
+      const compatibleFetch = model.clientConfig?.fetch;
+
+      expect(compatibleFetch).toBeTypeOf("function");
+      if (!compatibleFetch) {
+        throw new Error(
+          "Expected openai-compatible to install a fetch wrapper.",
+        );
+      }
+
+      const nonChatBody = JSON.stringify({
+        messages: [{ content: [[{ type: "text", text: "non-chat request" }]] }],
+      });
+      const validContentBody = JSON.stringify({
+        messages: [{ content: [{ type: "text", text: "already flat" }] }],
+      });
+      const multimodalBody = JSON.stringify({
+        messages: [
+          {
+            content: [
+              [
+                {
+                  type: "image_url",
+                  image_url: { url: "data:image/png;base64,a" },
+                },
+              ],
+            ],
+          },
+        ],
+      });
+
+      await compatibleFetch("https://vllm.example/v1/models", {
+        body: nonChatBody,
+        method: "POST",
+      });
+      await compatibleFetch("https://vllm.example/v1/chat/completions", {
+        body: "not json",
+        method: "POST",
+      });
+      await compatibleFetch("https://vllm.example/v1/chat/completions", {
+        body: validContentBody,
+        method: "POST",
+      });
+      await compatibleFetch("https://vllm.example/v1/chat/completions", {
+        body: multimodalBody,
+        method: "POST",
+      });
+
+      expect(
+        fetchMock.mock.calls.map(
+          ([, init]) => (init as { body: string } | undefined)?.body,
+        ),
+      ).toEqual([nonChatBody, "not json", validContentBody, multimodalBody]);
+    } finally {
+      restoreEnv("OPENAI_COMPATIBLE_API_KEY", savedApiKey);
+      restoreEnv("OPENAI_COMPATIBLE_BASE_URL", savedBaseUrl);
+      restoreEnv(OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY, savedUseResponsesApi);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("does not install content normalization for OpenAI-compatible Responses API requests", () => {
+    const savedApiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+    const savedBaseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
+    const savedUseResponsesApi =
+      process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
+    process.env.OPENAI_COMPATIBLE_API_KEY = "test-compatible-key";
+    process.env.OPENAI_COMPATIBLE_BASE_URL = "https://vllm.example/v1";
+    process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY] = "true";
+
+    try {
+      const model = createModel("openai-compatible", "local-model", 0) as {
+        clientConfig?: { fetch?: typeof fetch };
+        useResponsesApi?: boolean;
+      };
+
+      expect(model.useResponsesApi).toBe(true);
+      expect(model.clientConfig?.fetch).toBeUndefined();
+    } finally {
+      restoreEnv("OPENAI_COMPATIBLE_API_KEY", savedApiKey);
+      restoreEnv("OPENAI_COMPATIBLE_BASE_URL", savedBaseUrl);
+      restoreEnv(OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY, savedUseResponsesApi);
+    }
+  });
+
   test("routes Copilot GPT-5 models through the Responses API", () => {
     const model = createModel("copilot", "gpt-5.5", 0) as {
       useResponsesApi?: boolean;
@@ -307,17 +517,33 @@ describe("createModel provider-neutral maxTokens mapping", () => {
 
 describe("createModel reasoning configuration", () => {
   let savedReasoningEffort: string | undefined;
+  let savedOpenAiCompatibleReasoningEffortSupported: string | undefined;
+  let savedOpenAiCompatibleUseResponsesApi: string | undefined;
   let savedChatGptTokens: Record<string, string | undefined>;
 
   beforeEach(() => {
     savedReasoningEffort = process.env[REASONING_EFFORT_KEY];
+    savedOpenAiCompatibleReasoningEffortSupported =
+      process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY];
+    savedOpenAiCompatibleUseResponsesApi =
+      process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
     savedChatGptTokens = Object.fromEntries(
       CHATGPT_TOKEN_KEYS.map((key) => [key, process.env[key]]),
     );
+    delete process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY];
+    delete process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
   });
 
   afterEach(() => {
     restoreEnv(REASONING_EFFORT_KEY, savedReasoningEffort);
+    restoreEnv(
+      OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY,
+      savedOpenAiCompatibleReasoningEffortSupported,
+    );
+    restoreEnv(
+      OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY,
+      savedOpenAiCompatibleUseResponsesApi,
+    );
     for (const key of CHATGPT_TOKEN_KEYS) {
       restoreEnv(key, savedChatGptTokens[key]);
     }
@@ -417,6 +643,45 @@ describe("createModel reasoning configuration", () => {
     ) as { modelKwargs?: Record<string, unknown> };
 
     expect(model.modelKwargs).toMatchObject({ reasoning_effort: "high" });
+  });
+
+  test("rejects OpenAI-compatible effort without the explicit opt-in", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+
+    expect(() =>
+      createModel("openai-compatible", "Qwen/Qwen3.7-235B", 0),
+    ).toThrow(/not supported/u);
+  });
+
+  test("maps opted-in OpenAI-compatible effort to chat completions", () => {
+    process.env[REASONING_EFFORT_KEY] = "high";
+    process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY] = "true";
+
+    const model = createModel("openai-compatible", "Qwen/Qwen3.7-235B", 0) as {
+      modelKwargs?: Record<string, unknown>;
+      reasoning?: { effort?: string };
+      useResponsesApi?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(false);
+    expect(model.modelKwargs).toMatchObject({ reasoning_effort: "high" });
+    expect(model.reasoning).toBeUndefined();
+  });
+
+  test("maps opted-in OpenAI-compatible effort to Responses API reasoning", () => {
+    process.env[REASONING_EFFORT_KEY] = "max";
+    process.env[OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_KEY] = "true";
+    process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY] = "true";
+
+    const model = createModel("openai-compatible", "Qwen/Qwen3.7-235B", 0) as {
+      modelKwargs?: Record<string, unknown>;
+      reasoning?: { effort?: string };
+      useResponsesApi?: boolean;
+    };
+
+    expect(model.useResponsesApi).toBe(true);
+    expect(model.reasoning).toEqual({ effort: "max" });
+    expect(model.modelKwargs?.reasoning_effort).toBeUndefined();
   });
 
   test("serializes NVIDIA NIM effort in the Chat Completions request", async () => {

@@ -385,4 +385,46 @@ describe("repository page completion", () => {
       },
     });
   });
+
+  test("refreshes preserved page bytes without advancing source coverage", async () => {
+    const page = "/openwiki/preserved.md";
+    const originalVersion = await writeClaimsPage(page, "# Original\n");
+    await recordRepositoryPageCompletion(
+      root,
+      page,
+      {
+        gitHead: GIT_HEAD,
+        sourceFingerprint: SOURCE_FINGERPRINT,
+      },
+      "host/original",
+      "11111111-1111-4111-8111-111111111111",
+    );
+
+    const refreshedVersion = await writeClaimsPage(page, "# Finalized\n");
+    expect(refreshedVersion).not.toBe(originalVersion);
+
+    await replaceRepositoryPageManifest(
+      root,
+      [page],
+      {
+        gitHead: OTHER_GIT_HEAD,
+        sourceFingerprint: OTHER_SOURCE_FINGERPRINT,
+      },
+      new Set(),
+      new Set([page]),
+    );
+
+    await expect(readRepositoryPageManifest(root)).resolves.toEqual({
+      schemaVersion: 1,
+      pages: {
+        [page]: {
+          gitHead: GIT_HEAD,
+          sourceFingerprint: SOURCE_FINGERPRINT,
+          pageVersion: refreshedVersion,
+          completedBy: "host/original",
+          completedRunId: "11111111-1111-4111-8111-111111111111",
+        },
+      },
+    });
+  });
 });
