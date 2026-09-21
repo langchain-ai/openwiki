@@ -1,0 +1,19 @@
+.changeset/tidy-readers-rest.md
+  s_80539b98ae26ca::t_56f79c03d855f9 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bdcacfe3b6189440c4fca3bf4e0cc169354f50d6",
+  "prompts": {},
+  "sessions": {
+    "s_80539b98ae26ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c468-e0ea-7aa1-8bd4-9fb57f57fb66",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
