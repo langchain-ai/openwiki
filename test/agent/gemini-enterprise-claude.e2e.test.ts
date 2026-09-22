@@ -2,6 +2,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { AnthropicVertex } from "@anthropic-ai/vertex-sdk";
+import type { AuthClient } from "google-auth-library";
 import { ensureDomGlobals } from "../../src/mermaid/dom-shim.ts";
 import { createModel } from "../../src/agent/index.ts";
 
@@ -93,5 +95,53 @@ describe("gemini-enterprise Claude surface (real SDK + jsdom shim, issue #3)", (
     // Must NOT throw "It looks like you're running in a browser-like environment".
     const client = (model as { createClient: () => unknown }).createClient();
     expect(client).toBeDefined();
+  });
+
+  test("the real Vertex SDK forwards its default labels header to rawPredict", async () => {
+    let sentRequest: Request | undefined;
+    const labels = { app: "openwiki", team: "docs" };
+    const client = new AnthropicVertex({
+      projectId: "test-project",
+      region: "us-central1",
+      dangerouslyAllowBrowser: true,
+      authClient: {
+        getRequestHeaders: () =>
+          Promise.resolve(new Headers({ Authorization: "Bearer test-token" })),
+      } as unknown as AuthClient,
+      defaultHeaders: {
+        "X-Vertex-AI-Labels": Buffer.from(JSON.stringify(labels)).toString(
+          "base64",
+        ),
+      },
+      fetch: (input, init) => {
+        sentRequest = new Request(input, init);
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: "msg_test",
+              type: "message",
+              role: "assistant",
+              content: [{ type: "text", text: "ok" }],
+              model: "claude-sonnet-4-5@20250929",
+              stop_reason: "end_turn",
+              usage: { input_tokens: 1, output_tokens: 1 },
+            }),
+            { headers: { "content-type": "application/json" } },
+          ),
+        );
+      },
+    });
+
+    await client.messages.create({
+      model: "claude-sonnet-4-5@20250929",
+      max_tokens: 1,
+      messages: [{ role: "user", content: "hello" }],
+    });
+
+    expect(sentRequest?.url).toContain(":rawPredict");
+    const encoded = sentRequest?.headers.get("X-Vertex-AI-Labels");
+    expect(
+      JSON.parse(Buffer.from(encoded ?? "", "base64").toString("utf8")),
+    ).toEqual(labels);
   });
 });
