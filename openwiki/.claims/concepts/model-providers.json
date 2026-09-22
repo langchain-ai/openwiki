@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ffcb9faed693e7dd431a777f1a7afe1934051dab542ac0b02afe13b68d35410f",
+  "pageVersion": "sha256:b2b2e08b7d9da1deae742fd9ff24896440b6b659f75430ccd346226f72fba99b",
   "claims": [
     {
       "id": "claim_881dbd60dd434311a4774d72dabe29af",
@@ -249,12 +249,12 @@
       "statement": "All managed settings and credentials are persisted to ~/.openwiki/.env, and MANAGED_ENV_KEYS in src/config/env.ts is the single ordered source of truth (including the Bob BOB_API_KEY/BOB_BASE_URL keys and the openai-compatible reasoning/streaming keys) from which the credential diagnostics list and the agent debug key dump are derived so they cannot drift.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L105-L174",
-          "version": "repo-lines-v1:sha256:1f17e18c93a4f6ed244112c8a0f03115eb2d7471021404097761c987f4479c94:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxYmM1OGJiMzRjZjAzODZhYjc4NDY2Mzg2ZjQ0NTc0Y2M5MDM0YjJjNzgwNTNhNjlkZGQ0MDI5Yjk0YTRmMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkOTM3NjAyOTY1OGU1Y2QyYmRiNTI5YzIwOGNlNzU1OTkxMGU5MzMxM2IzOTNlNmY4NGFmMDgzNzU5OGUwYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYzUyMWQ4YTk2NTVkNDg5NTg1ZDE1YTlhOGQ0Yjg5NzMzOGU4NDgzNTM0OWI5YjI3ZGFkNDA4YjAzYTYwYzUifQ"
+          "resource": "repo://src/config/env.ts#L192-L208",
+          "version": "repo-lines-v1:sha256:96c6ccda9ee21eea0aef3807de942cbdafd34195913dbd1c5818ee51ab7e881d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OTJkNjM0ZTJmYmQ3Y2UxOTlkMzExNTIyMGYxNTRiMDMwOGNhYTg4MzkwMmMyMmE0OTgzOWE3MDcwNjEzNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjOGVlNWZiMDViNzcwZDY2MmZjOTJiMzJiODg4NDBiMjQyYjg0NGM5Yjk4YmQ4MWFiNjE0Yzk3Yzk1MTY4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
         },
         {
-          "resource": "repo://src/config/env.ts#L189-L205",
-          "version": "repo-lines-v1:sha256:96c6ccda9ee21eea0aef3807de942cbdafd34195913dbd1c5818ee51ab7e881d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OTJkNjM0ZTJmYmQ3Y2UxOTlkMzExNTIyMGYxNTRiMDMwOGNhYTg4MzkwMmMyMmE0OTgzOWE3MDcwNjEzNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjOGVlNWZiMDViNzcwZDY2MmZjOTJiMzJiODg4NDBiMjQyYjg0NGM5Yjk4YmQ4MWFiNjE0Yzk3Yzk1MTY4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY4NGNkNzFhMDRjMDZkMTRjY2YwMzVmMzVkZDUwNGM3NGNhZjcxMjdlZjFhZjFiNzg2OTI3YmQ1MWM1ZjQifQ"
+          "resource": "repo://src/config/env.ts#L99-L177",
+          "version": "repo-lines-v1:sha256:2349504370a7bb1edd87eb1e02c421dd72b9ce5ccab11cd46ed7a66e13983357:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTkxMGFhMDU2NTg4YTdlMDRhZWRjMDkyYzlhOWY5ODVhZDgxNDhjNzJkZmIzYTYxMDI4ZGJmMzMyYWViMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYzUyMWQ4YTk2NTVkNDg5NTg1ZDE1YTlhOGQ0Yjg5NzMzOGU4NDgzNTM0OWI5YjI3ZGFkNDA4YjAzYTYwYzUifQ"
         }
       ]
     },
@@ -409,10 +409,78 @@
           "version": "repo-lines-v1:sha256:aaa3308f89c7fecc7cf7b9c9c1c8c514f0417f0572129069ca83170a93b981a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YWViN2E2NjE4YjdkZjFlZmVhN2IxMDkxZjM5MTA5MWZmNWNhYmJiZTYwZWQwMWMxODVhYTAwMTRjYzYxZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5OTQ4NWJmZWQ2MTAyZjZkMDIxMjk3NWRkYjVlMTdjMzg1MzQ3N2UwMmRjZmNjYjVhZWIzN2Q0MzI4MmE0YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxYjgxNWM3MzUwMmZmZmRmMmUzNDA4MjQxMDQwNDJiYmU2YjQyMTM4YWQ3NWZlOGUxNmU4Nzg3NzQwZDBjZGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9d338281c7974598bec0d629a63ea58d",
+      "statement": "resolveRunConfig in src/agent/index.ts is the single ordering boundary that turns the declarative provider registry plus env settings into a run config (provider, modelId, providerRetryAttempts, pageConcurrency, maxOutputTokens, streamIdleTimeout) before createModel runs; any throw inside it is tagged 'config' for telemetry, and its onProviderResolved callback publishes the provider the instant it is known so later failures still attribute to it. The steps run in order: resolveConfiguredProvider, resolveExternalCliCredential/validateExternalCliCredential for copilot, ensureProviderCredentials, ensureProviderBaseUrl/SecretKey/Region, ensureFreshChatGptTokens for openai-chatgpt, resolveModelId, then the availability check and the run-level settings.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L181-L234",
+          "version": "repo-lines-v1:sha256:fe9b4eb5255ac31c3d09daa42eb4149854f2ffee04052ac3030e536764220cd1:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDVlNzA4ZTc3ODQ1MjhjMTZlMmYyMmIwYjEzMTg1ODBiMDI2OTBmY2Y5YjZmY2FiODk0OGMyN2FhYzVkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4OGViNTI4YzExZWQ3NDUyNWUyNWQ4ZTMyMzE0MmM5N2ZjY2M1NmJjNjY2ZWI1ZjVlYjhhMDAzMDk3YWQwZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZGZkYjc4MWYxZmUyMTAyYjFiZmQ3MjE1MTg4MjgxNWI1MzI5M2FhMGI2MDI0OGUxNTVmYjBjMWVkZWFlYWYifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L282-L384",
+          "version": "repo-lines-v1:sha256:89885f87266e89f2d45dc584c27546a0d21e993def79dd74ad435eb5b0a2d4cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyZDc0MDYyZWJiMzE3Y2E0NzE4ZDQ5MTlmYTgxNDg3Yzk4OGZhNmMxZjliOTI0YjM5ZjIyYmZhM2RmMmJiOWRkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2532b74958649cea488fec27151d826",
+      "statement": "ensureProviderCredentials in src/agent/index.ts fails fast at run startup by calling getMissingProviderEnvKey and, if it returns a key, throwing with the provider label plus getProviderCredentialHint (ADC / AWS-SDK / gh auth login guidance); it is paired with ensureProviderBaseUrl (required for openai-compatible and validated against getProviderBaseUrlWarnings), ensureProviderSecretKey (the paired AWS secret), and ensureProviderRegion (bedrock only).",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L317-L326",
+          "version": "repo-lines-v1:sha256:a07dda7130f5753365ad786d7726bc577301d93a572142896682871d78c9b8b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiN2U2MmM2MGUxMmI4NTM1N2ZhNjRhMmY1YmRjNmQzZjJjMmQ0MmMwMjg4ODJkYTE0YmVlNjVlM2ViMWQ5ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMmNmZWEyYmM3NmRlZjgzMjE3YTNhNGFjOGI2ODg5NzFmNDVhNjA4OTJiOWZkY2VkZGI1NTljYzVlMmY1NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkZjM2OGE2ZDJiZTE4NzZkNDY0MmQwMmQ2ZmQ2NzhlYzFkYzJkMDZlNjNlZGQ2NjE5ZjgxMTY2ZjI5NjkxZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMzhjMDVlODdiMmZjMDY4MzY1NWIwOTc5NDgxM2ViZTE0NGVkMTk2N2M4ZDJhMjY1ZWE5YzM2NGJlMWMwOWMifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L966-L1030",
+          "version": "repo-lines-v1:sha256:7bb69cdf03157773554bf13aef502f88005e98da21642a738fe482e680a44400:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNDQ0NDM2NWUwN2NkMGFiOTg4MjQwZmZmMTAyOWZhNmY4MzhkZTAzNTkwMjIwNWViOGZkMmU1ZjNiZjc4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NmFkOTNmNzU3NTZlNWU2Yzk3MDZkYjhhNjg4Y2UzZmNiZDg2NjEzY2NjODExMzIzNzA0NDBjZTM0N2MzYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_908fbd9b6f8b48be963dcd40c1e95e3d",
+      "statement": "getSelectedModelAvailability in src/model-availability.ts is the only availability adapter and covers only the openai provider: all other providers, a custom OPENAI_BASE_URL override, or a missing key short-circuit to { status: 'unknown' }; otherwise it queries https://api.openai.com/v1/models and returns 'available' on a matching id, 'unavailable' on a missing one, and 'unknown' on any non-OK response, unexpected body, or fetch failure. resolveRunConfig treats only 'unavailable' as fatal (throwing a 'set OPENWIKI_MODEL_ID' message) and debug-logs 'unknown', so a catalogue lookup failure never blocks inference.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L336-L354",
+          "version": "repo-lines-v1:sha256:a1d1e67cd5763926ffd4202390f70497fe8601f7075da7802a8d354d0a14359f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NWIxOGI2YzE5NmYzOTY1M2ViMDBjNjQxOWZhYzk0OGI3NDhjMGYyZmFhYmQzNmVjZmZlMWMwN2QyMjMxODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjNGI3MTQxNDJlYzk5NWZkNGNkNTY4Zjg1MzkzNDg4ZmVlMzIyYjI1MzExNjRmYjljMjlhNmM5ZDUxMjdkMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlNTYwOTZmY2FhYjhlNmE4YjgyODIyNzk0YmM3NTgyNjFmZTZiNjI0NjYyMThjNWY5MDlkZmI4MWM3OTkyYzQifQ"
+        },
+        {
+          "resource": "repo://src/model-availability.ts#L1-L85",
+          "version": "repo-lines-v1:sha256:319f306833df2a288e95781018f4a4406226a0ab4cf5961f73db9a912566c63c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMDNmMzAwMmU1YTZmMGMwM2RkNGI4OGUzODI2Y2EyMjAyYjRiYThhYjhjZGZhNDdlOTY4OGI2ZjQ3YzZlMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1865f7319e77496aa462051faabc3d9b",
+      "statement": "After model resolution, resolveRunConfig resolves the four run-level settings createModel threads into the chat-model constructor: resolvePageConcurrency (1 to MAX_PAGE_CONCURRENCY 8, default 1); resolveProviderRetryAttempts, which sets maxRetries and when OPENWIKI_PROVIDER_RETRY_ATTEMPTS is unset gives PARALLEL_PROVIDER_RETRY_ATTEMPTS (5) for pageConcurrency > 1 runs (transient rate limits dominate) else DEFAULT_PROVIDER_RETRY_ATTEMPTS (3); resolveConfiguredMaxOutputTokens (OpenRouter legacy maxTokens precedence, then OPENWIKI_MAX_OUTPUT_TOKENS, then the 16000 Bedrock default); and resolveStreamIdleTimeoutForProvider, which is non-undefined only for bedrock and is spread as streamIdleTimeout on ChatBedrockConverse.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1094-L1113",
+          "version": "repo-lines-v1:sha256:6aeaebd243c758ffa5e2c66326bed11732484f9d29128a173e3261d67dcd39b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNGQyZjM2YzJkNWY4MmIwN2FlMjMwNTkyZjJjNzJmMmMxNDIxNjNmMzIxOTEzYjhhOTQ5NzE1MTk5NjZiOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MjEzYzg3MGFkNmU3OWQwZDc3ZTJkYTUyYjJkY2RmNjhhMmY3NTc2ODQ3OGU0OWVlZjIxMGNhNzM5Y2MyYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhY2I2ZGFmNzBiM2FiZTA3NDI0OGUzOWI2MDMyMjA1NGQ4Njk1MDcyYzMzNmE0YjMyZjQ0NmE0NzA2OWEwMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyOGFkZTQxYTBhMzRiODcwZjJmODRmYWE3OTViMTliZmIxNGUyNWFjODk0ZTNmYzFiMmMxMGNlMzRiOGYzYjcifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L355-L379",
+          "version": "repo-lines-v1:sha256:7fbc23015350d614b7315080072e734c120e7bdb7449d8d982f5d56350b9078f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2VjMTQ5MGM5YmI4ODNlNTkyOGFiNGZkMGRlM2Q3ODcyNTM0ZTlmY2Q2MjgwMGViZWFjNWQ2Y2JkYjY4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmUzOTY5ZDZiODgyZGE2NDA5ZDllN2E2NDNiNDQxOTNlMmEzNjAzOTI3Y2JjZDI1ZmNmYWNjYzc5OTgxYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MDFmZjA0OTEwNWMxMThjOGNkMzhhYzA3YmIzNjYwMzU5NGJjOTdkMGRlNjJiNjY0OGRjYWRiYmI1NGI4N2UifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1015-L1098",
+          "version": "repo-lines-v1:sha256:367ece5740e1a9aecd5475b101363304666b02e6e43e3b8ce2c592f06de3f34e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTlhNDI3NDRiMWEwZGFjZjYyYjBkZDUxYjEyOTRmNGRjNzAxZDA1NGUxOGI1YWRkZThhMDU1NWYzNjdhZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMDE4Mzk2OWIyZDNkYmIzMWE5NDg4Zjc1M2M2MGQ3MTZjMjMzNGVmZmJiN2YyOTA3MDQ5OTk4Y2U1ZWVkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZDY3NTFhODI1OTBkNzk5ZDU4MGYyMGY0MDJjMjdmMTQ2OThhMjk1OWY0NmJlNWM0YWU4NmRmOGFlZjg4NGEifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1217-L1238",
+          "version": "repo-lines-v1:sha256:87e5cd6d472a88552178a9d84b0a30007caddf2a801645001b71cb709ee9835a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNWI2MzNiNjc2NmEyZmJjNDRmMmU2NDJjZWViOGNjMGUwY2M3YjVkOWVhNDRmZDNkOGI4Yzc3MmRmMDdjN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YTYzYTRjNjJjYzYwMTQyMDQ3NDFkYWVlZDBhZmRlNmVlMTgyMTc3ZmU3M2MwOWM2MWI5ZmNmYTZjMzczZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNzVjNzA0OTdhZTI1YmIxODYzN2Q2YzYwNGJmZGIzZTg0YzM0N2FiZmZlMTU0YWNkNDNmMGMyZGQ5MzViNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L73-L90",
+          "version": "repo-lines-v1:sha256:5e3650c9790b04ec6c8dc7c5114f7ae1bf31d919a1b446e671b67e41a31c23d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZDRhNTgxYmU1ODU3MDJjZjE4NmMxNzcwODJlOWZiOGMxNTRmODM3ZWQxNzVmMDMwY2EwMjFiNGQ4ODVkMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTk1MWQ3NDY2Njg4YWVmMGJhZDEyY2ZhNjc2ZmRhM2UzNDY4Mzg3YTJlNWJkYmVjNTA3ZTY2MDgwODM2MTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYTE0Y2MyZDA3OTQyY2I3MTEzYmM4ZWUwMGVhMzM4MWQxNDE3MDcyMTIzZDBhMDE5ZjgyYTQ4MTUyNDM1ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkNDhhMGE3NDRiZjYwMWZmZDI0MmUzZjZlYjMxYzI0ODIxYWY0MTYxODExZjA1ZmFiYTZhNTJlNDlhMTgyMDUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-15T08:09:47.649Z"
+    "at": "2026-09-22T08:09:45.637Z"
   }
 }

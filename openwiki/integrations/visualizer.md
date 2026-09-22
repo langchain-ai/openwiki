@@ -36,10 +36,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.2
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Interactive Visualizer
@@ -85,12 +85,19 @@ which the client uses to scale each node's radius.
 
 Edges come from Markdown links. `linkNodes` scans each body for relative `.md`
 link targets, resolves them against the linking page's directory into node ids,
-and records a directed edge plus the reciprocal `backlinks` entry. Self-links,
-links to pages not in the graph, and duplicate edges are dropped, so the graph
-only ever contains resolvable page-to-page references. The walk stays inside the
-wiki: paths that resolve outside `wikiRoot` are skipped, symlinks (which are
-neither files nor directories to the dirent check) are never followed, and the
-scaffolding files `INSTRUCTIONS.md` and `log.md` are excluded.
+and records a directed edge plus the reciprocal `backlinks` entry. Before
+resolving a target, each link is passed through `decodeURIComponent` so that
+URL-encoded filenames — for example a link written as `Foo%20Bar.md` — decode to
+the on-disk `Foo Bar.md` and match the corresponding node id. The decode is
+wrapped in a `try`/`catch`: if a link contains a literal percent sequence that is
+not valid URL-encoding (for instance `100%.md`), the raw, undecoded link is kept
+instead of throwing, and the target must still match an existing node id or the
+link is dropped. Self-links, links to pages not in the graph, and duplicate edges
+are dropped, so the graph only ever contains resolvable page-to-page
+references. The walk stays inside the wiki: paths that resolve outside
+`wikiRoot` are skipped, symlinks (which are neither files nor directories to the
+dirent check) are never followed, and the scaffolding files `INSTRUCTIONS.md`
+and `log.md` are excluded.
 
 ```mermaid
 flowchart TD

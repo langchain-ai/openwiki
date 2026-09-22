@@ -20,16 +20,18 @@ sources:
     resource: repo://src/config/env.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
     resource: repo://src/config/reasoning.ts
+  - id: openwiki-source-ebe194cbeaa2594a6699f9a1
+    resource: repo://src/model-availability.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
   - id: openwiki-source-a302ab67124df4839d320111
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Model Providers and Credentials
@@ -295,6 +297,104 @@ rationale that forces streaming on the openai-chatgpt Codex backend. For GPT-5
 models that use the Responses API (`responsesApi: /^gpt-5/u`), `streaming: true`
 is redundant but harmless, matching the openai-chatgpt provider pattern.
 `createModel` applies this with a conditional spread (`...(providerUsesStreaming(provider) ? { streaming: true } : {})`) rather than assigning `streaming: false`, because LangChain turns an explicit `false` into `disableStreaming`, which is not equivalent to omitting the key.
+
+## Run configuration resolution
+
+Before any model is built, `resolveRunConfig` (`src/agent/index.ts`) assembles
+everything a run needs and fails fast on misconfiguration. It is the single
+ordering boundary that turns the declarative provider registry plus the env
+settings into a concrete run config, and any throw inside it is tagged `config`
+so failure telemetry locates it to the resolution stage. Its callback
+`onProviderResolved` publishes the provider to telemetry the instant it is known,
+so a failure later in resolution (or in the build/run stages) still attributes
+to the right provider.
+
+```mermaid
+flowchart TD
+    Start["resolveRunConfig"] --> Prov["resolveConfiguredProvider"]
+    Prov --> Cli["resolveExternalCliCredential for copilot"]
+    Cli --> Cred["ensureProviderCredentials"]
+    Cred --> Base["ensureProviderBaseUrl / SecretKey / Region"]
+    Base --> ChatGpt{"provider == openai-chatgpt?"}
+    ChatGpt -->|yes| Refresh["ensureFreshChatGptTokens before build"]
+    ChatGpt -->|no| Model["resolveModelId"]
+    Refresh --> Model
+    Model --> Avail["getSelectedModelAvailability"]
+    Avail -->|unavailable| Fail["throw: set OPENWIKI_MODEL_ID"]
+    Avail -->|available or unknown| Concur["resolvePageConcurrency"]
+    Concur --> Retry["resolveProviderRetryAttempts pageConcurrency-aware"]
+    Retry --> Max["resolveConfiguredMaxOutputTokens"]
+    Max --> Idle["resolveStreamIdleTimeoutForProvider (bedrock only)"]
+    Idle --> Build["createModel maxRetries, maxTokens, streamIdleTimeout"]
+```
+
+Diagram: The ordered `resolveRunConfig` pipeline and the settings it feeds into `createModel`.
+
+The steps run in a fixed order:
+
+1. `resolveConfiguredProvider` selects the provider (explicit `OPENWIKI_PROVIDER`
+   or inferred from present API keys).
+2. For `copilot`, `resolveExternalCliCredential` injects the `gh` CLI token into
+   `COPILOT_API_KEY` for the process, then `validateExternalCliCredential`
+   checks it when present.
+3. `ensureProviderCredentials` calls `getMissingProviderEnvKey` and, if it
+   returns a key, throws with the provider label plus `getProviderCredentialHint`
+   (the ADC / AWS-SDK / `gh auth login` guidance). It then runs
+   `ensureProviderBaseUrl` (required for `openai-compatible`, validated against
+   `getProviderBaseUrlWarnings`), `ensureProviderSecretKey` (the paired AWS
+   secret), and `ensureProviderRegion` (`bedrock` only).
+4. For `openai-chatgpt`, `ensureFreshChatGptTokens` runs here so `createModel`
+   stays synchronous.
+5. `resolveModelId` resolves the model (fixed model, `OPENWIKI_MODEL_ID`, or the
+   provider's first option) and `warnOnProviderModelMismatch` emits a non-fatal
+   warning when the ID plainly belongs to another provider.
+
+### Model availability check
+
+`getSelectedModelAvailability` (`src/model-availability.ts`) is the only
+availability adapter, and it only covers the `openai` provider: for every other
+provider it returns `{ status: "unknown", reason: "No availability adapter is
+configured." }`. It also short-circuits to `unknown` when a custom `OPENAI_BASE_URL`
+override is set (an OpenAI-compatible gateway does not have OpenAI Models-API
+semantics) or no API key is available. When it can run, it queries
+`https://api.openai.com/v1/models` with the bearer key; a matching `id` is
+`available`, a missing one is `unavailable`, and any non-OK response, unexpected
+body, or thrown fetch is `unknown`.
+
+`resolveRunConfig` only treats `unavailable` as fatal (throwing an actionable
+"set `OPENWIKI_MODEL_ID`" message); `unknown` is debug-logged and the inference
+path proceeds, so a catalogue lookup failure can never block a run that would
+otherwise succeed.
+
+### Retry attempts, max output tokens, stream idle timeout, and page concurrency
+
+After model resolution, `resolveRunConfig` resolves the four run-level settings
+that `createModel` threads into the chat-model constructor:
+
+- **Page concurrency** — `resolvePageConcurrency` returns an integer from 1 to
+  `MAX_PAGE_CONCURRENCY` (8), defaulting to `DEFAULT_PAGE_CONCURRENCY` (1). It
+  bounds how many repository page workers share one provider key; beyond 8 a
+  single key is rate-limit bound and progress output stops being readable.
+- **Provider retry attempts** — `resolveProviderRetryAttempts` sets
+  `maxRetries` on every chat model. An explicit
+  `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` always wins; when unset, a run with more
+  than one page worker gets `PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5) — because
+  concurrent workers make transient rate limits the common failure — and a
+  single sequential worker gets `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3). The
+  page-concurrency value is passed in so the two settings stay coupled.
+- **Max output tokens** — `resolveConfiguredMaxOutputTokens` is the
+  provider-neutral per-request output cap. On `openrouter` the legacy
+  `OPENWIKI_OPENROUTER_MAX_TOKENS` takes precedence; otherwise the neutral
+  `OPENWIKI_MAX_OUTPUT_TOKENS` wins; and as a last fallback `bedrock` gets
+  `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so the Converse API's 4096 default does
+  not truncate long pages. `createModel` maps the result to each SDK's field
+  (`maxTokens` for OpenAI/Bedrock/OpenRouter, `maxOutputTokens` for Google,
+  `maxTokens` for Anthropic via `resolveAnthropicMaxOutputTokens`).
+- **Stream idle timeout** — `resolveStreamIdleTimeoutForProvider` is only
+  non-`undefined` for `bedrock`; `createModel` spreads it as
+  `streamIdleTimeout` on `ChatBedrockConverse`, a watchdog for the first/next
+  stream chunk (`OPENWIKI_STREAM_IDLE_TIMEOUT`, 0 disables it). Other providers
+  get no idle timeout override and use their SDK default.
 
 ## Reasoning effort
 

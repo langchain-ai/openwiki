@@ -12,7 +12,7 @@ tags:
   - langchain
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -28,6 +28,8 @@ sources:
     resource: repo://src/agent/okf-middleware.ts
   - id: openwiki-source-8bf337d8927152d7d30230b4
     resource: repo://src/agent/prompt.ts
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-73e36256f612bf9dbe62d127
     resource: repo://src/agent/translation-middleware.ts
   - id: openwiki-source-06902db4574f065a9a6ad95d
@@ -36,13 +38,17 @@ sources:
     resource: repo://src/config/constants.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
     resource: repo://src/config/reasoning.ts
+  - id: openwiki-source-58835b77ce38a0dd1fed8d09
+    resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-6f06cc988142430d18f2233e
+    resource: repo://src/integrations/mcp/stdio.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -65,7 +71,7 @@ flowchart TD
   Load --> Repo{"repository init or update"}
   Repo -->|yes| Native["resolveRunConfig then createModel then runNativeRepositoryGeneration"]
   Repo -->|no| Core["runOpenWikiAgentCore"]
-  Core --> Cfg["resolveRunConfig: provider, credentials, modelId, limits"]
+  Core --> Cfg["resolveRunConfig: provider, credentials, modelId, limits, concurrency"]
   Cfg --> Model["createModel builds LangChain chat model"]
   Model --> Graph["createOpenWikiAgentGraph: backend, middleware, prompt, checkpointer"]
   Graph --> Stream["agent.stream with messages or updates mode"]
@@ -83,7 +89,7 @@ Provider selection is `resolveConfiguredProvider`: an explicit `OPENWIKI_PROVIDE
 
 The model id comes from `resolveModelId`: it prefers an explicit option or `OPENWIKI_MODEL_ID`, else the provider's default; a provider with no built-in model options requires the id to be set. The id is normalized and validated, and if it is a known model of a different provider a non-fatal mismatch warning is emitted (the run still proceeds, since a custom gateway may serve it). Resolution also queries `getSelectedModelAvailability`, which aborts the run when a model is provably `unavailable`, but treats an `unknown` result as fine — a catalogue lookup failure is not proof a model cannot be invoked, and only the direct `openai` provider (with an API key and no custom base URL) is actually checked.
 
-After model resolution, `resolveRunConfig` resolves three provider-neutral operational settings that flow into `createModel`: the retry count (`OPENWIKI_PROVIDER_RETRY_ATTEMPTS`), the per-request output-token cap via `resolveConfiguredMaxOutputTokens` (`OPENWIKI_MAX_OUTPUT_TOKENS` translated to each SDK's field name, with Bedrock falling back to a 16,000-token default when the neutral setting is unset), and — for `bedrock` only — the stream idle-timeout watchdog (`OPENWIKI_STREAM_IDLE_TIMEOUT`). These are reported through the debug log so a run's effective limits are observable.
+After model resolution, `resolveRunConfig` resolves four provider-neutral operational settings that flow into `createModel` (and, for the native runner, into the page-worker pool): the page-worker concurrency (`resolvePageConcurrency`, `OPENWIKI_PAGE_CONCURRENCY`, an integer from 1 to `MAX_PAGE_CONCURRENCY` = 8, defaulting to 1), the retry count (`OPENWIKI_PROVIDER_RETRY_ATTEMPTS`, which itself defaults to `PARALLEL_PROVIDER_RETRY_ATTEMPTS` = 5 when more than one worker shares a provider key, versus `DEFAULT_PROVIDER_RETRY_ATTEMPTS` = 3 for a single worker), the per-request output-token cap via `resolveConfiguredMaxOutputTokens` (`OPENWIKI_MAX_OUTPUT_TOKENS` translated to each SDK's field name, with Bedrock falling back to a 16,000-token default when the neutral setting is unset), and — for `bedrock` only — the stream idle-timeout watchdog (`OPENWIKI_STREAM_IDLE_TIMEOUT`). These are reported through the debug log so a run's effective limits are observable.
 
 ## The provider matrix and model instantiation
 
@@ -165,12 +171,64 @@ flowchart TD
 
 Stream-chunk classification by mode and namespace, reducing each raw LangGraph chunk to a display event or null.
 
+## The native repository runner
+
+Repository `init`/`update` runs do not use the shared DeepAgent graph. `runOpenWikiAgent` builds the model directly from `resolveRunConfig` and hands it to `runNativeRepositoryGeneration`, which drives the durable repository lifecycle with its own planner and page workers. The model is built once and reused across every worker, but no repository-generation checkpointer or worker state survives beyond the durable core — each worker is a fresh, bounded agent.
+
+`runNativeRepositoryGeneration` begins (or reconstructs) the durable run via `beginRepositoryRun`. A strict preflight that proves an update needs no work returns `{ skipped: true }` before any model is invoked. Otherwise the run proceeds in order: a planning phase (only when the run is in `planning`), then `runPendingPageAgents` drains the persisted page queue, then `finishRepositoryRun` finalizes. If the repository source changed while OpenWiki was running, the wiki is finalized without advancing its source checkpoint and the user is told to run `--update` to reconcile.
+
+### The planner worker
+
+When the run is in the `planning` phase, `runPlanningAgent` builds one fresh, read-only DeepAgent whose sole completion action is `submit_plan`. The planner's filesystem surface is the small `PLANNER_FILESYSTEM_TOOLS` set — `read_file`, `ls`, `glob`, `grep` — exposed via `createFilesystemMiddleware`, and its `OpenWikiLocalShellBackend` is constructed with an empty `writableWikiPages` allowlist so it cannot write anything. Its middleware is `createFilesystemMiddleware` plus `NO_DELEGATION_MIDDLEWARE`.
+
+`submit_plan` validates the model's plan against `PlanSchema` (an array of page specs each with `path`/`title`/`purpose` plus optional `seedPaths`/`relatedPages`/`instructions`, and an optional `deletePages` list) and persists it durably through `submitRepositoryPlan`. A rejected `invalid_input` submission is turned into a correctable `ToolMessage` so the worker can correct and retry rather than failing the run; any other throw propagates. The planner is streamed with the single instruction `"Plan this repository wiki now."`, and if it exits without having called `submit_plan` the runner throws — planning cannot complete by narration.
+
+### The page-worker pool
+
+Each page is documented by its own fresh agent via `runPendingPageAgents`, which runs up to `pageConcurrency` workers at a time over the persisted page-job queue. The pool is process-local bookkeeping (not durable): a `claimed` set of job ids, a serialized `acquiring` promise so two loops never select the same job, an `inFlight` list of pages being written, a live `size` that can shrink, a single `fatal` slot, and a `skipped` snapshot list.
+
+Every page except `/openwiki/quickstart.md` is documented first. With a single worker the queue order already places quickstart last; with several workers quickstart is explicitly held back until every other page has finished, so its task-routing map links to pages that already exist. A fatal submission error stops new work, lets in-flight workers submit or skip, and is rethrown before `finish` so the run never finalizes with pending jobs.
+
+Each worker loop waits a per-slot `workerStartStaggerMs` (default 1,000 ms, ignored for a single worker) before its first job so the opening model requests of concurrent workers do not hit the provider at the same instant. A worker that skips a page on a provider rate limit lowers the live `size` by one, never below 1, and reports the reduction to the user; `isRateLimitError` recognizes HTTP 429 and rate-limit messages along `cause` chains. When the first pass ends with no fatal error and a held-back quickstart remains, a final single-worker pass documents it.
+
+### Page workers
+
+`runPageAgent` builds one fresh worker bounded to its assigned page job. Its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page. Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus three completion tools:
+
+- `submit_page` completes the page after it is written. It accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`) against `ClaimReconciliationSchema` and forwards them to `submitRepositoryPage`; other current Claims are retained automatically. An `invalid_input` rejection becomes a correctable `ToolMessage`; any other throw marks the submission fatal. It can be called at most once per worker.
+- `inspect_claims` returns the page's complete current Claim set, for use only before intentionally revising or removing otherwise-current content; ordinary focused updates should not call it.
+- `submit_plan` is named in the worker tool allowlist (`WORKER_TOOL_NAMES`) for event classification but is not contributed to page workers — only the planner owns planning.
+
+The worker's middleware is again `createFilesystemMiddleware` (over `PAGE_FILESYSTEM_TOOLS`) plus `NO_DELEGATION_MIDDLEWARE`, which filters out the general-purpose `task` tool that DeepAgents contributes even when `subagents` is empty, so repository workers are deliberately non-delegating. `coerceRepositoryWorkerModelResponse` normalizes provider-streaming aggregates that arrived without `role: "assistant"` (for example reasoning-only first deltas) into proper `AIMessage`/`AIMessageChunk` so LangChain's `wrapModelCall` validator accepts them.
+
+If a page worker throws after submitting, it counts as submitted. If it throws before submitting on a non-fatal error, the runner restores the page's pre-run snapshot via `skipRepositoryPage`, records it as skipped (to be reconsidered on the next update), and emits a deferred-page warning; a fatal submission failure rethrows and is captured by the pool's `fatal` slot. Workers stream only bounded tool lifecycle events — narration is never surfaced — and `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools, tagging the page onto each event.
+
+## The host-driven session manager
+
+The same repository lifecycle is also exposed to external coding agents over MCP. `HostSessionManager` is a thin, rootless single-run adapter over the same transport-neutral lifecycle core (`beginRepositoryRun`/`submitRepositoryPlan`/`nextRepositoryPage`/`inspectRepositoryPageClaims`/`submitRepositoryPage`/`finishRepositoryRun`) that the native runner uses directly. It does not build a model or agent: the host (an external agent) owns planning and page authoring, and OpenWiki owns the durable lifecycle.
+
+`HostSessionManager.create` validates a stable lowercase host identity (and an optional producer actor) and returns an empty adapter. Its `tools()` method returns exactly the six OpenWiki 0.5 lifecycle MCP tools in order — `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`, `openwiki_finish` — each with a Zod-validated input schema and a handler that parses input and dispatches to the matching adapter method. The adapter serializes operations with a single `operationInProgress` guard (concurrent operations fail with `invalid_state`), holds the active run in a process-local slot keyed by durable run id, and maps `RepositoryRunError` codes to stable `HostIntegrationError` codes at its boundary. The stdio MCP server (`runOpenWikiMcp`) constructs one `HostSessionManager` and serves its tools over a `StdioServerTransport`.
+
+The two surfaces share the lifecycle core but differ in who drives the model: the native runner builds the model and runs its own planner and page workers inside the process, while the host session manager hands the six tools to an external agent and only manages the durable run state.
+
+```mermaid
+flowchart TD
+  Begin["openwiki_begin / beginRepositoryRun"] --> Plan["openwiki_submit_plan / submitRepositoryPlan"]
+  Plan --> Next["openwiki_next_page / nextRepositoryPage"]
+  Next --> Inspect["openwiki_inspect_page_claims / inspectRepositoryPageClaims"]
+  Inspect --> Page["openwiki_submit_page / submitRepositoryPage"]
+  Page --> Next
+  Page --> Finish["openwiki_finish / finishRepositoryRun"]
+```
+
+The six lifecycle tools exposed by the host session manager map one-to-one onto the durable core the native runner calls directly.
+
 ## The docs-only filesystem backend
 
 `OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers three independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
 
 1. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and while any ignore rule is active, shell `execute` is restricted to a tiny anchored allowlist (`pwd`, `git rev-parse HEAD`) because arbitrary shell cannot be proven not to read an ignored path.
-2. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages.
+2. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
 3. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
 
 The backend also refuses unbounded root globs and globs that target `.git` metadata, steering the agent toward `ls` at the root followed by targeted searches. Every successful write/edit/delete records the mutated path in the tool-result metadata (`openwikiMutationPath`) so downstream validation knows which page changed.
