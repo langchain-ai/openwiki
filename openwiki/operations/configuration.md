@@ -31,10 +31,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Configuration and Environment
@@ -83,7 +83,9 @@ OpenWiki reads or persists, in the exact order they are written to
 `~/.openwiki/.env`. It is the single source of truth: both the credential
 diagnostics list (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and the agent's debug-dump
 key list (`DEBUG_ENV_KEYS`) are derived from it by filtering, so they cannot
-silently drift out of sync when a new managed key is added. LangChain
+silently drift out of sync when a new managed key is added — including the
+newer `OPENWIKI_PAGE_CONCURRENCY` key, which sits alongside
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` in the managed list. LangChain
 project/tracing settings are managed but are not credentials, so they are
 excluded from the diagnostics panel via `NON_CREDENTIAL_ENV_KEYS`.
 
@@ -235,8 +237,20 @@ next Bedrock stream chunk; `resolveStreamIdleTimeoutForProvider` applies it only
 to the `bedrock` provider, and a value of `0` disables the stream watchdog
 entirely (stalled streams may then hang indefinitely).
 
-`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` (`resolveProviderRetryAttempts`) sets provider
-retry attempts, defaulting to `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3).
+`OPENWIKI_PAGE_CONCURRENCY` (`resolvePageConcurrency`) sets how many
+repository page workers may run at once, accepting an integer from 1 to
+`MAX_PAGE_CONCURRENCY` (8) and defaulting to `DEFAULT_PAGE_CONCURRENCY` (1) when
+unset. Concurrent workers share one provider key, so they make transient rate
+limits the common failure; the upper bound keeps a single key from being
+rate-limit bound and keeps the progress view readable.
+
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` (`resolveProviderRetryAttempts`) sets the
+provider retry count as a positive integer. An explicit value always wins. When
+unset, the default adapts to the run's page concurrency: a single-worker run
+gets `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3), while a concurrent run (more than
+one page worker) gets `PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5), because
+concurrent workers make transient rate limits the common failure and need more
+headroom.
 
 ### Reasoning effort
 
@@ -289,8 +303,8 @@ for those models even though it is valid for OpenAI GPT-5.6.
 `CREDENTIAL_DIAGNOSTIC_ENV_KEYS`, comparing the file value against the
 `process.env` value. Each entry reports its source — `process.env`, the env file
 path, "process.env over <file>" when both are set, or `unset` — and a
-masked preview. Non-secret settings (provider, model, token limits, base URLs,
-region, Google project/location, and the boolean toggles, including
+masked preview. Non-secret settings (provider, model, token limits, page concurrency, base
+URLs, region, Google project/location, and the boolean toggles, including
 `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
@@ -299,13 +313,13 @@ values).
 Diagnostics surface per-key warnings through a dedicated validator per key:
 invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
-effort, invalid retry attempts, invalid stream idle timeout, base-URL provider
-mismatches (Anthropic, Baseten, Bob, Fireworks, NVIDIA, OpenAI, and the
-OpenAI-compatible `/chat/completions`-endpoint guard each validated through
-`getProviderBaseUrlWarnings`), credential whitespace/newline/quote issues, and a
-warning that the
-Bedrock stream watchdog is disabled when the idle timeout is `0`. The boolean
-validator `getBooleanWarnings` covers all four `openai-compatible` toggles —
+effort, invalid retry attempts, invalid page concurrency, invalid stream idle
+timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks,
+NVIDIA, OpenAI, and the OpenAI-compatible `/chat/completions`-endpoint guard
+each validated through `getProviderBaseUrlWarnings`), credential
+whitespace/newline/quote issues, and a warning that the Bedrock stream watchdog
+is disabled when the idle timeout is `0`. The boolean validator
+`getBooleanWarnings` covers all four `openai-compatible` toggles —
 `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`,
 `OPENWIKI_OPENAI_COMPATIBLE_STREAMING`,
 `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`, and

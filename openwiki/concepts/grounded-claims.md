@@ -42,10 +42,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Grounded Claims
@@ -226,10 +226,12 @@ always retains or establishes at least one material proposition.
 
 ## On-demand full-Claim inspection
 
-`nextRepositoryPage` returns only what a focused update needs: the pending job,
-its `existingClaimCount`, and `claimsRequiringAttention` — the subset of Claims
-carrying a stale or unresolved issue. Issue-free Claims are summarized as a
-count, not enumerated, so ordinary updates do not have to carry them.
+`nextRepositoryPage` returns the first pending page job not excluded by the
+caller's in-flight worker set, without reserving or mutating it, along with
+only what a focused update needs: the job's `existingClaimCount` and
+`claimsRequiringAttention` — the subset of Claims carrying a stale or
+unresolved issue. Issue-free Claims are summarized as a count, not
+enumerated, so ordinary updates do not have to carry them.
 
 When a worker must intentionally revise or remove otherwise-current content —
 for example rewriting a section whose Claims are not in `claimsRequiringAttention`
@@ -260,14 +262,18 @@ set.
 
 ### Per-page proof at `submit_page`
 
-Each page job is grounded individually before its job is marked complete. On
-`submit_page`, after the page's Markdown is written and its front matter
-deterministically repaired, the run executes a fixed sequence:
-`reconcilePageClaims` translates the model's sparse Claim decisions into the
-complete `confirm` / `update` / `add` / `retract` operation batch the session
-expects, then `claimsRuntime.finalize` persists the dirty page, and finally
-`assertPageClaimsDurable` re-opens the freshly written sidecar and proves the
-page is durable before advancing the queue.
+Each page job is grounded individually before its job is marked complete.
+`submitRepositoryPage` first runs page-local validation and front-matter
+repair without the run mutation lock (they touch only the submitted page),
+then takes the lock so concurrent workers never lose each other's
+completions: `reconcilePageClaims` translates the model's sparse Claim
+decisions into the complete `confirm` / `update` / `add` / `retract`
+operation batch the session expects, then `claimsRuntime.finalize` persists
+the dirty page — excluding every other still-pending page, which a concurrent
+worker may be mid-edit on, so projecting a stamp or rehashing their sidecar
+here would record transient bytes — and finally `assertPageClaimsDurable`
+re-opens the freshly written sidecar and proves the page is durable before
+the job is marked complete and the queue advances.
 
 `assertPageClaimsDurable` is the strict per-page proof. It re-reads the sidecar
 from disk and refuses the page when any of the following fail, so a partially or

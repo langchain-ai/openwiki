@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:de1a9d496802abceb62be7dd163cdd6f9e977ab1e2f859b8ba5214810ed09411",
+  "pageVersion": "sha256:7b9f94c1dcc1dc41ca7d294c5bdc4ad8eec7a1e100f580676f326debca759715",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
       "statement": "runOpenWikiAgent is the top-level run entrypoint: it loads persisted env, syncs bundled skills, resolves run configuration, then either delegates to native repository generation or runs the shared DeepAgent graph core.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L154-L274",
-          "version": "repo-lines-v1:sha256:5c281f8a490d739787c820d7323542b1c89600c2eade73facc0b06c07e1d53f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNjFmYWYyMDE5ZjY2ZTI3MDM3NGY1NGYyMjQ0M2ZhMzc2MmY2NjAzNzcwMWQyZGQ3Yzk0Yjk4YzAwMDhjODdlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmU3ZjgzZGNhYzk0OWUxMzc4YWI4MjE1MzUxYjdmODAyMzhlMWI2NDRkOWVkMjE2NzFkZTYzOWE2YWMwYmM1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOGFjN2Q2NTRiNjk3ZjFlNGM3Y2E2NWUxZTgxYWVjYzA4MjJhZmZmYjA5NmMwYzVkZWJkNjQzZDI2ODhiNzNmIn0"
+          "resource": "repo://src/agent/index.ts#L157-L280",
+          "version": "repo-lines-v1:sha256:292b63cdc71808037960f3345b7f736d1ebcdbf5fbf32bb7bdb5ef346621c7f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNjFmYWYyMDE5ZjY2ZTI3MDM3NGY1NGYyMjQ0M2ZhMzc2MmY2NjAzNzcwMWQyZGQ3Yzk0Yjk4YzAwMDhjODdlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmU3ZjgzZGNhYzk0OWUxMzc4YWI4MjE1MzUxYjdmODAyMzhlMWI2NDRkOWVkMjE2NzFkZTYzOWE2YWMwYmM1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOGFjN2Q2NTRiNjk3ZjFlNGM3Y2E2NWUxZTgxYWVjYzA4MjJhZmZmYjA5NmMwYzVkZWJkNjQzZDI2ODhiNzNmIn0"
         }
       ]
     },
@@ -17,8 +17,8 @@
       "statement": "Repository init and update runs bypass the shared DeepAgent graph entirely and are delegated to runNativeRepositoryGeneration (the OpenWiki page-job runner), which builds the model directly from the resolved config.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L178-L230",
-          "version": "repo-lines-v1:sha256:26fb22c846a7d24d9bc326ebe3efac141f744ea7a3083dbc3f741403462a1073:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDVlNzA4ZTc3ODQ1MjhjMTZlMmYyMmIwYjEzMTg1ODBiMDI2OTBmY2Y5YjZmY2FiODk0OGMyN2FhYzVkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4OGViNTI4YzExZWQ3NDUyNWUyNWQ4ZTMyMzE0MmM5N2ZjY2M1NmJjNjY2ZWI1ZjVlYjhhMDAzMDk3YWQwZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTExNDdiZTY3MDg0NjFkNjM5OWI1MDU1NzY0ZDFjODY0ZTY5NGQwNDFmZWMwODg3MzJiZDM1OWNkYjEwMmIifQ"
+          "resource": "repo://src/agent/index.ts#L184-L235",
+          "version": "repo-lines-v1:sha256:661bf022ab58b8fee9fb863322c0566c362b6f7c1ce63312d705a5f051b55ef5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MTA0YWI0MzIwYTQyZGU4YmExNDQ3NjY0OTBhNTgyYzdkODZkODdkOTU4YzRhOWJmMDI4OTk3ZjFkNGU0NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjZTJiMjg5MTRlZjk0YmIyZGM5MTA0OWIwZjAzMWM0MDY5ZWVhMDE5YjhlNWE1M2M2NmQ5ZTIxZmM0MGEzZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTExNDdiZTY3MDg0NjFkNjM5OWI1MDU1NzY0ZDFjODY0ZTY5NGQwNDFmZWMwODg3MzJiZDM1OWNkYjEwMmIifQ"
         }
       ]
     },
@@ -42,11 +42,11 @@
     },
     {
       "id": "claim_6ee44c71ad704a9995c3bd6e0aa81209",
-      "statement": "resolveRunConfig performs all pre-build resolution (provider, credentials, base URL, secret key, region, model id, retry/output-token/stream-idle-timeout settings), tags any throw with the config stage, and reports the resolved provider immediately via onProviderResolved so later failures are still attributed to it.",
+      "statement": "resolveRunConfig performs all pre-build resolution (provider, credentials, base URL, secret key, region, model id, page-worker concurrency, retry/output-token/stream-idle-timeout settings), tags any throw with the config stage, and reports the resolved provider immediately via onProviderResolved so later failures are still attributed to it.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L283-L372",
-          "version": "repo-lines-v1:sha256:2d2eb74757da076280b3916b9807dea543cc4e7623a85de84996b2cb2feafe57:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMzVmYjI4MzZmNmIwMTU0YTZhOTE1MjM3Y2EzNWZkOGI2MzNmNjIyYzNjNGExNWZiNDQ0NDJjZDZhMDc2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkZjk3MDA2YzE4YjMwNzRlZGE2MTdlYWQ0MWRkMWNhNzI3MzA5NDc1NjQ5MzYxNWMyODFjNjY2MTM1OWQ3NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNzQwNjJlYmIzMTdjYTQ3MThkNDkxOWZhODE0ODdjOTg4ZmE2YzFmOWI5MjRiMzlmMjJiZmEzZGYyYmI5ZGQifQ"
+          "resource": "repo://src/agent/index.ts#L289-L384",
+          "version": "repo-lines-v1:sha256:3f39a8627d9f80a06465d66c286964c00ba8e0e977c6e37f5f9385febdef5d81:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMzVmYjI4MzZmNmIwMTU0YTZhOTE1MjM3Y2EzNWZkOGI2MzNmNjIyYzNjNGExNWZiNDQ0NDJjZDZhMDc2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkZjk3MDA2YzE4YjMwNzRlZGE2MTdlYWQ0MWRkMWNhNzI3MzA5NDc1NjQ5MzYxNWMyODFjNjY2MTM1OWQ3NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNzQwNjJlYmIzMTdjYTQ3MThkNDkxOWZhODE0ODdjOTg4ZmE2YzFmOWI5MjRiMzlmMjJiZmEzZGYyYmI5ZGQifQ"
         }
       ]
     },
@@ -597,10 +597,124 @@
           "version": "repo-lines-v1:sha256:d2556426539ec9812435c62b8ddc9058aa1a9978b6098b0e09233087c6db1b4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NGQ2NmNkYjNkMTdiNTJmNDg0NzdiOWI2NzA3ZWQyZmRhZDFkYzRmYmJmNzQ0YzgyNGQ5MDJmYmE4MmRmOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MjA2Nzg2NjI0YWNhZmYzY2ExYWFlZDUzNDZlYWU0Njg0MWNjYjdiY2I4MzVjY2NmNWYyNzYxMWIzYWU1ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OWI3NGI1MDkzMTA2MzFmOTUxZDQ2NmY4ZTg2YWYxM2JmMjJmNTc0ZmYwNTk0NTdmNDg1M2ZhMzM1MmM2NGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_73800fbc55374cdbbd9c38119e42ab22",
+      "statement": "runNativeRepositoryGeneration drives the durable repository lifecycle directly: it begins (or reconstructs) the run, runs a planner when the run is in the planning phase, drains the persisted page queue through runPendingPageAgents, then finishes; a strict preflight that proves an update needs no work returns skipped before any model is invoked, and a source-changed run finalizes without advancing the source checkpoint and tells the user to run --update.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L344-L395",
+          "version": "repo-lines-v1:sha256:820c6a868bb06e8180366be2c092d7448e32a28746162c9a7bb34f210b47eef7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1OGU5MmJkYzc4OTAyNzg5YmE5N2Y5OWNiY2VhMTNiOTA1NDA1MTk3YzE1MmI0OGEwNDJiZDQwYWQ0YzY1YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwZWI3ZDk2Y2YyMTdmMmM4NzBjNWY0YjJjNWM1MzJjZDdiYWJmOWQwNDMyNGE1MTUwNzFlNzNkODBiMGQ4NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNjA1MGE5NGUzZDI3YjQ5NWIzZDJlZDBhMTQxZGJkYTJmOWUxMTViYmY4NWY1NTU2NjZkYmU5ZGQxNzJjZDEifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L403-L417",
+          "version": "repo-lines-v1:sha256:471375812094e7f2a4a4db6302411979f7ea81f6aafd9262b9767187e70dbd81:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NjhmNjk0MGZjZTNlZjU3NjRiYzc1ZDBiZGNlYTBlZTRhZTRmZDE4ZGRkNjY4ZjU5MDExZWNiYmEwODZhODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0NWI0ZjFkMTdmM2Y4MmNkZDE5MDE3Mzk5NTFmYjcyMDViNmMyYTQ4NDIwMTZkM2EyZTQwZDBlOTQyNWZlMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZTRmNWFkOTc4NzMwOTE0N2YwMmUyNGM1ZjA1OWY2MWE5ZDZiZmE4NjBmYzJjMzBiZjMwMmM0YzU4ZjA1N2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ecde3ace4b2543b1b43998446b9870d4",
+      "statement": "The planner worker is a fresh read-only DeepAgent whose only completion action is submit_plan: its filesystem surface is the four PLANNER_FILESYSTEM_TOOLS (read_file, ls, glob, grep) with an empty writableWikiPages allowlist, its middleware is createFilesystemMiddleware plus NO_DELEGATION_MIDDLEWARE, and a rejected invalid_input plan submission becomes a correctable ToolMessage rather than failing the run; exiting without submit_plan throws.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L428-L504",
+          "version": "repo-lines-v1:sha256:917a7382b6628ef3c5e3a4430e057f985c76a36a888b74b6de976cdaaf502b05:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzZjRhODE1MGMyYTE2MTkyYmVjYzRlMGUxODliNGY0MTVjZTUxZjhmZDYxNzI3MTI1ZTFmYjNmNThiMTc1MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYzIxZWNmZjQ5ZGFlZmRlZWVlNjJlMTQ0YjI2NWMxMjk5ZDY5NzU3YTBmZjBkZDcxNDUyZjM2OTJmMDM5NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwYjNjZGYwNzA1OGNiYjAyMjNhMzhkZjFjNWU0NzAyOWNiOWM1MjNiNTlhZjYyMmRlMWI0NGU5ZGNjYjVlYjYifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L85-L90",
+          "version": "repo-lines-v1:sha256:665f44920c6c8d7655a41f6aafe152119d59b7876ce61a6bb96dcf99839e7604:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IwZDlmNDIxOTFmNTYwMzUwMjM3ZTk3ZDQ0ZjJjMmFlZDI5MGQ3MTdjYzU3YzI0NmY2YzBlNDhjNTJmMGRhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNkYzc2ZDEyZTUzMDRkMzA3OWVkYjVmODkwMDA3ZWEwNWYyMjZlNGQ5M2I2OTU2ODQ2MGNhZmFmODAwNzQ0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQzNGNlZjE5ODQ0MmEzNWJmMzk0NTZlN2U1MDc1MWI4YTliOWFkNTZmNDRlNGFjZWYyNzFjN2VjMjA2N2M5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTZlY2ZmNjMxNTZjODA4NTdmZDE3NDZiZDZmNjA3YzAzYThiNGE3MGNmYjhlNmE4MDIyMGI2NDc4OTQ4ZDlhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_32f38643e69c4984b26b80a207114ef3",
+      "statement": "runPendingPageAgents runs a page-worker pool of up to pageConcurrency workers over the persisted page queue: each worker waits a per-slot workerStartStaggerMs before its first job (default 1000 ms, ignored for a single worker), and a worker that skips a page on a provider rate limit lowers the live pool size by one (never below 1); quickstart is held back until every other page finishes so its task-routing map links to pages that exist, then a final single-worker pass documents it.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L506-L624",
+          "version": "repo-lines-v1:sha256:9f14a85eb881e5eb4c977b88e41ae370b0501d9d88822f5d880ab007d2141f60:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ZGQxMjU1ZGRmZDc2MjMwZWI5N2NiNzlkNmE3OWQxZmUwZjY4ZjdmZDJhYjkxNmMyOWM5ZjYyNTZjZjE2ODE5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4ODI4NzI2ZWVmN2Y0MDk3NTYwMmZiMjcyM2E2Mzg5ODEwNjVmZDBjNGM3YmFkYjlhMWFjOTdmYjEyNzJmYWU2In0"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L659-L709",
+          "version": "repo-lines-v1:sha256:9f3695a7e0f879ebccf549eae6082d6cfc750d58e9ead59bf1aafb64747c0612:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYWM2ZmRmZjEwMjhkZmYwNzQ1N2Y3M2M5MzBhMmYxMTMwOWMxZGNiMjBhNjM5MTIwZWU4ZjhhMmIwZTAzMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMjE0MTE5MzAyZDQwOTU2MDljZjZlMjUxNDgzYTBiMGUzMzU0OTI1MTQ4MjA3ZGRkNWVjOTc3MDA0YWQwZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMDc4Nzk4OWI2YzliNDY5OTQ5MmEyZmExNzA4NjlmYWU5ZTc1ZjU5OWRhM2EwYmFhZGNjOTI5MGI1ZTk2MTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1da3eb2f1b18414e8d6357fe5538d609",
+      "statement": "Each page worker is a fresh agent bounded to exactly its own page (writableWikiPages set to its job path) with PAGE_FILESYSTEM_TOOLS (the planner's four read tools plus write_file and edit_file) plus submit_page and inspect_claims completion tools; submit_page accepts sparse Claim reconciliation (confirmedClaimIds/claims/retractedClaimIds) and can be called at most once, while inspect_claims returns the page's full Claim set only for intentional revision.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L818-L903",
+          "version": "repo-lines-v1:sha256:5f1ab5e6e99fb7dfa1fdc1f78677866ed592ce9724d001a943a5af27ab3a65aa:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NGFlN2U0N2Q5NDI3Y2YzNzAwYmI0ZmY1YmMxNTJjMDE2NjljZDQ2MTAzOGRhMTYyYmM5MWJmZDYxNWZhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4OTFlZTc1MjFiNDgxZjIyODNiOTcxZGZmMWU4ZWJhMzU2YzU0MWM1YzU5MWRhNTVjNWNmZWQ2Njc2YzQ4NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2ODgzNjk3OThjZjlhY2NjYTkzZDcwZjQ1ZDFkZGFmNDAwMmY3ZWI3NWMxNDJkZjYzOWU3OTc3NjM0NjYwYzAifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L86-L96",
+          "version": "repo-lines-v1:sha256:5d1fffe22c32a2712d34f839020a126489d9d56f1364b8aabd7ca0ad386d7536:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYjQ3MTgwOGEzNjU4ZmNhMjk2ZWJlZjI0YWI2OTVjNzE4YmNlZjIyZjU1YTM3MDUyNjQ0MmE2YTJmZmI0OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkMTg3Nzk4YTVlN2NlY2ViNjViYjg2YmIzOTQ1NTM5NDVhY2Q5NDU4MjJkNjE1OTdkOGMwYzcyMmNjMmM4NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4N2U0MzZiYWQyYzdjZTcwZGY0OTM0NTlhOWM4MWUwMTZiNjM0NzMyMjg4NDZlZjdkNjIyODA1MzY2N2I5ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af83adbc1e794bc1b47931ec1f0cd6e7",
+      "statement": "NO_DELEGATION_MIDDLEWARE filters the general-purpose task tool (added by DeepAgents even with empty subagents) out of every repository worker's model calls so planners and page workers are deliberately non-delegating, and coerceRepositoryWorkerModelResponse normalizes provider-streaming aggregates that arrived without an assistant role into AIMessage/AIMessageChunk so LangChain's wrapModelCall validator accepts them.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L98-L173",
+          "version": "repo-lines-v1:sha256:ccd35c35991b8d725e3b7b787b416d48db274cf3b9d228ff308adf1841aab888:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhYzllYjYxMDliNTNlYmQwZTYwMjI3NDAyZWVkMWRjZTkxM2RjYjNjMTAwYTYwZjEzOTFjZTA3MTdlNzJiOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMGM5NWYxNDgyOGVjMGVjODEyNTc5YTNiNTllMzk5NDM5YjYzMjc2YmFmZWEwYTAyZmU4MWVjMTRiYjUyYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYTYyOTliYzM2YzRiZGMyMGVhYWY2NTE0MzljOGNhZTM2ZTE5Y2FlMDRjN2E3NGM0MjM3MzVhYTIwNjE2NDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_14d56e11cccd4e029e678310ced755ff",
+      "statement": "A page worker that throws before submitting on a non-fatal error has its page restored from the pre-run snapshot via skipRepositoryPage (reconsidered on the next update) and is recorded as skipped, while a fatal submission failure is captured by the pool's single fatal slot and rethrown before finish so the run never finalizes with pending jobs; workers stream only bounded tool lifecycle events, never narration.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L905-L973",
+          "version": "repo-lines-v1:sha256:1f4b05329909c21edf9d36be48686fb6cac3c72149e84c238ac6340d3eacdc57:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2YmQ4ZmMzMTVhYWY2MGRlODgzYmY5MTY1OTFiOTE4NjU5ZDMzNjAyZjI0NDc5NTk3MWYxOGNlZjE0MDVhMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlNzZlMGJkMjVmOWIzYjQ4MDY2NmY0NjExZTc3MzkzOWQ0ZmYwOTI2MmQ1NjgwNTRhMTcwMTg3OGUwOWJkZTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1adfcfb1d0844cdb8466bf8b5541a6a3",
+      "statement": "HostSessionManager is a thin rootless single-run MCP adapter over the same transport-neutral lifecycle core (beginRepositoryRun/submitRepositoryPlan/nextRepositoryPage/inspectRepositoryPageClaims/submitRepositoryPage/finishRepositoryRun) the native runner uses directly: it builds no model or agent, serializes operations with a single guard, holds the active run keyed by durable run id, maps RepositoryRunError codes to HostIntegrationError codes, and is served over stdio by runOpenWikiMcp.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L53-L215",
+          "version": "repo-lines-v1:sha256:f93c1a2358c02fac86fce148a3800d0033015f03b92ae85d5a3eae1840a7c0b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NWI1OWY3MTQ5YzBjZmUzMjQ0Mjg3NDY2ZTRkZmFkNTBkOGRhNjNlYmIwZmI4NmM3YzA5ZjZhNGM3MzFmMGU2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyN2U1Nzg4ZDVkOWQ3M2QyNGE4MWRiYzBhNWE3NGJmYTgyYzljM2IzYWY5OWU1MmFmNzk2ZTkwYjQ2OGE4YTNkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZGE3MWFmZWMwYWEzMzAxOWViM2QxMGE5MzY3Nzc3ZjIyNjc4M2MyNmE0YTI1NTdjMDc0OTVlZTkwZDhhNGFlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhNzIwZDFmNGFhY2UzYjA4OWMzYmIyNTZjNzZkMWQ5YzQ4MzE5YmIyZTMyZDA1YmVjNTdkZThmZjliOWZkN2Q0In0"
+        },
+        {
+          "resource": "repo://src/integrations/mcp/stdio.ts#L27-L33",
+          "version": "repo-lines-v1:sha256:f8c8350444bffd5fcf42be3e5d9c0c76e39ae7d7bd5ea76ed831c46ec74031d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZjNiNmYyN2Y2MDdiZTQxZDg2MWQwYzdkNjZmNTZjMmJmOTYxMjFlNWFkMWMzZDEzNTA1MWJjMzA2ZGU1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODEyNjY1OTY5NDEyZTRjNTA5NWI2ZTY0OTI3YzYxNjVjMzExMGZjNTViYWNkYjIzNDA1YzY2NTUxODc0NjFmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4284e7f02d1a42c78f4c173f3968b2c0",
+      "statement": "HostSessionManager.tools() returns exactly the six OpenWiki 0.5 lifecycle MCP tools in order — openwiki_begin, openwiki_submit_plan, openwiki_next_page, openwiki_inspect_page_claims, openwiki_submit_page, openwiki_finish — each with a Zod-validated input schema and a handler dispatching to the matching adapter method over the same durable lifecycle the native runner calls directly.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L222-L268",
+          "version": "repo-lines-v1:sha256:6f3016a15bbdb6bce5dead012c3f7bb5b3ceaa900e6bf3fbadebf3f7d6f574a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZjE3MzRhNjk0ZWVjZDFmMzFiMWNmYTdjYzY4OTZlZjdkOTZmYzY1OTYyMDAwZjUzOTQ3NjBhYzkyMmVmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1MGQ3ZmRlNjc4YWEwOTU2MDBlYTE0OTg0Mjc3ZjYyNThhNWEzMjNhYzQ3NDY0ZTcyZmFkZTk2ZGE4NzUzZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhOTBlZjcyMzRmYWY2MGU1OGI5YjI2MTRiYmY5YTgyYzc3OTI3M2EyOWIxZTdjNmI4ODA1YjA5NjM5NTRkOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa4a503048de454587bc30d7b8c4a411",
+      "statement": "resolvePageConcurrency returns an integer page-worker concurrency from OPENWIKI_PAGE_CONCURRENCY (1 to MAX_PAGE_CONCURRENCY=8, defaulting to 1), and resolveProviderRetryAttempts defaults to PARALLEL_PROVIDER_RETRY_ATTEMPTS=5 when more than one worker shares a provider key versus DEFAULT_PROVIDER_RETRY_ATTEMPTS=3 for a single worker, reflecting that concurrent workers make transient rate limits the common failure.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L1028-L1098",
+          "version": "repo-lines-v1:sha256:c506e9650aace606195792ccb59d9d2a0a59c2cded8a8590cfc752e850ddcde6:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYTVhNWVlY2IzYWM5YjRmOThiMDc4M2I2M2Y3ZjIxNGNjMGM0YjI1YWE4MTUwNjZkZDlkZTUzYTBjMTliNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmOTM3NTVlZThkMzQ0YTlmMzk5NGU3YTZhNzhiOGMzOWY1ZmY1NTdiYjI4Zjc1MGQ1ODM3MTNkOTAwOTVlZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZDY3NTFhODI1OTBkNzk5ZDU4MGYyMGY0MDJjMjdmMTQ2OThhMjk1OWY0NmJlNWM0YWU4NmRmOGFlZjg4NGEifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L84-L90",
+          "version": "repo-lines-v1:sha256:3bc0df00789535aad0b89002af92b838940ab4d0817f19241393b53f8794616f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRjZDM4ZDQ0OWUxYjhmMDRjMWVhYmFhNDMzNTBlZDEyYjE0ZmI2Mzk2NzZmZDBlYTBiOWZlMjg2ODI1OTNlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhOTUxZDc0NjY2ODhhZWYwYmFkMTJjZmE2NzZmZGEzZTM0NjgzODdhMmU1YmRiZWM1MDdlNjYwODA4MzYxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc0ZTBjOTZhNzkyYTA3NzU1N2YyNzBlMjkxOTc5NTUyMTY3MGU3M2VkNWMxZDUzYTg3ZWY0ZjBjZWU1ZTFiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQ0OGEwYTc0NGJmNjAxZmZkMjQyZTNmNmViMzFjMjQ4MjFhZjQxNjE4MTFmMDVmYWJhNmE1MmU0OWExODIwNSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-15T08:09:47.649Z"
+    "at": "2026-09-22T08:09:45.637Z"
   }
 }

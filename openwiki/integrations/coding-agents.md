@@ -1,14 +1,13 @@
 ---
 type: integration guide
-title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro)
+title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
 description: How OpenWiki runs inside a host coding agent through the six-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-d55cae2851a4bac00040906e
+    resource: repo://docs/pi-integration-notes.md
   - id: openwiki-source-77c4fabfc00b27b92aa6311c
     resource: repo://integrations/openwiki/agents/bob.yaml
   - id: openwiki-source-da19cf14a1041f6d06ffc9a5
@@ -53,22 +52,25 @@ sources:
     resource: repo://src/integrations/mcp/stdio.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-22T08:09:45.637Z
 ---
 
-# Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro)
+# Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
 
 OpenWiki can run _inside_ a host coding agent (IBM Bob, Codex, Claude Code,
-OpenCode, Cursor, or Kiro) instead of as a standalone process. The host agent
-supplies the model, native repository tools, and Markdown authoring; OpenWiki
-supplies a deterministic, resumable **page-job lifecycle** over the Model Context
-Protocol (MCP). The two sides communicate through exactly six MCP tools, and
-installation wires a local stdio MCP server plus a shared skill bundle into each
-host's own configuration.
+OpenCode, Cursor, Kiro, Oh My Pi, or Antigravity CLI) instead of as a standalone
+process. The host agent supplies the model, native repository tools, and Markdown
+authoring; OpenWiki supplies a deterministic, resumable **page-job lifecycle** over
+the Model Context Protocol (MCP). The two sides communicate through exactly six
+MCP tools, and installation wires a local stdio MCP server plus a shared skill
+bundle into each host's own configuration.
 
 This page documents the protocol operations, the divided ownership of research
-versus finalization, repository-root resolution, install/uninstall mechanics,
-and the scope model. For the internal generation engine these tools drive, see
+versus finalization, repository-root resolution, install/uninstall mechanics, and
+the scope model. For the internal generation engine these tools drive, see
 [Repository generation workflow](/openwiki/workflows/repository-generation.md)
 and [Architecture overview](/openwiki/architecture/overview.md). For the
 `openwiki mcp` and `openwiki integrations` commands, see the
@@ -254,6 +256,19 @@ actor, per-scope skill directory and MCP config, and a documentation URL:
   `producerActor` `cursor`.
 - **Kiro** — `.kiro/settings/mcp.json` (`json`) at both user and project scope,
   skill under `.kiro/skills/openwiki` at both scopes; `producerActor` `kiro`.
+- **Oh My Pi** — `.omp/agent/mcp.json` (`json`) at user scope (the default
+  profile), skill under `.omp/agent/skills/openwiki`; project scope uses
+  `.omp/mcp.json` with skill under `.omp/skills/openwiki`; `producerActor` `omp`.
+  User-scope installation targets Oh My Pi's default profile only — named
+  profiles and `PI_CODING_AGENT_DIR` overrides use another agent directory, so
+  install with `--project` when that is the intended repository-local
+  configuration. The `omp` target is distinct from upstream Pi
+  (`earendil-works/pi`); this integration adds no upstream Pi target, generated
+  extension, or other Pi-specific artifact.
+- **Antigravity CLI** — user config `.gemini/config/mcp_config.json` (`json`)
+  with skill under `.gemini/antigravity-cli/skills/openwiki`; project scope uses
+  `.agents/mcp_config.json` with skill under `.agents/skills/openwiki`;
+  `producerActor` `antigravity`.
 
 `defaultMcpServerCommand(target)` produces the published invocation
 `openwiki mcp --host <target>`, which is what installed configs launch.
@@ -310,7 +325,7 @@ requested scope does not exist for the host.
 ## User-level vs project scope
 
 Every host supports **project** scope; user scope is optional (`user` may be
-`null` in the registry, though all six current hosts support both). For
+`null` in the registry, though all eight current hosts support both). For
 **project** scope the installer resolves the root through the same
 `resolveRepositoryRoot` used by runs, so a project install always lands at the
 Git worktree root; for **user** scope it anchors at the home directory. When a
@@ -321,7 +336,8 @@ User-scope destinations match each host's own conventions: IBM Bob writes the
 skill under `~/.agents` and the MCP entry under `~/.bob`, Codex writes under
 `~/.agents` and `~/.codex`, Claude Code under `~/.claude`, OpenCode under
 `~/.config/opencode` (OpenCode's global configuration directory on every
-supported platform), Cursor under `~/.cursor`, and Kiro under `~/.kiro`.
+supported platform), Cursor under `~/.cursor`, Kiro under `~/.kiro`, Oh My Pi
+under `~/.omp/agent` (default profile), and Antigravity CLI under `~/.gemini`.
 
 ## Contributing a new host
 
@@ -330,10 +346,10 @@ the id to `HostTargetId`, add the entry to `HOST_TARGETS`, reuse an existing
 config adapter when possible (add a focused one only for a genuinely different
 format), and add focused registry/install/status/uninstall/config-conflict tests.
 The full procedure, including the local dogfooding command
-`pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro>`, lives in
+`pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity>`, lives in
 `CONTRIBUTING.md` §"Adding a coding-agent integration". `pnpm integrations:dev`
 builds OpenWiki, refreshes the host skill, and records absolute paths to the
-current Node executable and `dist/cli/cli.js`; all six current hosts install at
+current Node executable and `dist/cli/cli.js`; all eight current hosts install at
 user scope, and later source changes only require `pnpm build` unless the bundled
 skill itself changes.
 

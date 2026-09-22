@@ -1,7 +1,7 @@
 ---
 type: workflow
 title: Repository Generation Lifecycle
-description: How OpenWiki drives resumable repository wiki generation through the six durable operations begin, submit_plan, next_page, inspect_page_claims, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json with source-fingerprint invalidation, sparse Claim reconciliation, and skipped-page handling.
+description: How OpenWiki drives resumable repository wiki generation through the six durable operations begin, submit_plan, next_page, inspect_page_claims, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json with source-fingerprint invalidation, sparse Claim reconciliation, skipped-page handling, and optional parallel page workers.
 tags:
   [
     repository-generation,
@@ -11,6 +11,7 @@ tags:
     run-state,
     source-fingerprint,
     claims,
+    parallel-workers,
   ]
 sources:
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -37,10 +38,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Repository Generation Lifecycle
@@ -244,14 +245,14 @@ which preserves the per-job durability guarantee differently:
 4. **Post-submit failure (durability guarantee)** — a worker that throws after
    `submit_page` succeeds does NOT get rolled back. The `submitted` flag is set
    before `submitRepositoryPage` returns, so the catch block checks
-   `if (submitted) return null;` and the post-loop guard does the same — neither
-   calls `skipRepositoryPage`, and the page stays durably complete. The page is
-   already a self-contained durability unit: its Claims were persisted and proven
-   durable by `assertPageClaimsDurable` before the job was marked `complete`, so a
-   later failure cannot undo that durability. The test "keeps a durably
-   completed page after a later worker failure" (the `pageWorkerPostSubmitFailures`
-   harness field) verifies that `restoreCalls` stays zero and the page's status
-   remains `complete`.
+   `if (submitted) return { status: "submitted" };` and the post-loop guard does
+   the same — neither calls `skipRepositoryPage`, and the page stays durably
+   complete. The page is already a self-contained durability unit: its Claims were
+   persisted and proven durable by `assertPageClaimsDurable` before the job was
+   marked `complete`, so a later failure cannot undo that durability. The test
+   "keeps a durably completed page after a later worker failure" (the
+   `pageWorkerPostSubmitFailures` harness field) verifies that `restoreCalls`
+   stays zero and the page's status remains `complete`.
 
 ### Snapshot capture, skip, and restore
 
@@ -438,18 +439,15 @@ retry.
 Both entrypoints drive the identical durable core.
 
 The **native runner** (`runNativeRepositoryGeneration`) begins the run with a
-stable OpenWiki producer actor, then loops: it runs a bounded planning agent
-when the phase is `planning`, runs one fresh non-delegating page worker per
-pending job (each bounded to writing only its assigned page and calling
-`submit_page`, with `inspect_claims` available on demand), and then calls
-`finish`. The page loop collects a `RepositoryPageSnapshot` for every worker it
-skips and passes them all to `finishRepositoryRun`. When `finish` reports
-`sourceChanged: true`, the runner emits a user-facing message explaining that the
-wiki was finalized without advancing the source checkpoint and a later
-`--update` will reconcile the drift. Workers reuse the supplied model but keep no
-repository-generation state beyond the durable core. The native runner captures
-the snapshot _before_ each worker and restores it on non-fatal failure, so a
-worker can never leave partial page content behind.
+stable OpenWiki producer actor, then loops: it runs a bounded planning agent when
+the phase is `planning`, runs every remaining page job via
+`runPendingPageAgents` (up to `pageConcurrency` fresh non-delegating workers at
+once, each bounded to writing only its assigned page and calling `submit_page`,
+with `inspect_claims` available on demand), and then calls `finish`. When
+`finish` reports `sourceChanged: true`, the runner emits a user-facing message
+explaining that the wiki was finalized without advancing the source checkpoint
+and a later `--update` will reconcile the drift. Workers reuse the supplied model
+but keep no repository-generation state beyond the durable core.
 
 The **host integration** (`HostSessionManager`) exposes the same six operations
 as the OpenWiki MCP tools, including `openwiki_inspect_page_claims`. It holds one
@@ -463,6 +461,125 @@ and source-fingerprint invalidation semantics. The host adapter does not, howeve
 participate in skipped-page handling: it calls `finishRepositoryRun` without
 `skippedPageSnapshots`, so a skipped job in a host-driven run makes finish report
 the missing-snapshot `invalid_state` unless the host supplies snapshots itself.
+
+## Parallel page workers
+
+The native runner drives page generation through `runPendingPageAgents`, which
+runs up to `pageConcurrency` worker loops at once (default 1). Each worker still
+owns exactly one page; concurrency is about how many pages are in flight, not
+about splitting a single page.
+
+### Worker pool ownership
+
+`PageWorkerPool` is the process-local bookkeeping shared by the worker loops of
+one run. Nothing in it is durable: the checkpoint only records `pending`,
+`skipped`, and `complete` job statuses, and a resumed run rebuilds ownership from
+scratch. The pool tracks:
+
+- `concurrent` — whether the run was configured with more than one worker.
+- `claimed` — job ids handed to a worker in this process, never offered again.
+- `acquiring` — a promise that serializes job acquisition so two loops never
+  select the same job. `nextRepositoryPage` selects before its first `await`, so
+  concurrent calls in one tick would all see the same unclaimed head of the queue.
+- `inFlight` — canonical pages currently being written, in start order.
+- `size` — live worker limit; lowered after rate-limit failures, never below 1.
+- `fatal` — first fatal error; once set, loops stop taking new jobs.
+- `skipped` — snapshots of pages whose worker exited without submitting.
+
+### Job acquisition
+
+`acquireNextJob` chains each call onto the pool's `acquiring` promise so only
+one loop at a time calls `nextRepositoryPage`. It passes an `exclude` set built
+from the pool's `claimed` ids and the `heldBack` ids, so each call yields a
+distinct pending job. When `nextRepositoryPage` returns `status: "complete"`
+(no unowned pending job remains), the loop exits. A concurrent pool also
+temporarily holds back the quickstart page so its task-routing map links to
+pages that already exist.
+
+### Worker start stagger
+
+The first wave of worker starts is spread by `workerStartStaggerMs` (default
+1 000 ms) so concurrent workers do not hit the provider at the same instant.
+Each slot waits `slot * workerStartStaggerMs` before its first job; the delay is
+ignored for a single worker (`slot === 0`).
+
+### Rate-limit backoff
+
+When a worker is skipped due to a provider rate-limit error (`isRateLimitError`),
+the pool shrinks its live `size` by one (never below 1) and emits a user-facing
+message. The remaining workers continue; the fatal-error guard ensures the run
+never finalizes with pending jobs.
+
+### Fatal-error handling
+
+A fatal submission error (any error from `runPageAgent` that is not a skipped
+`PageAgentOutcome`) stops new work: `runWorkerLoop` records it in `pool.fatal`,
+removes the in-flight page, and returns. `runPendingPageAgents` rethrows
+`pool.fatal.error` before calling `finishRepositoryRun`, so the run never
+finalizes with pending jobs. In-flight workers that have already submitted or
+will skip are allowed to complete before the rethrow.
+
+### Quickstart holdback
+
+With more than one worker, `runPendingPageAgents` holds back the quickstart page
+(`/openwiki/quickstart.md`) until every other page has finished, then runs a
+single-worker pass for it. With one worker the queue order already places
+quickstart last, so no explicit holdback is needed.
+
+### Snapshot capture and restore
+
+The native runner captures a `RepositoryPageSnapshot` via
+`captureRepositoryPageSnapshot` before each worker starts, recording the current
+pending job id, the page path, the pre-worker Markdown (or `null` if the page
+does not yet exist), and the page's existing Claims sidecar (or `null`).
+Snapshotting is itself strict: only the current pending job may be snapshotted,
+and the page must be text (a snapshot of a non-text page rejects with
+`invalid_state`).
+
+When a worker must be skipped, the runner calls `skipRepositoryPage` with that
+snapshot. `skipRepositoryPage` verifies the caller still owns the current pending
+job, then restores the page exactly: `restoreRepositoryPageMarkdown` writes back
+the snapshot Markdown, or deletes the page if the snapshot had none, so the
+worker's partial writes are discarded. The Claims sidecar is likewise restored —
+written back if the snapshot had Claims, deleted otherwise. A fresh process-local
+Claims runtime is rebuilt from durable state, `interrupted` last-update metadata
+is written, and a new checkpoint marks the job `skipped` without advancing the
+queue. `nextRepositoryPage` then sees the next `pending` job, so the run
+continues with the remaining pages.
+
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 8: ...ight Runner ->> Loop: runWorkerLoops Expecting '+', '-', '()', 'ACTOR', got 'loop' -->
+```text
+sequenceDiagram
+    autonumber
+    participant Runner as runPendingPageAgents
+    participant Pool as PageWorkerPool
+    participant Loop as runWorkerLoop slot N
+    participant Core as nextRepositoryPage and submitRepositoryPage
+    Runner ->> Pool: initialize claimed, acquiring, size, inFlight
+    Runner ->> Loop: runWorkerLoops starts pool.size loops
+    loop until queue drained or fatal
+        Loop ->> Pool: acquireNextJob serialized
+        Pool ->> Core: nextRepositoryPage exclude claimed
+        Core -->> Pool: pending job or complete
+        Loop ->> Loop: captureRepositoryPageSnapshot
+        Loop ->> Loop: runPageAgent
+        alt submit_page succeeds
+            Loop ->> Core: submitRepositoryPage
+            Core -->> Loop: complete
+        else non-fatal error or clean exit without submit
+            Loop ->> Core: skipRepositoryPage with snapshot
+            Pool ->> Pool: pool.skipped.push snapshot
+        else fatal error
+            Pool ->> Pool: pool.fatal set
+        end
+    end
+    Runner ->> Runner: rethrow pool.fatal if set
+    Runner ->> Runner: finishRepositoryRun with skipped snapshots
+```
+
+One pass of `runPendingPageAgents` with a concurrent worker pool. Job
+acquisition is serialized; model work runs in parallel; skip and submit mutate
+shared state under the `withRunMutation` lock.
 
 ## Planner and worker prompts
 

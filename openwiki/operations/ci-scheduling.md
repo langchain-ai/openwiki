@@ -35,10 +35,10 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-10T08:09:53.024Z
 generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # CI Scheduling and Self-Update

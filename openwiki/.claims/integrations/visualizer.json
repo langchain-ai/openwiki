@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5a24afc86d498b2cab5eddb2cbe29dd705e38520e983ee93e21cf4a705dcbc45",
+  "pageVersion": "sha256:54318d6cf404e6c106bf91250a72e1b205e2377158eb85c45b5607b1468a6135",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -72,15 +72,15 @@
     },
     {
       "id": "claim_b0941e9ef43f4b0ab3ed20221aeef814",
-      "statement": "Edges are derived from relative Markdown `.md` links resolved against the linking page's directory into node ids; self-links, links to pages not present in the graph, and duplicate edges are dropped, and each edge also records a reciprocal backlink on the target node.",
+      "statement": "linkNodes derives edges from relative Markdown `.md` links resolved against the linking page's directory into node ids; before resolving, each link is run through decodeURIComponent (wrapped in try/catch so a literal invalid percent sequence is kept raw rather than thrown), the target must still match an existing node, and self-links, links to pages not present in the graph, and duplicate edges are dropped, while each surviving edge also records a reciprocal backlink on the target node.",
       "evidence": [
         {
           "resource": "repo://src/visualize/graph.ts#L143-L145",
           "version": "repo-lines-v1:sha256:3c1bf21fad43ca1784e5d547da6b69a14a082b2617368681b16fb6db64fce0e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ5ZWZkMDNlZmJmZmQ5NjBkZjAxNTc2NTQ3MTVkNmUyOTA1MjQzN2E1ZjI2ZWQ4MjQ3ZWRhMmJkNzA1NDg5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc3Y2RhNzQ1ZDZiZGY3OTJjMWM2YmRmY2FjYmNhNTcwYjVkODkyYjI5ODcxNzExNmI1OTVjYjI1OTRmOWY0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGJmMTUwYmFlN2FiOTRlZDNkZGE4ODkzZDhhYTdhMjVlYjM3YWMxYjJjMTEwNjIxMjE0YjM5NTNmOGVjZDc0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg3NzQxYjhlMjQ4YmZhNmExYjg3NTM4YjA1NjJhNTE5MjUwN2I3NTQ0ZGI2OWRjYThjNjEzZjk1Nzg2NjM2ZSJ9"
         },
         {
-          "resource": "repo://src/visualize/graph.ts#L297-L320",
-          "version": "repo-lines-v1:sha256:0863ac3ac2e0678928ffc5032fc2378db92951fca6e0151fd40f11ef4c6c2beb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNWZlM2ZhNzM2YTQzNzRhZjQ0MTIzNWUxNTI0YWE2ZGJkYmFiZDAwNWYwZmY3Zjg0NDcwMjY0ZTgyZjEyODUifQ"
+          "resource": "repo://src/visualize/graph.ts#L297-L327",
+          "version": "repo-lines-v1:sha256:780f168546a9f69954011a95ed7f31a9bd552b5abbb7cb4975e3da0755c6c5b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNWZlM2ZhNzM2YTQzNzRhZjQ0MTIzNWUxNTI0YWE2ZGJkYmFiZDAwNWYwZmY3Zjg0NDcwMjY0ZTgyZjEyODUifQ"
         }
       ]
     },
@@ -408,7 +408,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-22T08:09:45.637Z"
   }
 }
