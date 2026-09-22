@@ -59,6 +59,8 @@ describe("published host integration bundle", () => {
             file.startsWith(".opencode/") ||
             file.startsWith(".cursor/") ||
             file.startsWith(".kiro/") ||
+            file.startsWith(".omp/") ||
+            file.startsWith(".gemini/") ||
             file.startsWith(".config/") ||
             file.startsWith(".deepagents/") ||
             file.includes("staging") ||

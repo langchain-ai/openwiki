@@ -34,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Onboarding and Setup
@@ -238,6 +238,29 @@ repository runs (`beginRepositoryRun`). It:
   `CLAUDE.md` that is neither the bare import nor the same file as `AGENTS.md`,
   but contains marker regions or any other content, is refreshed in place like
   `AGENTS.md`.
+- **Legacy pre-marker section removal.** Pre-marker (0.0.x) releases wrote an
+  unmarked `## OpenWiki` section straight into `AGENTS.md`/`CLAUDE.md`. Before
+  deciding where the managed block goes, `prepareCodeModeAgentSnippet` strips
+  those legacy sections via `findLegacyOpenWikiSections` so a file that was
+  first touched by an old release is not left with a stale section sitting
+  beside the new managed block (two `## OpenWiki` headings). A heading only
+  qualifies as legacy when its next non-blank line is exactly the released
+  template sentence ("This repository has documentation located in the
+  /openwiki directory."), so a hand-written `## OpenWiki` section that merely
+  shares the heading is never touched, and a heading quoted inside a fenced
+  code block is skipped (the parser tracks CommonMark fence state, so a `~~~`
+  line inside a ` ``` ` block does not close the outer fence). The removal
+  consumes only the known template lines beneath the heading and stops at the
+  first line that is not one of them, so hand-edited content below the section
+  — a customized quickstart link, an appended sentence, a trailing paragraph —
+  survives intact. With markers absent and a legacy section present, the
+  managed block is placed where the section was (preserving the file's shape)
+  rather than appended to the end; with no markers and no legacy section it is
+  appended after existing content. When stripping a legacy section from an
+  import-only `CLAUDE.md` leaves nothing but `@AGENTS.md`, that import is kept
+  verbatim (no managed block is added, since `AGENTS.md` already carries the
+  instructions). Marker validation runs on the post-legacy-removal content, so
+  a malformed/duplicated marker set still aborts with the file unchanged.
 - Creates the scheduled-update GitHub Actions workflow
   (`.github/workflows/openwiki-update.yml`) **only** when `createWorkflow` is set,
   which is the case only for the `init` command. `--update` and chat runs leave

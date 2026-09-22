@@ -13,7 +13,7 @@ Do not enumerate, preload, or search wikis at task start. Use retrieval when the
 user asks for it, when unfamiliar architecture or dependency behavior materially
 affects the task, or when source inspection leaves an important uncertainty.
 Stop once the question is grounded.
-Use openwiki_search when repository context could help locate code, understand
+When those conditions apply, use openwiki_search to locate code, understand
 behavior or relationships, choose an approach, or find a testing procedure.
 OpenWiki link creates named workspaces of related repository wikis. A repository
 with one workspace uses it automatically; an active workspace resolves overlaps.

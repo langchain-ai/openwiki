@@ -185,7 +185,9 @@ describe("OpenWiki MCP adapter", () => {
       expect(instructions).toContain("Stop once the question is grounded");
       expect(instructions).toContain("openwiki_list_workspaces");
       expect(instructions).toContain("openwiki_list_wikis");
-      expect(instructions).toContain("Use openwiki_search");
+      expect(instructions).toContain(
+        "When those conditions apply, use openwiki_search",
+      );
       expect(instructions).toContain("Use openwiki_read");
       expect(instructions).toContain("status=workspace_required");
       expect(instructions).toContain("return a wiki ID");

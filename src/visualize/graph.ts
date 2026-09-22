@@ -306,7 +306,14 @@ function linkNodes(nodes: WikiNode[], wikiRoot: string): WikiEdge[] {
   for (const node of nodes) {
     const fileDir = path.dirname(path.join(wikiRoot, `${node.id}.md`));
     for (const link of markdownLinks(node.body)) {
-      const target = toId(wikiRoot, path.resolve(fileDir, link));
+      let decodedLink = link;
+      try {
+        // Decode encoded filenames once, preserving literal percent sequences.
+        decodedLink = decodeURIComponent(link);
+      } catch {
+        // Keep literal percent signs; the target must still match an existing node.
+      }
+      const target = toId(wikiRoot, path.resolve(fileDir, decodedLink));
       const targetNode = byId.get(target);
       const key = `${node.id}\n${target}`;
       if (!targetNode || target === node.id || seen.has(key)) continue;

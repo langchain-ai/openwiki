@@ -59,6 +59,7 @@ describe("canonical OpenWiki host skill", () => {
     );
     expect(retrieval).toContain("when the\nuser asks for it");
     expect(retrieval).toContain("Stop once the question is grounded");
+    expect(retrieval).toContain("When those conditions apply, use");
     expect(retrieval).toContain("`openwiki_search");
     expect(retrieval).toContain("`openwiki_read");
     expect(retrieval).toContain("`openwiki_list_workspaces");

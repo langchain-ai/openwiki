@@ -1,6 +1,6 @@
 ---
 name: openwiki
-description: Search and read an existing repository OpenWiki, or initialize and update one through the resumable page-job lifecycle.
+description: Search and read an existing repository OpenWiki when requested or needed to resolve a concrete architecture or dependency uncertainty, or initialize and update one through the resumable page-job lifecycle.
 ---
 
 # OpenWiki
@@ -12,9 +12,10 @@ user asks for it, when unfamiliar architecture or dependency behavior materially
 affects the task, or when source inspection leaves an important uncertainty.
 Stop once the question is grounded.
 
-Use `openwiki_search({ root, query, paths?, limit? })` when repository context
-could help locate code, understand behavior or relationships, choose an approach,
-or find a testing procedure. Supply the absolute Git top-level. Optional
+When those conditions apply, use
+`openwiki_search({ root, query, paths?, limit? })` to locate code, understand
+behavior or relationships, choose an approach, or find a testing procedure.
+Supply the absolute Git top-level. Optional
 repository-relative source paths boost related sections without filtering other
 matches. Empty results are valid.
 

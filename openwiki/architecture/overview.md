@@ -13,6 +13,7 @@ tags:
     okf,
     connectors,
     visualizer,
+    page-concurrency,
   ]
 sources:
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
@@ -31,6 +32,8 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
@@ -41,10 +44,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Architecture Overview
@@ -89,15 +92,20 @@ flowchart TD
   Host --> McpServer["MCP server session-manager"]
   McpServer --> Lifecycle
   Core --> Connectors["connector tools"]
-  Lifecycle --> Snapshot["snapshot pending page and Claims"]
-  Snapshot --> PageWorker["page worker"]
-  PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot and marks skipped"]
-  Skip --> Lifecycle
+  Lifecycle --> Planner["bounded planner (submit_plan)"]
+  Planner --> Pool["page worker pool, up to pageConcurrency at once"]
+  Pool --> Slot1["worker slot 0"]
+  Pool --> Slot2["worker slot 1...N"]
+  Slot1 --> Snapshot["snapshot pending page and Claims"]
+  Slot2 --> Snapshot
+  Snapshot --> PageWorker["fresh page worker"]
+  PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot, marks skipped, lowers live limit on rate limit"]
+  Skip --> Pool
   PageWorker -->|"inspect_claims on demand"| Lifecycle
   PageWorker -->|"submit_page sparse Claim decisions"| Lifecycle
-  Lifecycle -->|"source drift at finish"| Report["runner reports drift and returns sourceChanged=true"]
+  Pool -->|"all drained (quickstart held back to last)"| Finalize["finishRepositoryRun restores skipped pages and finalizes"]
+  Finalize -->|"source drift at finish"| Report["runner reports drift, returns sourceChanged=true"]
   Report --> LaterUpdate["next --update resumes and invalidates the plan"]
-  Lifecycle --> Finalize["finishRepositoryRun restores skipped pages and finalizes"]
   Finalize --> Wiki["OKF wiki output"]
   Wiki --> Viz["visualize server or static export"]
 ```
@@ -106,6 +114,43 @@ Caption: High-level component relationships from the CLI through native and
 host-driven generation to OKF output and the visualizer. A finish-time source
 drift does not abort the run: `runNativeRepositoryGeneration` finalizes
 honestly and returns, leaving a later `--update` to reconcile.
+
+The lifecycle both drivers share is a strict, ordered sequence over a durable
+queue:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Driver as Native runner / host agent
+  participant Run as ActiveRepositoryRun
+  participant Queue as durable PageJob queue
+  Driver->>Run: begin
+  Run->>Run: reject unrecognized language (invalid_input)
+  Run->>Queue: resume or install run state (.run.json)
+  Driver->>Run: submit_plan
+  Run->>Queue: validate + persist ordered queue (phase -> generating)
+  loop each pending page (native: up to pageConcurrency workers)
+    Driver->>Run: next_page [exclude in-flight ids]
+    Run-->>Driver: job + existingClaimCount + claimsRequiringAttention
+    Driver->>Run: inspect_claims (on demand, broad rewrites)
+    Run-->>Driver: complete Claim set
+    Driver->>Run: submit_page (sparse Claim decisions)
+    Run->>Queue: persist Markdown + Claims + page-manifest (durable boundary)
+    alt worker fails / no submit
+      Driver->>Run: skipRepositoryPage
+      Run->>Queue: restore snapshot, mark skipped
+    end
+  end
+  Driver->>Run: finish (finalize-once)
+  Run->>Run: restore skipped pages, finalize Claims excluding them
+  Run->>Run: re-check source fingerprint at both ends
+  Run-->>Driver: { status: complete, sourceChanged? }
+```
+
+Caption: The `begin → submit_plan → next_page → submit_page → finish`
+lifecycle. `finish` is a single deterministic finalization; it refuses to run
+while any page job is still `pending`, restores skipped pages' Markdown, and
+persists `interrupted` metadata when pages were skipped or source drifted.
 
 ## CLI entrypoint
 
@@ -129,35 +174,62 @@ their own runners.
 `~/.openwiki/.env` environment, syncs bundled skills, and then branches on
 whether this is a repository generation run — `outputMode === "repository"`
 combined with an `init` or `update` command. Repository generation is delegated
-to `runNativeRepositoryGeneration`; every other case (personal-mode runs,
-chat, ingestion synthesis) builds a DeepAgents graph via the core path.
+to `runNativeRepositoryGeneration` (after the same `resolveRunConfig` that the
+core path uses); every other case (personal-mode runs, chat, ingestion
+synthesis) builds a DeepAgents graph via the core path.
 
-The core path resolves run configuration (provider, credentials, model id,
-retry count, output-token and stream-idle limits) before constructing a model,
-so credential and availability failures are tagged to the config stage and
-surface before any agent starts. `createOpenWikiAgent` is the lower-level
-factory that assembles a DeepAgent graph from an already-initialized model; it
-refuses repository `init`/`update` because those must go through the durable
-page-job runner. More detail lives in
+Run configuration is resolved once, up front, by `resolveRunConfig`: provider,
+credentials, model id, model availability, page concurrency, provider retry
+attempts (raised automatically for concurrent workers), output-token and
+stream-idle limits. The model is built from that resolved config before any
+agent runs, so credential and availability failures are tagged to the `config`
+stage and surface before any agent starts. Page concurrency comes from
+`resolvePageConcurrency` — an integer from 1 to 8 via
+`OPENWIKI_PAGE_CONCURRENCY`, defaulting to 1; when more than one worker shares
+one provider key, retries default to `PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5)
+instead of the sequential `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3).
+`createOpenWikiAgent` is the lower-level factory that assembles a DeepAgent
+graph from an already-initialized model; it refuses repository
+`init`/`update` (any non-`chat` repository command) because those must go
+through the durable page-job runner. More detail lives in
 [Agent runtime](agent-runtime.md).
 
 ## Native repository generation
 
 `runNativeRepositoryGeneration` drives the same durable lifecycle the host
 integrations use, but with OpenWiki's own model. It begins or resumes a run,
-runs a bounded planner when the run is in the planning phase, runs one fresh
-per-page worker for each pending page job, and finalizes. `beginRepositoryRun`
-rejects an unrecognized language with `invalid_input` before touching the
-repository, so a typo never persists the wrong language in run state. Each
-worker is a non-delegating DeepAgent: the planner gets read-only filesystem
-tools plus `submit_plan`; page workers additionally get `write_file`/`edit_file`
-plus `inspect_claims` and `submit_page`, and the general-purpose `task`
-delegation tool is stripped so workers cannot spawn subagents. A page worker
-submits only sparse Claim decisions (`confirmedClaimIds`, `claims`,
-`retractedClaimIds`) with current issue-free Claims retained automatically, and
-can call `inspect_claims` on demand before revising otherwise-current content;
-`nextRepositoryPage` returns only `existingClaimCount` and the Claims requiring
-attention.
+runs a bounded planner when the run is in the planning phase, runs fresh
+per-page workers for the pending page jobs (up to `pageConcurrency` at once),
+and finalizes. `beginRepositoryRun` rejects an unrecognized language with
+`invalid_input` before touching the repository, so a typo never persists the
+wrong language in run state. Each worker is a non-delegating DeepAgent: the
+planner gets read-only filesystem tools plus `submit_plan`; page workers
+additionally get `write_file`/`edit_file` plus `inspect_claims` and
+`submit_page`, and the general-purpose `task` delegation tool is stripped so
+workers cannot spawn subagents. A page worker submits only sparse Claim
+decisions (`confirmedClaimIds`, `claims`, `retractedClaimIds`) with current
+issue-free Claims retained automatically, and can call `inspect_claims` on
+demand before revising otherwise-current content; `nextRepositoryPage` returns
+only `existingClaimCount` and the Claims requiring attention.
+
+**Parallel page workers.** The single initialized model is reused across
+fresh workers. `runPendingPageAgents` runs a pool of up to `pageConcurrency`
+worker loops (`Math.max(1, Math.floor(pageConcurrency))`). Job acquisition is
+serialized through `acquireNextJob`: each call passes the in-flight job ids it
+already owns via `nextRepositoryPage`'s `exclude` set, so every worker gets a
+distinct pending job; ownership stays process-local and is never written to
+the durable checkpoint. The first wave of worker starts is staggered by
+`workerStartStaggerMs` (default 1s, ignored for a single worker) so concurrent
+opening requests do not hit the provider simultaneously. The quickstart page is
+explicitly held back when more than one worker is running, so its
+task-routing map links to pages that already exist; once the rest of the queue
+drains, a final single-worker pass documents quickstart. Progress events keep
+the historical single-page shape for one worker and add `completedCount` and
+`inFlightPages` only for a concurrent pool. A fatal submission error stops new
+work, lets in-flight workers submit or skip, and is rethrown before finish so
+the run never finalizes with pending jobs. If a worker fails on a provider
+rate limit, the live pool size is lowered by one (never below 1) and a notice
+is emitted; other skip causes keep the pool size.
 
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
@@ -195,16 +267,23 @@ transport-neutral tools — `openwiki_begin`, `openwiki_submit_plan`,
 `openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`,
 and `openwiki_finish` — backed by a session manager that holds at most one
 active process-local run and rejects any operation whose `runId` does not
-match. `openwiki_begin` rejects an unrecognized `language` with `invalid_input`
-instead of starting a run, so the caller can correct the code and retry with
-nothing to clean up. `openwiki_inspect_page_claims` returns the current pending
-page's complete Claim set on demand for broad rewrites; `openwiki_next_page`
-returns only `existingClaimCount` and the stale or unresolved Claims requiring
-an explicit decision, so focused updates stay compact. The coding agent
-owns repository research, planning, and factual authoring; OpenWiki owns the
-durable queue, Claims validation and persistence, source-drift handling, and
-deterministic finalization. Host-driven runs use only repository source and
-tests; connector context is not yet available to them.
+match, plus a single-operation guard that rejects overlapping lifecycle calls.
+`openwiki_begin` rejects an unrecognized `language` with `invalid_input`
+instead of starting a run (delegating to the same `beginRepositoryRun`
+language check), so the caller can correct the code and retry with nothing to
+clean up. `openwiki_inspect_page_claims` returns the current pending page's
+complete Claim set on demand for broad rewrites; `openwiki_next_page` returns
+only `existingClaimCount` and the stale or unresolved Claims requiring an
+explicit decision, so focused updates stay compact. `openwiki_finish` is the
+single finalize-once step: it refuses to run while any page job is still
+`pending`, and clears the process-local session only after durable completion.
+Host-driven runs document pages sequentially with the coding agent's own
+model and native repository tools — the parallel page-worker pool is a native
+runner capability not exposed over MCP. The coding agent owns repository
+research, planning, and factual authoring; OpenWiki owns the durable queue,
+Claims validation and persistence, source-drift handling, and deterministic
+finalization. Host-driven runs use only repository source and tests; connector
+context is not yet available to them.
 
 ## Claims
 
