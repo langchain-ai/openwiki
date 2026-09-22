@@ -55,6 +55,8 @@ configuration directory on every supported platform), Cursor under `~/.cursor`,
 Kiro under `~/.kiro`, Oh My Pi under `~/.omp/agent` (default profile), and
 Antigravity CLI under `~/.gemini`.
 
+Pi uses the package system and is not installed by the OpenWiki integration CLI. For local development, build the package and install it with `pi install /absolute/path/to/openwiki`; do not use a local-install flag. Published users install `pi install npm:openwiki`. The package includes `dist/integrations/pi/openwiki.js` and `integrations/openwiki`; the extension starts its package-local `dist/cli/cli.js` through Node.
+
 ## Adding a coding-agent integration
 
 OpenWiki host integrations share one canonical skill and six MCP tools:
