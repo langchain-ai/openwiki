@@ -2673,10 +2673,6 @@ async function readResponseBody(
   }
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function sanitizeOpenRouterResponseBody(body: string): string {
   // Redact string values whose JSON key name contains any secret-bearing term
   // (shared source of truth with isSecretLikeKey / the MCP redactor).
