@@ -95,8 +95,9 @@ const harness = vi.hoisted(() => ({
   planToolResults: [] as unknown[],
   planPaths: ["/openwiki/quickstart.md", "/openwiki/architecture.md"],
   resumed: false,
+  pageRestoreCalls: 0,
   restoreCalls: 0,
-  workerExitsWithoutSubmit: false,
+  workerExitsWithoutSubmit: 0,
 }));
 
 vi.mock("deepagents", async (importOriginal) => {
@@ -254,9 +255,10 @@ vi.mock("deepagents", async (importOriginal) => {
                     ],
                   };
             const exitWithoutSubmit =
-              toolName === "submit_page" && harness.workerExitsWithoutSubmit;
+              toolName === "submit_page" &&
+              harness.workerExitsWithoutSubmit > 0;
             if (exitWithoutSubmit) {
-              harness.workerExitsWithoutSubmit = false;
+              harness.workerExitsWithoutSubmit -= 1;
             } else {
               await completionTool.invoke(input);
               if (
@@ -290,6 +292,10 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       markdown: "original\n",
       claims: null,
     });
+  },
+  restoreRepositoryPage() {
+    harness.pageRestoreCalls += 1;
+    return Promise.resolve();
   },
   skipRepositoryPage(run: HarnessRun, snapshot: { jobId: string }) {
     harness.restoreCalls += 1;
@@ -602,7 +608,8 @@ beforeEach(() => {
   harness.planPaths = ["/openwiki/quickstart.md", "/openwiki/architecture.md"];
   harness.resumed = false;
   harness.restoreCalls = 0;
-  harness.workerExitsWithoutSubmit = false;
+  harness.pageRestoreCalls = 0;
+  harness.workerExitsWithoutSubmit = 0;
 });
 
 describe("runNativeRepositoryGeneration", () => {
@@ -727,12 +734,28 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.finishCalls).toBe(1);
   });
 
-  test("skips a failed page worker and continues the queue", async () => {
+  test("retries a failed page worker once before completing the page", async () => {
     harness.pageWorkerFailures = 1;
+    harness.planPaths = ["/openwiki/flaky.md", "/openwiki/later.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    // The first attempt threw, so its page was reset to the pre-run snapshot
+    // and the page was retried rather than skipped.
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
+    expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("skips a page worker that fails every attempt and continues the queue", async () => {
+    harness.pageWorkerFailures = 2;
     harness.planPaths = ["/openwiki/failed.md", "/openwiki/later.md"];
 
     await expect(runHarness()).resolves.toBeDefined();
 
+    expect(harness.pageRestoreCalls).toBe(1);
     expect(harness.restoreCalls).toBe(1);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
     expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
@@ -927,24 +950,43 @@ describe("runNativeRepositoryGeneration", () => {
     ).toBe(true);
   });
 
-  test("restores and leaves a page pending when its worker does not submit", async () => {
-    harness.workerExitsWithoutSubmit = true;
+  test("retries once when a worker exits without submitting and completes the page", async () => {
+    harness.workerExitsWithoutSubmit = 1;
     harness.planPaths = ["/openwiki/testing.md", "/openwiki/later.md"];
 
     const events = await runHarness();
 
-    expect(harness.restoreCalls).toBe(1);
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
     expect(harness.finishCalls).toBe(1);
-    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
     expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
-    expect(harness.agentOptions).toHaveLength(3);
+    // One planner, one worker per page, and one extra for the retry.
+    expect(harness.agentOptions).toHaveLength(4);
+    // Count by owner rather than position: the retry can be scheduled after a
+    // sibling page, so the two owners are what identify it as a retry.
+    const prompts = harness.agentOptions.map((option) =>
+      String(option.systemPrompt),
+    );
+    // The first page got two workers (attempt + retry); its sibling got one.
+    expect(
+      prompts.filter((prompt) =>
+        prompt.includes("You own exactly /openwiki/testing.md."),
+      ),
+    ).toHaveLength(2);
+    expect(
+      prompts.filter((prompt) =>
+        prompt.includes("You own exactly /openwiki/later.md."),
+      ),
+    ).toHaveLength(1);
+    // The page was recovered by the retry, so the skip warning must not fire.
     expect(
       events.some(
         (event) =>
           event.type === "text" &&
           event.text.includes("reconsidered on the next update"),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("reports strict no-op without constructing a worker", async () => {
@@ -1057,6 +1099,10 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
 
     const events = await runHarness({ pageConcurrency: 3 });
 
+    // A rate limit is surfaced to the pool instead of being retried, so the
+    // failed page costs exactly one attempt and no page reset.
+    expect(harness.pageRestoreCalls).toBe(0);
+
     // Which of the first three concurrent workers reaches the injected
     // failure first depends on scheduling, so assert on counts, not positions.
     expect(harness.restoreCalls).toBe(1);
@@ -1080,7 +1126,10 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
 
     const events = await runHarness({ pageConcurrency: 2 });
 
-    expect(harness.restoreCalls).toBe(1);
+    // One retryable throw with no rate-limit signal: reset and retry, then the
+    // page completes and the pool keeps its concurrency.
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
     expect(harness.finishCalls).toBe(1);
     expect(
       events.some(
