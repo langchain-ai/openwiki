@@ -1,5 +1,27 @@
 # openwiki
 
+## 0.6.0
+
+### Minor Changes
+
+- [#893](https://github.com/langchain-ai/openwiki/pull/893) [`53fba6b`](https://github.com/langchain-ai/openwiki/commit/53fba6b48ee5fa3fca098f6f8bb1575c11138b2a) Thanks [@tuandinh0801](https://github.com/tuandinh0801)! - feat: add Oh My Pi (`omp`) coding-agent integration
+
+- [#903](https://github.com/langchain-ai/openwiki/pull/903) [`4e84ff0`](https://github.com/langchain-ai/openwiki/commit/4e84ff04a9bfccc94d92fbf4a696a876f8121aa3) Thanks [@eugeneliu-86](https://github.com/eugeneliu-86)! - feat: run repository page workers in parallel
+
+- [#905](https://github.com/langchain-ai/openwiki/pull/905) [`0c0b35d`](https://github.com/langchain-ai/openwiki/commit/0c0b35d333f6b7c9b09dd846e30886515d8c3bc8) Thanks [@colifran](https://github.com/colifran)! - feat: implement openwiki search, read, and link to support queryable wikis over mcp and wiki linking for multi-wiki reads
+
+### Patch Changes
+
+- [#922](https://github.com/langchain-ai/openwiki/pull/922) [`05197b7`](https://github.com/langchain-ai/openwiki/commit/05197b7dd1913c5250a0eecd778e80c49c90dc4c) Thanks [@colifran](https://github.com/colifran)! - feat: add an Antigravity CLI coding-agent integration
+
+- [#932](https://github.com/langchain-ai/openwiki/pull/932) [`b83e1f2`](https://github.com/langchain-ai/openwiki/commit/b83e1f2b40762eceb39fd8de762f2aa39d4d0f47) Thanks [@IgorTodorovskiIBM](https://github.com/IgorTodorovskiIBM)! - fix: stream IBM Bob responses so long generations do not time out
+
+- [#914](https://github.com/langchain-ai/openwiki/pull/914) [`812cb48`](https://github.com/langchain-ai/openwiki/commit/812cb488f4a52ed530592aa1aebcc17b50e8bb2e) Thanks [@drakeo338](https://github.com/drakeo338)! - fix: replace legacy unmarked OpenWiki section instead of appending a duplicate
+
+- [#917](https://github.com/langchain-ai/openwiki/pull/917) [`0f5224f`](https://github.com/langchain-ai/openwiki/commit/0f5224fda800bf6cb3cdca769232e7095e391def) Thanks [@changingshow](https://github.com/changingshow)! - fix: resolve url-encoded filenames in graph links
+
+- [`d3e5f21`](https://github.com/langchain-ai/openwiki/commit/d3e5f21134575f7d1eb02e2075aa45dff895a141) Thanks [@colifran](https://github.com/colifran)! - fix: disable host shell execution in personal mode
+
 ## 0.5.2
 
 ### Patch Changes

@@ -709,6 +709,12 @@ describe("providerUsesStreaming", () => {
     expect(providerUsesStreaming("copilot")).toBe(true);
   });
 
+  test("always forces streaming for bob", () => {
+    delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+
+    expect(providerUsesStreaming("bob")).toBe(true);
+  });
+
   test("never applies to the other providers sharing the ChatOpenAI branch", () => {
     process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING = "true";
 

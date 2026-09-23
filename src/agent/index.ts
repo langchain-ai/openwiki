@@ -1300,6 +1300,7 @@ export function createModel(
       },
       model: modelId,
       ...maxTokensOptions,
+      ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
       ...retryOptions,
     });
   }
