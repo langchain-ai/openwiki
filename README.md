@@ -284,7 +284,7 @@ Concurrency defaults to `1` and accepts values from `1` to `8`. Start at `2` to 
 
 Each worker owns exactly one page, and completed pages remain durable resume units. The quickstart page is written last so it can link to the pages it routes to. A worker that fails on a provider rate limit lowers the run's concurrency by one for the rest of the run; the page it was writing is restored and picked up by the next update.
 
-LangChain handles transient provider errors. Retry attempts default to `3`, or `5` when `OPENWIKI_PAGE_CONCURRENCY` is above `1`. Override with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
+LangChain handles transient provider errors. For OpenAI and OpenAI-compatible transports, this also covers retryable streaming HTTP responses surfaced by the underlying SDK. Retry attempts default to `3`, or `5` when `OPENWIKI_PAGE_CONCURRENCY` is above `1`. Override with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
 
 </details>
 
