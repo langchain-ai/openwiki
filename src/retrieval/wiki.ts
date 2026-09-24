@@ -781,15 +781,28 @@ function createSearchUnit(
  */
 function headingSections(tokens: Token[]): ParsedHeadingSection[] {
   const headings: LocatedHeading[] = [];
-  const slugs = new Map<string, number>();
+  // GitHub's slugger advances a numeric suffix only until the *candidate* anchor is
+  // free, so a heading whose own slug was already taken by an earlier generated
+  // suffix keeps probing instead of reusing that anchor. Multiplicity matters because
+  // both readWikiSections and searchWiki key sections by anchor: a repeated anchor
+  // silently drops one section from the lookup map and hands the surviving search
+  // reference the wrong section's body.
+  const suffixes = new Map<string, number>();
+  const taken = new Set<string>();
   for (const [index, token] of tokens.entries()) {
     if (token.type !== "heading") continue;
     const heading = token as Tokens.Heading;
     const base = headingSlug(heading);
-    const count = slugs.get(base) ?? 0;
-    slugs.set(base, count + 1);
+    let anchor = base;
+    let suffix = suffixes.get(base) ?? 0;
+    while (taken.has(anchor)) {
+      suffix += 1;
+      anchor = `${base}-${suffix}`;
+    }
+    suffixes.set(base, suffix);
+    taken.add(anchor);
     headings.push({
-      anchor: count ? `${base}-${count}` : base,
+      anchor,
       depth: heading.depth,
       heading: heading.text,
       index,

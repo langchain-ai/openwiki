@@ -297,6 +297,53 @@ describe("repository wiki retrieval", () => {
     ]);
   });
 
+  test("read keeps every duplicate heading reachable when one already owns the suffix", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/payments.md"),
+      page({
+        title: "Payment Runtime",
+        description: "Payment behavior.",
+        source: "src/payments.ts",
+        body: [
+          "## Retry control",
+          "",
+          "The first retry section.",
+          "",
+          "## Retry control 1",
+          "",
+          "The section whose own slug already claims the `-1` anchor.",
+          "",
+          "## Retry control",
+          "",
+          "The repeated retry section.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const result = await readWikiSections(root, {
+      page: "openwiki/architecture/payments.md",
+      sections: ["retry-control", "retry-control-1", "retry-control-2"],
+    });
+
+    expect(result.sections).toEqual([
+      {
+        section: "retry-control",
+        content: "## Retry control\n\nThe first retry section.",
+      },
+      {
+        section: "retry-control-1",
+        content:
+          "## Retry control 1\n\nThe section whose own slug already claims the `-1` anchor.",
+      },
+      {
+        section: "retry-control-2",
+        content: "## Retry control\n\nThe repeated retry section.",
+      },
+    ]);
+  });
+
   test("linked search spans repositories and identifies results for exact reads", async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), "openwiki-retrieval-"),
