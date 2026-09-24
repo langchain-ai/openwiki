@@ -84,7 +84,7 @@ All integrations install at user level by default, so one installation works fro
 Host-specific locations and notes:
 
 - OpenCode uses `~/.config/opencode`.
-- IBM Bob / Bob Shell uses `~/.agents/skills` and `~/.bob/mcp.json`.
+- IBM Bob / Bob Shell uses `~/.agents/skills` and `~/.bob/settings/mcp.json` at user scope; `.agents/skills` and `.bob/mcp.json` at the project.
 - Kiro uses `~/.kiro/skills` and `~/.kiro/settings/mcp.json`.
 - Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`. This is Oh My Pi (`omp`); see [the upstream Pi integration notes](docs/pi-integration-notes.md).
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
