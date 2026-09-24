@@ -494,6 +494,34 @@ test("tolerates a human-readable not-found error from the backend when skipping 
   expect(run.state.plan?.pages[0]?.status).toBe("skipped");
 });
 
+test("tolerates an ENOENT error from the filesystem backend when skipping a never-written page", async () => {
+  const root = await createRepository();
+  const page = "/openwiki/operations/never-written.md";
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, {
+    pages: [
+      {
+        path: page,
+        title: "Never Written",
+        purpose: "Document a page whose worker fails before writing anything.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+
+  const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+  expect(snapshot).toMatchObject({ path: page, markdown: null, claims: null });
+
+  const deleteSpy = vi.spyOn(run.backend, "delete").mockResolvedValue({
+    error: `Error deleting '${page}': ENOENT: no such file or directory, lstat '${root}/openwiki/operations'`,
+  });
+
+  await expect(skipRepositoryPage(run, snapshot)).resolves.toBeUndefined();
+  expect(deleteSpy).toHaveBeenCalledWith(page);
+  expect(run.state.plan?.pages[0]?.status).toBe("skipped");
+});
+
 beforeEach(() => {
   failureHarness.manifestReplacements = 0;
   failureHarness.manifestWrites = 0;
