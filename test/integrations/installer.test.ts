@@ -392,7 +392,7 @@ describe("host integration registry", () => {
         producerActor: "bob",
         user: {
           skillDirectory: ".agents/skills/openwiki",
-          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+          mcpConfig: { kind: "json", relativePath: ".bob/settings/mcp.json" },
         },
         project: {
           skillDirectory: ".agents/skills/openwiki",
