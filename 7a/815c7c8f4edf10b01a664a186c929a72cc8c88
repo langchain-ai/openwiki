@@ -1,0 +1,42 @@
+src/integrations/install/registry.ts
+  s_004f01766035cd::t_dc71c7df09b129 125-141
+scripts/install-local-integration.mjs
+  s_004f01766035cd::t_3cfcbbe288e987 20
+test/cli/integrations-runners.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 93,226
+  s_004f01766035cd::t_3cfcbbe288e987 92,95
+  s_004f01766035cd::t_ec7c2b3e44b6b6 72
+src/integrations/install/types.ts
+  s_004f01766035cd::t_3cfcbbe288e987 5-12
+CONTRIBUTING.md
+  s_004f01766035cd::t_dc71c7df09b129 60,62
+  s_004f01766035cd::t_3cfcbbe288e987 40,46-47,55-56
+.changeset/antigravity-cli-integration.md
+  s_004f01766035cd::t_dc71c7df09b129 1-5
+test/integrations/package-contents.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 63
+test/integrations/cli-dogfood.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 94
+  s_004f01766035cd::t_3cfcbbe288e987 93
+README.md
+  s_004f01766035cd::t_dc71c7df09b129 117
+  s_004f01766035cd::t_3cfcbbe288e987 26,37,120,136,526-527
+test/integrations/installer.test.ts
+  s_004f01766035cd::t_dc71c7df09b129 486-502,514
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7a815c7c8f4edf10b01a664a186c929a72cc8c88",
+  "prompts": {},
+  "sessions": {
+    "s_004f01766035cd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c5f8-146f-7c32-b2e7-35121a62d032",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": null
+    }
+  }
+}

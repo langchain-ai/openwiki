@@ -1,0 +1,19 @@
+test/config/env.test.ts
+  s_b6aef606e7ac7f::t_4c62b5fb2d852f 2-7,214-216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9551222a05f69f033cadada2b5bff32cbf67b045",
+  "prompts": {},
+  "sessions": {
+    "s_b6aef606e7ac7f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0a21d-8ef4-7113-b798-696ff75aa36c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

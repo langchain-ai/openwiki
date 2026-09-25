@@ -1,0 +1,21 @@
+evals/swe-qa-pro/run.py
+  s_c8d8c7b77154f8::t_7fc4ab4fdbaf08 349-355,357
+evals/swe-qa-pro/test_pilot.py
+  s_c8d8c7b77154f8::t_7fc4ab4fdbaf08 53-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3afa97c43c5f67f88b4ba75f7b4a9439620d411d",
+  "prompts": {},
+  "sessions": {
+    "s_c8d8c7b77154f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08ca1-2759-7491-9b6b-a48dc9f877ed",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

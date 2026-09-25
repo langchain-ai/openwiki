@@ -1,0 +1,19 @@
+.changeset/soft-windows-fingerprint-ctime.md
+  s_326526e1ca384a::t_5f793f240f97fa 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "617e3aa8805a8060b1d0d9f7868c789897b3203d",
+  "prompts": {},
+  "sessions": {
+    "s_326526e1ca384a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08bf3-1123-7041-9081-11e1ac5353fc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

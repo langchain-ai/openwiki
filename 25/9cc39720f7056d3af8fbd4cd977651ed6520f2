@@ -1,0 +1,25 @@
+.changeset/vast-things-clean.md
+  h_f78d33d4280f3f 5
+  s_82b5b9a65e8057::t_eac7a6a5ba44ae 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "259cc39720f7056d3af8fbd4cd977651ed6520f2",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_82b5b9a65e8057": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0b0c0-3e74-7df3-98d9-eadad2c26ec7",
+        "model": "unknown"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

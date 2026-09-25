@@ -1,0 +1,21 @@
+test/ingestion/code-mode.test.ts
+  s_e95d4d020796ff::t_fc0baaf644ff05 464-492
+src/ingestion/code-mode.ts
+  s_e95d4d020796ff::t_fc0baaf644ff05 35,380-382,387,392,398,416,418-420
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "854050ac4e011fc432a106b794a37d2504dddc24",
+  "prompts": {},
+  "sessions": {
+    "s_e95d4d020796ff": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c4fb-8347-7d10-a83b-113e205c50d5",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

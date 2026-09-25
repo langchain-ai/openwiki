@@ -1,0 +1,31 @@
+src/cli/components/wiki-workspace-manager.tsx
+  s_82b5b9a65e8057::t_1d9ea7fd60e581 365,367,375
+  s_82b5b9a65e8057::t_ebd0c200321cc4 142,151
+  s_82b5b9a65e8057::t_fa2f44d6899c79 825
+  s_82b5b9a65e8057::t_06a889ea9af634 669,818,821,1148
+src/linking/wiki-workspaces.ts
+  s_82b5b9a65e8057::t_811dfbf4f53cd7 1461
+  s_82b5b9a65e8057::t_f627118affc76e 68,70
+test/linking/wiki-workspaces.test.ts
+  s_82b5b9a65e8057::t_21e2f99dfeef24 101
+README.md
+  s_82b5b9a65e8057::t_21e2f99dfeef24 152
+test/cli/components/wiki-workspace-manager.test.tsx
+  s_82b5b9a65e8057::t_4eda370b61679c 123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6224f62c6613cae6728c857f9f3df9ad50e3380b",
+  "prompts": {},
+  "sessions": {
+    "s_82b5b9a65e8057": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0b0c0-3e74-7df3-98d9-eadad2c26ec7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

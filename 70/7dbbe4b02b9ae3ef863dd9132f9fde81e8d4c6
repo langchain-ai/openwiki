@@ -1,0 +1,19 @@
+.changeset/legacy-openwiki-section.md
+  s_e95d4d020796ff::t_dabf36dacfc1bc 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "707dbbe4b02b9ae3ef863dd9132f9fde81e8d4c6",
+  "prompts": {},
+  "sessions": {
+    "s_e95d4d020796ff": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c4fb-8347-7d10-a83b-113e205c50d5",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

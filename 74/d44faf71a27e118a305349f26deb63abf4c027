@@ -1,0 +1,116 @@
+evals/swe-memory/Dockerfile
+  s_c8d8c7b77154f8::t_4bda6db054bd4b 4-11,13-14
+evals/swe-qa-pro/week.py
+  s_c8d8c7b77154f8::t_9758bf0be6e085 71-72,75-76,139-140
+  s_c8d8c7b77154f8::t_0e4a1c55994796 1-70,73-74,77-138,141-254
+evals/swe-memory/runtime.py
+  s_c8d8c7b77154f8::t_4bda6db054bd4b 32,50
+evals/memory-graph/demo.ts
+  s_c8d8c7b77154f8::t_e6f0d87fb93794 38-41
+  s_c8d8c7b77154f8::t_997a615afcf30e 1-37,42-91
+integrations/openwiki/SKILL.md
+  s_c8d8c7b77154f8::t_d901e41321cc2b 180-188,196,212,216
+  s_c8d8c7b77154f8::t_76a3a0863c6b32 14-16,18-23,26-31,41-45,54-59
+src/claims/guidance.ts
+  s_c8d8c7b77154f8::t_d901e41321cc2b 2,7,9-11,15-16,25-26
+evals/swe-memory/.dockerignore
+  s_c8d8c7b77154f8::t_4bda6db054bd4b 1-11
+src/brain/anchors.ts
+  s_c8d8c7b77154f8::t_cd6b0ebc7e338e 1-61
+src/brain/documents.ts
+  s_c8d8c7b77154f8::t_5a2857c5be0c0b 7-12,20,27,82,194-208,210,269-283
+  s_c8d8c7b77154f8::t_e6f0d87fb93794 284
+  s_c8d8c7b77154f8::t_15b90595877b7f 285
+package.json
+  s_c8d8c7b77154f8::t_997a615afcf30e 47
+src/brain/memories.ts
+  s_c8d8c7b77154f8::t_cd6b0ebc7e338e 9-14,57
+  s_c8d8c7b77154f8::t_ce8acc1a46abb4 1-8,15-18,20-56,58-133,135-151,155-191
+  s_c8d8c7b77154f8::t_e6f0d87fb93794 152-154
+  s_c8d8c7b77154f8::t_f192a330d434fb 19,134
+evals/swe-qa-pro/test_pilot.py
+  s_c8d8c7b77154f8::t_bf4f187fcc8f1d 136-155
+evals/swe-qa-pro/README.md
+  s_c8d8c7b77154f8::t_aa8cb4ab8caa1d 95,155-163
+  s_c8d8c7b77154f8::t_6628a1bbffb895 92-93,147-154
+  s_c8d8c7b77154f8::t_0e4a1c55994796 94
+  s_c8d8c7b77154f8::t_8a3bea59f84e75 164
+evals/swe-memory/test_focused_transfer.py
+  s_c8d8c7b77154f8::t_32f56b9d0ce632 1,4-5,7-24,42-45
+  s_c8d8c7b77154f8::t_d73f0f709b43e6 2-3,6,25-41
+evals/swe-memory/run.py
+  s_c8d8c7b77154f8::t_4bda6db054bd4b 147
+src/brain/search.ts
+  s_c8d8c7b77154f8::t_de60f7e63f94e8 131,139,173,184,237-241
+  s_c8d8c7b77154f8::t_6d3a665ec7980c 10-14,18-21,46-48,54,56-60,66,68-72,75,87,93-100,130,133-138,151,172,183,211-212,222-234,251-272
+  s_c8d8c7b77154f8::t_3e80b80506af1e 132
+  s_c8d8c7b77154f8::t_78444fd5cac095 273-274
+src/agent/repository-prompts.ts
+  s_c8d8c7b77154f8::t_d901e41321cc2b 155,166,216
+test/integrations/mcp-server.test.ts
+  s_c8d8c7b77154f8::t_e6f0d87fb93794 159
+  s_c8d8c7b77154f8::t_b68f45c0896e18 99,130-131,158,172
+test/brain/memory.test.ts
+  s_c8d8c7b77154f8::t_790f41ac9e8eca 249-251,301-303
+  s_c8d8c7b77154f8::t_b68f45c0896e18 21,247-248,253-267,269,271-289,293-300,304-305
+  s_c8d8c7b77154f8::t_aa5447f4efc5e0 252,270
+  s_c8d8c7b77154f8::t_db80219565638c 268
+  s_c8d8c7b77154f8::t_06fd01b6e28d3d 290-292
+evals/swe-qa-pro/test_week.py
+  s_c8d8c7b77154f8::t_9758bf0be6e085 1-38
+src/integrations/mcp/server.ts
+  s_c8d8c7b77154f8::t_76a3a0863c6b32 13-14,16-17,19-20
+evals/swe-qa-pro/agent-guidance.md
+  s_c8d8c7b77154f8::t_505dd61849bf6c 3-4,6,9-14,20,30-32
+evals/swe-qa-pro/test_focused.py
+  s_c8d8c7b77154f8::t_abede525028b34 1-40
+test/integrations/skill.test.ts
+  s_c8d8c7b77154f8::t_5502ac347a4c52 119
+src/brain/files.ts
+  s_c8d8c7b77154f8::t_40f935420b6fb4 210-225,236-238
+  s_c8d8c7b77154f8::t_f192a330d434fb 181,206-209,226-235,239-252
+  s_c8d8c7b77154f8::t_ce8acc1a46abb4 107,137-144,153,166,173-180
+evals/swe-memory/focused_transfer.py
+  s_c8d8c7b77154f8::t_beec4288292c49 47
+  s_c8d8c7b77154f8::t_32f56b9d0ce632 1-12,14,16-34,51-57,66-72,75-85,87-101,103-123,125-163,165-227,229-232
+  s_c8d8c7b77154f8::t_d73f0f709b43e6 58-65,73-74,86,102,124
+  s_c8d8c7b77154f8::t_3a49e9b7417a7c 15
+  s_c8d8c7b77154f8::t_d5e65888d89897 13,35-46,48-50,164,228,233-236
+evals/memory-graph/README.md
+  s_c8d8c7b77154f8::t_997a615afcf30e 1-27
+evals/swe-memory/memory_graph_transfer.py
+  s_c8d8c7b77154f8::t_fd2f5a010e0b08 1-159
+evals/swe-qa-pro/run.py
+  s_c8d8c7b77154f8::t_295893ff7ae344 1017-1044,1050,1056,1058-1060,1062-1063,1067,1078-1081,1107,1135-1137,1142
+  s_c8d8c7b77154f8::t_9a1a0f0992688d 1268-1269,1278-1280,1290-1291,1308,1329-1342
+  s_c8d8c7b77154f8::t_5e36339ae57249 1146-1169,1181-1183,1192-1193,1197-1233,1240-1241,1244-1248
+  s_c8d8c7b77154f8::t_5e3f43b382b5c4 1769-1770,1776,1802-1808
+evals/swe-memory/test_memory_graph_transfer.py
+  s_c8d8c7b77154f8::t_ed11385cbc1bfb 1-27
+src/brain/tools.ts
+  s_c8d8c7b77154f8::t_e6f0d87fb93794 22
+  s_c8d8c7b77154f8::t_8f9218a14de628 5,11-21,25-30,84,88-89
+  s_c8d8c7b77154f8::t_b68f45c0896e18 60,86
+evals/swe-qa-pro/focused.py
+  s_c8d8c7b77154f8::t_aa8cb4ab8caa1d 1-269
+evals/swe-memory/README.md
+  s_c8d8c7b77154f8::t_21802de9b63636 9-28
+  s_c8d8c7b77154f8::t_32f56b9d0ce632 93,133-144
+  s_c8d8c7b77154f8::t_f03c0d8558a256 145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "74d44faf71a27e118a305349f26deb63abf4c027",
+  "prompts": {},
+  "sessions": {
+    "s_c8d8c7b77154f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08ca1-2759-7491-9b6b-a48dc9f877ed",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

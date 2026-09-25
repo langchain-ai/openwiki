@@ -1,0 +1,37 @@
+.gitignore
+  s_c8d8c7b77154f8::t_6df672e67a0373 2
+evals/swe-qa-pro/agent-guidance.md
+  s_c8d8c7b77154f8::t_2a06850b5e67be 14-21
+evals/swe-qa-pro/.dockerignore
+  s_c8d8c7b77154f8::t_2a06850b5e67be 1-15
+evals/swe-qa-pro/run.py
+  s_c8d8c7b77154f8::t_2a06850b5e67be 31,205,470-484,517,587
+  s_c8d8c7b77154f8::t_3df42ce6ff4dfc 25-29,92-154,156,163-164,187,617
+  s_c8d8c7b77154f8::t_1d84af0611e086 30
+evals/swe-qa-pro/test_pilot.py
+  s_c8d8c7b77154f8::t_3df42ce6ff4dfc 23-36
+  s_c8d8c7b77154f8::t_2a06850b5e67be 107-112
+  s_c8d8c7b77154f8::t_345f23f9363fb7 105-106
+evals/swe-qa-pro/Dockerfile
+  s_c8d8c7b77154f8::t_2a06850b5e67be 6-10
+evals/swe-qa-pro/README.md
+  s_c8d8c7b77154f8::t_3df42ce6ff4dfc 75,85-92
+  s_c8d8c7b77154f8::t_0ae63022af0554 76
+  s_c8d8c7b77154f8::t_37264df7a85aba 15-25,28,33-35,55-65,95-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f4495024ff357b0fc673e48cdfcbee3d6a1abe41",
+  "prompts": {},
+  "sessions": {
+    "s_c8d8c7b77154f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08ca1-2759-7491-9b6b-a48dc9f877ed",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}

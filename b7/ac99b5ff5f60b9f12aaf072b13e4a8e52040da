@@ -1,0 +1,19 @@
+.changeset/bright-cameras-smile.md
+  s_455e68d8b02368::t_142db7a6423c00 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b7ac99b5ff5f60b9f12aaf072b13e4a8e52040da",
+  "prompts": {},
+  "sessions": {
+    "s_455e68d8b02368": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0b590-55a4-7d90-be65-3c7ead3c0d01",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
