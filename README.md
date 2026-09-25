@@ -466,6 +466,7 @@ OpenWiki supports thirteen providers. The onboarding default is OpenAI with `gpt
 | **OpenRouter**                                               | `OPENROUTER_API_KEY`                    |
 | **Nebius / Fireworks / Baseten / NVIDIA NIM**                | Provider API key                        |
 | **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways) | Base URL + key                          |
+| **SAP AI Core**                                              | `AICORE_SERVICE_KEY` JSON               |
 
 <details>
 <summary><b>GitHub Copilot</b></summary>
@@ -506,6 +507,25 @@ OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
 When explicit Bedrock credentials are not set, OpenWiki uses the AWS SDK default credential provider chain (OIDC/web identity, IAM roles, AWS profiles, ECS/EC2). The region resolves from `BEDROCK_AWS_REGION`, `AWS_REGION`, or `AWS_DEFAULT_REGION`. Available model IDs depend on which foundation models you have enabled in your account and region, so there is no preset list; paste the Bedrock model ID directly.
 
 Some newer models only accept on-demand invocation through a cross-region inference profile. If you see `ValidationException: Invocation of model ID ... with on-demand throughput isn't supported`, prefix the model ID with the profile's region code, for example `us.anthropic.claude-sonnet-5`. Your IAM policy then also needs `bedrock:InvokeModel` / `InvokeModelWithResponseStream` on both the `foundation-model` and `inference-profile` resource types.
+
+</details>
+
+<details>
+<summary><b>SAP AI Core</b></summary>
+
+<br/>
+
+The `sap-ai-core` provider calls models deployed in SAP AI Core via the Generative AI Hub Orchestration service:
+
+```bash
+OPENWIKI_PROVIDER=sap-ai-core
+AICORE_SERVICE_KEY='{"clientid":"...","clientsecret":"...","url":"...","serviceurls":{"AI_API_URL":"..."}}'
+OPENWIKI_MODEL_ID=gpt-5-mini
+# Optional: target specific resource group (defaults to "default")
+# AICORE_RESOURCE_GROUP=default
+```
+
+Available model IDs depend on which models and deployments you have configured in your SAP AI Core resource group.
 
 </details>
 
