@@ -51,8 +51,24 @@ describe("canonical OpenWiki host skill", () => {
     expect(frontmatter.description).toEqual(expect.any(String));
   });
 
-  test("contains the sequential lifecycle with optional Claim inspection", async () => {
+  test("contains retrieval and the sequential lifecycle", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
+    const retrieval = section(skill, "Read repository memory");
+    expect(retrieval).toContain(
+      "Do not enumerate, preload, or search wikis at task start",
+    );
+    expect(retrieval).toContain("when the\nuser asks for it");
+    expect(retrieval).toContain("Stop once the question is grounded");
+    expect(retrieval).toContain("When those conditions apply, use");
+    expect(retrieval).toContain("`openwiki_search");
+    expect(retrieval).toContain("`openwiki_read");
+    expect(retrieval).toContain("`openwiki_list_workspaces");
+    expect(retrieval).toContain("`openwiki_list_wikis");
+    expect(retrieval).toContain("connected by `openwiki link`");
+    expect(retrieval).toContain(
+      "`openwiki_read({ root, wiki, page, sections })`",
+    );
+    expect(retrieval).toContain("Neither operation starts a generation run");
     const required = section(skill, "Required sequence");
     const calls = [
       "openwiki_begin",
@@ -75,7 +91,15 @@ describe("canonical OpenWiki host skill", () => {
         ),
       ),
     ].sort();
-    expect(toolNames).toEqual([...calls].sort());
+    expect(toolNames).toEqual(
+      [
+        ...calls,
+        "openwiki_list_workspaces",
+        "openwiki_list_wikis",
+        "openwiki_search",
+        "openwiki_read",
+      ].sort(),
+    );
     expect(skill).not.toContain("openwiki_resolve_claims");
   });
 
@@ -148,7 +172,7 @@ describe("canonical OpenWiki host skill", () => {
     }
     expect(metadata.interface).toEqual({
       display_name: "OpenWiki",
-      short_description: "Initialize and update repository OpenWiki docs",
+      short_description: "Search, read, and maintain repository OpenWiki docs",
       default_prompt:
         "Use $openwiki to update this repository's OpenWiki from current source and tests.",
     });

@@ -70,6 +70,74 @@ describe("parseCommand — help", () => {
   test("help documents the output language option", () => {
     expect(getHelpText()).toContain("-l, --language <locale>");
   });
+
+  test("help documents workspace wiki linking", () => {
+    expect(getHelpText()).toContain("openwiki link [directory]");
+    expect(getHelpText()).toContain("openwiki workspace use <workspace>");
+  });
+});
+
+describe("parseCommand — link", () => {
+  test("defaults to the current directory", () => {
+    expect(parseCommand(["link"])).toEqual({
+      kind: "link",
+      exitCode: 0,
+      directory: ".",
+    });
+  });
+
+  test("accepts one shared workspace directory", () => {
+    expect(parseCommand(["link", "../services"])).toEqual({
+      kind: "link",
+      exitCode: 0,
+      directory: "../services",
+    });
+  });
+
+  test("rejects options and extra positional arguments", () => {
+    expect(parseCommand(["link", "--all"])).toEqual({
+      kind: "error",
+      exitCode: 1,
+      message: "Usage: openwiki link [directory]",
+    });
+    expect(parseCommand(["link", "one", "two"])).toEqual({
+      kind: "error",
+      exitCode: 1,
+      message: "Usage: openwiki link [directory]",
+    });
+  });
+});
+
+describe("parseCommand — workspace", () => {
+  test("parses active workspace commands", () => {
+    expect(parseCommand(["workspace", "use", "Payments"])).toEqual({
+      kind: "workspace",
+      action: "use",
+      workspace: "Payments",
+      exitCode: 0,
+    });
+    expect(parseCommand(["workspace", "current"])).toEqual({
+      kind: "workspace",
+      action: "current",
+      exitCode: 0,
+    });
+    expect(parseCommand(["workspace", "clear"])).toEqual({
+      kind: "workspace",
+      action: "clear",
+      exitCode: 0,
+    });
+  });
+
+  test("rejects incomplete or extra workspace arguments", () => {
+    expect(parseCommand(["workspace", "use"])).toMatchObject({
+      kind: "error",
+      exitCode: 1,
+    });
+    expect(parseCommand(["workspace", "current", "extra"])).toMatchObject({
+      kind: "error",
+      exitCode: 1,
+    });
+  });
 });
 
 describe("parseCommand — chat default", () => {

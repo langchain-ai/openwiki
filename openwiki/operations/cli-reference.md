@@ -14,6 +14,8 @@ sources:
     resource: repo://src/cli/diagnostics/error-diagnostics.ts
   - id: openwiki-source-ada18c62d92003b613355e30
     resource: repo://src/cli/integrations.ts
+  - id: openwiki-source-67e72f9455b70ea24879a8af
+    resource: repo://src/cli/link.tsx
   - id: openwiki-source-8d81ffb5996861d05633851c
     resource: repo://src/cli/run-mode.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
@@ -28,10 +30,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.5.2
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # CLI Commands and Flags
@@ -55,24 +57,30 @@ pipeline.
 
 `runStandardCommand` first conditionally loads the private OpenWiki environment
 (`commandLoadsEnvironment`), then re-resolves the command through
-`resolveStartupCommand` (which can downgrade a run to an `error` when a terminal
+`resolveStartupCommand` (which can downgrade a `run` to an `error` when a terminal
 or credentials are missing), decides whether to show the one-time first-run
 telemetry notice (`commandEmitsTelemetry`), and finally routes on
-`command.kind`.
+`command.kind`. `link` and `workspace` are dispatched first, ahead of the other
+standard commands; `auth`, `ngrok`, `cron`, `ingest`, and `visualize` each map to
+a dedicated runner; an `error` that `shouldPrintStartupError` selects is written
+to stderr; a `run` that `shouldRunNonInteractively` selects goes to
+`runPrintCommand`; otherwise the interactive Ink `App` is rendered.
 
 ```mermaid
 flowchart TD
   A["parseCommand(argv)"] --> B{"command.kind"}
   B -->|integrations| C["runIntegrationsCommand"]
   B -->|mcp| D["runMcpCommand"]
-  B -->|auth ngrok cron ingest visualize run error help| E["runStandardCommand"]
+  B -->|link workspace auth ngrok cron ingest visualize run error help| E["runStandardCommand"]
   E --> F["resolveStartupCommand"]
   F --> G{"kind after resolve"}
+  G -->|link| LK["runLinkCommand"]
+  G -->|workspace| WS["runWorkspaceCommand"]
   G -->|auth| H["runAuthCommand"]
   G -->|ngrok| I["runNgrokCommand"]
   G -->|cron| J["runCronCommand"]
   G -->|ingest| K["runIngestCommand"]
-  G -->|visualize| L["runVisualizeCommand"]
+  G -->|visualize| V["runVisualizeCommand"]
   G -->|error printable| M["stderr message and exit code"]
   G -->|run non-interactive| N["runPrintCommand"]
   G -->|run interactive| O["render Ink App"]
@@ -83,12 +91,12 @@ Dispatch of a parsed CLI command to its runner or the interactive UI.
 ## The parsed command union
 
 `parseCommand` returns a `CliCommand` — a discriminated union whose `kind`
-selects one of: `integrations`, `mcp`, `auth`, `ngrok`, `visualize`, `ingest`,
-`cron`, `help`, `run`, or `error`. Any bad flag or malformed invocation is
-represented as `{ kind: "error", exitCode: 1, message }` rather than throwing, so
-the entrypoint decides uniformly whether to print the error to stderr or surface
-it in the UI. A leading `--help`/`-h` yields `{ kind: "help" }`, and an argv that
-matches no subcommand is treated as a `run`.
+selects one of: `integrations`, `mcp`, `link`, `workspace`, `auth`, `ngrok`,
+`visualize`, `ingest`, `cron`, `help`, `run`, or `error`. Any bad flag or
+malformed invocation is represented as `{ kind: "error", exitCode: 1, message }`
+rather than throwing, so the entrypoint decides uniformly whether to print the
+error to stderr or surface it in the UI. A leading `--help`/`-h` yields
+`{ kind: "help" }`, and an argv that matches no subcommand is treated as a `run`.
 
 ### Run commands: init, update, print, mode, model, language
 
@@ -168,6 +176,33 @@ code-mode repo setup (`ensureCodeModeRepoSetup`, creating the workflow on
 credential setup, and auto-exit for a real init/update run
 (`shouldAutoExitStartupRun`).
 
+## Link and workspace management
+
+`openwiki link [directory]` opens the interactive wiki-workspace manager
+(`runLinkCommand` in `src/cli/link.tsx`). It requires an interactive terminal
+(stdin and stdout both TTYs), resolves a repository finder root from the given
+directory (default `.`), reads the existing workspace registry, and renders the
+In `WikiWorkspaceManager` to let the user create and name workspaces of related
+repository wikis. On submit it saves the updated workspace collection; on cancel
+it exits cleanly. More than one argument, or a leading-dash argument, is a parse
+error (`Usage: openwiki link [directory]`).
+
+`openwiki workspace` manages the persistent active workspace for the current
+repository (`runWorkspaceCommand` in `src/cli/link.tsx`). It resolves the
+repository root and supports three actions:
+
+- `workspace use <workspace>` — activate a workspace by ID or unique name,
+  printing the active workspace name.
+- `workspace current` — describe the active workspace, or report when none is
+  set, when only the repository's own wiki is used, or when a single workspace
+  is auto-selected.
+- `workspace clear` — clear the active workspace, reporting whether one was
+  set.
+
+Any other form is a parse error
+(`Usage: openwiki workspace <use <workspace>|current|clear>`). Neither `link` nor
+`workspace` loads OpenWiki model credentials or emits telemetry.
+
 ## Host integrations
 
 `openwiki integrations <install|list|uninstall>` is parsed by
@@ -236,8 +271,8 @@ or runs the visualize server.
 
 `commandLoadsEnvironment` gates loading of OpenWiki's private credential
 environment: real `run`, `auth`, `cron`, `ingest`, and `ngrok` commands load it,
-while `integrations` and `mcp` do not. `commandEmitsTelemetry` restricts
-telemetry emission (and therefore the one-time first-run disclosure) to real
+while `integrations`, `mcp`, `link`, and `workspace` do not. `commandEmitsTelemetry`
+restricts telemetry emission (and therefore the one-time first-run disclosure) to real
 `init`/`update` runs; chat, auth, and ingest record nothing. These predicates,
 `shouldRunNonInteractively`, and `shouldPrintStartupError` are the small set of
 exported decision functions the entrypoint uses to keep parsing pure and side

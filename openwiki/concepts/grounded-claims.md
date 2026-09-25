@@ -42,10 +42,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Grounded Claims
@@ -55,6 +55,13 @@ system, backed by one or more pieces of versioned repository evidence. Claims ar
 the factual backbone of a generated wiki page: each page owns a complete set of
 Claims, and OpenWiki tracks whether the source those Claims cite still matches
 what was observed when the page was written.
+
+The Claims model currently applies **only to repository code wikis and repository
+evidence**. The evidence resolver is `RepositoryEvidenceResolver`, rooted at a
+Git top-level and addressing files with `repo://` URIs; there is no
+connector-derived evidence path. Facts sourced from host integrations or
+connectors are not represented as Claims — only propositions grounded in
+versioned repository source are tracked, staleness-checked, and reconciled.
 
 The data model is deliberately small. A `Claim` has a stable OpenWiki-generated
 `id`, an atomic `statement`, and one or more `Evidence` records; each `Evidence`
@@ -226,10 +233,12 @@ always retains or establishes at least one material proposition.
 
 ## On-demand full-Claim inspection
 
-`nextRepositoryPage` returns only what a focused update needs: the pending job,
-its `existingClaimCount`, and `claimsRequiringAttention` — the subset of Claims
-carrying a stale or unresolved issue. Issue-free Claims are summarized as a
-count, not enumerated, so ordinary updates do not have to carry them.
+`nextRepositoryPage` returns the first pending page job not excluded by the
+caller's in-flight worker set, without reserving or mutating it, along with
+only what a focused update needs: the job's `existingClaimCount` and
+`claimsRequiringAttention` — the subset of Claims carrying a stale or
+unresolved issue. Issue-free Claims are summarized as a count, not
+enumerated, so ordinary updates do not have to carry them.
 
 When a worker must intentionally revise or remove otherwise-current content —
 for example rewriting a section whose Claims are not in `claimsRequiringAttention`
@@ -260,14 +269,18 @@ set.
 
 ### Per-page proof at `submit_page`
 
-Each page job is grounded individually before its job is marked complete. On
-`submit_page`, after the page's Markdown is written and its front matter
-deterministically repaired, the run executes a fixed sequence:
-`reconcilePageClaims` translates the model's sparse Claim decisions into the
-complete `confirm` / `update` / `add` / `retract` operation batch the session
-expects, then `claimsRuntime.finalize` persists the dirty page, and finally
-`assertPageClaimsDurable` re-opens the freshly written sidecar and proves the
-page is durable before advancing the queue.
+Each page job is grounded individually before its job is marked complete.
+`submitRepositoryPage` first runs page-local validation and front-matter
+repair without the run mutation lock (they touch only the submitted page),
+then takes the lock so concurrent workers never lose each other's
+completions: `reconcilePageClaims` translates the model's sparse Claim
+decisions into the complete `confirm` / `update` / `add` / `retract`
+operation batch the session expects, then `claimsRuntime.finalize` persists
+the dirty page — excluding every other still-pending page, which a concurrent
+worker may be mid-edit on, so projecting a stamp or rehashing their sidecar
+here would record transient bytes — and finally `assertPageClaimsDurable`
+re-opens the freshly written sidecar and proves the page is durable before
+the job is marked complete and the queue advances.
 
 `assertPageClaimsDurable` is the strict per-page proof. It re-reads the sidecar
 from disk and refuses the page when any of the following fail, so a partially or
@@ -354,14 +367,36 @@ never caching across a freshness boundary.
 ## Shared model-facing guidance
 
 The substance and reconciliation standards the worker sees are not ad hoc: they
-live in `src/claims/guidance.ts` as two shared constants —
-`CLAIMS_SUBSTANCE_GUIDANCE` (what counts as a material, atomic, evidence-backed
-proposition, including the `repo://` evidence-resource form requirement) and
-`CLAIMS_RECONCILIATION_GUIDANCE` (the sparse-decision rules: retain issue-free
-Claims automatically, give every issue-bearing Claim an explicit decision, never
-resubmit an unchanged Claim). These constants are shared by the page-worker
-prompt for init, update, and migration and by the MCP server instructions, so the
-same rules reach every host integration and tool description.
+live in `src/claims/guidance.ts` as two shared constants.
+
+`CLAIMS_SUBSTANCE_GUIDANCE` defines what counts as a material, atomic,
+evidence-backed proposition: one coherent, independently falsifiable idea rather
+than one file, symbol, or source line; one function or component may support
+several Claims when each records a different substantive truth; every evidence
+resource must use the canonical `repo://<repository-relative-path>` form
+(optionally with `#Lx-Ly`); and a materiality test — if the proposition were
+false, would it meaningfully change a reader's architectural model,
+implementation decision, operational expectation, or safe change plan? — gates
+inclusion, with completeness taking priority over minimizing Claim count.
+
+`CLAIMS_RECONCILIATION_GUIDANCE` defines the sparse-decision rules: treat a
+stale or unresolved marker as a requirement to recheck current source rather
+than retract automatically; retain issue-free Claims automatically when omitted;
+give every issue-bearing Claim one explicit `confirm` / `update` / `retract`
+decision; inspect the page's complete Claims on demand before revising
+otherwise-current content; submit every genuinely new proposition without an id
+and never resubmit an unchanged Claim; and require the final page body and
+reconciled Claim set to agree.
+
+These constants reach the model through two channels. The page-worker prompt
+(`createRepositoryPagePrompt`) inlines **both** constants into the system prompt
+for every `init` / `update` job, so a worker authoring a page sees the full
+substance and reconciliation standard. The MCP server `INSTRUCTIONS` constant
+inlines only `CLAIMS_RECONCILIATION_GUIDANCE` (the host already drives page
+authoring through `openwiki_submit_page`, whose tool description carries the
+sparse-decision rules), alongside workspace-discovery guidance and the
+deterministic page-job lifecycle, so the same reconciliation rules reach every
+MCP host integration and tool description.
 
 ## Related pages
 

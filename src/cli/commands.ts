@@ -100,12 +100,76 @@ export interface McpCliCommand {
 }
 
 /**
+ * Parsed interactive workspace wiki-linking command.
+ */
+export interface LinkCliCommand {
+  /**
+   * CLI dispatch discriminator.
+   */
+  kind: "link";
+
+  /**
+   * Initial process exit code.
+   */
+  exitCode: 0;
+
+  /**
+   * Shared directory whose descendant repositories are shown by the finder.
+   */
+  directory: string;
+}
+
+/**
+ * Parsed persistent active wiki-workspace command.
+ */
+export type WorkspaceCliCommand =
+  | {
+      /**
+       * CLI dispatch discriminator.
+       */
+      kind: "workspace";
+
+      /**
+       * Active-workspace mutation discriminator.
+       */
+      action: "use";
+
+      /**
+       * Workspace ID or unique name to activate.
+       */
+      workspace: string;
+
+      /**
+       * Initial process exit code.
+       */
+      exitCode: 0;
+    }
+  | {
+      /**
+       * CLI dispatch discriminator.
+       */
+      kind: "workspace";
+
+      /**
+       * Active-workspace inspection or clearing action.
+       */
+      action: "current" | "clear";
+
+      /**
+       * Initial process exit code.
+       */
+      exitCode: 0;
+    };
+
+/**
  * Host-integration commands added to the root CLI union.
  */
 export type HostIntegrationCliCommand = IntegrationsCliCommand | McpCliCommand;
 
 export type CliCommand =
   | HostIntegrationCliCommand
+  | LinkCliCommand
+  | WorkspaceCliCommand
   | {
       kind: "auth";
       action: "configure" | "list" | "oauth" | "tools";
@@ -176,6 +240,37 @@ export function parseCommand(argv: string[]): CliCommand {
 
   if (argv[0] === "mcp") {
     return parseMcpCommand(argv.slice(1));
+  }
+
+  if (argv[0] === "link") {
+    const directory = argv[1] ?? ".";
+    if (argv.length > 2 || directory.startsWith("-")) {
+      return {
+        kind: "error",
+        exitCode: 1,
+        message: "Usage: openwiki link [directory]",
+      };
+    }
+    return { kind: "link", exitCode: 0, directory };
+  }
+
+  if (argv[0] === "workspace") {
+    if (argv[1] === "use" && argv.length === 3 && !argv[2].startsWith("-")) {
+      return {
+        kind: "workspace",
+        action: "use",
+        workspace: argv[2],
+        exitCode: 0,
+      };
+    }
+    if ((argv[1] === "current" || argv[1] === "clear") && argv.length === 2) {
+      return { kind: "workspace", action: argv[1], exitCode: 0 };
+    }
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "Usage: openwiki workspace <use <workspace>|current|clear>",
+    };
   }
 
   if (argv[0] === "auth") {
@@ -1098,6 +1193,9 @@ export const helpContent: HelpContent = {
     "openwiki [--modelId <model>]",
     "openwiki [--modelId <model>] [message]",
     "openwiki --update [message]",
+    "openwiki link [directory]",
+    "openwiki workspace use <workspace>",
+    "openwiki workspace current|clear",
     "openwiki auth <provider>",
     "openwiki auth configure <provider> [--force]",
     "openwiki auth tools <provider>",
@@ -1126,6 +1224,16 @@ export const helpContent: HelpContent = {
       label: "openwiki",
       description:
         "Open the interactive OpenWiki code chat for the current repository.",
+    },
+    {
+      label: "openwiki link [directory]",
+      description:
+        "Create and manage named workspaces of related repository wikis.",
+    },
+    {
+      label: "openwiki workspace <use <workspace>|current|clear>",
+      description:
+        "Set, inspect, or clear the active wiki workspace for the current repository.",
     },
     {
       label: "openwiki auth <provider>",

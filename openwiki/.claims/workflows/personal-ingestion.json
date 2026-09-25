@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bf8bf3823081b84a0e7366c6fe1b278f325279f39358d2e905ed063dbd31e858",
+  "pageVersion": "sha256:61ad5c578fd5a6d87e8470476c7c1e5095a36fdc3bccd8fcf39bda2dadae0d50",
   "claims": [
     {
       "id": "claim_2c2c25ddb0d546a397521ccdb56c10ed",
@@ -148,11 +148,27 @@
     },
     {
       "id": "claim_d269ecf202494ccd87ac4302946cc287",
-      "statement": "createSourceUpdateMessage builds the agent user message with two variants: with a deterministic pull it lists the pull status/message and host-filesystem raw data paths and instructs use of shell tools, and without one it points at the connector config path and directs data gathering via connector/MCP tools; both scope work to the 24-hour window, mark source content as untrusted evidence, and forbid running other sources' ingestion.",
+      "statement": "createSourceUpdateMessage builds the agent user message with two variants: with a deterministic pull it lists the pull status/message and raw data file paths (relative to the connector raw directory) and instructs the agent to read them with openwiki_read_raw_item/openwiki_list_raw_items because shell execution is disabled in personal mode, and without one it points at the connector config path and directs data gathering via connector/MCP tools; both scope work to the 24-hour window, mark source content as untrusted evidence, and forbid running other sources' ingestion.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/ingestion.ts#L270-L347",
-          "version": "repo-lines-v1:sha256:a3e646bfeb25dcdb0ee717572de603e5f076b197c9665e41dfbf467e30e6038d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMWI2MzdjNTc5MDczZmRmZWRmOTBkMDBhNmIxYjVhZTE3ZDJhMWVmMTRiNGZhMjFlNzZjYmFlMWRkYjc3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMGNjOTIwM2VhYjUzNzhmMmZkY2E5MjY0YzFiMjQ3NzY2YzFkMjExMDgwMWYxYzgzOWRhZDM1NjQ3YjU2OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MWNhN2UyYmFjMDI4YzA2ZWVkYjcyNjE5MDFiZTFkYjAwMTNmNjAwYzk0Y2QyYWQ3ZmY1MDZiYzc2YWUxOWEifQ"
+          "resource": "repo://src/ingestion/ingestion.ts#L272-L348",
+          "version": "repo-lines-v1:sha256:f189ffa2dd158829eb4b40baeb0e49f705261d05354e294e5fbf4ed273b2435b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMWI2MzdjNTc5MDczZmRmZWRmOTBkMDBhNmIxYjVhZTE3ZDJhMWVmMTRiNGZhMjFlNzZjYmFlMWRkYjc3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NDBiMTkwOWY3M2RlMTUwMjc2OTQ2NTUyMTBlZjM2ZTJiZWRhMzQ0ODQ3NDZkODZjOGQ5ZTdmZDljZGQxMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMGNjOTIwM2VhYjUzNzhmMmZkY2E5MjY0YzFiMjQ3NzY2YzFkMjExMDgwMWYxYzgzOWRhZDM1NjQ3YjU2OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5MDQ2MWFkMjIwYzkzOTE5ZmI5ZGE4NDhkYTM1NGEwNWVlYzczMmEwZjA2NjdjOTRjNjdlNmI4MjFhYzU2OGUifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L314-L316",
+          "version": "repo-lines-v1:sha256:5128db844e5d4d1e35316e889090790752e45fa66cb96c7235b0364ff5be72be:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2YwYmNjYzUxNjQ3NWE3MTVmZTE0Y2JjNzI4YTVkM2NlOWY2OTliNTNhMTZkMWVhNDAxYzg4NjhlZGI4ZTZmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkzNzViODFjNDIyZTQ4MzYxM2UzYjBmODcxY2JhMmI3Y2JlZjA3NjRlZWI0NjY0NzJmNmViNmYzNzRlMTRlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA2M2MwYTQ3MzNkOTA5M2Y4YTQwMjdmMTM4YWI2MzFlODEwM2E0NjI1MTA1ODZlODk5MGM3NGQ4ZTNiYmQ0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmViMDM5ODYwMzc1OGFiZWExMWQxMzQ0ZDcwMWI0YmViM2MzOTg3YWUzYzUxNWU1ZGJiYzBkM2E5ZDQxYjUyNSJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L328-L329",
+          "version": "repo-lines-v1:sha256:f86cf9545f26aba96c7d7804a78bb76ea5c2cb55c98d799944584272a45d9871:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTk5MzBkYzBmZDYzZGMzMmRiN2VhMzNmZWM1NWU1NmJhYjAwYzIwODk2ODRmMmY1NDM3MmY3NTk0NjViMTRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjEwNjYwMjVmODk3NGEyNTg3OTBkNzk4YWRlMzNiMzI5OTBjZDc5NDA0NWE0NmZiYjdlYmM5NGM0M2E4NDFjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJkMGM0OTBkZmY3YjE1ZjQ0Zjk1MDA2NjRjMzgxZTkzMWMwYWQ1MTkwMDVmN2U3ODgyNzU3YjMzOTU1YWJkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWE3NzQ1N2I4NWIyYTEyZWZlMDU4NDI1MzExZjlkNmVjNzcwNjgyYzBjYWUyYjlkMTAwMzJkNjVkMjQ0NzViMSJ9"
+        },
+        {
+          "resource": "repo://test/ingestion/ingestion-run.test.ts#L215-L222",
+          "version": "repo-lines-v1:sha256:8b7e65bebc0a763571c885c9a7438ca896ea68c9ddfb2940992231419a741429:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE2M2QwNTBmNzI1YWY3NDA1ODhhMjdkNGUxZTY4MGM5YWU4YmM1YWEyYzQ3NzRlZmNhNjVmZTM3MDE0ODVlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNjNTMxYzYxZmJhMDU5NDg4OGY0MzQyMzFlNzFhNmQzMGIyOWY0MzMxNzA0NjIyNDQ5Y2ZjYmU4ZGRkZjA2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzU4YjU4YmMxNjc1NjVmNDdjNzliMTI5ODI2MjUwOTY4ZjZiNjRhZGY4YTdkMTdmNWNmZTNlMTZkNjcyNDRlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjk1Y2NmMmRmM2RjYzNhNGE0YjJiMjRhMjk1M2YzNjI2NjI2NTQ4YzcyZDI3YzYwZmYxMGI5NzExN2ZjZWRiZCJ9"
+        },
+        {
+          "resource": "repo://test/ingestion/ingestion-run.test.ts#L259-L264",
+          "version": "repo-lines-v1:sha256:004039b514d5abc4baa23cd27522e794068b83ce9a6c74bc9b70546fd47f30a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4Y2U3NmU4OTZhMGRiNDg0YjBjYjY4Yjg3NzA4MzM1YWQzMDgxNjA3MmMxNWNjOTQ4NDFiZmMzY2Q0NmZhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDc4ZjQwZWQ2YTAxM2Q4MjAwOWM3Y2E3NjYxMjAzMzA5MTA2NTkwZDliYzQ2MzYwZjQzNDNhMmZkZDViM2I1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTBhMWU0MjlkNmMxMjBiZDM4MWI1MTZjZDQ2MGMyNjViODQxODAxY2JhNzFjMmVhYmIxY2YwYTNiMjkxZmM5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTg0YjY2YjMxNDBlYzg0NGRmZGU2Y2M2Yjk5NTQwNGViZjQ5Njc4NDkwM2RjMGIwNGViYzM0MzM5ZmU4ZWM1OSJ9"
         }
       ]
     },
@@ -270,7 +286,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.3.3",
-    "at": "2026-08-25T02:14:25.283Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

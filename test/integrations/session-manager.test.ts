@@ -212,12 +212,16 @@ describe("HostSessionManager", () => {
     });
   });
 
-  test("exposes the ordered six-tool lifecycle with on-demand Claim inspection", () => {
+  test("exposes retrieval before the ordered lifecycle tools", () => {
     expect(
       createManager()
         .tools()
         .map(({ name }) => name),
     ).toEqual([
+      "openwiki_list_workspaces",
+      "openwiki_list_wikis",
+      "openwiki_search",
+      "openwiki_read",
       "openwiki_begin",
       "openwiki_submit_plan",
       "openwiki_next_page",
@@ -225,6 +229,70 @@ describe("HostSessionManager", () => {
       "openwiki_submit_page",
       "openwiki_finish",
     ]);
+  });
+
+  test("searches and reads wiki sections without an active generation run", async () => {
+    const root = await createRepository();
+    await mkdir(path.join(root, "openwiki"), { recursive: true });
+    await writeFile(
+      path.join(root, "openwiki/runtime.md"),
+      [
+        "---",
+        "type: guide",
+        "title: Runtime",
+        "description: Runtime startup and validation.",
+        "---",
+        "",
+        "# Runtime",
+        "",
+        "## Startup validation",
+        "",
+        "Configuration is validated before the worker starts.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    const tools = new Map(
+      createManager()
+        .tools()
+        .map((tool) => [tool.name, tool]),
+    );
+
+    await expect(
+      tools.get("openwiki_search")?.handle({
+        root,
+        query: "worker startup validation",
+      }),
+    ).resolves.toMatchObject({
+      results: [{ ref: ["openwiki/runtime.md#startup-validation"] }],
+    });
+    await expect(
+      tools.get("openwiki_read")?.handle({
+        root,
+        page: "openwiki/runtime.md",
+        sections: ["startup-validation"],
+      }),
+    ).resolves.toEqual({
+      page: "openwiki/runtime.md",
+      sections: [
+        {
+          section: "startup-validation",
+          content:
+            "## Startup validation\n\nConfiguration is validated before the worker starts.",
+        },
+      ],
+    });
+    await expect(
+      tools.get("openwiki_read")?.handle({
+        root,
+        page: "openwiki/missing.md",
+        sections: ["missing"],
+      }),
+    ).rejects.toMatchObject({
+      name: "HostIntegrationError",
+      code: "invalid_input",
+      message: "The requested OpenWiki page does not exist.",
+    });
   });
 
   test("validates host and producer identities", () => {

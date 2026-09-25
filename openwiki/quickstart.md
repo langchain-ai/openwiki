@@ -4,8 +4,6 @@ title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
 sources:
-  - id: openwiki-source-8037e2358a2c4f9b2c722a11
-    resource: repo://AGENTS.md
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
   - id: openwiki-source-c45a528335f5cf7306567dc9
@@ -38,10 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # OpenWiki Quickstart
@@ -96,14 +94,41 @@ then run it from the target repo's working directory.
 
 The process entrypoint is `src/cli/cli.tsx`. It installs a crash guard before any
 run so escaped rejections are recorded with telemetry, parses the argument vector
-into a command, and dispatches:
+into a command, and dispatches one of three ways:
 
 - `integrations` and `mcp` commands go to the host-integration surface
-  (`runIntegrationsCommand` / `runMcpCommand`).
-- All other commands run through `runStandardCommand`, the native pipeline, which
-  loads environment, resolves the startup command, decides once whether this is
-  the first run (mints the install id), and then either prints a startup error,
-  runs non-interactively in print mode, or renders the interactive Ink `App`.
+  (`runIntegrationsCommand` / `runMcpCommand`) and never load the native model
+  pipeline.
+- `link`, `workspace`, `auth`, `ngrok`, `cron`, `ingest`, and `visualize`
+  commands dispatch directly to their own runners inside `runStandardCommand`
+  after environment load and first-run detection, without entering the print or
+  interactive TUI path.
+- All other commands (the documentation agent: `init`, `update`, and the default
+  chat) continue through `runStandardCommand` to either print a startup error,
+  run non-interactively in print mode, or render the interactive Ink `App`.
+
+`runStandardCommand` loads environment (when the command requires it), resolves
+the startup command, and decides once whether this is the first run (mints the
+install id) before routing to the direct runner or the print/interactive branch.
+
+```mermaid
+flowchart TD
+  Start["argv parsed by parseCommand"] --> Check{"command kind"}
+  Check -->|"integrations"| Integ["runIntegrationsCommand"]
+  Check -->|"mcp"| Mcp["runMcpCommand"]
+  Check -->|"other"| Std["runStandardCommand"]
+  Std --> Env["load environment + resolve startup + first-run detect"]
+  Env --> Direct{"link / workspace / auth / ngrok / cron / ingest / visualize"}
+  Direct -->|"yes"| Runner["dedicated runner"]
+  Direct -->|"no"| Print{"startup error or non-TTY"}
+  Print -->|"error"| Err["print startup error + exit code"]
+  Print -->|"non-TTY print"| PrintMode["runPrintCommand"]
+  Print -->|"interactive TTY"| TUI["render Ink App"]
+```
+
+The CLI dispatch routes integrations and mcp to the host-integration surface,
+direct commands to their own runners, and the documentation agent to print or
+interactive.
 
 The `dev` script points at this same `.tsx` file, so behavior is identical
 between `pnpm run dev` and the built binary.
@@ -159,7 +184,7 @@ the canonical wiki pages; each one links into the deeper source map.
 
 | I want to…                                                                  | Read                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------ |
-| Run OpenWiki inside Codex, Claude Code, OpenCode, or Cursor                 | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
+| Run OpenWiki inside IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro, Oh My Pi, or Antigravity CLI | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
 | Understand the built-in source connectors, the ConnectorRuntime contract, and how to add a new one | [Source Connectors](/openwiki/integrations/connectors.md) |
 | Explore the interactive graph visualizer (live server and static export)    | [Interactive Visualizer](/openwiki/integrations/visualizer.md) |
 
@@ -195,22 +220,36 @@ their workspace is preserved. An update whose Claims preflight is clean, source
 fingerprint is unchanged, and every existing page has complete baseline coverage
 is proven a strict no-op at `begin` time and skips model invocation.
 
+By default a native run documents one page per worker. Set
+`OPENWIKI_PAGE_CONCURRENCY` to an integer from `1` to `8` (default `1`) to run
+that many page workers at once; each worker still owns exactly one page, the
+quickstart page is held back until every other page has finished so its
+task-routing map links to pages that exist, and every page remains a durable
+resume unit. A worker that fails on a provider rate limit lowers the live
+concurrency by one (never below `1`) and restores its page for the next run.
+For worker-scaling, retry, and output-token details see
+[Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md)
+and [Configuration and Environment](/openwiki/operations/configuration.md).
+
 Finalization is deterministic and runs once. `finishRepositoryRun` refuses to
 finish while any page job is still `pending`, validates that every `skipped` job
 carries its original page snapshot, restores skipped pages to their pre-worker
-Markdown and Claims, persists and proves the reconciled Claims durable, and only
-then removes `openwiki/.run.json` — so any earlier failure leaves the run
-resumable. If repository source changed while OpenWiki was running (detected by
-re-fingerprinting the source before and after finalization), the run finalizes
-without advancing the source checkpoint and writes `interrupted` update metadata
-instead of `complete`, prompting a follow-up `openwiki --update` to reconcile the
-drift.
+Markdown and Claims, persists and proves the reconciled Claims durable,
+restamps the page manifest so only pages this run actually regenerated advance
+to the current source checkpoint while all other tracked pages keep their prior
+checkpoint, and only then removes `openwiki/.run.json` — so any earlier failure
+leaves the run resumable. If repository source changed while OpenWiki was
+running (detected by re-fingerprinting the source before and after
+finalization), the run finalizes without advancing the source checkpoint and
+writes `interrupted` update metadata instead of `complete`, prompting a
+follow-up `openwiki --update` to reconcile the drift.
 
 ## Host-driven generation
 
-OpenWiki can also run inside a host coding agent (IBM Bob, Codex, Claude Code,
-OpenCode, Cursor, or Kiro) instead of launching its own model. The integration
-shares one canonical skill and the same six MCP operations as native generation:
+OpenWiki can also run inside a host coding agent — IBM Bob, Codex, Claude Code,
+OpenCode, Cursor, Kiro, Oh My Pi (`omp`), or Antigravity CLI (`antigravity`) —
+instead of launching its own model. The integration shares one canonical skill
+and the same six MCP operations as native generation:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand
 `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. The
 host owns repository research, planning, and factual authoring; OpenWiki owns the

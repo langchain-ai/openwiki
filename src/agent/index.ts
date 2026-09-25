@@ -12,7 +12,7 @@ import { ChatOpenRouter } from "@langchain/openrouter";
 import { OrchestrationClient } from "@sap-ai-sdk/langchain";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent } from "deepagents";
+import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -497,8 +497,26 @@ function createOpenWikiAgentGraph(
     tools: createOpenWikiConnectorTools(options.outputMode),
     checkpointer: options.checkpointer,
     backend,
-    middleware:
-      options.command === "chat"
+    middleware: [
+      // DeepAgents also applies this replacement to its general-purpose
+      // subagent. Personal runs have no shell tool, regardless of command.
+      ...(options.outputMode === "local-wiki"
+        ? [
+            createFilesystemMiddleware({
+              backend,
+              permissions: AGENT_FILESYSTEM_PERMISSIONS,
+              tools: [
+                "ls",
+                "read_file",
+                "glob",
+                "grep",
+                "write_file",
+                "edit_file",
+              ],
+            }),
+          ]
+        : []),
+      ...(options.command === "chat"
         ? []
         : [
             ...(translation
@@ -537,7 +555,8 @@ function createOpenWikiAgentGraph(
               conceptType,
               options.runTimestamp,
             ),
-          ],
+          ]),
+    ],
     skills: ["/skills/"],
     subagents: [],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
@@ -1301,6 +1320,7 @@ export function createModel(
       },
       model: modelId,
       ...maxTokensOptions,
+      ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
       ...retryOptions,
     });
   }

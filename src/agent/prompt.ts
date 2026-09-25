@@ -197,6 +197,6 @@ ${runtimeRoot}
 Runtime note:
 - ${formatRuntimeRootInstruction(outputMode)}
 - Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
-- Shell execute commands run on the host. For execute, use cd ${runtimeRoot} before commands that should run against this root.
+- ${outputMode === "local-wiki" ? "Shell execution is disabled in personal mode. Read connector evidence with openwiki_list_raw_items and openwiki_read_raw_item." : `Shell execute commands run on the host. For execute, use cd ${runtimeRoot} before commands that should run against this root.`}
 - Do not search parent directories or unrelated directories.`;
 }

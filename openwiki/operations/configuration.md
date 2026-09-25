@@ -31,10 +31,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-15T08:09:47.649Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Configuration and Environment
@@ -83,7 +83,9 @@ OpenWiki reads or persists, in the exact order they are written to
 `~/.openwiki/.env`. It is the single source of truth: both the credential
 diagnostics list (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and the agent's debug-dump
 key list (`DEBUG_ENV_KEYS`) are derived from it by filtering, so they cannot
-silently drift out of sync when a new managed key is added. LangChain
+silently drift out of sync when a new managed key is added — including the
+newer `OPENWIKI_PAGE_CONCURRENCY` key, which sits alongside
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` in the managed list. LangChain
 project/tracing settings are managed but are not credentials, so they are
 excluded from the diagnostics panel via `NON_CREDENTIAL_ENV_KEYS`.
 
@@ -186,29 +188,34 @@ variables and optional base-URL override in `PROVIDER_CONFIGS`; see
 ### Token limits
 
 OpenWiki caps per-request output tokens through three settings, resolved by
-`resolveConfiguredMaxOutputTokens` in a fixed precedence:
+`resolveConfiguredMaxOutputTokens`. The precedence has one provider-specific
+exception before the neutral rule:
 
-1. `OPENWIKI_MAX_OUTPUT_TOKENS` — the provider-neutral cap, parsed by
+1. **OpenRouter legacy cap.** When the provider is `openrouter` **and**
+   `OPENWIKI_OPENROUTER_MAX_TOKENS` is set, that value is used immediately — it
+   wins even over the provider-neutral `OPENWIKI_MAX_OUTPUT_TOKENS`, so existing
+   low-balance installations keep their provider-specific credit limit. This is
+   a legacy cap retained because, without one, OpenRouter's credit pre-check
+   budgets the model's full advertised output ceiling and rejects requests with
+   HTTP 402.
+2. **Provider-neutral cap.** Otherwise `OPENWIKI_MAX_OUTPUT_TOKENS` is parsed by
    `resolveMaxOutputTokens`, which accepts only a positive safe integer (no
-   fractions, exponents, or hex). When set, it applies to every provider.
-2. Provider-specific caps, used only when the neutral setting is unset:
-   - On **OpenRouter**, `OPENWIKI_OPENROUTER_MAX_TOKENS` is a legacy cap retained
-     for existing low-balance installations. It takes precedence over the
-     Bedrock default whenever set, because without a cap OpenRouter's credit
-     pre-check budgets the model's full advertised output ceiling and rejects
-     requests with HTTP 402.
-   - On **Bedrock**, `OPENWIKI_BEDROCK_MAX_TOKENS` caps output for the Bedrock
-     Converse API. `resolveBedrockMaxTokens` **defaults to
-     `BEDROCK_DEFAULT_MAX_TOKENS` (16000)** when unset, matching
-     `@langchain/anthropic`'s built-in ceiling for Claude models — without an
-     explicit `maxTokens`, Bedrock caps output at 4096 tokens and truncates long
-     wiki pages mid-write. Override it for models with a lower ceiling.
-3. When all of the above are unset, the resolved cap is `undefined` and the
-   provider SDK's own default applies (Bedrock excepted, which always gets the
-   16000 default).
+   fractions, exponents, or hex). When set, it applies to every other provider.
+3. **Bedrock default.** When the neutral setting is also unset and the provider
+   is `bedrock`, `OPENWIKI_BEDROCK_MAX_TOKENS` caps output for the Bedrock
+   Converse API. `resolveBedrockMaxTokens` **defaults to
+   `BEDROCK_DEFAULT_MAX_TOKENS` (16000)** when unset, matching
+   `@langchain/anthropic`'s built-in ceiling for Claude models — without an
+   explicit `maxTokens`, Bedrock caps output at 4096 tokens and truncates long
+   wiki pages mid-write. Override it for models with a lower ceiling.
+4. When all of the above are unset and the provider is not `bedrock`, the resolved
+   cap is `undefined` and the provider SDK's own default applies (Bedrock always
+   gets the 16000 default).
 
-In short: `OPENWIKI_MAX_OUTPUT_TOKENS` > provider-specific (OpenRouter legacy /
-Bedrock default) > unset.
+In short: on OpenRouter, `OPENWIKI_OPENROUTER_MAX_TOKENS` (if set) overrides
+everything; otherwise `OPENWIKI_MAX_OUTPUT_TOKENS` (if set) applies to all
+providers; otherwise Bedrock gets its 16000 default and every other provider gets
+`undefined`.
 
 ### Streaming and Responses API toggles
 
@@ -235,8 +242,20 @@ next Bedrock stream chunk; `resolveStreamIdleTimeoutForProvider` applies it only
 to the `bedrock` provider, and a value of `0` disables the stream watchdog
 entirely (stalled streams may then hang indefinitely).
 
-`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` (`resolveProviderRetryAttempts`) sets provider
-retry attempts, defaulting to `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3).
+`OPENWIKI_PAGE_CONCURRENCY` (`resolvePageConcurrency`) sets how many
+repository page workers may run at once, accepting an integer from 1 to
+`MAX_PAGE_CONCURRENCY` (8) and defaulting to `DEFAULT_PAGE_CONCURRENCY` (1) when
+unset. Concurrent workers share one provider key, so they make transient rate
+limits the common failure; the upper bound keeps a single key from being
+rate-limit bound and keeps the progress view readable.
+
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` (`resolveProviderRetryAttempts`) sets the
+provider retry count as a positive integer. An explicit value always wins. When
+unset, the default adapts to the run's page concurrency: a single-worker run
+gets `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3), while a concurrent run (more than
+one page worker) gets `PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5), because
+concurrent workers make transient rate limits the common failure and need more
+headroom.
 
 ### Reasoning effort
 
@@ -289,9 +308,9 @@ for those models even though it is valid for OpenAI GPT-5.6.
 `CREDENTIAL_DIAGNOSTIC_ENV_KEYS`, comparing the file value against the
 `process.env` value. Each entry reports its source — `process.env`, the env file
 path, "process.env over <file>" when both are set, or `unset` — and a
-masked preview. Non-secret settings (provider, model, token limits, base URLs,
-region, Google project/location, and the boolean toggles, including
-`OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
+masked preview. Non-secret settings (provider, model, token limits, page concurrency, retry
+attempts, base URLs, region, Google project/location, OpenRouter provider-only filter, and
+the boolean toggles, including `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
 values).
@@ -299,13 +318,13 @@ values).
 Diagnostics surface per-key warnings through a dedicated validator per key:
 invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
-effort, invalid retry attempts, invalid stream idle timeout, base-URL provider
-mismatches (Anthropic, Baseten, Bob, Fireworks, NVIDIA, OpenAI, and the
-OpenAI-compatible `/chat/completions`-endpoint guard each validated through
-`getProviderBaseUrlWarnings`), credential whitespace/newline/quote issues, and a
-warning that the
-Bedrock stream watchdog is disabled when the idle timeout is `0`. The boolean
-validator `getBooleanWarnings` covers all four `openai-compatible` toggles —
+effort, invalid retry attempts, invalid page concurrency, invalid stream idle
+timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks,
+NVIDIA, OpenAI, and the OpenAI-compatible base URL each validated through
+`getProviderBaseUrlWarnings`), credential
+whitespace/newline/quote issues, and a warning that the Bedrock stream watchdog
+is disabled when the idle timeout is `0`. The boolean validator
+`getBooleanWarnings` covers all four `openai-compatible` toggles —
 `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`,
 `OPENWIKI_OPENAI_COMPATIBLE_STREAMING`,
 `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`, and
