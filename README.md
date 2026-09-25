@@ -267,7 +267,7 @@ OpenWiki runs in one of two modes. Bare `openwiki`, `openwiki --init`, and `open
 | **Code** _(default)_ | The current repository | `openwiki/` in the repo | `openwiki --init`          |
 | **Personal**         | Your connected sources | `~/.openwiki/wiki`      | `openwiki personal --init` |
 
-By default the CLI stays open after a run so you can send follow-up messages. Add `-p` / `--print` for a one-shot, non-interactive run that prints the final output and exits. `--init` and `--update` auto-exit on success in an interactive terminal, so the same command works one-shot or interactively.
+By default the CLI stays open after a run so you can send follow-up messages. Add `-p` / `--print` for a one-shot, non-interactive run that prints the final output and exits. For repository runs, add `--stream-progress` to write lifecycle progress as it arrives while keeping assistant text buffered. `--init` and `--update` auto-exit on success in an interactive terminal, so the same command works one-shot or interactively.
 
 ### Parallel page workers
 

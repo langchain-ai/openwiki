@@ -71,6 +71,10 @@ describe("parseCommand — help", () => {
     expect(getHelpText()).toContain("-l, --language <locale>");
   });
 
+  test("help documents opt-in progress streaming", () => {
+    expect(getHelpText()).toContain("--stream-progress");
+  });
+
   test("help documents workspace wiki linking", () => {
     expect(getHelpText()).toContain("openwiki link [directory]");
     expect(getHelpText()).toContain("openwiki workspace use <workspace>");
@@ -379,6 +383,24 @@ describe("parseCommand — print", () => {
       kind: "run",
       print: true,
       command: "init",
+    });
+  });
+
+  test("--stream-progress is captured for a print run", () => {
+    expect(
+      parseCommand(["--print", "--stream-progress", "code", "--update"]),
+    ).toMatchObject({
+      kind: "run",
+      print: true,
+      streamProgress: true,
+      command: "update",
+    });
+  });
+
+  test("progress streaming defaults to disabled", () => {
+    expect(parseCommand(["--print", "--init"])).toMatchObject({
+      kind: "run",
+      streamProgress: false,
     });
   });
 
