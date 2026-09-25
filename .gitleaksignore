@@ -1,0 +1,5 @@
+# Upstream test fixtures with dummy placeholder values (verified not real credentials):
+#   "lsv2_placeholder" and "bedrock-secret-abcdef123456" in secret-handling tests.
+7070a6f5c84238002c86d7dc5335494ccb92c7ad:test/credentials.test.ts:generic-api-key:280
+7070a6f5c84238002c86d7dc5335494ccb92c7ad:test/credentials.test.ts:generic-api-key:293
+7070a6f5c84238002c86d7dc5335494ccb92c7ad:test/redaction.test.ts:generic-api-key:239
