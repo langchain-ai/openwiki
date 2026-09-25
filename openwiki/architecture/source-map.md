@@ -104,8 +104,8 @@ sources:
     resource: repo://test/agent/stream-redaction.test.ts
 generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-25T08:09:49.344Z
 ---
 
 # Source Map

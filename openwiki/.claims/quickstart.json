@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:34ca92d64ff862add4698e89a8b8503bbfe1e239dfc60bcc1869006255d83a03",
+  "pageVersion": "sha256:f510ceed15997e7724819b1b09c9bc84459a4731ac180006273dcafe57372253",
   "claims": [
     {
       "id": "claim_5836585e22d244e79875961ea0a09258",
-      "statement": "OpenWiki is a Node.js (>=22.22.0) CLI published as the `openwiki` npm package (v0.5.2) whose binary resolves to `dist/cli/cli.js`, described as a CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase, and whose runtime is driven by one of fourteen model providers.",
+      "statement": "OpenWiki is a Node.js (>=22.22.0) CLI published as the `openwiki` npm package (v0.6.0) whose binary resolves to `dist/cli/cli.js`, described as a CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase, and whose runtime is driven by one of fourteen model providers.",
       "evidence": [
         {
           "resource": "repo://package.json#L1-L9",
-          "version": "repo-lines-v1:sha256:bd1961a705f6ab3032da67848fced9717a7d62e00e7f1fb8dcef3aedf32f5876:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMyMjJlOTNkN2E1OTk2MGEwNGFkMmQwNGUyMDQ3ZDNkMzgyZTkwYmRjYjFiMjgzN2Q4ODcwOWZlMzA2Y2I2MyJ9"
+          "version": "repo-lines-v1:sha256:18624a1e6d031b493897264a2d3e79dfb891e4bee5e8fe1a75a54f0642ecbe59:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMyMjJlOTNkN2E1OTk2MGEwNGFkMmQwNGUyMDQ3ZDNkMzgyZTkwYmRjYjFiMjgzN2Q4ODcwOWZlMzA2Y2I2MyJ9"
         },
         {
           "resource": "repo://package.json#L10-L12",
           "version": "repo-lines-v1:sha256:73222e93d7a59960a04ad2d04e2047d3d382e90bdcb1b2837d88709fe306cb63:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZjMTQ3NTdiOGUxZTlkNmE3ZGVlOTkwMmU5MDQwN2FkOGNmNjczYjNlOGQ3NjNlMjc5NTBkMTlkMDY3OGQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTEwYjQ0ZDliYjU0MDFlZTQ1YTBhZDhjMTNkZWJhNjNhZDVmNzUwYjQ0ZGJmOTg5Y2I0YTNkOThjNGViZDEwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRhNmQ4MjdmNjM4ZTQ2NGVjNDYxNzAwNWMyMTI4OGQ4OTM3MGVhNzcwMmIyMmEwMzE5NTVmNmIxYzA1MWQ2ZiJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L110-L124",
+          "resource": "repo://src/config/constants.ts#L124-L138",
           "version": "repo-lines-v1:sha256:a6946e564ffab6e307f527c49532e22693863bb793a2152d88dfaf8bbf421efe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5OTZkMGY5NDUxOWIxNTYwODVlNzgxNWYxNDIzODhmNjQ0MDQ5OWRiYWM1YTUzYTIxNTNlMWY0YjljM2ZhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhZDAxNjFiNTM0ZGViNzM2ZGExZWRhYTQ2MTdkMjRlMDllMmVjZmFlNTFmNTFiMjEyZDAxNTRhNDA4NDc4Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxODY1MzNjODY3YTUxOWM1ODc5OTljNzgzYjNhNWQ4Zjg0ZTE0M2VlYzNkNDg3ZDRjNjM4ZDg4NTQ5NDdkOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMWIzZjNlYmY5OTA4OTk1MTQ1MzlmYzUwZmRlZmExYjY0M2I5N2E2OGRiMmQwNDI2Zjc4MzQ0OGRmZGJkZDEifQ"
         }
       ]
@@ -226,7 +226,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-25T08:09:49.344Z"
   }
 }
