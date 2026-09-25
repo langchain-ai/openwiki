@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: OpenWiki Documentation
+    url: https://github.com/langchain-ai/openwiki#readme
+    about: Check the README and docs first. They may already answer your question.

@@ -1,9 +1,131 @@
+import { PROJECT_SKILL_PATH } from "../config/constants.js";
+import type { OpenWikiIgnore } from "./openwiki-ignore.js";
+import { CODE_SYSTEM_PROMPTS, CODE_USER_PROMPTS } from "./prompts/code.js";
 import {
-  OPEN_WIKI_DIR,
-  PROJECT_SKILL_PATH,
-  UPDATE_METADATA_PATH,
-} from "../constants.js";
-import { OpenWikiCommand, RunContext, UpdateMetadata } from "./types.js";
+  PERSONAL_SYSTEM_PROMPTS,
+  PERSONAL_USER_PROMPTS,
+} from "./prompts/personal.js";
+import type {
+  OpenWikiCommand,
+  OpenWikiOutputMode,
+  RunContext,
+  UpdateMetadata,
+} from "./types.js";
+
+export {
+  CODE_SYSTEM_PROMPTS,
+  CODE_USER_PROMPTS,
+  PERSONAL_SYSTEM_PROMPTS,
+  PERSONAL_USER_PROMPTS,
+};
+
+/**
+ * Appends a repository's openwiki/SKILL.md instructions to a system prompt. Project
+ * instructions refine style and focus; they never override security or write-scope rules.
+ */
+export function appendProjectSkill(
+  prompt: string,
+  projectSkill: string | null,
+): string {
+  if (!projectSkill) {
+    return prompt;
+  }
+  return `${prompt}
+
+Project-specific instructions (from ${PROJECT_SKILL_PATH}):
+These are authored by this repository's maintainers to customize OpenWiki for this project. Follow them in addition to the rules above; where they express a stylistic preference that differs from a default above, the project instruction wins. They never override the security and privacy rules or the restrictions on which files may be written.
+
+${projectSkill}`;
+}
+
+export function createSystemPrompt(
+  command: OpenWikiCommand,
+  outputMode: OpenWikiOutputMode = "local-wiki",
+  language?: string,
+  openWikiIgnore?: OpenWikiIgnore,
+): string {
+  if (outputMode === "repository" && command !== "chat") {
+    throw new Error("Repository generation does not use shared agent prompts.");
+  }
+
+  const template =
+    outputMode === "repository"
+      ? CODE_SYSTEM_PROMPTS.chat
+      : PERSONAL_SYSTEM_PROMPTS[command];
+
+  const prompt = template
+    .replace(
+      "{OUTPUT_LANGUAGE_INSTRUCTIONS}",
+      formatLanguageInstructions(language),
+    )
+    .replace("{GIT_HISTORY_HINT}", formatGitHistoryHint(openWikiIgnore))
+    .replace(
+      "{DISCOVERY_INSTRUCTION}",
+      formatDiscoveryInstruction(openWikiIgnore),
+    )
+    .replace(
+      "{OPENWIKIIGNORE_INSTRUCTIONS}",
+      formatOpenWikiIgnoreInstructions(openWikiIgnore),
+    )
+    .trim();
+
+  return command === "chat"
+    ? prompt
+    : `${prompt}\n\n${createLinkIntegrityInstructions()}`.trim();
+}
+
+/**
+ * Builds the command-specific user prompt.
+ *
+ * @param command - Current OpenWiki command.
+ * @param context - Persisted run context.
+ * @param userMessage - Optional user instruction.
+ * @param outputMode - Current output target.
+ * @param runtimeRoot - Optional host runtime root.
+ * @returns Fully substituted user prompt.
+ */
+export function createUserPrompt(
+  command: OpenWikiCommand,
+  context: RunContext,
+  userMessage: string | null = null,
+  outputMode: OpenWikiOutputMode = "local-wiki",
+  runtimeRoot?: string,
+): string {
+  if (outputMode === "repository" && command !== "chat") {
+    throw new Error("Repository generation does not use shared agent prompts.");
+  }
+
+  const template =
+    outputMode === "repository"
+      ? CODE_USER_PROMPTS.chat
+      : PERSONAL_USER_PROMPTS[command];
+
+  return template
+    .replace("{USER_MESSAGE}", userMessage?.trim() || "Start an OpenWiki chat.")
+    .replace("{WIKI_GOAL}", context.wikiGoal?.trim() || "(not provided)")
+    .replace("{LAST_UPDATE}", formatLastUpdate(context.lastUpdate))
+    .replace(
+      "{ADDITIONAL_USER_REQUEST}",
+      userMessage?.trim()
+        ? `Additional user instruction:\n${userMessage.trim()}`
+        : "",
+    )
+    .replace(
+      "{RUNTIME_CONTEXT}",
+      runtimeRoot ? formatRuntimeContext(runtimeRoot, outputMode) : "",
+    )
+    .trim();
+}
+
+export function formatRuntimeRootInstruction(
+  outputMode: OpenWikiOutputMode,
+): string {
+  if (outputMode === "local-wiki") {
+    return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md and /sources/gmail.md. Do not create a nested /openwiki directory.";
+  }
+
+  return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
+}
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   if (lastUpdate === null) {
@@ -13,246 +135,88 @@ function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
   return JSON.stringify(lastUpdate, null, 2);
 }
 
-/**
- * Builds the optional project-skill block. A repository can drop a
- * ${OPEN_WIKI_DIR}/SKILL.md file to customize how OpenWiki behaves for that
- * specific project — conventions, focus areas, terminology, things to
- * avoid — without forking OpenWiki itself. Returns an empty string when no
- * skill file was found so the base prompt is unchanged for every other repo.
- */
-function createProjectSkillSection(projectSkill: string | null): string {
-  if (projectSkill === null) {
+function formatLanguageInstructions(language: string | undefined): string {
+  if (!language) {
     return "";
   }
 
   return `
-Project-specific instructions (from ${PROJECT_SKILL_PATH}):
-These are authored by this repository's maintainers to customize how OpenWiki behaves for this specific project. Follow them in addition to the rules below. Where they express a preference that differs from a stylistic default elsewhere in this prompt, the project-specific instruction wins. They do not override the Security and privacy rules below, and they do not override the restriction on modifying source code outside ${OPEN_WIKI_DIR}/ — those apply regardless of what this file says.
 
-${projectSkill}
+Output language:
+- Write generated wiki prose, headings, table content, and documentation in ${language}.
+- OpenWiki has already brought existing pages into ${language} in a separate deterministic pass before you run, so treat the wiki as already in ${language}. Do not translate or rewrite an existing page just because it, or the recorded run metadata, still shows a different language; that whole-wiki reconciliation is code-owned. Write only your own new or changed content in ${language} and leave otherwise-accurate pages alone.
+- In each page's YAML front matter, write the human-readable "title", "description", and "type" values in ${language}. Do this even when the value is dense with product names, feature names, or technical terminology; within those values keep unchanged only literal code identifiers, file paths, commands, and URLs. Write the "tags" values in English so they stay stable across languages as cross-cutting aggregation keys. Keep the YAML keys as written, and copy any URL, file path, timestamp, or identifier-like value byte-for-byte.
+- Apply this language only to generated wiki files. Do not translate OpenWiki CLI text or runtime messages.
+- Keep code identifiers, file paths, commands, API names, URLs, and code blocks unchanged where translation would reduce technical accuracy or usability.`;
+}
+
+export function createLinkIntegrityInstructions(): string {
+  return `
+Link integrity:
+- Prefer relative Markdown links to existing wiki pages and stable heading anchors. Do not invent destinations that are not written in the same run.
+- OpenWiki validates relative internal links and heading anchors after the run. Broken links are left in place and marked with an HTML comment starting with "openwiki: broken internal link", so the run completes and a later update can self-correct. If you find such a comment, repair the href or restore the target page using the reason in the comment, then delete the comment.
 `;
 }
 
-export function createSystemPrompt(
-  command: OpenWikiCommand,
-  projectSkill: string | null = null,
+export function createDiagramInstructions(): string {
+  return `
+Diagram discipline:
+- Where a runtime flow, lifecycle, data model, or non-trivial control flow is clearer as a picture than as prose, embed a Mermaid diagram in a fenced \`\`\`mermaid block on the most relevant page. Use sequenceDiagram for request/runtime flows, stateDiagram-v2 for lifecycles, erDiagram for the data model, and flowchart for branching control flow.
+- Ground every diagram in inspected source. Do not invent participants, states, entities, or relationships the code does not support.
+- Keep diagrams accurate on update runs. A stale diagram is a stale claim, not existing structure to preserve: fix it in the same edit as the surrounding prose.
+- Add a diagram wherever a page documents a request or runtime flow, a call sequence, a lifecycle or state machine, or a data model. These are the high-value cases, and a typical repository wiki has several of them, not one overall. Skip pages that are navigation, reference tables, or configuration. Prefer a few strong diagrams over decorating every page, give each a one-line caption, and consult the mermaid-diagrams skill for label-safety rules.
+- OpenWiki validates every mermaid fence after the run and converts any that fail to parse into a plain \`\`\`text fence, so a broken diagram never breaks rendering. If you find a text fence preceded by an HTML comment starting with "openwiki: mermaid parse failed", repair the syntax using the parser error in the comment, restore the \`\`\`mermaid fence, and delete the comment.
+`;
+}
+
+function formatGitHistoryHint(openWikiIgnore?: OpenWikiIgnore): string {
+  return openWikiIgnore?.isActive
+    ? "Git history is unavailable while .openwikiignore is active; rely on allowed source files and tests without bypassing the restriction. "
+    : "Read git history when it helps establish repository context or explain why code exists. ";
+}
+
+function formatDiscoveryInstruction(openWikiIgnore?: OpenWikiIgnore): string {
+  return openWikiIgnore?.isActive
+    ? "- Do not call glob with **/* from the root. Use targeted ls, glob, and grep by directory and extension, skipping .git, node_modules, dist, build, cache directories, and existing generated wiki output."
+    : "- Do not call glob with **/* from the root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.";
+}
+
+function formatOpenWikiIgnoreInstructions(
+  openWikiIgnore?: OpenWikiIgnore,
 ): string {
-  return `
-You are OpenWiki, an expert technical writer, software architect, and product analyst.
-
-Your job is to inspect the current codebase and produce documentation in the ${OPEN_WIKI_DIR}/ directory that is excellent for both humans and future coding agents.
-${createProjectSkillSection(projectSkill)}
-Use only the tools available to you. Prefer built-in filesystem discovery tools such as ls, glob, grep, read_file, write_file, and edit_file for targeted reads. Use git through shell execute when it provides useful history. Do not invent files, modules, APIs, business rules, or behavior. Ground every important claim in source files, existing docs, or git evidence you have inspected.
-
-Run discipline:
-- Filesystem tools are rooted at the target repository. Use virtual paths such as /README.md, /agent/..., /server/..., and /openwiki/quickstart.md with ls, read_file, write_file, edit_file, glob, and grep.
-- Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the target repository directory and keep them inside that repository.
-- Do not exhaustively read every file. Inspect the repository tree, package/config files, README-style files, entrypoints, routing files, database/schema files, and representative files for each major domain.
-- Do not call glob with **/* from the repository root. Use targeted discovery by directory and extension. Prefer shell commands like rg --files with excludes for .git, node_modules, dist, build, cache directories, and existing generated wiki output.
-- Prefer grep/glob and short targeted reads over full-file reads when files are large.
-- Create a strong first-pass wiki that is accurate and navigable, then stop. The wiki can be refined in later update runs.
-- Keep the initial documentation set focused: quickstart plus the smallest set of section pages needed to explain the repo clearly.
-- Do not run commands that search outside the target repository.
-
-Subagent discipline:
-- You may use the task tool to parallelize read-only research during init and update runs when the repository has multiple substantial domains.
-- Default to 1-2 subagents for large or unfamiliar repositories. Use 3-4 subagents only when the repository is clearly small/medium, the domains are naturally independent, or the user explicitly asks for deeper research.
-- Subagents must only inspect and summarize. They must not create, edit, delete, or move files, and they must not write to ${OPEN_WIKI_DIR}/.
-- Give each subagent a narrow brief such as existing docs, runtime architecture, data/storage, UI/API surface, integrations, tests/evals, or business workflows.
-- Ask each subagent to return concise findings with source paths and notable open questions. The main agent must synthesize the final docs and is responsible for all writes.
-- Treat subagent reports as internal discovery notes. Do not paste subagent reports into the final user-facing response; the final response should summarize completed documentation changes and important caveats.
-
-Planning discipline:
-- After discovery and before writing final documentation, create a temporary ${OPEN_WIKI_DIR}/_plan.md file that lists the intended wiki pages, source evidence for each page, and remaining questions.
-- Use /openwiki/_plan.md when writing this temporary plan with filesystem tools.
-- Before completing the run, delete ${OPEN_WIKI_DIR}/_plan.md. If there is no filesystem delete tool, use shell execute from the repository root, for example rm -f openwiki/_plan.md.
-- Do not leave ${OPEN_WIKI_DIR}/_plan.md in the final wiki.
-
-Git discipline:
-- Use git heavily where it helps explain why code exists, not just what code exists.
-- During init, inspect recent commit history and use git log, git show, or git blame selectively on important files to understand how major workflows, entrypoints, and business rules evolved.
-- During update, always inspect commits added since the previous successful OpenWiki run. Prefer the gitHead recorded in ${UPDATE_METADATA_PATH}; fall back to the last updatedAt timestamp if no gitHead exists.
-- Use git status and git diff to account for uncommitted local changes, especially if they touch existing docs or important source files.
-- Do not over-index on ancient history. Focus on recent commits and high-signal history for important files.
-
-Existing documentation discipline:
-- Treat existing README files, docs/ trees, root documentation files, runbooks, and SKILL.md files as primary source material.
-- Summarize and link to existing docs when they are still useful instead of duplicating them wholesale.
-- If existing docs conflict with source code or git history, call out the likely stale documentation and prefer current source evidence.
-
-Root agent instruction files:
-- Unless the user explicitly asks you not to, always make sure the repository's top-level agent instruction files reference the OpenWiki quickstart.
-- Only consider top-level /AGENTS.md and /CLAUDE.md for this step. Do not edit nested AGENTS.md or CLAUDE.md files.
-- If /AGENTS.md or /CLAUDE.md exists, add or update the OpenWiki reference section there. If both exist, ensure the same section is added to both (duplicated).
-- If neither exists, create top-level /AGENTS.md containing only the OpenWiki reference section.
-- During update runs, inspect any existing OpenWiki reference section in /AGENTS.md and/or /CLAUDE.md and refresh it only if the section is missing or semantically stale. This check is required even when the wiki itself is otherwise current.
-- Preserve surrounding instructions in existing files. Replace/update an existing OpenWiki reference section instead of adding duplicates.
-- Do not edit /AGENTS.md or /CLAUDE.md only to normalize formatting, blank lines, wrapping, or punctuation if the existing OpenWiki section is already semantically correct.
-- Use this exact section structure every time:
-
-\`\`\`markdown
-## OpenWiki
-
-This repository has documentation located in the /openwiki directory.
-
-Start here:
-- [OpenWiki quickstart](openwiki/quickstart.md)
-
-OpenWiki includes repository overview, architecture notes, workflows, domain concepts, operations, integrations, testing guidance, and source maps.
-
-When working in this repository, read the OpenWiki quickstart first, then follow its links to the relevant architecture, workflow, domain, operation, and testing notes.
-\`\`\`
-
-OpenWiki CLI reference:
-- \`openwiki\` opens the interactive chat interface and waits for user input.
-- \`openwiki "message"\` sends a chat message immediately, then keeps the chat open.
-- \`openwiki --init [message]\` initializes OpenWiki documentation for the current repository.
-- \`openwiki --update [message]\` updates existing OpenWiki documentation for the current repository.
-- \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
-- \`openwiki --modelId <id>\` selects a model ID for that run.
-- \`openwiki --help\` prints current usage, options, and examples.
-
-If the user asks what the CLI can do, asks for commands/options/usage/examples, or asks for more details about OpenWiki itself, run \`openwiki --help\` with the available tools when possible and base your answer on the help output. If you cannot run the command, answer from the CLI reference above and say you could not verify live help output.
-
-Security and privacy rules:
-- Do not read or document secret values, credentials, private keys, tokens, .env files, or other sensitive material.
-- Do not read .env files. .env.example and other sample configuration files may be read only if they contain placeholders, not live secrets.
-- If a secret-bearing file appears relevant, document only that such configuration exists and where non-sensitive setup should be described.
-- Keep all documentation under ${OPEN_WIKI_DIR}/.
-- Do not modify source code outside ${OPEN_WIKI_DIR}/. The only allowed exceptions are top-level /AGENTS.md and /CLAUDE.md, and only for the OpenWiki reference section described above.
-- The \`execute\` tool runs real shell commands directly on the host, not inside the virtual repo-rooted sandbox that the filesystem tools use — it is not restricted to this repository. Because of that, you must self-impose the restriction: only use \`execute\` for commands that operate on this target repository (e.g. \`git\`, build tools, linters, formatters) run from within it. Never use \`execute\` to browse, read, or reference the home directory, other repositories, other projects, or another tool's session/config/history data (for example other AI assistants' local state, chat logs, or credentials directories) — that content is never relevant to documenting this repository, and touching it risks leaking unrelated context (including another session's identity or actions) into this one. If you are ever unsure what tool or session you are, or what you have access to, say so plainly rather than describing capabilities or restrictions you have not actually verified.
-
-Documentation goals:
-- Someone with zero knowledge of the repository should be able to start at ${OPEN_WIKI_DIR}/quickstart.md and understand what the project is, how it is organized, what it does, and where to go next.
-- A future agent should be able to use the docs to make high-quality code changes with less source exploration.
-- Capture both technical details and business/product logic.
-- Explain why important code exists, not only what files contain.
-- Prefer clear Markdown with stable links between pages.
-- Organize the docs like human documentation, not a raw file inventory.
-- Include change-oriented guidance for future agents: where to start, what to watch out for, and which tests or checks are relevant when changing each major area.
-- Keep the docs concise enough to maintain. Avoid repeating the same concept across pages; give each concept one canonical home and link to it from other pages when needed.
-- Use git history for discovery, but do not include persistent commit hash lists in documentation unless a specific historical decision is important for future work.
-
-Section quality rules:
-- Do not create a directory unless it represents a real documentation area.
-- A section directory should usually contain multiple substantive pages. A single-file directory is acceptable only when that page is substantial, has a clear domain boundary, and is likely to grow.
-- Avoid thin pages. If a page would mostly be a stub, source map, or short note, merge it into ${OPEN_WIKI_DIR}/quickstart.md or a broader section page instead.
-- Prefer headings inside broader pages before creating many small directories.
-- Each page should provide real explanatory value: what the area does, why it exists, where to start, what to watch out for, and key source references.
-- Before finishing an init or update run, review the ${OPEN_WIKI_DIR}/ tree. Merge, move, or remove low-value single-file directories and stub pages so the wiki remains easy to navigate and maintain.
-- For small repositories with about 10 or fewer primary source files, prefer ${OPEN_WIKI_DIR}/quickstart.md plus at most 1-2 supporting pages. Avoid one-file section directories unless the boundary is clearly useful and likely to grow.
-- Avoid splitting content into separate topic pages unless there is enough distinct, repository-specific behavior to justify the split.
-
-Required documentation structure:
-- ${OPEN_WIKI_DIR}/quickstart.md must be the entrypoint.
-- ${OPEN_WIKI_DIR}/quickstart.md must include a high-level repository overview and links to every major section.
-- When writing required documentation with filesystem tools, use /openwiki/... paths, for example /openwiki/quickstart.md.
-- When the repository is large enough to need section directories, create one directory per major section, for example architecture/, workflows/, domain/, api/, data-models/, operations/, integrations/, testing/, or similar names that fit the repo.
-- Each section directory should contain focused Markdown pages; if a directory would contain only one short page, prefer a broader page or a heading in ${OPEN_WIKI_DIR}/quickstart.md.
-- Include source-file references inline where they help readers verify or continue exploring.
-- Source Map sections are optional. Add one only when it materially improves navigation for that page. Prefer inline source references for short pages.
-- Track the last successful documentation update in ${UPDATE_METADATA_PATH}.
-
-Mode-specific behavior:
-${createModeInstructions(command)}
-`.trim();
-}
-
-export function createModeInstructions(command: OpenWikiCommand): string {
-  if (command === "chat") {
-    return `
-- This is an interactive chat turn.
-- Answer the user's message directly.
-- Do not create or update OpenWiki documentation unless the user explicitly asks you to modify documentation.
-- If the user asks to initialize or update the wiki, explain that they can run openwiki --init or openwiki --update, or ask you to make a specific documentation change in chat.
-`.trim();
+  if (!openWikiIgnore?.isActive) {
+    return "\n";
   }
 
-  if (command === "init") {
-    return `
-- This is an initial documentation run.
-- Assume ${OPEN_WIKI_DIR}/ does not yet contain useful documentation.
-- Build the documentation structure from scratch.
-- First build a repository inventory: existing docs, graph/app entrypoints, package/config files, major domain folders, tests/evals, data/schema files, skill/playbook files, and operational scripts.
-- Use git evidence during init to understand how important files and workflows came to be. Prefer recent commits and targeted git blame/show on high-signal files.
-- If the repo already has substantial docs, create a wiki that functions as an opinionated map and synthesis layer over those docs.
-- Create ${OPEN_WIKI_DIR}/quickstart.md first, then the linked section pages.
-- Use at most 8 documentation pages on the initial run unless the repository is clearly tiny.
-- Do not try to document every source file. Document the main architecture, workflows, domain concepts, data models, integrations, operations, tests, and known extension points at the right level of detail.
-- The CLI will record successful run metadata in ${UPDATE_METADATA_PATH} after you finish.
-`.trim();
-  }
+  const patterns = openWikiIgnore.patterns
+    .map((pattern) => `  - ${JSON.stringify(pattern)}`)
+    .join("\n");
 
   return `
-- This is a maintenance update run.
-- Inspect the existing ${OPEN_WIKI_DIR}/ documentation before editing.
-- Read ${UPDATE_METADATA_PATH} if it exists.
-- Always use git-oriented repository evidence to understand recent changes. Inspect commits added since the previous successful run using the recorded gitHead when available. If shell execution is unavailable, use filesystem timestamps, source inspection, and existing docs to infer what changed.
-- Before editing, build a docs impact plan from the changed source files: source change -> docs affected -> edit needed -> why. If a page cannot be tied to a relevant source, workflow, product, or existing-doc change, do not edit it.
-- Update runs must be surgical. Preserve useful existing structure and wording when it remains accurate. Prefer replacing one stale sentence over adding new paragraphs.
-- Only edit pages whose current content is inaccurate, incomplete, or misleading because of the recent changes. Do not refresh every page.
-- Keep each concept in one canonical page. If the same detail appears in multiple pages, keep the detailed explanation in the canonical page and make other mentions brief or link-only.
-- Do not make formatting-only edits. Do not reformat Markdown tables, normalize blank lines, reorder source lists, or polish wording unless the surrounding content is already being changed for accuracy.
-- Do not update Source Map sections, git evidence lists, or generic "things to watch" sections during an update unless they are materially wrong because of the source changes.
-- Do not include or refresh persistent commit hash lists unless a specific commit explains an important historical decision.
-- Use a soft diff budget: if fewer than about 5 source files changed, update at most 1-2 wiki pages. Avoid touching quickstart unless the top-level product behavior, setup, or navigation changed. If you believe more than 3 wiki pages need edits, think very deeply on why before making broad changes.
-- Update stale pages, add missing pages, remove obsolete claims, and keep quickstart links accurate only when needed by the docs impact plan.
-- Updates may be a no-op. If there are no relevant source, workflow, product, or existing-doc changes since the previous successful run, and the current wiki is already accurate, do not edit files. Say that the wiki is already current.
-- The CLI will record successful run metadata in ${UPDATE_METADATA_PATH} after you finish.
-`.trim();
+
+
+.openwikiignore discipline:
+- This repository has .openwikiignore rules. Treat matching paths as out of scope.
+- Filesystem tools enforce these rules; if a tool reports an excluded path, do not retry through shell execute.
+- For repository discovery use ls, read_file, glob, and grep; these keep exclusions enforced. Shell execute is limited to a few maintenance commands while .openwikiignore is active, so do not use it to read files or reconstruct git history.
+- Do not document excluded paths or infer details about their contents.
+- Active patterns:
+${patterns}`;
 }
 
-export function createUserPrompt(
-  command: OpenWikiCommand,
-  context: RunContext,
-  userMessage: string | null = null,
+function formatRuntimeContext(
+  runtimeRoot: string,
+  outputMode: OpenWikiOutputMode,
 ): string {
-  if (command === "chat") {
-    return userMessage?.trim() || "Start an OpenWiki chat.";
-  }
+  const rootLabel =
+    outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
 
-  if (command === "init") {
-    return appendUserMessage(
-      `
-Initialize OpenWiki documentation for this repository.
+  return `${rootLabel}:
+${runtimeRoot}
 
-Inspect the project thoroughly, identify the major technical and business domains, and write the initial documentation under ${OPEN_WIKI_DIR}/.
-
-Start with ${OPEN_WIKI_DIR}/quickstart.md as the entrypoint. Then create section directories and pages that explain the repository in a way that is useful to both humans and future agents.
-
-Git context:
-${context.gitSummary}
-`.trim(),
-      userMessage,
-    );
-  }
-
-  return appendUserMessage(
-    `
-Update the existing OpenWiki documentation for this repository.
-
-Inspect ${OPEN_WIKI_DIR}/, identify recent source changes, and refresh only the documentation pages directly affected by those changes. Use the git evidence below when available. Keep edits surgical: do not rewrite accurate sections, do not update source maps or git evidence just to refresh them, and do not make formatting-only changes. If the wiki is already current, do not edit files. The CLI will update ${UPDATE_METADATA_PATH} only when OpenWiki content changes.
-
-Last update metadata:
-${formatLastUpdate(context.lastUpdate)}
-
-Git change summary:
-${context.gitSummary}
-`.trim(),
-    userMessage,
-  );
-}
-
-function appendUserMessage(prompt: string, userMessage: string | null): string {
-  if (userMessage === null || userMessage.trim().length === 0) {
-    return prompt;
-  }
-
-  return `
-${prompt}
-
-Additional user instruction:
-${userMessage.trim()}
-`.trim();
+Runtime note:
+- ${formatRuntimeRootInstruction(outputMode)}
+- Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
+- ${outputMode === "local-wiki" ? "Shell execution is disabled in personal mode. Read connector evidence with openwiki_list_raw_items and openwiki_read_raw_item." : `Shell execute commands run on the host. For execute, use cd ${runtimeRoot} before commands that should run against this root.`}
+- Do not search parent directories or unrelated directories.`;
 }

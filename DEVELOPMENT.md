@@ -4,7 +4,7 @@
 
 Prerequisites:
 
-- Node.js 20 or newer
+- Node.js 22.22.0 or newer
 - pnpm
 
 Set up pnpm's global bin directory once if `pnpm link --global` has not worked
@@ -18,7 +18,7 @@ Restart your shell, or source the profile file that `pnpm setup` changed. Then
 set up and link this package:
 
 ```sh
-cd /Users/bracesproul/code/lang-chain-ai/projects/agent-docs
+cd /path/to/openwiki
 pnpm install
 pnpm run build
 pnpm link --global
@@ -42,12 +42,12 @@ openwiki "Please focus on API documentation"
 ```
 
 The target repo is still the current working directory. The global link only
-avoids typing the path to `dist/cli.js`.
+avoids typing the path to `dist/cli/cli.js`.
 
 If you do not want to configure pnpm globals, use a shell alias instead:
 
 ```sh
-alias openwiki='node /Users/bracesproul/code/lang-chain-ai/projects/agent-docs/dist/cli.js'
+alias openwiki='node /path/to/openwiki/dist/cli/cli.js'
 ```
 
 That alias can go in `~/.zshrc` if you want it to persist.
@@ -58,7 +58,7 @@ After changing OpenWiki source code, rebuild from this package directory:
 pnpm run build
 ```
 
-The existing global link will keep using the rebuilt `dist/cli.js`.
+The existing global link will keep using the rebuilt `dist/cli/cli.js`.
 
 Real runs can write:
 

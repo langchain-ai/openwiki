@@ -3,3 +3,4 @@ dist
 node_modules
 *.tgz
 pnpm-lock.yaml
+/openwiki/
