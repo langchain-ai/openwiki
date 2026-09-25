@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title description">
+  <title id="title">OpenWiki link: one service, one searchable workspace</title>
+  <desc id="description">OpenWiki link groups the existing wikis of control plane, data plane, and infrastructure repositories into a named service workspace. OpenWiki search finds relevant sections across all three wikis. OpenWiki read retrieves complete selected sections from the wiki identified in each result. The repositories remain separate.</desc>
+  <defs>
+    <style>
+      text { font-family: Helvetica, Arial, sans-serif; fill: #08111d; }
+      .mono { font-family: Menlo, Consolas, monospace; }
+      .muted { fill: #375776; }
+      .blue { fill: #006ce8; }
+      .panel { fill: #f4faff; stroke: #a7d8ff; stroke-width: 1.5; }
+      .line { fill: none; stroke: #0072ef; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .icon { fill: none; stroke: #006ce8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L9 4.5 L0 9 Z" fill="#0072ef"/>
+    </marker>
+    <g id="repo" class="icon">
+      <rect x="0" y="0" width="29" height="34" rx="3"/>
+      <path d="M7 0 V34 M13 9 H22 M13 15 H22 M13 21 H19"/>
+    </g>
+    <g id="document" class="icon">
+      <path d="M1 0 H16 L25 9 V32 H1 Z M16 0 V9 H25 M7 15 H19 M7 21 H19 M7 27 H15"/>
+    </g>
+  </defs>
+
+  <path fill="#e5f4ff" d="M0 0 H1600 V1000 H0 Z"/>
+  <text x="48" y="80" font-size="48" letter-spacing="-1.5">OpenWiki link</text>
+  <text x="48" y="123" font-size="23" class="mono muted">One service. Three repositories. One searchable workspace.</text>
+
+  <circle cx="68" cy="200" r="19" fill="#006ce8"/>
+  <text x="68" y="207" text-anchor="middle" font-size="21" style="fill:#fff">1</text>
+  <text x="102" y="208" font-size="26" font-weight="600">Link repository wikis</text>
+
+  <rect x="48" y="243" width="744" height="631" rx="17" fill="#e5f4ff" stroke="#527fa8" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="78" y="286" font-size="24" font-weight="600">Service workspace</text>
+  <rect x="493" y="264" width="266" height="37" rx="8" fill="#f4faff" stroke="#a7d8ff"/>
+  <text x="626" y="289" text-anchor="middle" font-size="19" class="mono blue">openwiki link</text>
+  <text x="78" y="321" font-size="18" class="muted">A named group of existing repository wikis</text>
+
+  <rect x="78" y="357" width="608" height="130" rx="13" class="panel"/>
+  <use href="#repo" x="101" y="379"/>
+  <text x="146" y="404" font-size="25" font-weight="600">Control plane</text>
+  <text x="146" y="433" font-size="18" class="muted">APIs, orchestration, and policy</text>
+  <use href="#document" transform="translate(148 451) scale(.63)"/>
+  <text x="174" y="467" font-size="17" class="mono blue">control-plane/openwiki/</text>
+
+  <rect x="78" y="511" width="608" height="130" rx="13" class="panel"/>
+  <use href="#repo" x="101" y="533"/>
+  <text x="146" y="558" font-size="25" font-weight="600">Data plane</text>
+  <text x="146" y="587" font-size="18" class="muted">Request routing and worker execution</text>
+  <use href="#document" transform="translate(148 605) scale(.63)"/>
+  <text x="174" y="621" font-size="17" class="mono blue">data-plane/openwiki/</text>
+
+  <rect x="78" y="665" width="608" height="130" rx="13" class="panel"/>
+  <use href="#repo" x="101" y="687"/>
+  <text x="146" y="712" font-size="25" font-weight="600">Infrastructure</text>
+  <text x="146" y="741" font-size="18" class="muted">Clusters, networking, and deployment</text>
+  <use href="#document" transform="translate(148 759) scale(.63)"/>
+  <text x="174" y="775" font-size="17" class="mono blue">infra/openwiki/</text>
+
+  <path d="M686 422 H719 Q736 422 736 439 V713 Q736 730 719 730 H686 M686 576 H736" class="line"/>
+  <circle cx="736" cy="576" r="5" fill="#006ce8"/>
+  <path d="M736 576 H814 Q835 576 835 555 V422 Q835 403 855 403 H893" class="line" marker-end="url(#arrow)"/>
+  <text x="420" y="841" text-anchor="middle" font-size="18" class="muted">Repositories stay separate; their wikis are linked.</text>
+
+  <circle cx="917" cy="200" r="19" fill="#006ce8"/>
+  <text x="917" y="207" text-anchor="middle" font-size="21" style="fill:#fff">2</text>
+  <text x="951" y="208" font-size="26" font-weight="600">Search the workspace</text>
+
+  <rect x="898" y="243" width="654" height="331" rx="14" class="panel"/>
+  <circle cx="933" cy="281" r="9" class="icon"/>
+  <path d="M940 288 L948 296" class="icon"/>
+  <text x="966" y="291" font-size="25" class="mono blue">openwiki_search</text>
+  <text x="925" y="326" font-size="18" class="muted">Find relevant sections across all member wikis.</text>
+  <rect x="924" y="347" width="602" height="48" rx="8" fill="#e5f4ff" stroke="#a7d8ff"/>
+  <text x="943" y="378" font-size="20">“How does a request reach a worker?”</text>
+
+  <text x="925" y="430" font-size="15" class="mono muted">RANKED RESULTS</text>
+  <text x="947" y="463" font-size="19">Request admission</text>
+  <circle cx="930" cy="457" r="3" fill="#4381b6"/>
+  <text x="1499" y="462" text-anchor="end" font-size="16" class="mono muted">control-plane</text>
+  <rect x="919" y="475" width="612" height="38" rx="7" fill="#e5f4ff" stroke="#0072ef"/>
+  <circle cx="930" cy="494" r="3" fill="#0072ef"/>
+  <text x="947" y="501" font-size="19" class="blue">Worker dispatch</text>
+  <text x="1499" y="500" text-anchor="end" font-size="16" class="mono blue">data-plane</text>
+  <circle cx="930" cy="532" r="3" fill="#4381b6"/>
+  <text x="947" y="539" font-size="19">Service networking</text>
+  <text x="1499" y="538" text-anchor="end" font-size="16" class="mono muted">infra</text>
+
+  <path d="M1219 575 V621" class="line" marker-end="url(#arrow)"/>
+  <text x="1240" y="608" font-size="15" class="mono muted">wiki + page + section</text>
+
+  <circle cx="917" cy="657" r="19" fill="#006ce8"/>
+  <text x="917" y="664" text-anchor="middle" font-size="21" style="fill:#fff">3</text>
+  <text x="951" y="665" font-size="26" font-weight="600">Read the relevant sections</text>
+
+  <rect x="898" y="698" width="654" height="176" rx="14" class="panel"/>
+  <use href="#document" x="925" y="721"/>
+  <text x="966" y="746" font-size="25" class="mono blue">openwiki_read</text>
+  <text x="925" y="782" font-size="18" class="muted">Retrieve complete sections from any member wiki.</text>
+  <rect x="924" y="803" width="602" height="45" rx="8" fill="#e5f4ff" stroke="#a7d8ff"/>
+  <use href="#document" transform="translate(942 814) scale(.65)"/>
+  <text x="973" y="831" font-size="19">Data plane / Worker dispatch</text>
+
+  <path d="M49 924 H1551" stroke="#b6dcf8"/>
+  <text x="48" y="961" font-size="19" class="muted">Link once. Search across repositories. Read only what you need.</text>
+  <text x="1552" y="961" text-anchor="end" font-size="17" class="mono blue">Local · read-only · model-free retrieval</text>
+</svg>

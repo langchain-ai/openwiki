@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "allow": ["Skill(artifact-design)", "Skill(artifact-design:*)"]
+  }
+}

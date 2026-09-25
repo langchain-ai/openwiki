@@ -1,0 +1,159 @@
+{
+  "name": "taskflow",
+  "description": "A production-shaped in-memory task queue whose choreographed 5-checkpoint history (T0 0.1.0 through T4 1.0.0, ~37 commits, 8 per update gap) stress-tests claim grounding and forgetting under a large, lifelike diff. Structural traps are derived from the source surface: a MemoryStore-to-InMemoryStore rename with a file move, an experimental RedisStore feature reverted a checkpoint after it ships, a TaskError-to-TaskExecutionError rename with a deprecated alias, and a same-named TaskError resurrected with a new validation meaning in a new file. Three signature-stable bug fixes (LIFO-to-FIFO dequeue, batched-to-streaming worker pool, off-by-one retry backoff) flip behavior invisibly to the surface and are reachable only as claim staleness, and a distributed-workers docstring at T4 is a code-authoritative hallucination. A transient clear() is added then reverted inside a gap.",
+  "difficulty": "hard",
+  "sourceRepo": "./repo",
+  "evidenceMap": {
+    "entries": [
+      {
+        "id": "public-api-and-version",
+        "concept": "package public API, entrypoint, exports, modules, release version, package metadata, and library purpose",
+        "evidence": ["src/index.ts", "package.json", "README.md"]
+      },
+      {
+        "id": "queue-ordering",
+        "concept": "task queue insertion, ordering, FIFO or LIFO, oldest or newest selection, priority, removal, size, and empty queue behavior",
+        "evidence": [
+          "src/queue.ts#Queue",
+          "src/queue.ts#createQueue",
+          "src/queue.ts#enqueue",
+          "src/queue.ts#dequeue",
+          "src/queue.ts#size",
+          "src/task.ts",
+          "test/queue.test.ts"
+        ]
+      },
+      {
+        "id": "task-model-and-errors",
+        "concept": "task data model, identifiers, payload, priority, lifecycle state, execution errors, validation errors, TaskError, and TaskExecutionError",
+        "evidence": [
+          "src/task.ts#Task",
+          "src/task.ts#Priority",
+          "src/task.ts#TaskState",
+          "src/task.ts#TaskError",
+          "src/task.ts#TaskExecutionError",
+          "src/scheduler.ts#TaskError",
+          "src/worker.ts"
+        ]
+      },
+      {
+        "id": "worker-execution",
+        "concept": "worker task execution, handler behavior, queue draining, sequential or concurrent processing, worker pools, batching, streaming, running state, and failure wrapping",
+        "evidence": [
+          "src/worker.ts#Worker",
+          "src/worker.ts#runWorker",
+          "src/queue.ts#dequeue",
+          "src/task.ts#TaskExecutionError"
+        ]
+      },
+      {
+        "id": "stores-and-results",
+        "concept": "task result storage, Store contract, save and load behavior, in-memory storage, MemoryStore, InMemoryStore, RedisStore, persistence, and implementation availability",
+        "evidence": [
+          "src/store.ts#MemoryStore",
+          "src/store/store.ts#Store",
+          "src/store/in-memory-store.ts#InMemoryStore",
+          "src/store/redis-store.ts#RedisStore",
+          "src/persistent-queue.ts"
+        ]
+      },
+      {
+        "id": "retry-policy",
+        "concept": "task retry policy, retry attempts, failure limits, timing, delays, exponential backoff, defaults, and RetryError behavior",
+        "evidence": [
+          "src/retry.ts#RetryPolicy",
+          "src/retry.ts#RetryError",
+          "src/retry.ts#backoffDelay",
+          "src/retry.ts#withRetry",
+          "src/scheduler.ts#schedule"
+        ]
+      },
+      {
+        "id": "task-events",
+        "concept": "task lifecycle events, event bus, subscribers, listeners, publication, delivery, and registration order",
+        "evidence": [
+          "src/events.ts#TaskEvent",
+          "src/events.ts#EventBus",
+          "src/events.ts#subscribe",
+          "src/events.ts#publish",
+          "src/task.ts"
+        ]
+      },
+      {
+        "id": "scheduler-and-dead-letter",
+        "concept": "task scheduler, scheduling, concurrency, submitted tasks, retry options, worker processes, distributed workers, clusters, dead letter queue, and failed task burial",
+        "evidence": [
+          "src/scheduler.ts#Scheduler",
+          "src/scheduler.ts#DeadLetterQueue",
+          "src/scheduler.ts#createScheduler",
+          "src/scheduler.ts#schedule",
+          "src/worker.ts",
+          "src/queue.ts",
+          "src/retry.ts"
+        ]
+      },
+      {
+        "id": "scheduler-metrics",
+        "concept": "scheduler metrics, queued running and completed counts, monitoring, activity snapshots, and metric calculation",
+        "evidence": [
+          "src/metrics.ts#SchedulerMetrics",
+          "src/metrics.ts#metrics",
+          "src/scheduler.ts"
+        ]
+      },
+      {
+        "id": "persistent-queue",
+        "concept": "persistent queue, disk storage, file paths, process restarts, opening or creating queues, and durable tasks",
+        "evidence": [
+          "src/persistent-queue.ts#PersistentQueue",
+          "src/persistent-queue.ts#openPersistentQueue",
+          "src/task.ts"
+        ]
+      },
+      {
+        "id": "tests-and-build",
+        "concept": "tests, test coverage, imports used by tests, assertions, build scripts, type checking, strict mode, compiler configuration, formatting, and package commands",
+        "evidence": [
+          "test/**/*.ts",
+          "package.json",
+          "tsconfig.json",
+          ".prettierrc.json"
+        ]
+      },
+      {
+        "id": "module-structure",
+        "concept": "source files, module ownership, imports, dependencies, re-exports, file contents, declarations, and repository structure",
+        "evidence": ["src/**/*.ts", "test/**/*.ts", "src/index.ts"]
+      }
+    ]
+  },
+  "trace": {
+    "checkpoints": [
+      {
+        "id": "T0",
+        "commit": "090dab8d986a864115533cd74626f927f3059434",
+        "label": "taskflow 0.1.0 MVP: FIFO queue (latent LIFO bug), sequential worker, TaskError execution error"
+      },
+      {
+        "id": "T1",
+        "commit": "daad8257a1adefe33d968ade97e9dd3dacec0322",
+        "label": "taskflow 0.2.0: FIFO fix, priority ordering, worker pool, MemoryStore"
+      },
+      {
+        "id": "T2",
+        "commit": "6c9e9133ba70b70874d83fd9ba763b65d80e1dda",
+        "label": "taskflow 0.3.0: retries, events, worker-pool fix, Store extracted with MemoryStore renamed to InMemoryStore"
+      },
+      {
+        "id": "T3",
+        "commit": "9eb029d46e9b0b571a7c1d5c0a6179c11cc8e9ac",
+        "label": "taskflow 0.4.0: Scheduler, DeadLetterQueue, experimental RedisStore, TaskError renamed to TaskExecutionError with alias, retry backoff fix"
+      },
+      {
+        "id": "T4",
+        "commit": "4238a1f66565683b6cff2db1f9118aa031ec8d18",
+        "label": "taskflow 1.0.0: RedisStore reverted, metrics, PersistentQueue, TaskError resurrected as a validation error, schedule retries default flip, distributed-workers doc lie"
+      }
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "calc",
+  "description": "Three checkpoints of a small arithmetic library used to measure useful point-in-time knowledge and longitudinal discovery, correction, forgetting, and retention.",
+  "difficulty": "easy",
+  "sourceRepo": "./repo",
+  "evidenceMap": {
+    "entries": [
+      {
+        "id": "arithmetic-api",
+        "concept": "calculator arithmetic functions, named exports, parameters, return values, addition, subtraction, and negation behavior",
+        "evidence": [
+          "src/calc.ts#add",
+          "src/calc.ts#subtract",
+          "src/calc.ts#negate"
+        ]
+      },
+      {
+        "id": "library-properties",
+        "concept": "calculator library purity, input validation, rounding, side effects, input output, and module API properties",
+        "evidence": ["src/calc.ts", "README.md"]
+      },
+      {
+        "id": "release-version",
+        "concept": "calculator release version, VERSION constant, package release identity, and README version",
+        "evidence": ["src/version.ts#VERSION", "README.md"]
+      }
+    ]
+  },
+  "trace": {
+    "checkpoints": [
+      {
+        "id": "T0",
+        "commit": "973be7a697c4d75b4cde36085f6a470b84c51f88",
+        "label": "calc 1.0.0 with add and negate"
+      },
+      {
+        "id": "T1",
+        "commit": "0ee8f2956b69b54bf6dcb9be10259aec4d5f799b",
+        "label": "introduce subtract"
+      },
+      {
+        "id": "T2",
+        "commit": "811b273eafc0bbaeae999de1c6966f03790eabe2",
+        "label": "remove negate, bump to 2.0.0"
+      }
+    ]
+  }
+}
