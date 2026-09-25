@@ -1,0 +1,93 @@
+src/wiki/theme-extraction.ts
+  s_72dcbdf8dc5a63::t_5145161e123b45 154
+  s_72dcbdf8dc5a63::t_b6e4c939cb6005 514
+  s_72dcbdf8dc5a63::t_79a40d71f59adf 151-153
+  s_72dcbdf8dc5a63::t_99f0fddae2bcd8 155-157,511-513
+  s_72dcbdf8dc5a63::t_101a428da49eb5 515-517
+  s_72dcbdf8dc5a63::t_9a51b2a7408946 1-150,158-510,518-529
+scripts/run-source-update-batch.ts
+  s_72dcbdf8dc5a63::t_f72998876a5c38 3-9
+  s_72dcbdf8dc5a63::t_74542419c1c083 1-2
+  s_72dcbdf8dc5a63::t_eaae5359f94309 10-12
+  s_72dcbdf8dc5a63::t_7655b033791565 13-67
+test/wiki/content-classification.test.ts
+  s_72dcbdf8dc5a63::t_7cf7d00a8d21a7 6
+  s_72dcbdf8dc5a63::t_1c7b4a0d1849df 77
+  s_72dcbdf8dc5a63::t_f7fe195788f187 3-5
+  s_72dcbdf8dc5a63::t_b4e89f9c934a9f 7-9,74-76
+  s_72dcbdf8dc5a63::t_305e0c014ba8cb 78-80
+  s_72dcbdf8dc5a63::t_fc5fc2594de906 1-2,10-73,81-87
+src/ingestion/run-source-update-process.ts
+  s_72dcbdf8dc5a63::t_96cc98556c3b54 2-5
+  s_72dcbdf8dc5a63::t_b81349521bb2c3 1
+  s_72dcbdf8dc5a63::t_0c35dea0666fb8 6-8
+  s_72dcbdf8dc5a63::t_fefdde3ffaf320 9-87
+scripts/export-wiki-graph.ts
+  s_72dcbdf8dc5a63::t_1b0f13da3bfa87 1-92
+scripts/extract-themes.ts
+  s_72dcbdf8dc5a63::t_e068054e4e957b 1-78
+scripts/graduate-topics.ts
+  s_72dcbdf8dc5a63::t_8ec7b1042a40b6 1-82
+scripts/maintain-wiki-graph.ts
+  s_72dcbdf8dc5a63::t_c0cdffe547d25f 1-62
+scripts/restructure-wiki.ts
+  s_72dcbdf8dc5a63::t_dc805a401e64eb 1-93
+scripts/run-mesh-maintenance.ts
+  s_72dcbdf8dc5a63::t_ce909c29ea65d5 1-34
+src/okf/frontmatter.ts
+  s_72dcbdf8dc5a63::t_e6f2f1a43e2cca 636
+src/version.ts
+  s_72dcbdf8dc5a63::t_bf35d735251990 37-44,46-49,57-58,66,72-101,106
+src/wiki/content-classification.ts
+  s_72dcbdf8dc5a63::t_6f164fde6473a3 1-112
+src/wiki/corroboration.ts
+  s_72dcbdf8dc5a63::t_c87e72dc52ed25 1-45
+src/wiki/graduation.ts
+  s_72dcbdf8dc5a63::t_6085d424cd3338 1-98
+src/wiki/graph-maintenance.ts
+  s_72dcbdf8dc5a63::t_b1b63cc58ff9e3 1-491
+src/wiki/pipeline.ts
+  s_72dcbdf8dc5a63::t_b25d09049b128c 1-319
+src/wiki/restructure.ts
+  s_72dcbdf8dc5a63::t_d97f5f12588acb 1-66
+src/wiki/run-mesh-maintenance-process.ts
+  s_72dcbdf8dc5a63::t_e9b1c74e885613 1-98
+src/wiki/scoped-run.ts
+  s_72dcbdf8dc5a63::t_eb7b746282eaf8 1-30
+src/wiki/staleness.ts
+  s_72dcbdf8dc5a63::t_3c44a507d786ae 1-84
+src/wiki/synthesis-guidance.ts
+  s_72dcbdf8dc5a63::t_1085fef9581a27 1-17
+test/wiki/evidence-excerpts.test.ts
+  s_72dcbdf8dc5a63::t_53259783323c75 1-95
+test/wiki/file-record-clustering.test.ts
+  s_72dcbdf8dc5a63::t_39c925c479521c 1-96
+test/wiki/json-file-fallback.test.ts
+  s_72dcbdf8dc5a63::t_134955c4326b6c 1-70
+test/wiki/mega-cluster-refinement.test.ts
+  s_72dcbdf8dc5a63::t_1cd3ae6861c24f 1-105
+test/wiki/merge-batching.test.ts
+  s_72dcbdf8dc5a63::t_21c0c2a63d4794 1-51
+test/wiki/shallow-pages.test.ts
+  s_72dcbdf8dc5a63::t_10a69e075d1c0a 1-75
+test/wiki/split-cooldown.test.ts
+  s_72dcbdf8dc5a63::t_a26fb07aea50ed 1-84
+test/wiki/theme-evidence-refs.test.ts
+  s_72dcbdf8dc5a63::t_55ca9a015cb46d 1-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6158abdaaf43316c8fec85fd515c1de358fce66f",
+  "prompts": {},
+  "sessions": {
+    "s_72dcbdf8dc5a63": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bfec842-386a-4cd9-b84a-319e0292fcc6",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "gdibben <gethin.dibben@langchain.dev>"
+    }
+  }
+}
