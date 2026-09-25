@@ -829,7 +829,9 @@ function getMetadataFilePath(
  */
 export async function readProjectSkill(cwd: string): Promise<string | null> {
   try {
-    const content = (await readFile(path.join(cwd, PROJECT_SKILL_PATH), "utf8")).trim();
+    const content = (
+      await readFile(path.join(cwd, PROJECT_SKILL_PATH), "utf8")
+    ).trim();
     return content.length > 0 ? content : null;
   } catch (error) {
     if (isFileNotFoundError(error)) {

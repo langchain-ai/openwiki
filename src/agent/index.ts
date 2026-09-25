@@ -439,6 +439,7 @@ export async function createOpenWikiAgent(
     checkpointer,
     context,
     openWikiIgnore,
+    projectSkill: await readProjectSkill(options.cwd),
     runTimestamp: new Date().toISOString(),
   });
 }

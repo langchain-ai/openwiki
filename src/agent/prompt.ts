@@ -23,7 +23,10 @@ export {
  * Appends a repository's openwiki/SKILL.md instructions to a system prompt. Project
  * instructions refine style and focus; they never override security or write-scope rules.
  */
-export function appendProjectSkill(prompt: string, projectSkill: string | null): string {
+export function appendProjectSkill(
+  prompt: string,
+  projectSkill: string | null,
+): string {
   if (!projectSkill) {
     return prompt;
   }
