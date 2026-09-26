@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { BackendProtocolV2 } from "deepagents";
 import type { OpenWikiOutputMode } from "../agent/types.js";
@@ -14,9 +13,17 @@ import {
 import { listWikiConceptPaths } from "./index-sync.js";
 
 /**
- * Stable prefix identifying source entries owned by the Claims projection.
+ * Legacy prefix earlier OpenWiki versions wrote on `sources[].id` to mark
+ * ownership. Recognized on read only, so wikis generated before this change
+ * still get their stale entries replaced instead of retained forever.
  */
-const OPENWIKI_SOURCE_ID_PREFIX = "openwiki-source-";
+const LEGACY_OPENWIKI_SOURCE_ID_PREFIX = "openwiki-source-";
+
+/**
+ * Actor-convention prefix (OKF section 7) identifying source entries this
+ * Claims projection owns, independent of which OpenWiki version wrote them.
+ */
+const OPENWIKI_SOURCE_AUTHOR_PREFIX = "openwiki/";
 
 /**
  * Page-local repository evidence resources keyed by virtual concept path.
@@ -27,18 +34,24 @@ export type ClaimEvidenceResources = ReadonlyMap<string, readonly string[]>;
  * Projects page-owned Claims evidence files into OKF `sources` front matter.
  *
  * Existing producer-authored source entries are retained. OpenWiki-owned
- * entries receive deterministic IDs derived from their resource, allowing a
- * later Claims reconciliation to replace or remove only its own projection.
- * Pages without Claims state are left untouched.
+ * entries are tagged with `author: <producerActor>` (OKF section 7's actor
+ * convention), which lets a later Claims reconciliation replace or remove
+ * only its own projection. They omit `id`: per OKF section 5.1, `id` "SHOULD
+ * be present when the body cites the source", and no claim currently cites
+ * an individual source by footnote, so writing one would only add opaque
+ * per-entry noise a reader or agent has to read past for no benefit. Pages
+ * without Claims state are left untouched.
  *
  * @param backend - Active generated-wiki filesystem.
  * @param outputMode - Current wiki target.
  * @param resourcesByPage - Complete current evidence resources per Claims page.
+ * @param producerActor - Actor tag stamped on entries this call projects.
  */
 export async function synchronizeClaimSources(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   resourcesByPage: ClaimEvidenceResources,
+  producerActor: string,
 ): Promise<void> {
   const concepts = new Set(await listWikiConceptPaths(backend, outputMode));
   const pages = [...resourcesByPage.keys()].sort((left, right) =>
@@ -53,6 +66,7 @@ export async function synchronizeClaimSources(
     const nextSources = mergeClaimSources(
       currentSources,
       resourcesByPage.get(page) ?? [],
+      producerActor,
     );
     const projected = isDeepStrictEqual(currentSources, nextSources)
       ? repaired
@@ -75,6 +89,7 @@ export async function synchronizeClaimSources(
 function mergeClaimSources(
   current: readonly Record<string, unknown>[],
   resources: readonly string[],
+  producerActor: string,
 ): Record<string, unknown>[] {
   const retained = current.filter((entry) => !isOpenWikiSource(entry));
   const retainedResources = new Set(
@@ -86,7 +101,7 @@ function mergeClaimSources(
     .sort((left, right) => left.localeCompare(right))
     .filter((resource) => !retainedResources.has(resource))
     .map((resource) => ({
-      id: openWikiSourceId(resource),
+      author: producerActor,
       resource,
     }));
   return [...retained, ...projected];
@@ -120,24 +135,20 @@ function readSourceEntries(content: string): Record<string, unknown>[] {
 }
 
 /**
- * Identifies one source entry emitted by this Claims projection.
+ * Identifies one source entry emitted by this Claims projection, including
+ * entries an earlier OpenWiki version tagged via the legacy `id` prefix.
  */
 function isOpenWikiSource(entry: Record<string, unknown>): boolean {
+  if (
+    typeof entry.author === "string" &&
+    entry.author.startsWith(OPENWIKI_SOURCE_AUTHOR_PREFIX)
+  ) {
+    return true;
+  }
   return (
     typeof entry.id === "string" &&
-    entry.id.startsWith(OPENWIKI_SOURCE_ID_PREFIX)
+    entry.id.startsWith(LEGACY_OPENWIKI_SOURCE_ID_PREFIX)
   );
-}
-
-/**
- * Derives a stable, portable source ID suitable for later footnote joins.
- */
-function openWikiSourceId(resource: string): string {
-  const digest = createHash("sha256")
-    .update(resource)
-    .digest("hex")
-    .slice(0, 24);
-  return `${OPENWIKI_SOURCE_ID_PREFIX}${digest}`;
 }
 
 /**
