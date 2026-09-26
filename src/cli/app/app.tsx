@@ -127,7 +127,9 @@ export function App({ command }: AppProps) {
   const activeRunId = useRef(0);
   const interruptRequested = useRef(false);
   const agentRunInFlight = useRef(false);
-  const sessionThreadId = useRef(createOpenWikiThreadId(runtimeCwd));
+  const sessionThreadId = useRef(
+    process.env.OPENWIKI_THREAD_ID || createOpenWikiThreadId(runtimeCwd),
+  );
   const sessionThreadMode = useRef<OpenWikiRunMode>(runMode);
   const mountedRef = useRef(false);
   const nextLogId = useRef(1);
