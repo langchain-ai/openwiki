@@ -138,6 +138,7 @@ function buildClaimsRuntime(
           session,
           store,
           result.verificationByPage,
+          excludedPages,
         )),
       );
       for (const warning of warnings) onWarning(warning);
@@ -156,16 +157,19 @@ function buildClaimsRuntime(
  * @param session - Process-local Claims working state.
  * @param store - Repository Claims and Markdown persistence boundary.
  * @param verificationByPage - Durable verification eligibility by factual page.
+ * @param excludedPages - Pages whose restored Markdown must remain unchanged.
  * @returns Page-version synchronization warnings requiring run failure.
  */
 async function finalizeVerificationProjection(
   session: ClaimSession,
   store: ClaimsStore,
   verificationByPage: Parameters<typeof synchronizeClaimsVerification>[1],
+  excludedPages: ReadonlySet<string>,
 ): Promise<string[]> {
   const originals = await synchronizeClaimsVerification(
     store,
     verificationByPage,
+    excludedPages,
   );
   // Deterministic finalizers may have changed code-owned frontmatter without
   // changing the verification event. Refresh every represented page so Claims
