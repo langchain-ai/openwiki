@@ -381,7 +381,10 @@ export async function runNativeRepositoryGeneration(
     pageCount: run.state.plan?.pages.length,
   });
 
-  const result = await finishRepositoryRun(run, { skippedPageSnapshots });
+  const result = await finishRepositoryRun(run, {
+    skippedPageSnapshots,
+    onEvent: options.onEvent,
+  });
   if (result.sourceChanged) {
     options.onEvent?.({
       type: "text",
