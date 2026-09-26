@@ -109,6 +109,7 @@ import {
   finishRepositoryRun,
   inspectRepositoryPageClaims,
   nextRepositoryPage,
+  restoreRepositoryPage,
   skipRepositoryPage,
   submitRepositoryPage,
   submitRepositoryPlan,
@@ -365,6 +366,48 @@ test("restores the exact pending Markdown and Claims snapshot", async () => {
     gitHead: successfulMetadata.gitHead,
     status: "interrupted",
   });
+});
+
+test("restores a page snapshot without skipping the pending job", async () => {
+  const root = await createRepository(["testing.md"]);
+  const page = "/openwiki/testing.md";
+  const store = new ClaimsStore(root);
+  const originalClaims = {
+    schemaVersion: 1 as const,
+    pageVersion: await store.hashPage(page),
+    claims: [],
+  };
+  await store.writePage(page, originalClaims);
+
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, {
+    pages: [
+      {
+        path: page,
+        title: "Testing",
+        purpose: "Update testing documentation.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+  const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+
+  await run.backend.write(page, validPage("Rewritten"));
+  await store.writePage(page, {
+    schemaVersion: 1 as const,
+    pageVersion: await store.hashPage(page),
+    claims: [],
+  });
+
+  await restoreRepositoryPage(run, snapshot);
+
+  expect(await readFile(path.join(root, "openwiki/testing.md"), "utf8")).toBe(
+    validPage("testing"),
+  );
+  expect(await store.loadPage(page)).toEqual(originalClaims);
+  expect(run.state.plan?.pages[0]?.status).toBe("pending");
+  expect(await nextRepositoryPage(run)).toMatchObject({ status: "pending" });
 });
 
 test("preserves prior page coverage when a worker is skipped", async () => {
