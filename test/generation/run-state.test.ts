@@ -33,6 +33,7 @@ function createRunState(): RepositoryRunState {
     language: "en",
     languageChanged: false,
     requiredRewritePages: [],
+    requiredCoveragePages: [],
     initialPages: ["/openwiki/quickstart.md"],
     sourceFingerprint: `sha256:${"a".repeat(64)}`,
     targetGitHead: "0123456789abcdef",
@@ -91,6 +92,23 @@ afterEach(async () => {
 });
 
 describe("repository run-state persistence", () => {
+  test("loads old checkpoints without coverage requirements", async () => {
+    const legacy: Partial<RepositoryRunState> = createRunState();
+    delete legacy.requiredCoveragePages;
+    await mkdir(path.dirname(repositoryRunStatePath(root)), {
+      recursive: true,
+    });
+    await writeFile(
+      repositoryRunStatePath(root),
+      JSON.stringify(legacy),
+      "utf8",
+    );
+    expect(await readRepositoryRunState(root)).toEqual({
+      ...legacy,
+      requiredCoveragePages: [],
+    });
+  });
+
   test("atomically writes and reads the complete checkpoint", async () => {
     const state = createRunState();
 
