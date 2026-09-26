@@ -317,7 +317,7 @@ function resolveLineRangeEvidence(
   if (unchangedSpan) {
     return {
       evidence: {
-        resource: input.resource,
+        resource: formatLineRangeResource(input.resource, unchangedSpan),
         version: previousVersion,
       },
       content: getLineRangeContent(lines, unchangedSpan),
@@ -386,11 +386,31 @@ function createLineRangeEvidence(
   const content = getLineRangeContent(lines, span);
   return {
     evidence: {
-      resource,
+      resource: formatLineRangeResource(resource, span),
       version: formatLineRangeVersion(content, lines, span),
     },
     content,
   };
+}
+
+/**
+ * Formats a range evidence URI from its actual resolved source span.
+ *
+ * @param resource - Previously canonical repository resource.
+ * @param span - Selected current line span.
+ * @returns Canonical resource with current line numbers.
+ */
+function formatLineRangeResource(
+  resource: string,
+  span: SourceLineSpan,
+): string {
+  return formatRepositoryEvidenceResource({
+    path: parseRepositoryEvidenceResource(resource).path,
+    range: {
+      startLine: span.startIndex + 1,
+      endLine: span.endIndexExclusive,
+    },
+  });
 }
 
 /**

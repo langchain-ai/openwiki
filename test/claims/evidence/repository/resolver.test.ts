@@ -116,6 +116,7 @@ describe("RepositoryEvidenceResolver", () => {
     );
 
     expect(moved?.content).toBe("target one\ntarget two\n");
+    expect(moved?.evidence.resource).toBe("repo://fixture.any#L6-L7");
     expect(moved?.evidence.version).toBe(before?.evidence.version);
   });
 
@@ -179,6 +180,28 @@ describe("RepositoryEvidenceResolver", () => {
     );
 
     expect(changed?.content).toBe("target one\nnew target line\ntarget two\n");
+    expect(changed?.evidence.version).not.toBe(before?.evidence.version);
+  });
+
+  test("refreshes relocated changed range resources", async () => {
+    await writeFixture(
+      "fixture.any",
+      "before one\nbefore two\nbefore three\ntarget one\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const resolver = new RepositoryEvidenceResolver({ rootDir });
+    const before = await resolver.resolve("repo://fixture.any#L4-L5");
+
+    await writeFixture(
+      "fixture.any",
+      "inserted one\ninserted two\nbefore one\nbefore two\nbefore three\ntarget one\nnew target line\ntarget two\nafter one\nafter two\nafter three\n",
+    );
+    const changed = await resolver.resolve(
+      "repo://fixture.any#L4-L5",
+      before?.evidence.version,
+    );
+
+    expect(changed?.content).toBe("target one\nnew target line\ntarget two\n");
+    expect(changed?.evidence.resource).toBe("repo://fixture.any#L6-L8");
     expect(changed?.evidence.version).not.toBe(before?.evidence.version);
   });
 
