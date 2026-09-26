@@ -27,6 +27,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  OPENWIKI_VERTEX_LABELS_ENV_KEY,
 } from "../../src/config/constants.ts";
 
 // `loadOpenWikiEnv`, `saveOpenWikiEnv`, and `getCredentialDiagnostics` all read
@@ -74,6 +75,7 @@ const KEYS_UNDER_TEST = [
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  OPENWIKI_VERTEX_LABELS_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
   // into these tests, and a loaded value cannot leak back out to other tests.
@@ -470,6 +472,19 @@ describe("getCredentialDiagnostics", () => {
 
     expect(entry?.preview).not.toContain("sk-secret-12345");
     expect(entry?.length).toBe("sk-secret-12345".length);
+  });
+
+  test("does not preview configured Vertex labels", async () => {
+    const labels = '{"team":"private_team"}';
+    await env.saveOpenWikiEnv({ [OPENWIKI_VERTEX_LABELS_ENV_KEY]: labels });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_VERTEX_LABELS_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe("<configured>");
+    expect(entry?.length).toBe(labels.length);
   });
 
   test("surfaces non-secret base URLs verbatim, not masked", async () => {

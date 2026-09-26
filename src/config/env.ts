@@ -20,6 +20,7 @@ import {
   GEMINI_API_KEY_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
+  OPENWIKI_VERTEX_LABELS_ENV_KEY,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   isValidModelId,
   NEBIUS_API_KEY_ENV_KEY,
@@ -135,6 +136,7 @@ export const MANAGED_ENV_KEYS = [
   GEMINI_API_KEY_ENV_KEY,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
   GOOGLE_CLOUD_LOCATION_ENV_KEY,
+  OPENWIKI_VERTEX_LABELS_ENV_KEY,
   GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
@@ -407,9 +409,12 @@ function createCredentialDiagnostic(
     key,
     source,
     length: value.length,
-    preview: isNonSecretDiagnosticKey(key)
-      ? JSON.stringify(value)
-      : createCredentialPreview(value),
+    preview:
+      key === OPENWIKI_VERTEX_LABELS_ENV_KEY
+        ? "<configured>"
+        : isNonSecretDiagnosticKey(key)
+          ? JSON.stringify(value)
+          : createCredentialPreview(value),
     warnings:
       key === OPENWIKI_MODEL_ID_ENV_KEY
         ? getModelWarnings(value)

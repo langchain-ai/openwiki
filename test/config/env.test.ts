@@ -130,6 +130,10 @@ describe("formatEnv", () => {
 });
 
 describe("MANAGED_ENV_KEYS", () => {
+  test("manages optional Vertex billing labels", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_VERTEX_LABELS");
+  });
+
   test("manages the model output token limit", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_MAX_OUTPUT_TOKENS");
   });

@@ -10,6 +10,7 @@ type VertexCall = {
     projectId?: string;
     region?: string;
     dangerouslyAllowBrowser?: boolean;
+    defaultHeaders?: Record<string, string>;
     apiKey?: string;
     authToken?: string;
   };
@@ -36,6 +37,7 @@ const { createModel } = await import("../../src/agent/index.ts");
 
 const PROJECT_KEY = "GOOGLE_CLOUD_PROJECT";
 const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
+const VERTEX_LABELS_KEY = "OPENWIKI_VERTEX_LABELS";
 
 describe("gemini-enterprise Claude surface (createClient)", () => {
   let saved: Record<string, string | undefined> = {};
@@ -44,11 +46,13 @@ describe("gemini-enterprise Claude surface (createClient)", () => {
     saved = {
       [PROJECT_KEY]: process.env[PROJECT_KEY],
       [LOCATION_KEY]: process.env[LOCATION_KEY],
+      [VERTEX_LABELS_KEY]: process.env[VERTEX_LABELS_KEY],
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
       ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN,
     };
     process.env[PROJECT_KEY] = "test-project";
     process.env[LOCATION_KEY] = "us-east5";
+    delete process.env[VERTEX_LABELS_KEY];
     process.env.ANTHROPIC_API_KEY = "sk-should-be-hidden";
     process.env.ANTHROPIC_AUTH_TOKEN = "tok-should-be-hidden";
     vertexCalls.length = 0;
@@ -83,6 +87,39 @@ describe("gemini-enterprise Claude surface (createClient)", () => {
     // Project + region flow through.
     expect(call?.options.projectId).toBe("test-project");
     expect(call?.options.region).toBe("us-east5");
+  });
+
+  test("passes configured labels through the Vertex rawPredict header", () => {
+    process.env[VERTEX_LABELS_KEY] = '{"app":"openwiki","team":"docs"}';
+    const model = createModel(
+      "gemini-enterprise",
+      "claude-sonnet-4-5@20250929",
+      0,
+    );
+    (model as { createClient?: () => unknown }).createClient?.();
+
+    const encoded =
+      vertexCalls[0]?.options.defaultHeaders?.["X-Vertex-AI-Labels"];
+    expect(encoded).toBeDefined();
+    expect(
+      JSON.parse(Buffer.from(encoded ?? "", "base64").toString("utf8")),
+    ).toEqual({
+      app: "openwiki",
+      team: "docs",
+    });
+  });
+
+  test("rejects more than 32 labels for Claude", () => {
+    process.env[VERTEX_LABELS_KEY] = JSON.stringify(
+      Object.fromEntries(
+        Array.from({ length: 33 }, (_, i) => [`key_${i}`, "x"]),
+      ),
+    );
+
+    expect(() =>
+      createModel("gemini-enterprise", "claude-sonnet-4-5@20250929", 0),
+    ).toThrow(/at most 32 labels for Claude/u);
+    expect(vertexCalls).toHaveLength(0);
   });
 
   test("forwards dangerouslyAllowBrowser to AnthropicVertex, and only that flag (not the ANTHROPIC_* auth options)", () => {

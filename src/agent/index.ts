@@ -66,6 +66,7 @@ import {
   vertexOpenAIBaseUrl,
   withAnthropicAuthEnvNeutralized,
 } from "./vertex-surface.js";
+import { LabeledVertexChatGoogle, parseVertexLabels } from "./vertex-labels.js";
 import type {
   OpenWikiCommand,
   OpenWikiOutputMode,
@@ -99,6 +100,7 @@ import {
   isModelIdForOtherProvider,
   DEFAULT_VERTEX_LOCATION,
   GOOGLE_CLOUD_PROJECT_ENV_KEY,
+  OPENWIKI_VERTEX_LABELS_ENV_KEY,
   isValidModelId,
   normalizeModelId,
   NVIDIA_BASE_URL_ENV_KEY,
@@ -1192,6 +1194,7 @@ export function createModel(
       location,
       retryOptions,
       configuredMaxOutputTokens,
+      parseVertexLabels(process.env[OPENWIKI_VERTEX_LABELS_ENV_KEY]),
     );
   }
 
@@ -1523,6 +1526,7 @@ function createGeminiEnterpriseModel(
   location: string,
   retryOptions: { maxRetries: number },
   maxOutputTokens?: number,
+  vertexLabels?: Record<string, string>,
 ) {
   const maxTokensOptions =
     maxOutputTokens === undefined ? {} : { maxTokens: maxOutputTokens };
@@ -1531,6 +1535,11 @@ function createGeminiEnterpriseModel(
 
   switch (resolveVertexSurface(modelId)) {
     case "anthropic": {
+      if (vertexLabels && Object.keys(vertexLabels).length > 32) {
+        throw new Error(
+          `${OPENWIKI_VERTEX_LABELS_ENV_KEY} supports at most 32 labels for Claude models.`,
+        );
+      }
       const maxTokens = resolveAnthropicMaxOutputTokens(
         modelId,
         maxOutputTokens,
@@ -1561,6 +1570,15 @@ function createGeminiEnterpriseModel(
                 projectId,
                 region: location,
                 dangerouslyAllowBrowser: true,
+                ...(vertexLabels
+                  ? {
+                      defaultHeaders: {
+                        "X-Vertex-AI-Labels": Buffer.from(
+                          JSON.stringify(vertexLabels),
+                        ).toString("base64"),
+                      },
+                    }
+                  : {}),
               }),
           ),
         ...(maxTokens !== undefined ? { maxTokens } : {}),
@@ -1569,6 +1587,11 @@ function createGeminiEnterpriseModel(
     }
 
     case "openai-maas":
+      if (vertexLabels) {
+        throw new Error(
+          `${OPENWIKI_VERTEX_LABELS_ENV_KEY} is not supported by the Vertex OpenAI-compatible endpoint.`,
+        );
+      }
       // Partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …) are
       // reached over Vertex's OpenAI-compatible endpoint. The bearer token is
       // injected per request by a fetch wrapper (see createVertexAuthFetch);
@@ -1584,8 +1607,8 @@ function createGeminiEnterpriseModel(
         ...retryOptions,
       });
 
-    default:
-      return new ChatGoogle({
+    default: {
+      const options = {
         // Gemini/Gemma over generateContent wants the bare model ID; normalize a
         // fully publisher-pathed ID (publishers/google/models/gemini-…) the same
         // way the anthropic and maas branches normalize theirs.
@@ -1607,7 +1630,11 @@ function createGeminiEnterpriseModel(
         googleAuthOptions: { projectId },
         ...googleMaxOutputTokensOptions,
         ...retryOptions,
-      });
+      } as const;
+      return vertexLabels
+        ? new LabeledVertexChatGoogle(options, vertexLabels)
+        : new ChatGoogle(options);
+    }
   }
 }
 
@@ -2600,6 +2627,7 @@ export function formatEnvironmentDebugValue(
 
   if (
     key.endsWith("_API_KEY") ||
+    key === OPENWIKI_VERTEX_LABELS_ENV_KEY ||
     key === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
     key === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY ||
     key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY

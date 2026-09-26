@@ -10,6 +10,7 @@ import { createModel } from "../../src/agent/index.ts";
 
 const PROJECT_KEY = "GOOGLE_CLOUD_PROJECT";
 const LOCATION_KEY = "GOOGLE_CLOUD_LOCATION";
+const VERTEX_LABELS_KEY = "OPENWIKI_VERTEX_LABELS";
 const GEMINI_KEY = "GEMINI_API_KEY";
 const MAX_OUTPUT_TOKENS_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
 const REASONING_EFFORT_KEY = "OPENWIKI_REASONING_EFFORT";
@@ -50,20 +51,24 @@ describe("createModel gemini-enterprise surface dispatch", () => {
   let savedProject: string | undefined;
   let savedLocation: string | undefined;
   let savedMaxOutputTokens: string | undefined;
+  let savedVertexLabels: string | undefined;
 
   beforeEach(() => {
     savedProject = process.env[PROJECT_KEY];
     savedLocation = process.env[LOCATION_KEY];
     savedMaxOutputTokens = process.env[MAX_OUTPUT_TOKENS_KEY];
+    savedVertexLabels = process.env[VERTEX_LABELS_KEY];
     process.env[PROJECT_KEY] = "test-project";
     process.env[LOCATION_KEY] = "us-central1";
     delete process.env[MAX_OUTPUT_TOKENS_KEY];
+    delete process.env[VERTEX_LABELS_KEY];
   });
 
   afterEach(() => {
     restoreEnv(PROJECT_KEY, savedProject);
     restoreEnv(LOCATION_KEY, savedLocation);
     restoreEnv(MAX_OUTPUT_TOKENS_KEY, savedMaxOutputTokens);
+    restoreEnv(VERTEX_LABELS_KEY, savedVertexLabels);
   });
 
   test("routes Claude IDs to ChatAnthropic and strips the publisher path", () => {
@@ -95,6 +100,31 @@ describe("createModel gemini-enterprise surface dispatch", () => {
 
     expect(model).toBeInstanceOf(ChatGoogle);
     expect(modelName(model)).toBe("gemini-3.1-pro");
+  });
+
+  test("includes configured Vertex labels in the Gemini request body", () => {
+    process.env[VERTEX_LABELS_KEY] = '{"app":"openwiki","team":"docs"}';
+    const model = createModel("gemini-enterprise", "gemini-3.1-pro", 0);
+
+    expect((model as ChatGoogle).invocationParams({})).toMatchObject({
+      labels: { app: "openwiki", team: "docs" },
+    });
+  });
+
+  test("does not apply Vertex labels to the AI Studio provider", () => {
+    process.env[VERTEX_LABELS_KEY] = '{"app":"openwiki"}';
+    const model = createModel("gemini", "gemini-3.1-pro", 0);
+
+    expect((model as ChatGoogle).invocationParams({})).not.toHaveProperty(
+      "labels",
+    );
+  });
+
+  test("rejects labels for the unsupported Vertex OpenAI-compatible surface", () => {
+    process.env[VERTEX_LABELS_KEY] = '{"app":"openwiki"}';
+    expect(() =>
+      createModel("gemini-enterprise", "meta/llama-3.3-70b-instruct-maas", 0),
+    ).toThrow(/OPENWIKI_VERTEX_LABELS.*not supported/u);
   });
 
   test("routes Gemma IDs to ChatGoogle (default surface)", () => {

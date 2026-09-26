@@ -3,6 +3,7 @@ import { formatEnvironmentDebugValue } from "../../src/agent/index.ts";
 import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_VERTEX_LABELS_ENV_KEY,
 } from "../../src/config/constants.ts";
 
 // formatEnvironmentDebugValue feeds the --debug env dump, which can end up in
@@ -36,6 +37,13 @@ describe("formatEnvironmentDebugValue – non-secret classification", () => {
     expect(formatEnvironmentDebugValue("SOME_UNKNOWN_KEY", "short")).toBe(
       "set(length=5)",
     );
+  });
+
+  test("does not include Vertex label values in debug output", () => {
+    const labels = '{"team":"private_team"}';
+    expect(
+      formatEnvironmentDebugValue(OPENWIKI_VERTEX_LABELS_ENV_KEY, labels),
+    ).toBe(`set(length=${labels.length})`);
   });
 
   test("a long generic value is previewed with head and tail only", () => {

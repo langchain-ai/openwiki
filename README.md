@@ -533,6 +533,19 @@ GOOGLE_CLOUD_PROJECT=your-gcp-project
 GOOGLE_CLOUD_LOCATION=global   # optional, defaults to global
 ```
 
+To attribute Vertex PayGo model charges in Cloud Billing, optionally export
+`OPENWIKI_VERTEX_LABELS='{"app":"openwiki","team":"docs"}'` before running
+OpenWiki. Labels are included in native Google `generateContent` requests and
+Claude `rawPredict` requests, including their streaming variants. They are not
+supported by the Vertex OpenAI-compatible endpoint used for other partner
+models; OpenWiki reports that combination instead of silently omitting the
+labels. Google requires lowercase label keys and values (letters, digits,
+underscores, or dashes), at most 63 characters each, and up to 64 labels for
+Google models or 32 for Claude. Do not put personal or sensitive information in
+labels. Provisioned Throughput requests do not forward labels to billing. See
+[Google's custom metadata labels guide](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/add-labels-to-api-calls)
+for billing details and limits.
+
 Set `OPENWIKI_MODEL_ID` to any Model Garden model. Gemini and Claude ship as presets; partner models are reached by pasting their ID (for example `publishers/meta/models/llama-3.3-70b-instruct-maas`). The credentials need Vertex AI access (`roles/aiplatform.user`), and the models must be enabled in the Model Garden. The `global` endpoint serves Gemini and Claude with the best availability; set `GOOGLE_CLOUD_LOCATION` to a regional endpoint for data residency, and always set it explicitly for region-specific partner (MaaS) models.
 
 For CI, authenticate before the update job runs (for example with [`google-github-actions/auth`](https://github.com/google-github-actions/auth)) and set `OPENWIKI_PROVIDER=gemini-enterprise` and `GOOGLE_CLOUD_PROJECT` in the job environment.
