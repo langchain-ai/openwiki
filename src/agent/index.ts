@@ -94,6 +94,7 @@ import {
   getProviderModelOptions,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderRegionEnvKeys,
+  MISTRAL_BASE_URL_ENV_KEY,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -2591,6 +2592,7 @@ export function formatEnvironmentDebugValue(
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
