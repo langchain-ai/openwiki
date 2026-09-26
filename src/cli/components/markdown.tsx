@@ -67,7 +67,7 @@ export function MarkdownBlock({
           <Text key={`${index}-${itemIndex}`} wrap="wrap">
             <Text color="gray">
               {(token as Tokens.List).ordered
-                ? `${Number((token as Tokens.List).start || 1) + itemIndex}. `
+                ? `${Number((token as Tokens.List).start ?? 1) + itemIndex}. `
                 : "- "}
             </Text>
             <InlineMarkdown tokens={getTokenChildren(item)} />
