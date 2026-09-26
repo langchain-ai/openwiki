@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-25T08:09:49.344Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
