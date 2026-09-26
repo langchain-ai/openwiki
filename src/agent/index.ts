@@ -120,6 +120,7 @@ import {
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
   providerUsesStreaming,
+  resolveCodexServiceTier,
   resolveConfiguredMaxOutputTokens,
   resolveConfiguredProvider,
   resolveOpenAiCompatibleStreamMessages,
@@ -1143,6 +1144,8 @@ export function createModel(
     },
   );
 
+  const codexServiceTier = resolveCodexServiceTier(provider);
+
   // GPT-5.6 supports `max` before some OpenAI SDK type unions include it. The
   // documented Responses payload is still `reasoning: { effort }`, so keep the
   // compatibility cast narrowly at the ChatOpenAI constructor boundary.
@@ -1235,6 +1238,7 @@ export function createModel(
       streaming: true,
       ...maxTokensOptions,
       ...responsesReasoningOptions,
+      ...(codexServiceTier ? { service_tier: codexServiceTier } : {}),
       ...retryOptions,
       configuration: {
         baseURL: CODEX_RESPONSES_BASE_URL,
