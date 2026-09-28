@@ -1,4 +1,5 @@
-import { chmod, readFile, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { chmod, mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import {
   ensureConnectorHome,
@@ -85,18 +86,64 @@ export function updateStateWithRun(
   };
 }
 
+/**
+ * Writes JSON to a private (0o600) file atomically and durably: the content is
+ * written to a temporary sibling, flushed to disk, and then renamed into
+ * place. The destination path therefore only ever becomes visible with
+ * complete content, so readers racing the write (for example the synthesis
+ * agent reading a raw dump the connector just reported) can never observe a
+ * partial file, and the write is on disk before the path is reported.
+ */
 async function writePrivateJson(
   filePath: string,
   value: unknown,
 ): Promise<void> {
-  await import("node:fs/promises").then(({ mkdir }) =>
-    mkdir(path.dirname(filePath), { recursive: true, mode: 0o700 }),
-  );
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, {
-    encoding: "utf8",
-    mode: 0o600,
-  });
+  const directoryPath = path.dirname(filePath);
+  await mkdir(directoryPath, { recursive: true, mode: 0o700 });
+
+  const tempPath = `${filePath}.${randomUUID()}.tmp`;
+  const fileHandle = await open(tempPath, "wx", 0o600);
+
+  try {
+    await fileHandle.writeFile(`${JSON.stringify(value, null, 2)}\n`, "utf8");
+    await fileHandle.sync();
+  } catch (error) {
+    await fileHandle.close();
+    await rm(tempPath, { force: true });
+    throw error;
+  }
+
+  await fileHandle.close();
+
+  try {
+    await rename(tempPath, filePath);
+  } catch (error) {
+    await rm(tempPath, { force: true });
+    throw error;
+  }
+
   await chmod(filePath, 0o600);
+  await syncDirectory(directoryPath);
+}
+
+/**
+ * Flushes a directory so a just-renamed entry survives a crash and is visible
+ * to other readers of the directory. Best effort: directory fsync is not
+ * supported on some platforms (notably Windows), where the rename above is
+ * still atomic.
+ */
+async function syncDirectory(directoryPath: string): Promise<void> {
+  try {
+    const directoryHandle = await open(directoryPath, "r");
+
+    try {
+      await directoryHandle.sync();
+    } finally {
+      await directoryHandle.close();
+    }
+  } catch {
+    // Ignore: opening or fsyncing a directory is platform-dependent.
+  }
 }
 
 function isFileNotFoundError(error: unknown): boolean {
