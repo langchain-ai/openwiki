@@ -35,10 +35,10 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # CI Scheduling and Self-Update
@@ -263,6 +263,32 @@ in three ways beyond the auto-merge steps:
    manual runs queue rather than clobber each other, and pins
    `peter-evans/create-pull-request` to the v8.1.1 commit SHA
    (`5f6978faf089d4d20b00c7766989d076bb2fc7f1`).
+
+#### Auto-merge setup requirements
+
+Auto-merge is repository infrastructure rather than an OpenWiki runtime
+feature: the example creates a docs-only PR and only enables GitHub auto-merge
+after OpenWiki finishes successfully, so required branch checks and reviews
+still gate when the PR actually merges. Before using the variant, configure the
+repository once:
+
+1. Enable **Allow auto-merge** in the repository's pull request settings.
+2. Add branch protection or a ruleset for the default branch. Require the
+   checks that should gate generated docs, and decide whether OpenWiki PRs still
+   require human review.
+3. Create a fine-grained personal access token or GitHub App token scoped to the
+   target repository with permissions for **Contents: read and write** and
+   **Pull requests: read and write**, and save it as the `OPENWIKI_PR_TOKEN`
+   Actions secret.
+4. Copy the example to `.github/workflows/openwiki-update.yml`, pin the OpenWiki
+   version and provider, and add the provider secret.
+
+The dedicated token is deliberate: pull requests created with the default
+`GITHUB_TOKEN` do not start most `pull_request` workflows, so required PR checks
+may never run. Organization policies may require a GitHub App token instead of a
+personal access token. Keep the workflow's `add-paths` restricted to generated
+documentation, pin every action and package version, and do not auto-merge
+changes to executable workflow files.
 
 ### Scheduling and gating
 

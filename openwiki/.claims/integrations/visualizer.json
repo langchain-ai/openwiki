@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:54318d6cf404e6c106bf91250a72e1b205e2377158eb85c45b5607b1468a6135",
+  "pageVersion": "sha256:1ba0f4f1714d5afb06ae5636d7daea8298204de1e3f030e6aec997d1a16003a4",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -27,7 +27,7 @@
       "statement": "`buildGraph(wikiRoot)` is the shared graph builder for both live and static modes: it collects Markdown files, reads them into nodes, resolves links into edges, and returns a WikiGraph with root basename, ISO generatedAt timestamp, sorted distinct types, nodes, and edges.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L322-L338",
+          "resource": "repo://src/visualize/graph.ts#L329-L345",
           "version": "repo-lines-v1:sha256:ac7b350435f15aac26a929bbcc534b43f459872cd2565daa5225602679743bc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhZGY3YmU0NWRjNWU1ODg5ZDRmMDgwYjIxMTNhMTQwYWVlNGUwZTgyYzZiYWZkNGVlNTY3ZDI2NTVjNzc3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -409,6 +409,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T08:09:45.637Z"
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

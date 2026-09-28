@@ -36,10 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-25T08:09:49.344Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+  - by: openwiki/0.6.0
+    at: 2026-09-25T08:09:49.344Z
 ---
 
 # OpenWiki Quickstart
@@ -55,7 +55,7 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.5.2), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.6.0), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
@@ -94,14 +94,41 @@ then run it from the target repo's working directory.
 
 The process entrypoint is `src/cli/cli.tsx`. It installs a crash guard before any
 run so escaped rejections are recorded with telemetry, parses the argument vector
-into a command, and dispatches:
+into a command, and dispatches one of three ways:
 
 - `integrations` and `mcp` commands go to the host-integration surface
-  (`runIntegrationsCommand` / `runMcpCommand`).
-- All other commands run through `runStandardCommand`, the native pipeline, which
-  loads environment, resolves the startup command, decides once whether this is
-  the first run (mints the install id), and then either prints a startup error,
-  runs non-interactively in print mode, or renders the interactive Ink `App`.
+  (`runIntegrationsCommand` / `runMcpCommand`) and never load the native model
+  pipeline.
+- `link`, `workspace`, `auth`, `ngrok`, `cron`, `ingest`, and `visualize`
+  commands dispatch directly to their own runners inside `runStandardCommand`
+  after environment load and first-run detection, without entering the print or
+  interactive TUI path.
+- All other commands (the documentation agent: `init`, `update`, and the default
+  chat) continue through `runStandardCommand` to either print a startup error,
+  run non-interactively in print mode, or render the interactive Ink `App`.
+
+`runStandardCommand` loads environment (when the command requires it), resolves
+the startup command, and decides once whether this is the first run (mints the
+install id) before routing to the direct runner or the print/interactive branch.
+
+```mermaid
+flowchart TD
+  Start["argv parsed by parseCommand"] --> Check{"command kind"}
+  Check -->|"integrations"| Integ["runIntegrationsCommand"]
+  Check -->|"mcp"| Mcp["runMcpCommand"]
+  Check -->|"other"| Std["runStandardCommand"]
+  Std --> Env["load environment + resolve startup + first-run detect"]
+  Env --> Direct{"link / workspace / auth / ngrok / cron / ingest / visualize"}
+  Direct -->|"yes"| Runner["dedicated runner"]
+  Direct -->|"no"| Print{"startup error or non-TTY"}
+  Print -->|"error"| Err["print startup error + exit code"]
+  Print -->|"non-TTY print"| PrintMode["runPrintCommand"]
+  Print -->|"interactive TTY"| TUI["render Ink App"]
+```
+
+The CLI dispatch routes integrations and mcp to the host-integration surface,
+direct commands to their own runners, and the documentation agent to print or
+interactive.
 
 The `dev` script points at this same `.tsx` file, so behavior is identical
 between `pnpm run dev` and the built binary.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3769c430279a87f47fd9f7ca078ce9193438d943dfea79896b6776756378e3f4",
+  "pageVersion": "sha256:8c86008454d552f7ec4f4fb2044577ab8fa00cba22a2b031c70502f8c79e365a",
   "claims": [
     {
       "id": "claim_f6ee1be411cc44af8ce963e1af7842d1",
@@ -168,19 +168,15 @@
     },
     {
       "id": "claim_8a1b8fcab2d64f6e9fcad26134f21ebe",
-      "statement": "resolveConfiguredMaxOutputTokens resolves the per-request output-token cap in precedence: OPENWIKI_MAX_OUTPUT_TOKENS (provider-neutral, positive safe integer) wins when set; otherwise the OpenRouter legacy OPENWIKI_OPENROUTER_MAX_TOKENS takes precedence on openrouter runs, and on bedrock the OPENWIKI_BEDROCK_MAX_TOKENS default (16000 via BEDROCK_DEFAULT_MAX_TOKENS) applies; otherwise the cap is undefined.",
+      "statement": "resolveConfiguredMaxOutputTokens resolves the per-request output-token cap with a provider-specific exception first: on openrouter runs, OPENWIKI_OPENROUTER_MAX_TOKENS (the legacy cap, when set) overrides even the provider-neutral OPENWIKI_MAX_OUTPUT_TOKENS; otherwise OPENWIKI_MAX_OUTPUT_TOKENS (provider-neutral, positive safe integer) applies when set; otherwise on bedrock OPENWIKI_BEDROCK_MAX_TOKENS defaults to 16000 via BEDROCK_DEFAULT_MAX_TOKENS; otherwise the cap is undefined (non-Bedrock providers fall back to the provider SDK default).",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L1089-L1096",
-          "version": "repo-lines-v1:sha256:6939ea1c19bffcc2ab2a0e84901842ae565e65c1243b664a2341b62914aad480:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMyOTQ5ZDk0ODBjZmJjYjQxNGI2ZjdhYTllNzg0Mjc4ZDNkMmYzZTU3Njg5NWNiNThmYzY1NzAyYWU0NDkwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWVmZGRiZmQyMGRmMGQ3ODllMDBhNjUwNjgwODFmNjUzNGIyYWFkZWRmYjFiNDE4NTc1ZjlkY2MyZTI4ZjFkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzZhZmQ4MjBiNDc2MGYyZmE2MGVjOTg5MzI5MzMxZTRjY2E5YzAwYjRmMWNjOWQyMDdjZTdmZDc3OWZlZWMwOSJ9"
-        },
-        {
-          "resource": "repo://src/config/constants.ts#L1110-L1132",
+          "resource": "repo://src/config/constants.ts#L1217-L1239",
           "version": "repo-lines-v1:sha256:9d9501c2cb2541c19d42680f86001e5933c17cdd35752e2fddf092d1e2b3bfb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNWI2MzNiNjc2NmEyZmJjNDRmMmU2NDJjZWViOGNjMGUwY2M3YjVkOWVhNDRmZDNkOGI4Yzc3MmRmMDdjN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNzVjNzA0OTdhZTI1YmIxODYzN2Q2YzYwNGJmZGIzZTg0YzM0N2FiZmZlMTU0YWNkNDNmMGMyZGQ5MzViNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNzA2OWRkN2IyNmMxOWU1MmNjZjM2ZDg3OTFkZWFhZGIxMTFjNmZkZTgyMWVkNmNhYmYyMTljYjQxZWIzYTgifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L1172-L1198",
-          "version": "repo-lines-v1:sha256:9156fd023231cd7534c629dc10def0e167eb31ef6fda3ac8ab8aab34d52a808a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZDRiMzFlNGNiMTg1ZTA4M2Q5NTQyMjFhYTcxNjZmYTM4YWNmZmUxNTBlMGM1MzAxNzAyMzgwMjkxNWI1YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZDE2MzZjZmVhZGZhMzlmMTZjOTAzNzQwNjg4NDY0ZjFlMWM0YzViMWNlMzBkNGJkMWI0ZTk4NmU1NmRjYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjOTg4MGYyYTVmZjQyYjA2MTA5NWIyNmRmYTI1MGRlMDEwYWRkMzY3Y2FjMzFmNjlkZGExYzUwNmY5MGMxM2IifQ"
+          "resource": "repo://test/config/constants.test.ts#L815-L822",
+          "version": "repo-lines-v1:sha256:2213cf63cbc752aa605a7d13794123dd151012f4780398577fe65b555ce1c75e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI5ZDM2MDZkN2E5ZjQ5YmU0NTQ2OWQyMzMzNTE3ZTY5ZjI5NmUzMzZmMmE4MGI1MWFlNzRmM2M3NTExN2JkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzVjZTZiMzdiN2Y1NjVjNDEyZDc5OGYyOTQ2ZDViMGE4ZWJkZTJjNDUzYjgzNGVmYzA0MGFkM2FiYTRmM2JmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2RlMzQzOWI3YmIzZjc0NWViYjFhZTg2YzMzY2FiOTQ0NDAxYWMxN2UwNDkzNDIyMmQ5MTgwNWI0MWQ1OGNiNiJ9"
         }
       ]
     },
@@ -451,6 +447,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T08:09:45.637Z"
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }
