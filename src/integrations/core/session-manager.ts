@@ -26,6 +26,7 @@ import {
   type SubmitPlanRequest,
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
+import { createRetrievalTools } from "./retrieval-tools.js";
 
 /**
  * Stable host identity and optional deterministic clock for the MCP adapter.
@@ -48,7 +49,7 @@ export interface HostSessionManagerOptions {
 }
 
 /**
- * Thin single-run MCP adapter over the transport-neutral lifecycle core.
+ * Read-only repository memory plus a single-run generation lifecycle adapter.
  */
 export class HostSessionManager {
   /**
@@ -178,7 +179,7 @@ export class HostSessionManager {
     });
   }
 
-  /** Returns the current pending page's complete Claims only when requested. */
+  /** Returns a pending page job's complete Claims only when requested. */
   async inspectPageClaims(input: InspectPageClaimsRequest): Promise<unknown> {
     return this.runOperation(() => {
       const run = this.requireSession(input.runId);
@@ -215,12 +216,13 @@ export class HostSessionManager {
   }
 
   /**
-   * Returns exactly the six OpenWiki 0.5 lifecycle tools.
+   * Returns read-only retrieval followed by the six generation lifecycle tools.
    *
    * @returns Ordered transport-neutral tool definitions.
    */
   tools(): readonly ProtocolTool[] {
     return [
+      ...createRetrievalTools(),
       {
         name: "openwiki_begin",
         description:
@@ -245,7 +247,7 @@ export class HostSessionManager {
       {
         name: "openwiki_inspect_page_claims",
         description:
-          "Return the current pending page's complete Claim set without opaque evidence versions. Use only before intentionally revising or removing otherwise-current content; focused updates normally need only the issue Claims returned by openwiki_next_page.",
+          "Return the pending page job's complete Claim set without opaque evidence versions. Use only before intentionally revising or removing otherwise-current content; focused updates normally need only the issue Claims returned by openwiki_next_page.",
         schema: InspectPageClaimsInput,
         handle: async (input) =>
           this.inspectPageClaims(InspectPageClaimsInput.parse(input)),
@@ -253,7 +255,7 @@ export class HostSessionManager {
       {
         name: "openwiki_submit_page",
         description:
-          "Complete the current page job after its Markdown is written. Submit only sparse decisions: confirmedClaimIds for rechecked issue Claims retained unchanged, claims for revisions or additions, and retractedClaimIds for removals. Other current Claims are retained automatically. The final page and reconciled Claim set must agree.",
+          "Complete the pending page job after its Markdown is written. Submit only sparse decisions: confirmedClaimIds for rechecked issue Claims retained unchanged, claims for revisions or additions, and retractedClaimIds for removals. Other current Claims are retained automatically. The final page and reconciled Claim set must agree.",
         schema: SubmitPageInput,
         handle: async (input) => this.submitPage(SubmitPageInput.parse(input)),
       },

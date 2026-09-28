@@ -79,15 +79,22 @@ jobs:
         if: ${{ !cancelled() }}
         run: rm -f -- openwiki/.run.json
 
+      - name: List OpenWiki update paths
+        id: paths
+        if: ${{ !cancelled() }}
+        # CLAUDE.md is listed only when present: git add fails on a missing path
+        # and then stages nothing.
+        run: |
+          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
+          if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
+          echo "list=$paths" >> "$GITHUB_OUTPUT"
+
       - name: Create OpenWiki update pull request
+        id: create-pr
         if: ${{ !cancelled() }}
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          add-paths: |
-            openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
+          add-paths: ${{ steps.paths.outputs.list }}
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"
@@ -99,6 +106,10 @@ jobs:
             When the result is `failure`, this PR intentionally preserves only the
             pages completed before the failure. Merge it to make that progress the
             baseline for the next scheduled run.
+
+      - name: Annotate OpenWiki update pull request
+        if: ${{ !cancelled() && steps.create-pr.outputs.pull-request-url != '' }}
+        run: echo "::notice title=OpenWiki update pull request::${{ steps.create-pr.outputs.pull-request-url }}"
 
       - name: Propagate OpenWiki failure
         if: ${{ steps.openwiki.outcome == 'failure' }}

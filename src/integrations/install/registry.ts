@@ -14,7 +14,7 @@ export const HOST_TARGETS = {
     producerActor: "bob",
     user: {
       skillDirectory: ".agents/skills/openwiki",
-      mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+      mcpConfig: { kind: "json", relativePath: ".bob/settings/mcp.json" },
     },
     project: {
       skillDirectory: ".agents/skills/openwiki",
@@ -104,6 +104,40 @@ export const HOST_TARGETS = {
       mcpConfig: { kind: "json", relativePath: ".kiro/settings/mcp.json" },
     },
     documentationUrl: "https://kiro.dev/docs/mcp/configuration/",
+  },
+  omp: {
+    id: "omp",
+    displayName: "Oh My Pi",
+    producerActor: "omp",
+    // User scope targets omp's default agent dir (~/.omp/agent). Named profiles
+    // and PI_CODING_AGENT_DIR overrides use another directory; use --project
+    // for those setups.
+    user: {
+      skillDirectory: ".omp/agent/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".omp/agent/mcp.json" },
+    },
+    project: {
+      skillDirectory: ".omp/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".omp/mcp.json" },
+    },
+    documentationUrl: "https://omp.sh",
+  },
+  antigravity: {
+    id: "antigravity",
+    displayName: "Antigravity CLI",
+    producerActor: "antigravity",
+    user: {
+      skillDirectory: ".gemini/antigravity-cli/skills/openwiki",
+      mcpConfig: {
+        kind: "json",
+        relativePath: ".gemini/config/mcp_config.json",
+      },
+    },
+    project: {
+      skillDirectory: ".agents/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".agents/mcp_config.json" },
+    },
+    documentationUrl: "https://antigravity.google/docs/mcp?tab=cli",
   },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
