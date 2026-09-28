@@ -1,0 +1,19 @@
+.changeset/no-create-claude-md.md
+  s_9ca0008bc10962::t_9699aa972c8ad7 2,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bafc98c16478facfd92508f026c2dd283722d794",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
