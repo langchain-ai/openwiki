@@ -11,8 +11,14 @@ type RegisteredTool = {
   ): Promise<unknown>;
 };
 
-const extension = (await import("../../dist/integrations/pi/openwiki.js"))
-  .default;
+type Extension = (pi: {
+  registerTool(tool: RegisteredTool): void;
+  on(event: string, handler: () => Promise<void>): void;
+}) => void;
+
+const extensionModule: unknown =
+  await import("../../dist/integrations/pi/openwiki.js");
+const extension = (extensionModule as { default: Extension }).default;
 
 type Schema = Record<string, unknown>;
 
