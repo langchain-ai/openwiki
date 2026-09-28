@@ -1,0 +1,25 @@
+test/agent/wiki-link-validator-dogfood.test.ts
+  s_9ca0008bc10962::t_96a90517c62ab4 32-33
+test/agent/repository-prompts.test.ts
+  s_9ca0008bc10962::t_96a90517c62ab4 143-144
+  s_9ca0008bc10962::t_417a49c81778c4 145-147
+src/agent/repository-prompts.ts
+  s_9ca0008bc10962::t_417a49c81778c4 136-138
+  s_9ca0008bc10962::t_96a90517c62ab4 133-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5b4b57d97f5bf9372b0be1432de171d7bc401c72",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
