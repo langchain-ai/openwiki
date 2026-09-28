@@ -1,0 +1,19 @@
+.changeset/fix-init-token-explosion-stall.md
+  s_9ca0008bc10962::t_cddd7277a901b3 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f117cc9bf30204e40d44479dccfd28ee3a4ec470",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
