@@ -1,0 +1,20 @@
+test/integrations/pi-extension.test.ts
+  s_9ca0008bc10962::t_437aadf26b7fdc 14-18
+  s_9ca0008bc10962::t_5649718828d57b 19-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7ce783b8e8e794800fa0e4dffbb89148947a3372",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
