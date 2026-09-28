@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatGoogle } from "@langchain/google/node";
 import { ChatOpenAI } from "@langchain/openai";
+import { OrchestrationClient } from "@sap-ai-sdk/langchain";
 import { createModel } from "../../src/agent/index.ts";
 
 // Constructing a LangChain chat model makes no network calls (auth/clients
@@ -23,6 +24,7 @@ const CHATGPT_TOKEN_KEYS = [
   "OPENAI_CHATGPT_REFRESH_TOKEN",
   "OPENAI_CHATGPT_ACCOUNT_ID",
 ] as const;
+const AICORE_RESOURCE_GROUP_KEY = "AICORE_RESOURCE_GROUP";
 
 function modelName(model: unknown): string | undefined {
   return (model as { model?: string }).model;
@@ -791,6 +793,68 @@ describe("createModel openrouter output-token cap", () => {
     expect(() => createModel("openrouter", "z-ai/glm-4.7-flash", 0)).toThrow(
       /OPENWIKI_OPENROUTER_MAX_TOKENS/u,
     );
+  });
+});
+
+describe("createModel sap-ai-core", () => {
+  let savedResourceGroup: string | undefined;
+  let savedMaxOutputTokens: string | undefined;
+
+  beforeEach(() => {
+    savedResourceGroup = process.env[AICORE_RESOURCE_GROUP_KEY];
+    savedMaxOutputTokens = process.env[MAX_OUTPUT_TOKENS_KEY];
+    delete process.env[AICORE_RESOURCE_GROUP_KEY];
+    delete process.env[MAX_OUTPUT_TOKENS_KEY];
+  });
+
+  afterEach(() => {
+    restoreEnv(AICORE_RESOURCE_GROUP_KEY, savedResourceGroup);
+    restoreEnv(MAX_OUTPUT_TOKENS_KEY, savedMaxOutputTokens);
+  });
+
+  test("returns OrchestrationClient with model name", () => {
+    const model = createModel("sap-ai-core", "gpt-4o", 0);
+    expect(model).toBeInstanceOf(OrchestrationClient);
+    const client = model as OrchestrationClient;
+    const config = client.orchestrationConfig as {
+      promptTemplating?: {
+        model?: {
+          name?: string;
+          params?: { max_tokens?: number };
+        };
+      };
+    };
+    expect(config.promptTemplating?.model?.name).toBe("gpt-4o");
+    expect(config.promptTemplating?.model?.params).toBeUndefined();
+    expect(client.deploymentConfig).toBeUndefined();
+  });
+
+  test("passes max_tokens when OPENWIKI_MAX_OUTPUT_TOKENS is set", () => {
+    process.env[MAX_OUTPUT_TOKENS_KEY] = "16000";
+    const model = createModel(
+      "sap-ai-core",
+      "gpt-4o",
+      0,
+    ) as OrchestrationClient;
+    const config = model.orchestrationConfig as {
+      promptTemplating?: {
+        model?: {
+          name?: string;
+          params?: { max_tokens?: number };
+        };
+      };
+    };
+    expect(config.promptTemplating?.model?.params?.max_tokens).toBe(16_000);
+  });
+
+  test("passes resourceGroup when AICORE_RESOURCE_GROUP is set", () => {
+    process.env[AICORE_RESOURCE_GROUP_KEY] = "prod";
+    const model = createModel(
+      "sap-ai-core",
+      "gpt-4o",
+      0,
+    ) as OrchestrationClient;
+    expect(model.deploymentConfig).toEqual({ resourceGroup: "prod" });
   });
 });
 
