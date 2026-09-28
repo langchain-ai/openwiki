@@ -1,0 +1,24 @@
+src/retrieval/wiki.ts
+  s_9ca0008bc10962::t_c671d5453a4a7f 294-297,546-547,550,749-752,781
+  s_9ca0008bc10962::t_5ef78750ade3d9 293
+test/retrieval/wiki.test.ts
+  s_9ca0008bc10962::t_c671d5453a4a7f 190-221
+.changeset/readable-wiki-introductions.md
+  s_9ca0008bc10962::t_c671d5453a4a7f 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "348c4b652587b083b111ccf06c0a651eba086701",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
