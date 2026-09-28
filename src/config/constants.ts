@@ -74,6 +74,20 @@ export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const OPENWIKI_REASONING_EFFORT_ENV_KEY = "OPENWIKI_REASONING_EFFORT";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
+/**
+ * Model retry count used when several page workers share one provider key and
+ * no explicit `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` override is set. Concurrent
+ * workers make transient rate limits the common failure, so they get more
+ * headroom than a single sequential worker.
+ */
+export const PARALLEL_PROVIDER_RETRY_ATTEMPTS = 5;
+export const OPENWIKI_PAGE_CONCURRENCY_ENV_KEY = "OPENWIKI_PAGE_CONCURRENCY";
+export const DEFAULT_PAGE_CONCURRENCY = 1;
+/**
+ * Upper bound on concurrent repository page workers. Beyond this a single
+ * provider key is rate-limit bound and the progress view stops being readable.
+ */
+export const MAX_PAGE_CONCURRENCY = 8;
 export const DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS = 16_384;
 const TRUE_ENV_VALUE = "true";
 export const OPENWIKI_GOOGLE_ACCESS_TOKEN_ENV_KEY =
@@ -516,6 +530,13 @@ export function providerUsesStreaming(provider: OpenWikiProvider): boolean {
   // that use the Responses API (useResponsesApi: true), streaming: true is
   // redundant but harmless, matching the openai-chatgpt provider pattern.
   if (provider === "copilot") {
+    return true;
+  }
+
+  // Long generations, such as planning a large repository, can outlast the Bob
+  // endpoint's response timeout when sent as a single non-streaming completion.
+  // Streaming returns output as it is produced, including tool calls.
+  if (provider === "bob") {
     return true;
   }
 
@@ -1005,13 +1026,63 @@ export function resolveStreamIdleTimeoutForProvider(
   return provider === "bedrock" ? resolveStreamIdleTimeout(env) : undefined;
 }
 
+/**
+ * Resolves how many repository page workers may run at once.
+ *
+ * @param env - Process environment to read.
+ * @returns Integer from 1 to {@link MAX_PAGE_CONCURRENCY}; 1 when unset.
+ */
+export function resolvePageConcurrency(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const rawConcurrency = env[OPENWIKI_PAGE_CONCURRENCY_ENV_KEY];
+
+  if (rawConcurrency === undefined) {
+    return DEFAULT_PAGE_CONCURRENCY;
+  }
+
+  const concurrency = rawConcurrency.trim();
+  const invalid = new Error(
+    `Invalid ${OPENWIKI_PAGE_CONCURRENCY_ENV_KEY}. Expected an integer from 1 to ${MAX_PAGE_CONCURRENCY}.`,
+  );
+
+  if (!/^[1-9]\d*$/u.test(concurrency)) {
+    throw invalid;
+  }
+
+  const parsedConcurrency = Number(concurrency);
+
+  if (
+    !Number.isSafeInteger(parsedConcurrency) ||
+    parsedConcurrency > MAX_PAGE_CONCURRENCY
+  ) {
+    throw invalid;
+  }
+
+  return parsedConcurrency;
+}
+
+/**
+ * Resolves the provider retry count for model calls.
+ *
+ * An explicit `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` always wins. When unset, a
+ * run with more than one page worker gets {@link PARALLEL_PROVIDER_RETRY_ATTEMPTS}
+ * because concurrent workers make transient rate limits the common failure.
+ *
+ * @param env - Process environment to read.
+ * @param options - Resolved page concurrency for the run, when known.
+ * @returns Positive integer retry count.
+ */
 export function resolveProviderRetryAttempts(
   env: NodeJS.ProcessEnv = process.env,
+  options: { pageConcurrency?: number } = {},
 ): number {
   const rawRetryAttempts = env[OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY];
 
   if (rawRetryAttempts === undefined) {
-    return DEFAULT_PROVIDER_RETRY_ATTEMPTS;
+    return (options.pageConcurrency ?? DEFAULT_PAGE_CONCURRENCY) > 1
+      ? PARALLEL_PROVIDER_RETRY_ATTEMPTS
+      : DEFAULT_PROVIDER_RETRY_ATTEMPTS;
   }
 
   const retryAttempts = rawRetryAttempts.trim();

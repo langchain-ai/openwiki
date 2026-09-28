@@ -65,12 +65,22 @@ export function formatRepositoryPrintProgress(
 /**
  * Formats current-page progress without inventing missing queue data.
  *
+ * A single worker keeps the historical "page i of N" line. Several concurrent
+ * workers report completed count and the pages currently in flight instead,
+ * because no single queue position describes the run.
+ *
  * @param progress - Generating-stage progress payload.
  * @returns Page position and canonical path when available.
  */
 function formatPageProgress(
   progress: RepositoryGenerationProgressEvent | RunRepositoryProgressLogItem,
 ): string {
+  const inFlight = progress.inFlightPages ?? [];
+  if (inFlight.length > 1 && progress.pageCount !== undefined) {
+    const completed = progress.completedCount ?? 0;
+    return `Documenting ${completed} of ${progress.pageCount} · ${inFlight.length} in flight: ${inFlight.join(", ")}`;
+  }
+
   const page = progress.page ?? "repository page";
   if (progress.pageIndex && progress.pageCount !== undefined) {
     return `Documenting page ${progress.pageIndex} of ${progress.pageCount} · ${page}`;

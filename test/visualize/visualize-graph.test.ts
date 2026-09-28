@@ -109,6 +109,68 @@ describe("buildGraph", () => {
     expect(graph.edges).toEqual([]);
   });
 
+  test("decodes Unicode and special-character links and records backlinks", async () => {
+    const name = "靖难之役 #1%.md";
+    const href = encodeURIComponent(name);
+    const root = await makeWiki({
+      "events/index.md": `[Event](${href})\n[Same event](${href}#details)\n[Person](../${encodeURIComponent("人物")}/${encodeURIComponent("朱棣.md")})\n`,
+      [`events/${name}`]: "# Event\n",
+      "人物/朱棣.md": "# Person\n",
+      "literal.md": "[Decode once](%25E4%25B8%2580.md)\n",
+      "%E4%B8%80.md": "# Literal percent-encoded filename\n",
+    });
+
+    const graph = await buildGraph(root);
+
+    expect(graph.edges).toHaveLength(3);
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { source: "events/index", target: "events/靖难之役 #1%" },
+        { source: "events/index", target: "人物/朱棣" },
+        { source: "literal", target: "%E4%B8%80" },
+      ]),
+    );
+    expect(
+      graph.nodes.find((n) => n.id === "events/靖难之役 #1%")?.backlinks,
+    ).toEqual(["events/index"]);
+  });
+
+  test("preserves raw percent and Unicode filenames and deduplicates encoded links", async () => {
+    const root = await makeWiki({
+      "index.md":
+        "[Progress](progress100%.md)\n[Encoded progress](progress100%25.md)\n[Unicode](朱棣.md)\n",
+      "progress100%.md": "# Progress\n",
+      "朱棣.md": "# Person\n",
+      "raw.md": "[Progress](progress100%.md)\n",
+    });
+
+    const graph = await buildGraph(root);
+
+    expect(graph.edges).toHaveLength(3);
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        { source: "index", target: "progress100%" },
+        { source: "index", target: "朱棣" },
+        { source: "raw", target: "progress100%" },
+      ]),
+    );
+    expect(graph.nodes.find((n) => n.id === "progress100%")?.backlinks).toEqual(
+      ["index", "raw"],
+    );
+  });
+
+  test("malformed URL encoding does not prevent valid graph links", async () => {
+    const root = await makeWiki({
+      "index.md":
+        "[Invalid escape](bad%ZZ.md)\n[Incomplete encoding](%E4%B8.md)\n[Valid page](valid.md)\n",
+      "valid.md": "# Valid page\n",
+    });
+
+    const graph = await buildGraph(root);
+
+    expect(graph.edges).toEqual([{ source: "index", target: "valid" }]);
+  });
+
   test("does not follow a symlink that escapes the wiki root", async () => {
     const secret = await mkdtemp(path.join(tmpdir(), "openwiki-secret-"));
     tempDirs.push(secret);

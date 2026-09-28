@@ -632,7 +632,7 @@ describe("beginRepositoryRun", () => {
       claims: [{ id: "claim_stale" }],
     });
     expect(() => inspectRepositoryPageClaims(run, randomUUID())).toThrow(
-      "Only the current pending OpenWiki page job's Claims may be inspected",
+      "Only a pending OpenWiki page job may be inspected",
     );
   });
 
@@ -1429,7 +1429,7 @@ describe("repository page queue", () => {
     ).rejects.toMatchObject({ code: "invalid_state" });
   });
 
-  test("rejects out-of-order submission but repairs invalid frontmatter", async () => {
+  test("accepts any pending job by id and repairs invalid frontmatter", async () => {
     const root = await createRepository(["second.md"]);
     const run = await beginForcedUpdate(root);
     await submitRepositoryPlan(run, {
@@ -1448,9 +1448,27 @@ describe("repository page queue", () => {
     });
     const jobs = run.state.plan?.pages ?? [];
 
+    // Queue order is a resume discipline, not an ownership rule: a worker may
+    // complete the later job while the earlier one is still owned elsewhere.
+    await run.backend.write(jobs[1].path, validPage("Second"));
     await expect(
-      submitRepositoryPage(run, { jobId: jobs[1].id, claims: [] }),
-    ).rejects.toThrow("Only the current pending");
+      submitRepositoryPage(run, {
+        jobId: jobs[1].id,
+        claims: [
+          {
+            statement: "The repository has a README.",
+            evidence: [{ resource: "repo://README.md" }],
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({ status: "complete", remaining: 1 });
+    expect(run.state.plan?.pages.map(({ status }) => status)).toEqual([
+      "pending",
+      "complete",
+    ]);
+    await expect(
+      submitRepositoryPage(run, { jobId: randomUUID(), claims: [] }),
+    ).rejects.toThrow("Unknown OpenWiki page job");
 
     await run.backend.write(jobs[0].path, "# Missing frontmatter\n");
     await expect(
@@ -1470,6 +1488,212 @@ describe("repository page queue", () => {
     );
     expect(validateOkfFrontmatter(repaired)).toEqual({ valid: true });
     expect(repaired).toContain("# Missing frontmatter");
+  });
+
+  test("hands out distinct pending jobs to concurrent workers", async () => {
+    const root = await createRepository(["second.md", "third.md"]);
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        { path: "/openwiki/quickstart.md", title: "Q", purpose: "Refresh." },
+        { path: "/openwiki/second.md", title: "S", purpose: "Refresh." },
+        { path: "/openwiki/third.md", title: "T", purpose: "Refresh." },
+      ],
+    });
+    const jobs = run.state.plan?.pages ?? [];
+    const claimed = new Set<string>();
+
+    const first = await nextRepositoryPage(run, { exclude: claimed });
+    if (first.status !== "pending") throw new Error("Expected first job.");
+    claimed.add(first.job.id);
+    const second = await nextRepositoryPage(run, { exclude: claimed });
+    if (second.status !== "pending") throw new Error("Expected second job.");
+    claimed.add(second.job.id);
+    const third = await nextRepositoryPage(run, { exclude: claimed });
+    if (third.status !== "pending") throw new Error("Expected third job.");
+    claimed.add(third.job.id);
+
+    expect(new Set([first.job.id, second.job.id, third.job.id]).size).toBe(3);
+    expect(claimed).toEqual(new Set(jobs.map(({ id }) => id)));
+    await expect(
+      nextRepositoryPage(run, { exclude: claimed }),
+    ).resolves.toEqual({ status: "complete" });
+    // Without an exclusion list the queue still reports its first pending job.
+    await expect(nextRepositoryPage(run)).resolves.toMatchObject({
+      status: "pending",
+      job: { id: jobs[0].id },
+    });
+  });
+
+  test("serializes concurrent page submissions into one durable checkpoint", async () => {
+    const root = await createRepository(["second.md", "third.md"]);
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        { path: "/openwiki/quickstart.md", title: "Q", purpose: "Refresh." },
+        { path: "/openwiki/second.md", title: "S", purpose: "Refresh." },
+        { path: "/openwiki/third.md", title: "T", purpose: "Refresh." },
+      ],
+    });
+    const jobs = run.state.plan?.pages ?? [];
+    for (const job of jobs) {
+      await run.backend.write(job.path, validPage(job.title));
+    }
+
+    const results = await Promise.all(
+      jobs.map((job, index) =>
+        submitRepositoryPage(run, {
+          jobId: job.id,
+          claims: [
+            {
+              statement: `Statement ${index} about the README.`,
+              evidence: [{ resource: "repo://README.md" }],
+            },
+          ],
+        }),
+      ),
+    );
+
+    expect(results.map(({ status }) => status)).toEqual([
+      "complete",
+      "complete",
+      "complete",
+    ]);
+    expect(results.map(({ remaining }) => remaining).sort()).toEqual([0, 1, 2]);
+    expect(run.state.plan?.pages.map(({ status }) => status)).toEqual([
+      "complete",
+      "complete",
+      "complete",
+    ]);
+    expect(
+      (await readRepositoryRunState(root))?.plan?.pages.map(
+        ({ status }) => status,
+      ),
+    ).toEqual(["complete", "complete", "complete"]);
+    const manifest = await readRepositoryPageManifest(root);
+    for (const job of jobs) {
+      expect(manifest.pages[job.path]).toMatchObject({
+        completedRunId: run.state.runId,
+        completedBy: ACTOR.producerActor,
+      });
+      const persisted = await new ClaimsStore(root).loadPage(job.path);
+      expect(persisted?.claims.map(({ statement }) => statement)).toEqual([
+        `Statement ${jobs.indexOf(job)} about the README.`,
+      ]);
+    }
+    await expect(finishRepositoryRun(run)).resolves.toEqual({
+      status: "complete",
+    });
+  });
+
+  test("leaves another pending job's page and sidecar untouched on submit", async () => {
+    const root = await createRepository(["second.md"]);
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        { path: "/openwiki/quickstart.md", title: "Q", purpose: "Refresh." },
+        { path: "/openwiki/second.md", title: "S", purpose: "Refresh." },
+      ],
+    });
+    const jobs = run.state.plan?.pages ?? [];
+    const headJob = jobs.find(({ path }) => path === "/openwiki/second.md");
+    const tailJob = jobs.find(({ path }) => path === "/openwiki/quickstart.md");
+    if (!headJob || !tailJob) throw new Error("Expected both plan jobs.");
+
+    // A concurrent worker owns quickstart and has written partial content.
+    const partial = "---\ntype: Guide\ntitle: Partial\n---\n\n# Half written\n";
+    await run.backend.write(tailJob.path, partial);
+    const sidecarPath = path.join(
+      root,
+      "openwiki",
+      ".claims",
+      "quickstart.json",
+    );
+    const sidecarBefore = await readFile(sidecarPath, "utf8");
+
+    await run.backend.write(headJob.path, validPage("Second"));
+    await submitRepositoryPage(run, {
+      jobId: headJob.id,
+      claims: [
+        {
+          statement: "The repository has a README.",
+          evidence: [{ resource: "repo://README.md" }],
+        },
+      ],
+    });
+
+    // Neither the in-flight Markdown nor its sidecar was restamped by the
+    // sibling's finalization; only the submitting page became durable.
+    await expect(
+      readFile(path.join(root, "openwiki", "quickstart.md"), "utf8"),
+    ).resolves.toBe(partial);
+    await expect(readFile(sidecarPath, "utf8")).resolves.toBe(sidecarBefore);
+    expect(run.state.plan?.pages.map(({ status }) => status)).toEqual([
+      "complete",
+      "pending",
+    ]);
+  });
+
+  test("skips one owned job while another worker completes its own", async () => {
+    const root = await createRepository(["second.md"]);
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        { path: "/openwiki/quickstart.md", title: "Q", purpose: "Refresh." },
+        { path: "/openwiki/second.md", title: "S", purpose: "Refresh." },
+      ],
+    });
+    // The plan sorts quickstart last, so it is the non-head job here.
+    const jobs = run.state.plan?.pages ?? [];
+    const headJob = jobs.find(({ path }) => path === "/openwiki/second.md");
+    const tailJob = jobs.find(({ path }) => path === "/openwiki/quickstart.md");
+    if (!headJob || !tailJob) throw new Error("Expected both plan jobs.");
+    expect(jobs.map(({ id }) => id)).toEqual([headJob.id, tailJob.id]);
+    const original = await readFile(
+      path.join(root, "openwiki", "quickstart.md"),
+      "utf8",
+    );
+
+    // Both workers snapshot before starting; the tail job is not the queue
+    // head, which the positional model used to reject.
+    const headSnapshot = await captureRepositoryPageSnapshot(run, headJob.id);
+    const tailSnapshot = await captureRepositoryPageSnapshot(run, tailJob.id);
+    expect(headSnapshot.jobId).toBe(headJob.id);
+    expect(tailSnapshot.jobId).toBe(tailJob.id);
+
+    await run.backend.write(tailJob.path, "# Partial worker output\n");
+    await run.backend.write(headJob.path, validPage("Second"));
+    await Promise.all([
+      skipRepositoryPage(run, tailSnapshot),
+      submitRepositoryPage(run, {
+        jobId: headJob.id,
+        claims: [
+          {
+            statement: "The repository has a README.",
+            evidence: [{ resource: "repo://README.md" }],
+          },
+        ],
+      }),
+    ]);
+
+    expect(run.state.plan?.pages.map(({ status }) => status)).toEqual([
+      "complete",
+      "skipped",
+    ]);
+    expect(
+      (await readRepositoryRunState(root))?.plan?.pages.map(
+        ({ status }) => status,
+      ),
+    ).toEqual(["complete", "skipped"]);
+    await expect(
+      readFile(path.join(root, "openwiki", "quickstart.md"), "utf8"),
+    ).resolves.toBe(original);
+    await expect(skipRepositoryPage(run, tailSnapshot)).rejects.toThrow(
+      "no longer owns a pending job",
+    );
+    await expect(
+      finishRepositoryRun(run, { skippedPageSnapshots: [tailSnapshot] }),
+    ).resolves.toEqual({ status: "complete" });
   });
 });
 
