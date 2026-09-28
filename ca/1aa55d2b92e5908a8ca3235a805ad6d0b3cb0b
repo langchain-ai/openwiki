@@ -1,0 +1,19 @@
+.changeset/frontmatter-degradation-signals.md
+  s_9ca0008bc10962::t_e39cab4e83df42 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ca1aa55d2b92e5908a8ca3235a805ad6d0b3cb0b",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
