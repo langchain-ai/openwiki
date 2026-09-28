@@ -67,6 +67,7 @@ import {
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
+  OPENWIKI_PAGE_CONCURRENCY_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   resolveConfiguredProvider,
@@ -74,6 +75,7 @@ import {
   resolveBedrockMaxTokens,
   resolveMaxOutputTokens,
   resolveOpenRouterMaxTokens,
+  resolvePageConcurrency,
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeout,
   type OpenWikiProvider,
@@ -149,6 +151,7 @@ export const MANAGED_ENV_KEYS = [
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
+  OPENWIKI_PAGE_CONCURRENCY_ENV_KEY,
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
   OPENWIKI_NOTION_TOKEN_ENV_KEY,
   OPENWIKI_NOTION_MCP_CLIENT_ID_ENV_KEY,
@@ -428,15 +431,17 @@ function createCredentialDiagnostic(
                     : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
                         key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
                         key === OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY ||
-                      key ===
+                        key ===
                           OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
                       ? getBooleanWarnings(value)
                       : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
                         ? getRetryAttemptsWarnings(value)
-                        : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
-                          ? getReasoningEffortWarnings(value)
-                          : (getBaseUrlDiagnosticWarnings(key, value) ??
-                            getCredentialWarnings(value)),
+                        : key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY
+                          ? getPageConcurrencyWarnings(value)
+                          : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
+                            ? getReasoningEffortWarnings(value)
+                            : (getBaseUrlDiagnosticWarnings(key, value) ??
+                              getCredentialWarnings(value)),
   };
 }
 
@@ -503,6 +508,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY ||
     key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
+    key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY ||
     key === OPENWIKI_REASONING_EFFORT_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY ||
@@ -567,6 +573,18 @@ function getBooleanWarnings(value: string): string[] {
   return booleanDiagnosticValues.has(value.trim().toLowerCase())
     ? []
     : [invalidBooleanWarning];
+}
+
+function getPageConcurrencyWarnings(value: string): string[] {
+  try {
+    resolvePageConcurrency({
+      [OPENWIKI_PAGE_CONCURRENCY_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid page concurrency"];
+  }
 }
 
 function getRetryAttemptsWarnings(value: string): string[] {

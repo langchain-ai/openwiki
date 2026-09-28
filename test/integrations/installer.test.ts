@@ -472,6 +472,34 @@ describe("host integration registry", () => {
           },
         },
       },
+      omp: {
+        producerActor: "omp",
+        user: {
+          skillDirectory: ".omp/agent/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".omp/agent/mcp.json" },
+        },
+        project: {
+          skillDirectory: ".omp/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".omp/mcp.json" },
+        },
+      },
+      antigravity: {
+        producerActor: "antigravity",
+        user: {
+          skillDirectory: ".gemini/antigravity-cli/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".gemini/config/mcp_config.json",
+          },
+        },
+        project: {
+          skillDirectory: ".agents/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".agents/mcp_config.json",
+          },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -482,6 +510,8 @@ describe("host integration registry", () => {
       "opencode",
       "cursor",
       "kiro",
+      "omp",
+      "antigravity",
     ]);
     expect(HOST_TARGETS.bob.user.skillDirectory).toBe(
       HOST_TARGETS.codex.user.skillDirectory,

@@ -10,6 +10,8 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-d80f123259efa4712b198b63
     resource: repo://src/cli/startup.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-c2770ac037a7f4b0116a0dc5
     resource: repo://src/config/env.ts
   - id: openwiki-source-7d433875b0854d0b8b951be0
@@ -32,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+  - by: openwiki/0.5.2
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Onboarding and Setup
@@ -125,8 +127,8 @@ by a controller state machine. The steps that apply to a given provider and run
 mode, in walk order, are produced by `orderedSetupSteps`: an optional run-mode
 chooser, the provider selection, the provider's primary credential step, any
 provider-specific steps (secret key, GCP project/location, base URL, region),
-then the model step, the LangSmith step, and finally — only in code mode — a
-`code-repo-confirm` step.
+then the model step (skipped for providers that pin a single `fixedModel`), the
+LangSmith step, and finally — only in code mode — a `code-repo-confirm` step.
 
 The primary credential step is chosen per provider by `credentialStep`: OAuth
 providers use `oauth-login`, AWS-SDK providers have no in-wizard step (they are
@@ -134,13 +136,22 @@ handled via AWS credentials), external-CLI providers use `external-cli-auth`,
 API-key providers use `api-key`, and keyless providers that require a GCP project
 use `gcp-project`.
 
+A provider with a `fixedModel` (checked by `providerHasFixedModel`) always uses
+that single model ID and skips the model-selection step entirely — the value is
+used verbatim rather than normalized. The IBM Bob provider is the fixed-model
+case: it pins `fixedModel: "premium"`, authenticates with an API key
+(`BOB_API_KEY`, via the `api-key` credential step), and exposes an optional
+`BOB_BASE_URL`, so its spine runs provider → api-key → langsmith →
+(code-repo-confirm in code mode) with no model step.
+
 ```mermaid
 stateDiagram-v2
   [*] --> run_mode
   run_mode --> provider
   provider --> credential
   credential --> extra_provider_steps
-  extra_provider_steps --> model
+  extra_provider_steps --> model: non-fixedModel provider
+  extra_provider_steps --> langsmith: fixedModel provider
   model --> langsmith
   langsmith --> code_repo_confirm: code mode
   langsmith --> [*]: personal mode
@@ -148,6 +159,9 @@ stateDiagram-v2
 ```
 
 Ordered setup steps for code vs. personal mode as returned by orderedSetupSteps.
+The model step is emitted only when the provider does not pin a fixedModel
+(providerHasFixedModel), so a fixedModel provider such as IBM Bob goes straight
+from the provider-specific steps to the LangSmith step.
 
 Two functions distinguish "which step to jump to" from "which steps exist".
 `getInitialStep` is a skip-based waterfall that lands on the first unsatisfied
@@ -209,6 +223,19 @@ repository runs (`beginRepositoryRun`). It:
   `CLAUDE.md` managed block is deliberately minimal and just points to
   `AGENTS.md` via the `@AGENTS.md` import, so `AGENTS.md` stays the single
   canonical source of agent instructions.
+- **Retrieval-first AGENTS.md block.** The `AGENTS.md` managed block
+  (`createCodeModeAgentsSnippet`) is retrieval-first rather than eager-load: it
+  tells the agent **not** to enumerate, preload, or search wikis at task start,
+  but to reach for `openwiki_search` (just-in-time context) and `openwiki_read`
+  (the relevant complete sections) when unfamiliar architecture or dependency
+  behavior materially affects the task, or when source inspection leaves an
+  important uncertainty — stopping once the question is grounded. If a search
+  returns `workspace_required`, the agent asks which listed workspace to use and
+  retries with its ID; `openwiki_list_workspaces`/`openwiki_list_wikis` are for
+  discovering workspace membership itself. `openwiki/quickstart.md` and its
+  links are the fallback only when the retrieval tools are unavailable. Source
+  code and tests are treated as authoritative, and the brief's unknowns/review
+  items are verification gaps, not automatic requirements.
 - **Import-only CLAUDE.md preservation.** Two branches keep a forwarding
   `CLAUDE.md` intact. First, a `CLAUDE.md` whose trimmed content is exactly
   `@AGENTS.md` (the `CLAUDE_AGENTS_IMPORT` sentinel) is left entirely unchanged —
@@ -224,6 +251,29 @@ repository runs (`beginRepositoryRun`). It:
   `CLAUDE.md` that is neither the bare import nor the same file as `AGENTS.md`,
   but contains marker regions or any other content, is refreshed in place like
   `AGENTS.md`.
+- **Legacy pre-marker section removal.** Pre-marker (0.0.x) releases wrote an
+  unmarked `## OpenWiki` section straight into `AGENTS.md`/`CLAUDE.md`. Before
+  deciding where the managed block goes, `prepareCodeModeAgentSnippet` strips
+  those legacy sections via `findLegacyOpenWikiSections` so a file that was
+  first touched by an old release is not left with a stale section sitting
+  beside the new managed block (two `## OpenWiki` headings). A heading only
+  qualifies as legacy when its next non-blank line is exactly the released
+  template sentence ("This repository has documentation located in the
+  /openwiki directory."), so a hand-written `## OpenWiki` section that merely
+  shares the heading is never touched, and a heading quoted inside a fenced
+  code block is skipped (the parser tracks CommonMark fence state, so a `~~~`
+  line inside a ` ``` ` block does not close the outer fence). The removal
+  consumes only the known template lines beneath the heading and stops at the
+  first line that is not one of them, so hand-edited content below the section
+  — a customized quickstart link, an appended sentence, a trailing paragraph —
+  survives intact. With markers absent and a legacy section present, the
+  managed block is placed where the section was (preserving the file's shape)
+  rather than appended to the end; with no markers and no legacy section it is
+  appended after existing content. When stripping a legacy section from an
+  import-only `CLAUDE.md` leaves nothing but `@AGENTS.md`, that import is kept
+  verbatim (no managed block is added, since `AGENTS.md` already carries the
+  instructions). Marker validation runs on the post-legacy-removal content, so
+  a malformed/duplicated marker set still aborts with the file unchanged.
 - Creates the scheduled-update GitHub Actions workflow
   (`.github/workflows/openwiki-update.yml`) **only** when `createWorkflow` is set,
   which is the case only for the `init` command. `--update` and chat runs leave

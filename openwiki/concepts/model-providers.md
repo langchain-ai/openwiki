@@ -1,9 +1,11 @@
 ---
 type: reference
 title: Model Providers and Credentials
-description: Reference for OpenWiki's supported model providers, their environment keys, base URLs, and authentication methods (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, and external CLI), the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
+description: Reference for OpenWiki's supported model providers (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, external CLI, and the IBM Bob Apikey adapter), their environment keys, base URLs, authentication methods, the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
 tags: [model-providers, credentials, oauth, authentication, configuration, env, reasoning]
 sources:
+  - id: openwiki-source-f8b008ed89162a0e204fc02d
+    resource: repo://src/agent/bob.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-91bd3ea533c00a8366f8d420
@@ -18,14 +20,18 @@ sources:
     resource: repo://src/config/env.ts
   - id: openwiki-source-f1dd0edb129e50f253618ff4
     resource: repo://src/config/reasoning.ts
+  - id: openwiki-source-ebe194cbeaa2594a6699f9a1
+    resource: repo://src/model-availability.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
+  - id: openwiki-source-a302ab67124df4839d320111
+    resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-11T08:09:37.996Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-25T08:09:49.344Z" }
 verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-11T08:09:37.996Z
+  - by: openwiki/0.6.0
+    at: 2026-09-25T08:09:49.344Z
 ---
 
 # Model Providers and Credentials
@@ -65,6 +71,7 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `openai`                       | OpenAI                        | api-key       | `OPENAI_API_KEY`                            | (SDK default) / `OPENAI_BASE_URL`                              |
 | `openai-chatgpt`               | OpenAI (ChatGPT login)        | oauth         | `OPENAI_CHATGPT_ACCESS_TOKEN` (+ token set) | Codex backend (fixed)                                          |
 | `anthropic`                    | Anthropic                     | api-key       | `ANTHROPIC_API_KEY`                         | (SDK default) / `ANTHROPIC_BASE_URL`                           |
+| `bob`                          | IBM Bob                       | api-key       | `BOB_API_KEY`                               | `https://api.us-east.bob.ibm.com/inference/v1` / `BOB_BASE_URL` |
 | `copilot`                      | GitHub Copilot                | external-cli  | `COPILOT_API_KEY`                           | `https://api.githubcopilot.com` / `COPILOT_BASE_URL`           |
 | `gemini`                       | Gemini (AI Studio)            | api-key       | `GEMINI_API_KEY`                            | (SDK default)                                                  |
 | `gemini-enterprise`            | Gemini Enterprise (Vertex AI) | ADC (keyless) | none — `GOOGLE_CLOUD_PROJECT`               | derived from project/location                                  |
@@ -77,7 +84,9 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `nvidia`                       | NVIDIA NIM                    | api-key       | `NVIDIA_API_KEY`                            | `https://integrate.api.nvidia.com/v1` / `NVIDIA_BASE_URL`      |
 
 `SELECTABLE_OPENWIKI_PROVIDERS` fixes the order these providers appear in the
-setup wizard.
+setup wizard. The `bob` provider is the only one that sets `fixedModel`
+(`"premium"`): `resolveModelId` returns it verbatim and skips model selection
+entirely, so Bob's model step never appears in the wizard.
 
 ## Authentication methods
 
@@ -98,6 +107,35 @@ self-hosted or proxied endpoints can be pointed at without code changes. The
 `OPENAI_COMPATIBLE_BASE_URL` (`requiresBaseUrl`); its base-URL validation rejects
 a URL that already ends in `/chat/completions`, since the SDK appends that path
 itself.
+
+### IBM Bob (`bob`)
+
+`bob` is an api-key provider that targets IBM Bob's inference endpoint at
+`https://api.us-east.bob.ibm.com/inference/v1` (overridable via `BOB_BASE_URL`).
+It is the only provider with a `fixedModel` — `"premium"` — so `resolveModelId`
+returns that ID verbatim and the model-selection step is skipped entirely (see
+`providerHasFixedModel` / `getProviderFixedModel`). `createModel` builds a
+`ChatOpenAI` chat-completions client with a placeholder `apiKey`
+(`"bob-placeholder"`), which only satisfies the constructor's missing-key check;
+the real credential is injected per request by a custom fetch wrapper.
+
+The adapter is `createBobFetch` (`src/agent/bob.ts`), which wraps `fetch` at the
+final request boundary to satisfy Bob's two non-standard requirements:
+
+- It rewrites the `Authorization: Bearer <placeholder>` header that
+  `ChatOpenAI` emits to `Authorization: Apikey <key>`, reading `BOB_API_KEY` from
+  the environment at call time so a hot-reloaded `.env` value is always used.
+- It sets `User-Agent: ibm-bob-openwiki-provider` (the `BOB_USER_AGENT` constant),
+  which Bob's Cloudflare WAF requires to admit the request.
+
+Like Copilot, `bob` is forced onto the streaming HTTP transport:
+`providerUsesStreaming` returns `true` for `bob` because long generations (such as
+planning a large repository) can outlast the Bob endpoint's response timeout when
+sent as a single non-streaming completion, whereas streaming returns output —
+including tool calls — as it is produced. `createModel` applies the same
+conditional `streaming: true` spread it uses for Copilot (described below) rather
+than assigning `streaming: false`, since LangChain turns an explicit `false` into
+`disableStreaming`.
 
 ### ChatGPT OAuth (`openai-chatgpt`)
 
@@ -185,13 +223,20 @@ surface; `createGeminiEnterpriseModel` selects the transport per model ID via
 
 - `gemini` — Google's own Gemini/Gemma models over native `generateContent`, via `ChatGoogle`.
 - `anthropic` — Claude over Anthropic's wire protocol, bridged through `ChatAnthropic`'s `createClient` hook and the `AnthropicVertex` SDK, which authenticates via ADC.
-- `openai-maas` — partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, …) over Vertex's OpenAI-compatible endpoint, whose base URL is built by `vertexOpenAIBaseUrl`.
+- `openai-maas` — partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, Grok, …) over Vertex's OpenAI-compatible endpoint, whose base URL is built by `vertexOpenAIBaseUrl`.
+
+`resolveVertexSurface` classifies the model ID by family, not provider: an
+`anthropic`/`claude` token routes to the Anthropic surface, and a token from
+the openai-maas family (`ai21`, `codellama`, `codestral`, `deepseek`, `grok`,
+`jamba`, `llama`, `meta`, `mistral`, `qwen`, `xai`) routes to the openai-maas
+surface; anything else defaults to `gemini`. The patterns tolerate both bare
+IDs and publisher-pathed IDs.
 
 ```mermaid
 flowchart TD
     Model["modelId"] --> Resolve["resolveVertexSurface"]
     Resolve -->|anthropic / claude| Claude["ChatAnthropic createClient plus AnthropicVertex ADC"]
-    Resolve -->|openai-maas / llama, mistral, ...| MaaS["ChatOpenAI at vertexOpenAIBaseUrl, createVertexAuthFetch ADC bearer"]
+    Resolve -->|openai-maas / llama, mistral, grok, ...| MaaS["ChatOpenAI at vertexOpenAIBaseUrl, createVertexAuthFetch ADC bearer"]
     Resolve -->|gemini / default| Gemini["ChatGoogle generateContent ADC"]
     Claude --> Project["GOOGLE_CLOUD_PROJECT plus GOOGLE_CLOUD_LOCATION"]
     MaaS --> Project
@@ -261,6 +306,104 @@ rationale that forces streaming on the openai-chatgpt Codex backend. For GPT-5
 models that use the Responses API (`responsesApi: /^gpt-5/u`), `streaming: true`
 is redundant but harmless, matching the openai-chatgpt provider pattern.
 `createModel` applies this with a conditional spread (`...(providerUsesStreaming(provider) ? { streaming: true } : {})`) rather than assigning `streaming: false`, because LangChain turns an explicit `false` into `disableStreaming`, which is not equivalent to omitting the key.
+
+## Run configuration resolution
+
+Before any model is built, `resolveRunConfig` (`src/agent/index.ts`) assembles
+everything a run needs and fails fast on misconfiguration. It is the single
+ordering boundary that turns the declarative provider registry plus the env
+settings into a concrete run config, and any throw inside it is tagged `config`
+so failure telemetry locates it to the resolution stage. Its callback
+`onProviderResolved` publishes the provider to telemetry the instant it is known,
+so a failure later in resolution (or in the build/run stages) still attributes
+to the right provider.
+
+```mermaid
+flowchart TD
+    Start["resolveRunConfig"] --> Prov["resolveConfiguredProvider"]
+    Prov --> Cli["resolveExternalCliCredential for copilot"]
+    Cli --> Cred["ensureProviderCredentials"]
+    Cred --> Base["ensureProviderBaseUrl / SecretKey / Region"]
+    Base --> ChatGpt{"provider == openai-chatgpt?"}
+    ChatGpt -->|yes| Refresh["ensureFreshChatGptTokens before build"]
+    ChatGpt -->|no| Model["resolveModelId"]
+    Refresh --> Model
+    Model --> Avail["getSelectedModelAvailability"]
+    Avail -->|unavailable| Fail["throw: set OPENWIKI_MODEL_ID"]
+    Avail -->|available or unknown| Concur["resolvePageConcurrency"]
+    Concur --> Retry["resolveProviderRetryAttempts pageConcurrency-aware"]
+    Retry --> Max["resolveConfiguredMaxOutputTokens"]
+    Max --> Idle["resolveStreamIdleTimeoutForProvider (bedrock only)"]
+    Idle --> Build["createModel maxRetries, maxTokens, streamIdleTimeout"]
+```
+
+Diagram: The ordered `resolveRunConfig` pipeline and the settings it feeds into `createModel`.
+
+The steps run in a fixed order:
+
+1. `resolveConfiguredProvider` selects the provider (explicit `OPENWIKI_PROVIDER`
+   or inferred from present API keys).
+2. For `copilot`, `resolveExternalCliCredential` injects the `gh` CLI token into
+   `COPILOT_API_KEY` for the process, then `validateExternalCliCredential`
+   checks it when present.
+3. `ensureProviderCredentials` calls `getMissingProviderEnvKey` and, if it
+   returns a key, throws with the provider label plus `getProviderCredentialHint`
+   (the ADC / AWS-SDK / `gh auth login` guidance). It then runs
+   `ensureProviderBaseUrl` (required for `openai-compatible`, validated against
+   `getProviderBaseUrlWarnings`), `ensureProviderSecretKey` (the paired AWS
+   secret), and `ensureProviderRegion` (`bedrock` only).
+4. For `openai-chatgpt`, `ensureFreshChatGptTokens` runs here so `createModel`
+   stays synchronous.
+5. `resolveModelId` resolves the model (fixed model, `OPENWIKI_MODEL_ID`, or the
+   provider's first option) and `warnOnProviderModelMismatch` emits a non-fatal
+   warning when the ID plainly belongs to another provider.
+
+### Model availability check
+
+`getSelectedModelAvailability` (`src/model-availability.ts`) is the only
+availability adapter, and it only covers the `openai` provider: for every other
+provider it returns `{ status: "unknown", reason: "No availability adapter is
+configured." }`. It also short-circuits to `unknown` when a custom `OPENAI_BASE_URL`
+override is set (an OpenAI-compatible gateway does not have OpenAI Models-API
+semantics) or no API key is available. When it can run, it queries
+`https://api.openai.com/v1/models` with the bearer key; a matching `id` is
+`available`, a missing one is `unavailable`, and any non-OK response, unexpected
+body, or thrown fetch is `unknown`.
+
+`resolveRunConfig` only treats `unavailable` as fatal (throwing an actionable
+"set `OPENWIKI_MODEL_ID`" message); `unknown` is debug-logged and the inference
+path proceeds, so a catalogue lookup failure can never block a run that would
+otherwise succeed.
+
+### Retry attempts, max output tokens, stream idle timeout, and page concurrency
+
+After model resolution, `resolveRunConfig` resolves the four run-level settings
+that `createModel` threads into the chat-model constructor:
+
+- **Page concurrency** — `resolvePageConcurrency` returns an integer from 1 to
+  `MAX_PAGE_CONCURRENCY` (8), defaulting to `DEFAULT_PAGE_CONCURRENCY` (1). It
+  bounds how many repository page workers share one provider key; beyond 8 a
+  single key is rate-limit bound and progress output stops being readable.
+- **Provider retry attempts** — `resolveProviderRetryAttempts` sets
+  `maxRetries` on every chat model. An explicit
+  `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` always wins; when unset, a run with more
+  than one page worker gets `PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5) — because
+  concurrent workers make transient rate limits the common failure — and a
+  single sequential worker gets `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3). The
+  page-concurrency value is passed in so the two settings stay coupled.
+- **Max output tokens** — `resolveConfiguredMaxOutputTokens` is the
+  provider-neutral per-request output cap. On `openrouter` the legacy
+  `OPENWIKI_OPENROUTER_MAX_TOKENS` takes precedence; otherwise the neutral
+  `OPENWIKI_MAX_OUTPUT_TOKENS` wins; and as a last fallback `bedrock` gets
+  `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so the Converse API's 4096 default does
+  not truncate long pages. `createModel` maps the result to each SDK's field
+  (`maxTokens` for OpenAI/Bedrock/OpenRouter, `maxOutputTokens` for Google,
+  `maxTokens` for Anthropic via `resolveAnthropicMaxOutputTokens`).
+- **Stream idle timeout** — `resolveStreamIdleTimeoutForProvider` is only
+  non-`undefined` for `bedrock`; `createModel` spreads it as
+  `streamIdleTimeout` on `ChatBedrockConverse`, a watchdog for the first/next
+  stream chunk (`OPENWIKI_STREAM_IDLE_TIMEOUT`, 0 disables it). Other providers
+  get no idle timeout override and use their SDK default.
 
 ## Reasoning effort
 

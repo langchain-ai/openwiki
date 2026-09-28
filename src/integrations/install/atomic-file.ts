@@ -7,16 +7,20 @@ import path from "node:path";
  *
  * @param filePath - Absolute destination path.
  * @param content - Complete replacement content.
+ * @param defaultMode - Mode used when the destination does not yet exist.
  */
 export async function writeTextAtomic(
   filePath: string,
   content: string,
+  defaultMode: number = 0o644,
 ): Promise<void> {
   await mkdir(path.dirname(filePath), { recursive: true });
   const mode = await lstat(filePath)
     .then((file) => file.mode & 0o777)
     .catch((error: unknown) => {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return 0o644;
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return defaultMode;
+      }
       throw error;
     });
   const temporary = path.join(

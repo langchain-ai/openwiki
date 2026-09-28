@@ -11,7 +11,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent } from "deepagents";
+import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -129,6 +129,7 @@ import {
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
+  resolvePageConcurrency,
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeoutForProvider,
   type OpenWikiProvider,
@@ -211,6 +212,7 @@ export async function runOpenWikiAgent(
             planningContext: options.userMessage,
             modelId: config.modelId,
             model,
+            pageConcurrency: config.pageConcurrency,
             onEvent: options.onEvent,
           }),
         { errorClass: "agent_error" },
@@ -292,6 +294,7 @@ async function resolveRunConfig(
   provider: OpenWikiProvider;
   modelId: string;
   providerRetryAttempts: number;
+  pageConcurrency: number;
   maxOutputTokens: number | undefined;
   streamIdleTimeout: number | undefined;
 }> {
@@ -350,7 +353,11 @@ async function resolveRunConfig(
         }`,
       );
     }
-    const providerRetryAttempts = resolveProviderRetryAttempts();
+    const pageConcurrency = resolvePageConcurrency();
+    emitDebug(options, `generation.pageConcurrency=${pageConcurrency}`);
+    const providerRetryAttempts = resolveProviderRetryAttempts(process.env, {
+      pageConcurrency,
+    });
     emitDebug(options, `provider.retryAttempts=${providerRetryAttempts}`);
     const maxOutputTokens = resolveConfiguredMaxOutputTokens(provider);
     emitDebug(
@@ -367,6 +374,7 @@ async function resolveRunConfig(
       provider,
       modelId,
       providerRetryAttempts,
+      pageConcurrency,
       maxOutputTokens,
       streamIdleTimeout,
     };
@@ -493,6 +501,24 @@ function createOpenWikiAgentGraph(
     checkpointer: options.checkpointer,
     backend,
     middleware: [
+      // DeepAgents also applies this replacement to its general-purpose
+      // subagent. Personal runs have no shell tool, regardless of command.
+      ...(options.outputMode === "local-wiki"
+        ? [
+            createFilesystemMiddleware({
+              backend,
+              permissions: AGENT_FILESYSTEM_PERMISSIONS,
+              tools: [
+                "ls",
+                "read_file",
+                "glob",
+                "grep",
+                "write_file",
+                "edit_file",
+              ],
+            }),
+          ]
+        : []),
       ...(options.command === "chat"
         ? []
         : [
@@ -1280,6 +1306,7 @@ export function createModel(
       },
       model: modelId,
       ...maxTokensOptions,
+      ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
       ...retryOptions,
     });
   }

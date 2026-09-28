@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1da4500a0aab562bf4a252cf59d0ac172854b0013b2ca6c560d6b1adf74ca62a",
+  "pageVersion": "sha256:a9cefd6ff96721ca1dfd0162ee29e261fce355ac7aaf12d1bfdbb0b3283c71b2",
   "claims": [
     {
       "id": "claim_e161d3153b544232b9f17aa2f2838616",
@@ -8,49 +8,49 @@
       "evidence": [
         {
           "resource": "repo://src/cli/cli.tsx#L44-L53",
-          "version": "repo-lines-v1:sha256:4888f57d5b9eb35c837750492c04d9c0bd1d8d76bfd654ad929f2c8069826bd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MDVhMzQwMGM5Njg0YmI5OWMwYjA2N2JiMjFkZjYwZGM2MWEzM2ZiNDczN2QzZDZhMjQ3OThjMDdkMDE5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNWQxNGIwYzIzMjJjZjY3YzBhODM3YzQzMmQyODFhMWFjOGQyNjdkYzFlNDk1ZDg0YTVhNjlkYTMyNjNjM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMWE0ZTQyZDY5OTBkNThiNmMxZGNmMTUxMWNlNjVhYTMzZDQ5YjQwN2Y4NjRjZDA2NzhjODliYTY1NWM1ODIifQ"
+          "version": "repo-lines-v1:sha256:d6e5125778090bce5b4938a7e511739c538081d2cead35fa37a5663cc166d5a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1YTc2MzA0OWZkOGU0N2IyMTAxOTdjN2Y1MWU4NWYxMTM4YjAwNGQyMDA0YmJmZmNmYjEyNzczODFiN2E2MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNmE0MjAzMWI5Y2RiM2U5ZTczNzc5MGFiOTBhZTdhM2E4NzliMTZiY2NhYzkwZWFhNDc0MWE1NWE5YjBjMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
         },
         {
-          "resource": "repo://src/cli/commands.ts#L168-L181",
-          "version": "repo-lines-v1:sha256:73746653d6d338c988839ba8a7ca3c03f64014493a7ba167642a89e0a8759b76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZmY1YWU1NzIyNWZhMWY0OTE2OWY1Yjc0YmQxZTFhZGRhNGU4YzQ0YjFjOTI5YzdlMzk2ODE4YjcyOTAzZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOGQzZGI5NDYzMDIwOThiMzIxZDQ5NjU1ODJjZjljNzM4NGFjMzdhNmM5NjQzOTQ0OGY5MmVlYWVjMmViMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyZjBiYjQ5YTNiNGJjYjIwYzBjNWU3ZjJjNjYzNWRjOTE2OTVmYjkwZjU0ZjY5MGIwNGY0YzE3NTM1Mjg3ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlZmE2YWNmMGE2NzU0NWU0ZjVmNTFiY2I2MWFjZDY1MDVlZWY1NzBhNDU3Njk0MjM1OTZkODZkYWNhZTdkNzQifQ"
+          "resource": "repo://src/cli/commands.ts#L169-L228",
+          "version": "repo-lines-v1:sha256:53c657c39cd09b9762d55ea1ea7ced95b4405b7ce5695ce6918ef1d7a3a61d0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmOTU4MjYzYTk0OTgyNzBjOTI3ZTA4NjllN2ExYmZkMGE4NzNiYmYwNjU2MDg2MjZkNzllMDUwMzI3ZjViZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MTMwNjI4MGYxYzY3OGQ4YTE1ZjM0YTA1NjhjZmEyMDQ5NTE4ZGRjMGUxNzU4YzZjYTVhZjdkYmJkNWU1ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBiYjQ5YTNiNGJjYjIwYzBjNWU3ZjJjNjYzNWRjOTE2OTVmYjkwZjU0ZjY5MGIwNGY0YzE3NTM1Mjg3ZDgifQ"
         }
       ]
     },
     {
       "id": "claim_daab62a8043d4f79bc1f381661df3525",
-      "statement": "The entrypoint handles the integrations and mcp commands directly via runIntegrationsCommand and runMcpCommand, while every other command is routed through runStandardCommand.",
+      "statement": "The entrypoint handles the integrations and mcp commands directly via runIntegrationsCommand and runMcpCommand, while every other command (link, workspace, auth, ngrok, cron, ingest, visualize, run, error, help) is routed through runStandardCommand.",
       "evidence": [
         {
-          "resource": "repo://src/cli/cli.tsx#L34-L53",
-          "version": "repo-lines-v1:sha256:9941b958d8e234e20d766b616cd79f7b481480ea173693e9c85605c6f6dd2d27:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZTY3OGNjYTRjYTU4ZjkyNGYwZDcyZWEyMzEzYzY2YmE5MDVmMDY3ZTk4MDE4OGIzMTVkMzIxN2VjMTg4YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwYTE3MzU1MGI2ZjEyNTRlYjA5ZmI3Y2U4ZDlhNDhhNmJmMmE5NDYyY2RjOWQ1OWRmZTIwOTA4YTdmYzc3N2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMWE0ZTQyZDY5OTBkNThiNmMxZGNmMTUxMWNlNjVhYTMzZDQ5YjQwN2Y4NjRjZDA2NzhjODliYTY1NWM1ODIifQ"
+          "resource": "repo://src/cli/cli.tsx#L48-L53",
+          "version": "repo-lines-v1:sha256:a32687981f96a760f1a9864dc62527be3d5aa93221fadbb1768ab603e55b7e51:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdhNDBhMDZmZjBmZmQ5YmIxMWNjMGI2NDY1YWI0N2Y1NzM2NGVjZjY4Y2I1NzIyZjljODAzNTE2N2U2ODAzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVhNzYzMDQ5ZmQ4ZTQ3YjIxMDE5N2M3ZjUxZTg1ZjExMzhiMDA0ZDIwMDRiYmZmY2ZiMTI3NzM4MWI3YTYyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDJkMjZhYmEzZDI3OGY1ZjRlNGJkMTUxZmY1NzcxNjllMWY1ODY3ZjBjZTQxYmUxZWQyYTEzYzE0ODhlNGYxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
         },
         {
-          "resource": "repo://src/cli/cli.tsx#L60-L111",
-          "version": "repo-lines-v1:sha256:b62e777a1db8f4c5c5b85019feb701990e5592aa7b7dfe635d91e670545d9791:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGM4ODRkYjNiZjQwOTk4ODNmYjZhOTg0ZTgwZmM3OGU0YTcwZjE5MDQ1YzlmMmRkZjFlZjU0N2VkMjY3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMjUwZWQ5NDIwZjE2YTYyOTgzNzAxZWVjYmY0YzIwNmY4Y2MzY2ZhMGVjZGQ5NTQyYjY4MTJiYzg2ZDc5YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/cli/cli.tsx#L81-L105",
+          "version": "repo-lines-v1:sha256:a2bc7da30b2e9690b78e99bac552a3c11343315279e6cf772ffe28721a67e403:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMjA2MjY0ZDNiYWViMzk2ZmVkYTRmYTk2MGE2OWVhNzcwNDM5ZmE3YmUzMDE4OTc4ZmZjNTJhMmVmNzYxMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OWRlMTE2YWExOTRlZDE0Y2ZhNzE4OGEwYmYyMGE4ZWU5YjA2OGM0ZmZjOWQ1M2M5MGVhZjU1ZTI5NTM5MDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyNmY1NzM1NTA4ZjU3OTcyOGZjODI1NjMyOWZkYmY5NjE0OTQ0NjYyNmQ4OThlMWIwNTU3ZDhlZWU1ZmJhMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwNDNmZmZmMDkzMDgyODMyOGE4ZGU4NmZjMzViYjQ0NjkxNjM3MzZlODI3MmFmMmVkZTNkZmNiZmVkZTEzOTcifQ"
         }
       ]
     },
     {
       "id": "claim_a6804a83a532487a83d1b14614cf00f8",
-      "statement": "runStandardCommand conditionally loads the OpenWiki environment, re-resolves the command through resolveStartupCommand, computes the first-run telemetry notice, and then dispatches on command.kind to auth, ngrok, cron, ingest, visualize, printable error, non-interactive print, or the interactive Ink App.",
+      "statement": "runStandardCommand conditionally loads the OpenWiki environment, re-resolves the command through resolveStartupCommand, computes the first-run telemetry notice, and then dispatches on command.kind to link, workspace, auth, ngrok, cron, ingest, visualize, a printable error, non-interactive print, or the interactive Ink App.",
       "evidence": [
         {
-          "resource": "repo://src/cli/cli.tsx#L60-L111",
-          "version": "repo-lines-v1:sha256:b62e777a1db8f4c5c5b85019feb701990e5592aa7b7dfe635d91e670545d9791:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGM4ODRkYjNiZjQwOTk4ODNmYjZhOTg0ZTgwZmM3OGU0YTcwZjE5MDQ1YzlmMmRkZjFlZjU0N2VkMjY3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMjUwZWQ5NDIwZjE2YTYyOTgzNzAxZWVjYmY0YzIwNmY4Y2MzY2ZhMGVjZGQ5NTQyYjY4MTJiYzg2ZDc5YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/cli/cli.tsx#L61-L115",
+          "version": "repo-lines-v1:sha256:b7c0847761080167011d30ce7e8f19e222f2a70f7a792f998f6e1e72b5a45e9b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGM4ODRkYjNiZjQwOTk4ODNmYjZhOTg0ZTgwZmM3OGU0YTcwZjE5MDQ1YzlmMmRkZjFlZjU0N2VkMjY3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMjUwZWQ5NDIwZjE2YTYyOTgzNzAxZWVjYmY0YzIwNmY4Y2MzY2ZhMGVjZGQ5NTQyYjY4MTJiYzg2ZDc5YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
     },
     {
       "id": "claim_dfd1f74b66694d73bba2083d633b5dd6",
-      "statement": "parseCommand returns a discriminated CliCommand union (kinds integrations, mcp, auth, ngrok, visualize, ingest, cron, help, run, error); malformed invocations are represented as { kind: 'error', exitCode: 1, message } rather than thrown exceptions.",
+      "statement": "parseCommand returns a discriminated CliCommand union (kinds integrations, mcp, link, workspace, auth, ngrok, visualize, ingest, cron, help, run, error); malformed invocations are represented as { kind: 'error', exitCode: 1, message } rather than thrown exceptions.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L107-L164",
-          "version": "repo-lines-v1:sha256:904e3b186fcfa3b42b8382f08b2f0aea9dbac28577ed62536012687b8ce791e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmOTU4MjYzYTk0OTgyNzBjOTI3ZTA4NjllN2ExYmZkMGE4NzNiYmYwNjU2MDg2MjZkNzllMDUwMzI3ZjViZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MTMwNjI4MGYxYzY3OGQ4YTE1ZjM0YTA1NjhjZmEyMDQ5NTE4ZGRjMGUxNzU4YzZjYTVhZjdkYmJkNWU1ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjBiYjQ5YTNiNGJjYjIwYzBjNWU3ZjJjNjYzNWRjOTE2OTVmYjkwZjU0ZjY5MGIwNGY0YzE3NTM1Mjg3ZDgifQ"
+          "resource": "repo://src/cli/commands.ts#L102-L228",
+          "version": "repo-lines-v1:sha256:11b78c1c310011a5c6003c1e281ff02e2c129c4ba763f97145b47cf0f05e4608:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZDllMTI1NDY0MjU1NzZkM2RlYWU4YzliOWRiZjEyOGQ1ZDZkZGFmNWQ3ZmU4NTc5MzQ5MjdkZWZmYTNiOWRkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ZDZjYWFmMjE3MDYyMGM4NzA0M2YxNzNmZWZmOTAzODg2YmY4ZWU0NTU4ZTYyZjFkN2FkM2RjNDA5NjJlMzY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MmYwYmI0OWEzYjRiY2IyMGMwYzVlN2YyYzY2MzVkYzkxNjk1ZmI5MGY1NGY2OTBiMDRmNGMxNzUzNTI4N2Q4In0"
         },
         {
-          "resource": "repo://src/cli/commands.ts#L203-L209",
-          "version": "repo-lines-v1:sha256:aaff264b6f3a63fcf6515b1ec9aaee83f900298cede2692920575013689bfb42:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQwZWRiZDRkNzdlNjU3NWQ0NmJhNDNkYzUyNTI1YjBhMTFkNjQ0NjUwYTUxNjk3Yjc1YWMxMzZjNDU0Zjg5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDMyYzdkZjk1OGFkMTNhYzFkNzQ0YTVmN2U3NTQ1MWE2MmNkMzk0YjBiODI3YmQ5NzU0ZjliNTViNDJiOTk4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTQ2MzJmNDA3YWZiN2Y0MjIzMDFjZjczMjMwMWI3YWU0NzcxN2Q4NGU0ZjU2NGI5NDUxNWE5MjNiYjQwODc1YSJ9"
+          "resource": "repo://src/cli/commands.ts#L232-L625",
+          "version": "repo-lines-v1:sha256:594b1f0367ddf51e56ee63c41d8dba65a7830d3a2405ea3494dbd41e0f447b87:eyJzZWxlY3RlZExpbmVDb3VudCI6Mzk0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNWZmNWFlNTcyMjVmYTFmNDkxNjlmNWI3NGJkMWUxYWRkYTRlOGM0NGIxYzkyOWM3ZTM5NjgxOGI3MjkwM2UzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMDhmMjJhZDk4ZWVmNGZhOGQyMDQzNzVmMmMzNzA3M2RmOWI3MDRkYzYyMzhmNjFkOTUyNmIyMmNjOWQ0Y2NlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MmYwYmI0OWEzYjRiY2IyMGMwYzVlN2YyYzY2MzVkYzkxNjk1ZmI5MGY1NGY2OTBiMDRmNGMxNzUzNTI4N2Q4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNzkyOWU5MWUwZjk5YzNlODI1ZGU2OWI0MzVmYjY0ODRkMWIwYTFkZjJmNDY1NjFhYmYxYTI5ZjA0MTg4Yjg4In0"
         }
       ]
     },
@@ -493,10 +493,60 @@
           "version": "repo-lines-v1:sha256:2272fe56dbf1fb8b96953582887767a727776f88b0364cbebc545a96d087be88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZmM0MGUwYzJlYWYxNTA0MzRmZDEwOTdlNWZkZWUxMmU0M2E0YjA4N2ExY2M4OGJkOWY5NWQ4NWY0OTVhNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Zjc0ZDhkOGMyNjM5NjhhOTIxYjJkOWRmMTU2NTI1ZjNjMTQ1ZmEyNjVhMWFlYWMzZDk2ZjFmM2MxNDQ3OTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZDYyZTJiNTE1ODI5ZjgxNjBjMDkzYjEzYjE0ZTgwMjgwYTYzYjViYzg4NDBjMzhjZWJhNDEwODU0ZDQzNDQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c4672ca839304efd9da881b9a7247cda",
+      "statement": "openwiki link [directory] opens the interactive wiki-workspace manager (runLinkCommand), requires an interactive terminal, resolves a repository finder root from the directory (default .), renders the Ink WikiWorkspaceManager, and on submit saves the workspace collection; more than one argument or a leading-dash argument is a parse error.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L245-L255",
+          "version": "repo-lines-v1:sha256:dff2784671a341e463bb9dd64e1632164be409c3a8b914e24391814bb35c97a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMWRlZjI3MWFhYWRhODFmYzlkZDIzNTFiMDk4MjgwMWU3NjBmNThkNDFkMWIzMzZhOGVlNDI5MzY4ZTRjYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZDFlMmE2NjU2YWRhYzNhZmVhOTNjNmVkZWRlNjI3YmE0YjQ0MmNlM2FjZDg3NTI4OTY1NjlmNGIyMzRlOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5ZDBkYzQxYmM1YWFkZWRmYmM0ZWQzZDBkMzlhZDY2NmJjMGM0YWZiZTM1ZjgwMmVmNDlkYmY1ZjVkZmRhMDAifQ"
+        },
+        {
+          "resource": "repo://src/cli/link.tsx#L100-L124",
+          "version": "repo-lines-v1:sha256:11189873cfb27914016a8b6b8d5fdaf50aff339657abd3c2cecc82e4ad29186d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZDA2ZGQ3YjE2NDI5MTY2ODE2MjJlMmJjNjE4Zjk0ODcxZGJiMDk3YTFkMzFkOWJjZTdiM2UzMjYwYWM1ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjN2E5NWM0NTVkODQ2YzE4ZmYwNWExMjI3Y2RhOGVlMjlhODRkYTkyMzhlOTU2ODJkNzA5MGQ1OTVmZTIzNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0YjFmZjkzMTEwMTYxZWRmMDhiMWIxOGVkOGExZTRhOTgwMjIyODlhMWNjYTFhMzczYWZiZjM4MzA4ZDkzZWIifQ"
+        },
+        {
+          "resource": "repo://src/cli/link.tsx#L26-L60",
+          "version": "repo-lines-v1:sha256:8e76c85769753fa9df10bd14fa70acb7fc8696f27640af4b6307db8e7c25dfbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MmI3YjkyNWM0MjYxNTI0NzZjYmI0MDdlZmFlMjU5MmFlYTg3ZmZlYzFlOTU5Y2FkZmRkMmQ2YjcyZjUxNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3OTc2ZDZmNmQyZGI4OTIyYWNjOTQ1MmJlZDAwOGMzZGQxNDA5NDY4ZDExZmQxYzAwNjgxNTI5OTZiNDhlY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NjZkMWZmMDRkM2JlNThiNzZkOWQ3OGI3ZjY1ZjExM2M2OWRmZmRjZTU3ZTNiZWMzYjU3OTM1Njg3NzRlMDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4979f223309a4f51a06737d843967c65",
+      "statement": "openwiki workspace supports use <workspace> (activate by ID/name), current (describe active workspace), and clear (clear active workspace), resolved against the repository root by runWorkspaceCommand; any other form is a parse error.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L257-L274",
+          "version": "repo-lines-v1:sha256:0594eb0137c7af53a00ed61f3cf7c783d7e2b448e6a8556a4902a677a574ef50:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyODJhZGU3NjJlNDUyYzFmMjY0OTYzMjEwYjlmMGVmYjdhM2ZlNGNlNmM3ZDNhYWViMmI1Nzg1OGZmN2YzMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjN2I0MTllOGQwNjQ4NzQ5NzBlZjQzYmFmNzAxZTRlMzFmZDJlN2Y4YTY2OTYzNjg3ZWE3NWYxMDEwNTgwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNGNmOGNjMjJlZmU3Yzc1NGM2OWJiODUyYjAxYmZhMjIyZjdmYTVhYzFmNDI3MzgwNDhiOTk3NzFiM2I0NTMifQ"
+        },
+        {
+          "resource": "repo://src/cli/link.tsx#L132-L152",
+          "version": "repo-lines-v1:sha256:93b6428adb7f8a51dfa54148896af6237fb8284c024aac5637b866d3a6af123e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NzI4MTBmZmU0YTM0OTMyNjhmMTM0NzlhYzRkYjhjZDU5NzFhMWIzYjcwNzRmOGUwZGEwNWE1NTNjODgyMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjYTRkZTU0YzYxZGMxMmY4ZjU5ODAzMGNlMTE3NWFlNTVjYzI3ZGQ1MTVhNTJmNDNkMmMxNzBlODBiY2I2ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/cli/link.tsx#L67-L90",
+          "version": "repo-lines-v1:sha256:2732d64a36484d744e2c4385932caa38d5303344e9724162fdb674b7d4924dbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliM2ZkMTg2N2Y0NGI4NzYyYWQ0N2I0NDEyOTkzMmFkMzA4ZWRiMDkxOGU2NGU1ODU2MTM2MzNlMjg3ODY1YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5YmMxODRhN2NmODc0OGYyMzIwNmU1Mzk2MjNiNmRkODY2ZDE4Mzk3ZWMwMTAzOTNiYTVjZTU1MWMwZjQ4YzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1ZWZiOGYwMjhiMDhhNTc3MjEwNGFmMzEzYWVhMWMzM2I5NjViYzQ1OWMzYzM3OTQwMzVjNjk1MmEyZTI4ZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc8050ab58d64c5dbc1e508faeae4083",
+      "statement": "Neither link nor workspace loads OpenWiki model credentials (commandLoadsEnvironment returns false for both) nor emits telemetry.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/commands.ts#L1157-L1163",
+          "version": "repo-lines-v1:sha256:8bc4fd202d34df826bc8a5dd33464f2e14368c412352c1d6d9617def6c4173e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDczYjc5MWFjZGI4ZDAxY2E3YzQ1ODhjN2JjOTkxMGNiOTc5NDBhMTEzMGNlNzNhMDFhZDc2YmVlNDExZjg3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Y3Njk3ZGFkNDcwZWY1YTI3NmUzMjA3YjVjYjY4NGQyNGE2ZTYwZGQxOWY5M2E2MTFhNTc0Zjc5YTNlMjRmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWFlZWIwZjAyZGRkMjRkMDg1YWI3Mjg2MzZjYjcxZDA4YjU0ZjhhMTIwYTNkYjVlZWZmM2JmMzBlNjU5MDNiNyJ9"
+        },
+        {
+          "resource": "repo://src/cli/commands.ts#L1173-L1181",
+          "version": "repo-lines-v1:sha256:a0a5077be4d04d8c2ac93022531fb1e90a719007b59d86865139a2cffc14854d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzZjJlMTViNGE1MjZkOTI2ODkzNTNiODBlNzFlNjU5OWNlN2QwYTRlYzE0YzBlOTM1OTJmMDZjZmUwMTExZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWE4NTYzZTkyNTA5MWRiNGYyM2ZiYjg2ZTZiM2NhODZmZTMwZDAwMjk2Zjk5YjI3NzE1YzAwODZhMmFkZDk0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWMxZGQwZmY4OWUxYTlhN2UzZTEyN2VlMDkzZWU3YTNiYmRjM2Y2MDJiZTlkMGU4MzU3ZjVhNjk4ZWRlM2EwNSJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

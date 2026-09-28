@@ -1,11 +1,17 @@
 ---
 type: integration guide
-title: Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
-description: How OpenWiki runs inside a host coding agent through the five-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
+title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
+description: How OpenWiki runs inside a host coding agent through the six-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-d55cae2851a4bac00040906e
+    resource: repo://docs/pi-integration-notes.md
+  - id: openwiki-source-77c4fabfc00b27b92aa6311c
+    resource: repo://integrations/openwiki/agents/bob.yaml
+  - id: openwiki-source-da19cf14a1041f6d06ffc9a5
+    resource: repo://integrations/openwiki/agents/openai.yaml
   - id: openwiki-source-438fff4d79b8ab99f5c88c73
     resource: repo://integrations/openwiki/SKILL.md
   - id: openwiki-source-638173446de4138fa3a622a8
@@ -22,6 +28,8 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-ce169075085dcc1a24c7601d
     resource: repo://src/integrations/core/repository-root.ts
+  - id: openwiki-source-3c86ca0bb7fbb79f2be66a2b
+    resource: repo://src/integrations/core/retrieval-tools.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-2d3b31afd763da198a5938b7
@@ -46,24 +54,25 @@ sources:
     resource: repo://src/integrations/mcp/stdio.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T10:21:48.925Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T10:21:48.925Z
+  - by: openwiki/0.5.2
+    at: 2026-09-23T08:09:37.122Z
 ---
 
-# Coding-Agent Integrations (Codex/Claude/OpenCode/Cursor)
+# Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
 
-OpenWiki can run _inside_ a host coding agent (Codex, Claude Code, OpenCode, or
-Cursor) instead of as a standalone process. The host agent supplies the model, native
-repository tools, and Markdown authoring; OpenWiki supplies a deterministic,
-resumable **page-job lifecycle** over the Model Context Protocol (MCP). The two
-sides communicate through exactly six MCP tools, and installation wires a local
-stdio MCP server plus a shared skill bundle into each host's own configuration.
+OpenWiki can run _inside_ a host coding agent (IBM Bob, Codex, Claude Code,
+OpenCode, Cursor, Kiro, Oh My Pi, or Antigravity CLI) instead of as a standalone
+process. The host agent supplies the model, native repository tools, and Markdown
+authoring; OpenWiki supplies a deterministic, resumable **page-job lifecycle** over
+the Model Context Protocol (MCP). The two sides communicate through four read-only retrieval tools plus six
+generation lifecycle tools (ten in all), and installation wires a local stdio
+MCP server plus a shared skill bundle into each host's own configuration.
 
 This page documents the protocol operations, the divided ownership of research
-versus finalization, repository-root resolution, install/uninstall mechanics,
-and the scope model. For the internal generation engine these tools drive, see
+versus finalization, repository-root resolution, install/uninstall mechanics, and
+the scope model. For the internal generation engine these tools drive, see
 [Repository generation workflow](/openwiki/workflows/repository-generation.md)
 and [Architecture overview](/openwiki/architecture/overview.md). For the
 `openwiki mcp` and `openwiki integrations` commands, see the
@@ -85,17 +94,41 @@ instructions advertised at initialization
 (`src/integrations/mcp/server.ts`), which embed the shared
 `CLAIMS_RECONCILIATION_GUIDANCE` from `src/claims/guidance.ts` so the sparse
 reconciliation rules reach the host model through the transport as well as the
-skill bundle.
+skill bundle. The server instructions also carry workspace-aware retrieval
+guidance — directing the host not to enumerate or preload wikis at task start,
+to use `openwiki_search` only when a concrete architecture or dependency
+uncertainty materially affects the task, and to resolve workspace ambiguity via
+`openwiki_list_workspaces` and `openwiki_list_wikis` — so the four read-only
+tools and the six lifecycle tools share one coherent guidance surface.
 
-## The six MCP operations
+## The MCP tool set
 
-`HostSessionManager.tools()` exposes exactly six transport-neutral lifecycle
-tools, in order: `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`,
-`openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`.
-Each tool parses its input against a strict Zod schema before delegating to the
-repository-generation core. The `ProtocolToolName` type and `tools()` return
-value are the single source of truth for this set; both report "the six
-OpenWiki 0.5 lifecycle tools."
+`HostSessionManager.tools()` exposes an ordered, transport-neutral tool set:
+four read-only retrieval tools followed by six generation lifecycle tools. The
+`ProtocolToolName` type enumerates all ten names and is the single source of
+truth for the set; `tools()` returns `...createRetrievalTools()` (the four
+read-only tools) followed by the six lifecycle tools, each parsing its input
+against a strict Zod schema before delegating to the repository-generation
+core.
+
+### Read-only retrieval tools
+
+The four retrieval tools — `openwiki_list_workspaces`, `openwiki_list_wikis`,
+`openwiki_search`, and `openwiki_read` — never start a generation run or invoke
+a model. `openwiki_search` searches an existing repository OpenWiki (resolving
+workspace membership automatically), `openwiki_read` returns complete Markdown
+sections selected from search refs, and the two `list_*` tools discover the
+named workspaces a wiki belongs to and the wikis within one. They share the same
+`resolveRepositoryRoot` safety as the lifecycle tools and map retrieval failures
+to bounded `HostIntegrationError` codes. The host is directed to use retrieval
+only when a concrete architecture or dependency uncertainty materially affects
+the task, then stop once grounded.
+
+### The six generation lifecycle tools
+
+In order, the six lifecycle tools are: `openwiki_begin`,
+`openwiki_submit_plan`, `openwiki_next_page`, `openwiki_inspect_page_claims`,
+`openwiki_submit_page`, and `openwiki_finish`.
 
 - **`openwiki_begin`** — Starts or resumes a run for an absolute Git root in
   mode `init` or `update`, with optional `language` and `force`. It validates the
@@ -211,10 +244,10 @@ this path today.
 
 `runOpenWikiMcp` starts the local stdio server: it creates a
 `HostSessionManager`, builds the MCP server with `createOpenWikiMcpServer`, and
-connects a `StdioServerTransport`. The adapter registers each lifecycle tool's
-schema and description with the MCP SDK and executes it through `executeTool`.
-The server is invoked by the CLI's `openwiki mcp --host <id>` command, which
-looks up the host's registry entry to supply the correct provenance actor.
+connects a `StdioServerTransport`. The adapter registers each tool's schema and
+description with the MCP SDK and executes it through `executeTool`. The server
+is invoked by the CLI's `openwiki mcp --host <id>` command, which looks up the
+host's registry entry to supply the correct provenance actor.
 
 ## Installation: host config and the skill bundle
 
@@ -229,6 +262,11 @@ bundle) and a **managed MCP server entry** in the host's config file. The
 registry of supported hosts. Each entry declares its display name, provenance
 actor, per-scope skill directory and MCP config, and a documentation URL:
 
+- **IBM Bob** — `.bob/mcp.json` (`json`) at both user and project scope, skill
+  under `.agents/skills/openwiki` at both scopes; `producerActor` `bob`. IBM Bob
+  additionally ships an agent manifest at
+  `integrations/openwiki/agents/bob.yaml` (`display_name`, `short_description`,
+  `default_prompt`) consumed by the Bob host to surface the OpenWiki agent.
 - **Codex** — `.codex/config.toml` (`codex-toml`), skill under
   `.agents/skills/openwiki`, at both user and project scope; `producerActor`
   `codex`.
@@ -242,6 +280,21 @@ actor, per-scope skill directory and MCP config, and a documentation URL:
 - **Cursor** — `.cursor/mcp.json` (`json`), skill under
   `.cursor/skills/openwiki`, at both user and project scope;
   `producerActor` `cursor`.
+- **Kiro** — `.kiro/settings/mcp.json` (`json`) at both user and project scope,
+  skill under `.kiro/skills/openwiki` at both scopes; `producerActor` `kiro`.
+- **Oh My Pi** — `.omp/agent/mcp.json` (`json`) at user scope (the default
+  profile), skill under `.omp/agent/skills/openwiki`; project scope uses
+  `.omp/mcp.json` with skill under `.omp/skills/openwiki`; `producerActor` `omp`.
+  User-scope installation targets Oh My Pi's default profile only — named
+  profiles and `PI_CODING_AGENT_DIR` overrides use another agent directory, so
+  install with `--project` when that is the intended repository-local
+  configuration. The `omp` target is distinct from upstream Pi
+  (`earendil-works/pi`); this integration adds no upstream Pi target, generated
+  extension, or other Pi-specific artifact.
+- **Antigravity CLI** — user config `.gemini/config/mcp_config.json` (`json`)
+  with skill under `.gemini/antigravity-cli/skills/openwiki`; project scope uses
+  `.agents/mcp_config.json` with skill under `.agents/skills/openwiki`;
+  `producerActor` `antigravity`.
 
 `defaultMcpServerCommand(target)` produces the published invocation
 `openwiki mcp --host <target>`, which is what installed configs launch.
@@ -267,9 +320,12 @@ Each adapter reports whether its entry is `not-installed`, `installed`, or
 The canonical bundle is resolved relative to the installer module
 (`resolveCanonicalSkillBundle`) and inventoried into a deterministic SHA-256
 hash map keyed by relative path (`inventorySkill`), which requires a `SKILL.md`
-at the root. On install, a `.openwiki-install.json` **receipt** records the
-owning package, OpenWiki version, host target, installed MCP command, and per-
-file hashes. `inspectInstallation` uses the receipt to classify a destination as
+at the root. The bundle root is restricted to `SKILL.md`, an `agents/` tree
+(host agent manifests such as `agents/bob.yaml` and `agents/openai.yaml`), and a
+`references/` tree; any other path is rejected. On install, a
+`.openwiki-install.json` **receipt** records the owning package, OpenWiki
+version, host target, installed MCP command, and per-file hashes.
+`inspectInstallation` uses the receipt to classify a destination as
 `not-installed`, `installed` (intact), or `modified` (present but altered or
 unmanaged).
 
@@ -295,26 +351,34 @@ requested scope does not exist for the host.
 ## User-level vs project scope
 
 Every host supports **project** scope; user scope is optional (`user` may be
-`null` in the registry, though all four current hosts support both). For
+`null` in the registry, though all eight current hosts support both). For
 **project** scope the installer resolves the root through the same
 `resolveRepositoryRoot` used by runs, so a project install always lands at the
 Git worktree root; for **user** scope it anchors at the home directory. When a
 host does not support the requested scope, `resolveInstallContext` raises an
 `invalid_input` error directing the user to re-run with `--project`.
 
+User-scope destinations match each host's own conventions: IBM Bob writes the
+skill under `~/.agents` and the MCP entry under `~/.bob`, Codex writes under
+`~/.agents` and `~/.codex`, Claude Code under `~/.claude`, OpenCode under
+`~/.config/opencode` (OpenCode's global configuration directory on every
+supported platform), Cursor under `~/.cursor`, Kiro under `~/.kiro`, Oh My Pi
+under `~/.omp/agent` (default profile), and Antigravity CLI under `~/.gemini`.
+
 ## Contributing a new host
 
-Adding a host is a registry-and-config change, not a new skill or new tools: add
-the id to `HostTargetId`, add the entry to `HOST_TARGETS`, reuse an existing
-config adapter when possible (add a focused one only for a genuinely different
-format), and add focused registry/install/status/uninstall/config-conflict tests.
+Adding a host is a registry-and-config change, not a new skill or new tools:
+hosts share one canonical skill, four read-only retrieval tools, and the six
+lifecycle tools — add the id to `HostTargetId`, add the entry to `HOST_TARGETS`,
+reuse an existing config adapter when possible (add a focused one only for a
+genuinely different format), and add focused registry/install/status/uninstall/config-conflict tests.
 The full procedure, including the local dogfooding command
-`pnpm integrations:dev <host>`, lives in `CONTRIBUTING.md` §"Adding a
-coding-agent integration". `pnpm integrations:dev` builds OpenWiki, refreshes
-the host skill, and records absolute paths to the current Node executable and
-`dist/cli/cli.js`; the four current hosts all install at user scope, and later
-source changes only require `pnpm build` unless the bundled skill itself
-changes.
+`pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity>`, lives in
+`CONTRIBUTING.md` §"Adding a coding-agent integration". `pnpm integrations:dev`
+builds OpenWiki, refreshes the host skill, and records absolute paths to the
+current Node executable and `dist/cli/cli.js`; all eight current hosts install at
+user scope, and later source changes only require `pnpm build` unless the bundled
+skill itself changes.
 
 ## Focused tests
 

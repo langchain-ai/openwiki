@@ -5,7 +5,10 @@ import {
   BEDROCK_DEFAULT_CACHE_TTL,
   BEDROCK_DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL_ID,
+  DEFAULT_PAGE_CONCURRENCY,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
+  MAX_PAGE_CONCURRENCY,
+  PARALLEL_PROVIDER_RETRY_ATTEMPTS,
   DEFAULT_PROVIDER,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
@@ -45,6 +48,7 @@ import {
   resolveProviderBaseUrl,
   resolveProviderLocation,
   resolveProviderRegion,
+  resolvePageConcurrency,
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeout,
   resolveStreamIdleTimeoutForProvider,
@@ -276,7 +280,63 @@ describe("resolveProviderBaseUrl", () => {
   });
 });
 
+describe("resolvePageConcurrency", () => {
+  test("defaults to one sequential worker", () => {
+    expect(resolvePageConcurrency({})).toBe(DEFAULT_PAGE_CONCURRENCY);
+    expect(DEFAULT_PAGE_CONCURRENCY).toBe(1);
+  });
+
+  test("accepts integers up to the cap and trims whitespace", () => {
+    expect(resolvePageConcurrency({ OPENWIKI_PAGE_CONCURRENCY: "1" })).toBe(1);
+    expect(resolvePageConcurrency({ OPENWIKI_PAGE_CONCURRENCY: " 4 " })).toBe(
+      4,
+    );
+    expect(
+      resolvePageConcurrency({
+        OPENWIKI_PAGE_CONCURRENCY: String(MAX_PAGE_CONCURRENCY),
+      }),
+    ).toBe(MAX_PAGE_CONCURRENCY);
+  });
+
+  test("rejects values outside 1 to the cap", () => {
+    for (const value of [
+      "",
+      "   ",
+      "0",
+      "-1",
+      "1.5",
+      "abc",
+      "1e1",
+      String(MAX_PAGE_CONCURRENCY + 1),
+    ]) {
+      expect(() =>
+        resolvePageConcurrency({ OPENWIKI_PAGE_CONCURRENCY: value }),
+      ).toThrow(
+        `Invalid OPENWIKI_PAGE_CONCURRENCY. Expected an integer from 1 to ${MAX_PAGE_CONCURRENCY}.`,
+      );
+    }
+  });
+});
+
 describe("resolveProviderRetryAttempts", () => {
+  test("raises the default for concurrent page workers unless overridden", () => {
+    expect(resolveProviderRetryAttempts({}, { pageConcurrency: 1 })).toBe(
+      DEFAULT_PROVIDER_RETRY_ATTEMPTS,
+    );
+    expect(resolveProviderRetryAttempts({}, { pageConcurrency: 2 })).toBe(
+      PARALLEL_PROVIDER_RETRY_ATTEMPTS,
+    );
+    expect(PARALLEL_PROVIDER_RETRY_ATTEMPTS).toBeGreaterThan(
+      DEFAULT_PROVIDER_RETRY_ATTEMPTS,
+    );
+    expect(
+      resolveProviderRetryAttempts(
+        { OPENWIKI_PROVIDER_RETRY_ATTEMPTS: "2" },
+        { pageConcurrency: 4 },
+      ),
+    ).toBe(2);
+  });
+
   test("uses the OpenWiki default when no override is set", () => {
     expect(resolveProviderRetryAttempts({})).toBe(
       DEFAULT_PROVIDER_RETRY_ATTEMPTS,
@@ -649,6 +709,12 @@ describe("providerUsesStreaming", () => {
     delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
 
     expect(providerUsesStreaming("copilot")).toBe(true);
+  });
+
+  test("always forces streaming for bob", () => {
+    delete process.env.OPENWIKI_OPENAI_COMPATIBLE_STREAMING;
+
+    expect(providerUsesStreaming("bob")).toBe(true);
   });
 
   test("never applies to the other providers sharing the ChatOpenAI branch", () => {

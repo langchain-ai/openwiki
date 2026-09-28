@@ -124,6 +124,36 @@ describe("appendRunLogEvent repository progress", () => {
     );
   });
 
+  test("retains concurrent worker progress fields", () => {
+    const ref = idRef();
+    const log = appendRunLogEvent(
+      [],
+      {
+        type: "repository_progress",
+        stage: "generating",
+        page: "/openwiki/b.md",
+        pageIndex: 2,
+        pageCount: 5,
+        completedCount: 1,
+        inFlightPages: ["/openwiki/a.md", "/openwiki/b.md"],
+      },
+      ref,
+    );
+
+    expect(log).toEqual([
+      {
+        id: 0,
+        type: "repository_progress",
+        stage: "generating",
+        page: "/openwiki/b.md",
+        pageIndex: 2,
+        pageCount: 5,
+        completedCount: 1,
+        inFlightPages: ["/openwiki/a.md", "/openwiki/b.md"],
+      },
+    ]);
+  });
+
   test("retains planning, replanning, finalizing, and no-op states", () => {
     const ref = idRef();
     let log: RunLogItem[] = [];

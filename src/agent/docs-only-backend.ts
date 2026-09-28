@@ -148,7 +148,7 @@ function referencesClaimsState(command: string): boolean {
  * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
  * doc-generation agent.
  *
- * It wraps the deepagents `LocalShellBackend` and layers on three independent
+ * It wraps the deepagents `LocalShellBackend` and layers on four independent
  * constraints:
  *
  * 1. `.openwikiignore` exclusion: reads/writes/edits of an ignored path are hard
@@ -159,8 +159,9 @@ function referencesClaimsState(command: string): boolean {
  *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
  * 3. Claims ownership: repository `.claims` sidecars are hidden from generic
  *    tools and may only be accessed by OpenWiki's direct persistence layer.
+ * 4. Personal mode: shell execution is always denied, including delegated calls.
  *
- * All three are security boundaries against an agent that may be prompt-injected via
+ * These boundaries constrain an agent that may be prompt-injected via
  * untrusted repository content, so path checks canonicalize before matching.
  */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
@@ -479,12 +480,25 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
-   * Run a shell command. While any `.openwikiignore` rule is active, only the
+   * Refuse every shell command in personal mode. In repository mode, while any
+   * `.openwikiignore` rule is active, only the
    * {@link allowedIgnoredShellCommands} allowlist may run; anything else is
    * refused (exit code 1) with guidance to use the gated filesystem tools,
    * since arbitrary shell cannot be proven not to read an ignored path.
    */
   override async execute(command: string): Promise<ExecuteResponse> {
+    // Personal agents consume untrusted connector content, including during
+    // unattended ingestion. Enforce this at the backend as well as the tool
+    // surface so delegated or stale tool calls cannot reach the host shell.
+    if (this.outputMode === "local-wiki") {
+      return {
+        exitCode: 1,
+        output:
+          "Shell execution is disabled in personal mode. Use wiki filesystem tools and openwiki_read_raw_item for connector evidence.",
+        truncated: false,
+      };
+    }
+
     if (this.outputMode === "repository" && referencesClaimsState(command)) {
       return {
         exitCode: 1,

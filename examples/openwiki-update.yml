@@ -54,6 +54,7 @@ jobs:
         run: rm -f -- openwiki/.run.json
 
       - name: Create OpenWiki update pull request
+        id: create-pr
         if: ${{ !cancelled() }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
@@ -73,6 +74,10 @@ jobs:
             When the result is `failure`, this PR intentionally preserves only the
             pages completed before the failure. Merge it to make that progress the
             baseline for the next scheduled run.
+
+      - name: Annotate OpenWiki update pull request
+        if: ${{ !cancelled() && steps.create-pr.outputs.pull-request-url != '' }}
+        run: echo "::notice title=OpenWiki update pull request::${{ steps.create-pr.outputs.pull-request-url }}"
 
       - name: Propagate OpenWiki failure
         if: ${{ steps.openwiki.outcome == 'failure' }}
