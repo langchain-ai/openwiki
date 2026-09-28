@@ -572,7 +572,7 @@ OPENWIKI_MAX_OUTPUT_TOKENS=512
 
 You can also select `tsubasa-pro`. Both aliases have a 32,768-token context window. In a controlled first-turn check, the stock personal-chat prompt used an estimated 32,140 input tokens: a 512-token output allowance fit, while 1,024 exceeded the context budget. The setting above bounds short responses; the small remaining context budget does not qualify longer conversations or full wiki generation.
 
-Live inference was not verified: the tested public `/v1/models` route returned HTTP 404. Controlled checks establish client serialization and the bounded first turn only.
+The setup picker does not apply the 512-token cap automatically. Set it explicitly before using this provider; the default output budget does not fit the stock personal-chat prompt.
 
 </details>
 
