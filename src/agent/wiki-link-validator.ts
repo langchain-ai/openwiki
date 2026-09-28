@@ -111,6 +111,7 @@ export async function validateWikiInternalLinks(
         href,
         line,
         headingAnchors,
+        outputMode,
       );
       if (issue) {
         issues.push(issue);
@@ -203,6 +204,16 @@ export function stampBrokenLinks(
  * wiki subtree: a wiki page may legitimately link out to a repo file (a design
  * doc, source file, etc.), which renders correctly on GitHub. A link is broken
  * only when its target genuinely does not exist.
+ *
+ * In `repository` mode, a root-absolute path (e.g. `/openwiki/foo.md`) is
+ * flagged outright, before existence is even checked: it happens to resolve
+ * against this validator's repo-rooted backend, but no real consumer reads it
+ * that way. A coding agent reading the page relative to its own directory,
+ * GitHub's Markdown renderer (which treats a leading `/` as relative to the
+ * `github.com` domain, not the repository), and local Markdown viewers all
+ * fail to follow it. In `local-wiki` mode the backend root already *is* the
+ * wiki root, so a root-absolute path there can be the consumer's own
+ * intended convention and is left unflagged.
  */
 async function validateLink(
   backend: BackendProtocolV2,
@@ -210,6 +221,7 @@ async function validateLink(
   rawHref: string,
   line: number,
   sourceAnchors: Set<string>,
+  outputMode: OpenWikiOutputMode,
 ): Promise<WikiLinkIssue | null> {
   const href = rawHref.trim();
   if (!href || isExternalHref(href)) {
@@ -230,6 +242,19 @@ async function validateLink(
       };
     }
     return null;
+  }
+
+  if (outputMode === "repository" && linkPath.startsWith("/")) {
+    return {
+      href,
+      line,
+      message:
+        `link "${linkPath}" is root-absolute, which no real consumer resolves ` +
+        "against the repository root (not a coding agent reading the page, " +
+        "not GitHub's Markdown renderer, not a local viewer); use a path " +
+        "relative to this file instead",
+      sourcePath,
+    };
   }
 
   const resolvedPath = resolveRepoLinkPath(sourcePath, linkPath);
@@ -426,10 +451,11 @@ function parseLinkDestination(rawHref: string): {
  * Resolves a link path to a normalized repo-absolute path, or undefined when it
  * cannot be contained within the repo root.
  *
- * A leading-slash link is absolute from the virtual filesystem root (the repo
- * root in `repository` mode, the wiki dir in `local-wiki` mode) — the same
- * convention the generation prompt teaches and GitHub renders. A relative link
- * resolves against its source file's directory.
+ * A leading-slash link is absolute from the virtual filesystem root. In
+ * `repository` mode, `validateLink` flags root-absolute links before this
+ * function is ever called, so any absolute `linkPath` reaching here is from
+ * `local-wiki` mode, where the backend root already is the wiki directory. A
+ * relative link resolves against its source file's directory in both modes.
  *
  * The result is not constrained to the wiki subtree: wiki pages may link out to
  * other repo files, so containment is enforced at the repo root instead.

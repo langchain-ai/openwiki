@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8e58664d8c44672f5b452802eee57b6edbc24c59a48db7e62b8a003c281447bc",
+  "pageVersion": "sha256:9d9d4d88dce3737d9fc02affcc773e11eca4210424af7e2108bb3187d2b81f6b",
   "claims": [
     {
       "id": "claim_35bcc7d94294470cbce1e5d06f9fb26f",
@@ -540,29 +540,47 @@
     },
     {
       "id": "claim_a92c8d4dbffc46eea85b984004d4f8a7",
-      "statement": "The model-facing Claims substance and reconciliation standards live as shared constants in src/claims/guidance.ts (CLAIMS_SUBSTANCE_GUIDANCE and CLAIMS_RECONCILIATION_GUIDANCE), including the repo:// evidence-resource form requirement, and are reused by the page-worker prompt for init/update/migration and by the MCP server instructions so the same rules reach every host integration and tool description.",
+      "statement": "The model-facing Claims substance and reconciliation standards live as shared constants in src/claims/guidance.ts: CLAIMS_SUBSTANCE_GUIDANCE (the materiality test, atomic-means-one-idea principle, and repo:// evidence-resource form requirement) and CLAIMS_RECONCILIATION_GUIDANCE (the sparse-decision rules). The page-worker prompt (createRepositoryPagePrompt) inlines both constants into the system prompt for every init/update job, while the MCP server INSTRUCTIONS constant inlines only CLAIMS_RECONCILIATION_GUIDANCE alongside workspace-discovery guidance and the deterministic page-job lifecycle, so the reconciliation rules reach every host integration and tool description.",
       "evidence": [
         {
-          "resource": "repo://src/agent/repository-prompts.ts#L162-L164",
-          "version": "repo-lines-v1:sha256:2427f4a50a46495179bab535df7fff81cabf36019ce31db8bb3d7326006035c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlNGRiOWJlMmFiYzg0NDM4M2NiNTdiYjc3NWVjZDE1NGZjNDhjODc1YTBmNWM2Nzc3YWFmZGEyYWNmYzllMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1Y2NjMzg2OTYzYWNjNzAzNDcxYjZhMmE1NGNmOTA0M2I4YWU3NDM5NGEwODM1NzYwN2MzNDE3ZGI5YWJiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTgyNzNlYWVhOWVkNDljZWNhZWViMGFkNTcwYTY1ODE1ZjA5ZDc3NzJlYTc0MmFjZTMyYWJhYWQ2OGY0MDJjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA3OTFiMzI4YmJhNGY4ODhiMWEwY2MyMmNjZDFhOTRkMmMzMjM1MjUzMGEyOGNjM2VmODQ1OWViYTk0MWEwNiJ9"
+          "resource": "repo://src/agent/repository-prompts.ts#L1-L5",
+          "version": "repo-lines-v1:sha256:c7aadd13cb2b568a4a3b65f93567d0444c74142ded3dd82f8d4491c836643d0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQ2NmEzYmI5N2ZlNGFlMmQ0ZWQ0NmRmZDAwYTExODZhMTkzNTU4M2VhMGM5ZTg1Y2IwOWU4ZTMwZmIxYmNlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM1NzRlZTQ1MzYxMTU0OGY0ZjRhOTllYTIyOThhYzcwNmI0ZDY0MThhNDRhNGZiYTU3NDc3YjA1ZGJlYTAzYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg0M2Q4NzExZjYxZmZlOGJhMzUyNGFmMDFjMzMzOWRiZmVjZDE4Y2NmYzI2YjE3YzhmNGE2YjhhOTVjNzA5OCJ9"
+        },
+        {
+          "resource": "repo://src/agent/repository-prompts.ts#L162-L165",
+          "version": "repo-lines-v1:sha256:672da4a9d5b3a018e31c3d33a8b964ffac49701ca42b514d0e8302e3fee2cc23:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1Y2NjMzg2OTYzYWNjNzAzNDcxYjZhMmE1NGNmOTA0M2I4YWU3NDM5NGEwODM1NzYwN2MzNDE3ZGI5YWJiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTlkOTQ3ZTU0NDUzNzdhOGM1MjVkNjZjOTQ5NGQxOTM3YWRjYjM4ZGMyOGY4YjFkMjI1Yzc0NWU0NmNiNWQ0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA3OTFiMzI4YmJhNGY4ODhiMWEwY2MyMmNjZDFhOTRkMmMzMjM1MjUzMGEyOGNjM2VmODQ1OWViYTk0MWEwNiJ9"
+        },
+        {
+          "resource": "repo://src/claims/guidance.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:d0696cd3f8a33dbd89f0d03eb13d1b5912d91cd5abf17a150b790f2bc23fda06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODczYzg4M2I1MzE2ZDhmMDkyMzlmNzU3ZmVjM2Q0MjQyZjZjNTcwZGIxNjUzMDUxZWJmMWU1NGEzYWIzMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNDM3MmVhM2U2MDdhZWZjMzY3NzYwZGQ2MGQ2ZDU3M2Q5OTMyODljMDRjODI5ZGZjNjkzYjJlMjU2ODVkZDkifQ"
         },
         {
           "resource": "repo://src/claims/guidance.ts#L18-L24",
           "version": "repo-lines-v1:sha256:677a66ae8f486bcfa06a81254f02e3a9338d2ea190eaf20ca1e14174bb591b50:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFkYWJjNjFiMzI2NDY1MWYxZGY4M2E1MTU3ZGIwZWJjNzlmZmQ0Y2MwZjBkNDAwMjJjOGIyNGRhOTk3MmNkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU5MDJiZjg4NzY0N2NkMWRkNTAzYTRlM2FkNGRlODk2N2M2OWYyYTY0ZGY1NzNjNDkwODIzYjlhMWQxYjA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDYzMGViZjI4MzhhMTI1ZTYyYmE4MGVlYWEzZTQ1MTgzZmYzZDQ4ZDk2NzM2MTM1NjllZjMyN2QxZTE1NjE2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://src/claims/guidance.ts#L7-L13",
-          "version": "repo-lines-v1:sha256:11d89f1c9b6d4a31fa9747ad3f7976e4890b9ea82b92e15cade1337c02831ec0:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZhOThlZmQ0YTY2OGEzYTdkMDdjZGViMjI2OWQ2ZjI3NzQwODZjYTYzNDFlNWE0N2JlNzMyNTE3YzUwZDU4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk4NzNjODgzYjUzMTZkOGYwOTIzOWY3NTdmZWMzZDQyNDJmNmM1NzBkYjE2NTMwNTFlYmYxZTU0YTNhYjMzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ5NDc1ZTg4MWY4MTEwZTExNmI2ZDg2NTVkNjE2MDM2NTAxNWU5ZWJiZjFjZDg0YjZjNzAxMjAzNDVlYzc3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI0MzcyZWEzZTYwN2FlZmMzNjc3NjBkZDYwZDZkNTczZDk5MzI4OWMwNGM4MjlkZmM2OTNiMmUyNTY4NWRkOSJ9"
+          "resource": "repo://src/integrations/mcp/server.ts#L3-L47",
+          "version": "repo-lines-v1:sha256:4d287b22fb4548dadb72e82d67422037a8390912b264fe0842f9436b2998a4b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MTQwNzEwNjliNDM4NTUzZjgzM2JmNTllOWI3NzYxYjM3ZGE3ODI4MjcyYjRkNGRhOWIzNjU3NGYxYTU2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZDYwOTI1MzgyZDA0YzVkYTc4M2UzZDVhMTMxMTIyYWZkMGIxNmJiMjUxZmRjYTY2YjQ2MGU1MWNmOTdiYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxNDUzY2JkMzdmMWM4ZWEyZTcwZWQxYWJlNDhkYjkwZGI3YWE5NmRmNmFlNmI3ZGM4ZDVkY2U5Y2Y3YTQ1YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1MzQxZGYyNTUzMmYzNDFjZWYzNGNiMzQ4ZTA1MmQ2MDYwNzM2YTQzZGRiY2QxMmU3MDVjZjcxZmU5NzcwODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4daa81d1507c42e4ac7d6b3e091fceec",
+      "statement": "The Claims model applies only to repository code wikis and repository evidence: the evidence resolver is RepositoryEvidenceResolver, rooted at a Git top-level and addressing files with repo:// URIs, with no connector-derived evidence path, so facts sourced from host integrations or connectors are not represented as Claims.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/brains/code/runtime.ts#L76-L81",
+          "version": "repo-lines-v1:sha256:36a470b51222640ecf6979d8b0ca3658cc5b2e527b39d08ea796a3e2d8ac3a55:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY2OTMyNDliNmVkNWU1ZmI5OWM4OGM2NGIwMmRlZWY1YmVkOTdkZTgzODQ3YTJkZDk1Y2Y0ZmE5ZGRjYWRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWZmYzRmOTY2MmY4N2ExYzA3YjMxYmFlMjk2YTAwMjlkMDk0M2U4ZWM3NmM4YTE2YzkyYmE5MzM5OGFjZmY4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDBhYjM5OTcxNTU3ZTQ0MGYxNjQ2OTM2NGU2MzYyMmQ2ZTlhNGYyOWU0MGI3MDg1NDRjYWE4YmY0M2EyYWM0YyJ9"
         },
         {
-          "resource": "repo://src/integrations/mcp/server.ts#L3-L25",
-          "version": "repo-lines-v1:sha256:4bf4531ee31c610d805d902b0544dcd35c62d50d11536b426cd5edcfe6e0ccec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MTQwNzEwNjliNDM4NTUzZjgzM2JmNTllOWI3NzYxYjM3ZGE3ODI4MjcyYjRkNGRhOWIzNjU3NGYxYTU2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1NWNjYzM4Njk2M2FjYzcwMzQ3MWI2YTJhNTRjZjkwNDNiOGFlNzQzOTRhMDgzNTc2MDdjMzQxN2RiOWFiYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxNDUzY2JkMzdmMWM4ZWEyZTcwZWQxYWJlNDhkYjkwZGI3YWE5NmRmNmFlNmI3ZGM4ZDVkY2U5Y2Y3YTQ1YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MTc1NGQ2OTY3YjQ4MWQ4YmRhYWMzMWIzZmJmMDc3MzFjNTViYWVkNDE0YThiODZmYTFjYWFmODNmZTYzNTEifQ"
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L1-L69",
+          "version": "repo-lines-v1:sha256:d16f91e13525efd131ff4a81c6e0191d1a60413f4914923ddd9a0871c032e0a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNTNhZTcwOWRiNTcyOTA5ZWQ4YjRjNjdhNzViYjE2ODkwMWFkNzk2ZDllYjQ2MzVmYTEyZjU5ZWIxNzI1MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NzIzMmEyYjc4ZGVjZmQ5ZGRhYWUwMWUxZjk4NjgyNzE3MzQ2Y2E2ZjhhNmU0YWFhMDc5YTFlYmFiY2I2MmYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T08:09:45.637Z"
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

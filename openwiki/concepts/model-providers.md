@@ -28,10 +28,10 @@ sources:
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-25T08:09:49.344Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+  - by: openwiki/0.6.0
+    at: 2026-09-25T08:09:49.344Z
 ---
 
 # Model Providers and Credentials
@@ -128,6 +128,15 @@ final request boundary to satisfy Bob's two non-standard requirements:
 - It sets `User-Agent: ibm-bob-openwiki-provider` (the `BOB_USER_AGENT` constant),
   which Bob's Cloudflare WAF requires to admit the request.
 
+Like Copilot, `bob` is forced onto the streaming HTTP transport:
+`providerUsesStreaming` returns `true` for `bob` because long generations (such as
+planning a large repository) can outlast the Bob endpoint's response timeout when
+sent as a single non-streaming completion, whereas streaming returns output —
+including tool calls — as it is produced. `createModel` applies the same
+conditional `streaming: true` spread it uses for Copilot (described below) rather
+than assigning `streaming: false`, since LangChain turns an explicit `false` into
+`disableStreaming`.
+
 ### ChatGPT OAuth (`openai-chatgpt`)
 
 The `openai-chatgpt` provider authenticates model calls against OpenAI's Codex
@@ -217,11 +226,11 @@ surface; `createGeminiEnterpriseModel` selects the transport per model ID via
 - `openai-maas` — partner/open-weight models (Llama, Mistral, DeepSeek, Qwen, Grok, …) over Vertex's OpenAI-compatible endpoint, whose base URL is built by `vertexOpenAIBaseUrl`.
 
 `resolveVertexSurface` classifies the model ID by family, not provider: an
-`anthropic`/`claude` token routes to the Anthropic surface, and an
-`xai`/`grok` token (alongside `llama`, `meta`, `mistral`, `qwen`, `deepseek`,
-`ai21`, `jamba`, and `codellama`) routes to the openai-maas surface; anything
-else defaults to `gemini`. The patterns tolerate both bare IDs and
-publisher-pathed IDs.
+`anthropic`/`claude` token routes to the Anthropic surface, and a token from
+the openai-maas family (`ai21`, `codellama`, `codestral`, `deepseek`, `grok`,
+`jamba`, `llama`, `meta`, `mistral`, `qwen`, `xai`) routes to the openai-maas
+surface; anything else defaults to `gemini`. The patterns tolerate both bare
+IDs and publisher-pathed IDs.
 
 ```mermaid
 flowchart TD
@@ -466,6 +475,6 @@ for the ChatGPT provider — expands the collected `CodexTokens` through
 
 ## Related pages
 
-- [Agent runtime](/openwiki/architecture/agent-runtime.md) — how `createModel` builds and drives the selected provider.
-- [Configuration](/openwiki/operations/configuration.md) — operational configuration and the full env variable surface.
-- [Onboarding](/openwiki/workflows/onboarding.md) — the interactive setup that collects and persists provider credentials.
+- [Agent runtime](../architecture/agent-runtime.md) — how `createModel` builds and drives the selected provider.
+- [Configuration](../operations/configuration.md) — operational configuration and the full env variable surface.
+- [Onboarding](../workflows/onboarding.md) — the interactive setup that collects and persists provider credentials.

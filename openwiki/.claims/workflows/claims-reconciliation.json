@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7ef42f6d25d532507e92d40834e95dac3dfb3dd7790cc5fc6b6ffde07385451d",
+  "pageVersion": "sha256:a5fad641acd1b39e16e12610086c9e41707c24e8f9aae0d2a1a7487af82d9442",
   "claims": [
     {
       "id": "claim_b4fc5fda11a9482d91f562eef48a86f6",
@@ -122,7 +122,7 @@
     },
     {
       "id": "claim_53bb4c5b6ec741e990f19c0b6110e08d",
-      "statement": "When a page worker submits its finished page, the repository run repairs and validates front matter, then calls reconcilePageClaims with the worker's sparse Claim decisions, persists the page's dirty Claim state via finalize with the run's startedAt timestamp, and asserts the page's Claims are durable via assertPageClaimsDurable before advancing the queue; any failure in that block is wrapped in a RepositoryRunError with invalid_input.",
+      "statement": "When a page worker submits its finished page, the repository run repairs and validates front matter, then calls reconcilePageClaims with the worker's sparse Claim decisions, persists the page's dirty Claim state via finalize with the run's startedAt timestamp (excluding the pages still owned by other pending jobs so a concurrent worker's transient bytes are not projected into verification stamps or rehashed sidecars), and asserts the page's Claims are durable via assertPageClaimsDurable before advancing the queue; any failure in that block is wrapped in a RepositoryRunError with invalid_input.",
       "evidence": [
         {
           "resource": "repo://src/generation/page-jobs.ts#L402-L410",
@@ -133,8 +133,8 @@
           "version": "repo-lines-v1:sha256:a6db58deb3cf60215b0527f2af01ffcbb7f3afa439d673e916e7bb7a684db6ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OGE0NTM5MTI0ZWFlYjNiNjBhZWMwM2QwNWVmNzU4NDcwZDc1N2I4MDczNTYzYjI0NjAzOTVhZGI1MGIzYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4MjQ0MTFkZDFiYzVkZTMyZWM4ZjU0YzFjMTk5ODdhMmEwMTk2ZWJmMjgwM2VmNDg1MzJlMzMwM2FkOGY1ZWQifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1329-L1410",
-          "version": "repo-lines-v1:sha256:5024ba3b841606edd028ca04e9b4b3eccf6a2795166c5ebdd2babfdb2b29ed6e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZTMyNDg4NDhkZGQ0YzZjOGYxNjZmYTUzNDJjNTliYjI3MWRjMjBlYmMzZjZiMDgwMmU1NTAyMzI4NjJjYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+          "resource": "repo://src/generation/repository-run.ts#L1352-L1375",
+          "version": "repo-lines-v1:sha256:6d96fbdcf3dcd235d9aad950a347eb85f755a1b3bfd7bbef6186ec8d35f345b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZGY4N2E0NzMxNmM3MDhjNTUwMjA5OGU5YWY2YzQ0NTM0ZWI4MGJlYWRjZjYwNjMwMjhlZmNhODU5MzdhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlN2Q2YTcyY2JkOTk4M2E0YTk1OWZjYmM1NDA3Y2I4MGYxZjM3MzMxYjNhMDViYjRiMDc1ZjA5ZGVhNWQyYTkifQ"
         }
       ]
     },
@@ -375,6 +375,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T08:09:45.637Z"
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

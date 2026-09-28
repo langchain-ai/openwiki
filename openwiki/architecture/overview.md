@@ -44,10 +44,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Architecture Overview
@@ -73,23 +73,25 @@ selects the personal brain. See [Two modes](../concepts/two-modes.md).
 **Driver** decides which model and tools do the authoring. In _native_
 generation, OpenWiki resolves a configured provider, builds its own chat model,
 and runs its own DeepAgents workers. In _host-driven_ generation, a coding agent
-(IBM Bob, Codex, Claude Code, OpenCode, Cursor, or Kiro) uses its own
-authenticated model and native repository tools, while OpenWiki exposes the
-durable page-job lifecycle over MCP and owns validation and finalization.
-Host-driven runs currently support only repository code wikis, not personal
-brains.
+(Codex, Claude Code, OpenCode, Cursor, IBM Bob / Bob Shell, Kiro, Oh My Pi, or
+Antigravity) uses its own authenticated model and native repository tools, while
+OpenWiki exposes the durable page-job lifecycle over MCP and owns validation
+and finalization. Host-driven runs currently support only repository code wikis,
+not personal brains.
 
 ```mermaid
 flowchart TD
   CLI["cli.tsx entrypoint"] --> Parse["parseCommand"]
-  Parse --> Std["standard commands"]
-  Parse --> Host["integrations and mcp commands"]
-  Std --> RunAgent["runOpenWikiAgent"]
+  Parse --> Integ["integrations / mcp (direct dispatch)"]
+  Parse --> Std["runStandardCommand"]
+  Std --> Direct["link / workspace / auth / ngrok / cron / ingest / visualize"]
+  Direct --> Runners["dedicated command runners"]
+  Std --> RunAgent["runOpenWikiAgent (init / update / chat)"]
   RunAgent --> RepoGen{"repository init or update"}
   RepoGen -->|yes| NativeRun["runNativeRepositoryGeneration"]
   RepoGen -->|no| Core["runOpenWikiAgentCore DeepAgent"]
   NativeRun --> Lifecycle["durable page-job lifecycle"]
-  Host --> McpServer["MCP server session-manager"]
+  Integ --> McpServer["MCP server session-manager"]
   McpServer --> Lifecycle
   Core --> Connectors["connector tools"]
   Lifecycle --> Planner["bounded planner (submit_plan)"]
@@ -155,18 +157,20 @@ persists `interrupted` metadata when pages were skipped or source drifted.
 ## CLI entrypoint
 
 The executable `cli.tsx` registers a crash guard, parses `process.argv` with
-`parseCommand`, and dispatches. Integration and MCP commands are handled
-separately from the standard rendering pipeline; everything else flows through
-`runStandardCommand`, which optionally loads the OpenWiki environment, resolves
-the effective startup command, and then either runs auth, ngrok, cron, ingest,
-or visualize handlers, prints a startup error, runs non-interactively in print
-mode, or renders the interactive Ink TUI.
+`parseCommand`, and dispatches. `integrations` and `mcp` commands are routed
+straight to their own runners before any environment is loaded; everything else
+flows through `runStandardCommand`, which optionally loads the OpenWiki
+environment, resolves the effective startup command, and then dispatches the
+direct-target commands — `link`, `workspace`, `auth`, `ngrok`, `cron`,
+`ingest`, and `visualize` — to their handlers, prints a startup error, runs
+non-interactively in print mode, or renders the interactive Ink TUI.
 
 `parseCommand` produces a discriminated `CliCommand` union whose `run` variant
 carries the resolved `command` (`init`, `update`, `chat`), `mode`
-(`personal` or `code`), model id, print flag, and user message. Auth, ingest,
-cron, visualize, integrations, and mcp are distinct command kinds routed to
-their own runners.
+(`personal` or `code`) and its source, model id, print flag, dry-run flag,
+resolved language, a `shouldStart` hint, and the user message. `auth`, `ngrok`,
+`cron`, `ingest`, `visualize`, `link`, `workspace`, `integrations`, and `mcp`
+are distinct command kinds, each routed to its own runner.
 
 ## Agent runtime
 
@@ -262,8 +266,10 @@ run. The end-to-end flow is documented in
 ## Host-driven (coding-agent) generation
 
 An installed coding-agent integration runs the same lifecycle over MCP instead
-of launching an OpenWiki model. The MCP server exposes exactly six
-transport-neutral tools — `openwiki_begin`, `openwiki_submit_plan`,
+of launching an OpenWiki model. `ProtocolToolName` enumerates ten tool names —
+four read-only retrieval tools (`openwiki_list_workspaces`,
+`openwiki_list_wikis`, `openwiki_search`, `openwiki_read`) plus six
+transport-neutral lifecycle tools — `openwiki_begin`, `openwiki_submit_plan`,
 `openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`,
 and `openwiki_finish` — backed by a session manager that holds at most one
 active process-local run and rejects any operation whose `runId` does not

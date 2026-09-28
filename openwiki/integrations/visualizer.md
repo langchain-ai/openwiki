@@ -3,6 +3,9 @@ type: integration
 title: Interactive Visualizer
 description: How the `openwiki visualize` command builds a link graph from wiki Markdown and OKF frontmatter, serves a live single-page reader over loopback HTTP, and exports a self-contained static site for hosting.
 tags: [visualizer, graph, static-export, cli, server, markdown-reader]
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-23T08:09:37.122Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -37,9 +40,6 @@ sources:
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
 generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
 ---
 
 # Interactive Visualizer

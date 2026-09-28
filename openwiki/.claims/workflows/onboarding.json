@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e28a51b11debe6741632c87f1cbf5dff7b4b3696b16b225febccf5e59b13f44a",
+  "pageVersion": "sha256:394884272320666de739b47a77e39e91927a1d422840f8d51eff9929554ff3c3",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -230,7 +230,7 @@
     },
     {
       "id": "claim_565a566cd0a8445abfe2e9691dd0a125",
-      "statement": "writeCodeModeAgentSnippets creates AGENTS.md/CLAUDE.md when missing and otherwise replaces only the content between the <!-- OPENWIKI:START --> and <!-- OPENWIKI:END --> markers, preparing and validating both files before writing either and aborting with the file unchanged when markers are malformed or duplicated. A CLAUDE.md whose trimmed content is exactly @AGENTS.md (CLAUDE_AGENTS_IMPORT) is left unchanged (nextContent undefined). When CLAUDE.md and AGENTS.md resolve to the same file on disk (e.g. CLAUDE.md is a symlink to AGENTS.md, detected by resolvesToSameFile via matching inode and device), the CLAUDE.md snippet carries the full instructions inline (the same snippet as AGENTS.md) instead of the @AGENTS.md pointer, because the import would point the file at itself; otherwise the CLAUDE.md snippet is the minimal @AGENTS.md pointer. A CLAUDE.md with marker regions or other content is refreshed in place.",
+      "statement": "writeCodeModeAgentSnippets creates AGENTS.md/CLAUDE.md when missing and otherwise replaces only the content between the <!-- OPENWIKI:START --> and <!-- OPENWIKI:END --> markers, preparing and validating both files before writing either and aborting with the file unchanged when markers are malformed or duplicated. A CLAUDE.md whose trimmed content is exactly @AGENTS.md (CLAUDE_AGENTS_IMPORT) is left unchanged (nextContent undefined). When CLAUDE.md and AGENTS.md resolve to the same file on disk (e.g. CLAUDE.md is a symlink to AGENTS.md, detected by resolvesToSameFile via matching inode and device, with inode 0 treated as unknown), the CLAUDE.md snippet carries the full instructions inline (the same snippet as AGENTS.md) instead of the @AGENTS.md pointer, because the import would point the file at itself; otherwise the CLAUDE.md snippet is the minimal @AGENTS.md pointer. A CLAUDE.md with marker regions or other content is refreshed in place.",
       "evidence": [
         {
           "resource": "repo://src/ingestion/code-mode.ts#L18-L43",
@@ -241,16 +241,16 @@
           "version": "repo-lines-v1:sha256:c01ee7202d4cbd4185ec50b4d1fab659b390a829f5716fb67867d520247966bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTU0YzdkZjI5NmI4NDgyOTNmNzRiZmE2ODRjYjUyMDRjOWVmZGE0ZDZjNzRlNjA2MDUzZDA1NmU4MzMwMzQifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L602-L653",
-          "version": "repo-lines-v1:sha256:3a507cab7fc744022cadcf094fe29ea207c70fb9b9f4e0c4f9eecb66ce328db3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NzRhMWE3MzI1MTkyZWI1ZWFmYTZlYjU5OTUwZjY4MGVjNzdkMWMwNjg5Y2RiNDA0NTY3OTM5NzhhMDZkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L610-L648",
+          "version": "repo-lines-v1:sha256:d75c1d750de94233bcf3b3661cc7be0a16b1e9f1182d00479ed84fc6f20d9b48:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjliYTYwYjUxNDM1ODM2YTZhNzNhZDJjNjE1NjUwNGVmNmE1MDUyODU5MzBjMWI2YTQ0YjBkMGY0YzllNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWEyMjc0YmYzNmEwOWMyMjI3ZWRkNGI2M2E1YjgzZDFkZmUyNTIzYjFmOTE3NmE4NGMyY2M0N2IwYTlkODYifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L161-L210",
-          "version": "repo-lines-v1:sha256:01fdb0d9d5fa0b03e5f8ec74efbc37d38830aac0052a227931332c73b44aae2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkwYjU0ZjFmYmI2YjI1MGI3ZGNkYWY3MGJiYTgxNTE0MGMxMTY4MWEwOTJmZjVjYWZiMzNmZDI1OWY5ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MjQ1NmZhYWE1ODY4YTA3ZGI0ZDlhOTg5NzU3NzAxN2FlNTMwYTYxNDVhMzhhMWQzNmJiZDFlNjYyOGRiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkN2MxYzIyYjIxYTFkMmNhNDQxMDViMzdiMTg3ODUwNDZmZmY4ODY5ZWM4MDBkMmE0Y2QwNDgxZDhmY2U0Y2UifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L655-L665",
+          "version": "repo-lines-v1:sha256:8cff508ca4d3c96cf6894f1115dc1dcca14b8777d510847c647c1eaf0a82bc54:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTc1OGMyYWQ5Yjk4MTc0MGI3OGExY2UzMWVhZTBjNTI4ZjY2MTAxOGNhNGQyOGE3ODU4N2E2YzZkMzc0ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYmNiNDg3ZmMyZTFmZDExMzBlZTViMmIyOGQzZDFmYjJiOTI2MTY2NTdjNTg2OTdlNjVhOGNhZTFmOTRhZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L212-L220",
-          "version": "repo-lines-v1:sha256:1b245e1292a80901f5218e52bebcc0a7ffe9e37c43d20d354b605bd75e6487b7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc3OWMzNDIxNzMzMTRmZTRhZWQ2OTk5NmFmYTVlODUwNTFhOWFhNDgyYmJkMjJkZDFkODdlMDcyNWQ3ZTc0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDNlOTI0NGUwY2NlYjMwMGYwYTc3ZTRjMzIyN2I4MjE3NTU2NWFhNWRhMTIxNWFiNTBmMTc4OGQ0ODNhOTQ1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDcyYjdjZGQzZTRkMTA3MWViZmUzMDljZjAxN2MxZmZlMmVjNmU5ZmQ3NTI1NjExM2JkYTA1ZTViZDg5YTcwOCJ9"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L161-L240",
+          "version": "repo-lines-v1:sha256:0a506c40f4b2118488f90ddf5399bc4b223ac6debb246f8d15dfbfe3e1044a21:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkwYjU0ZjFmYmI2YjI1MGI3ZGNkYWY3MGJiYTgxNTE0MGMxMTY4MWEwOTJmZjVjYWZiMzNmZDI1OWY5ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MjQ1NmZhYWE1ODY4YTA3ZGI0ZDlhOTg5NzU3NzAxN2FlNTMwYTYxNDVhMzhhMWQzNmJiZDFlNjYyOGRiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
         }
       ]
     },
@@ -379,10 +379,24 @@
           "version": "repo-lines-v1:sha256:6d6d6fd0605b8a71c0f5ff401a6ec56730aa98d50d0a07058eb5629494cd553a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4OWM1MjA5MTA0NzliOWQ3OGNhY2M3MjAzOWQ1NDIzMjdjOWRiNjEwNmQ2ZTBmNGYwMzY1YTYyNGI4OTk1ZWJjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNGJjYzU2OWQ0YWViOGQ0NTYzMmM5M2RiMzYxZTA0NjIzZTBhODVkZDg0YjUyZDk1ODIxYWVlMzE4MThlNWI5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxZTdlODFmYjVmMDJkMmVjMGMwMDNhZTJmYTBlYzM1YTkwOTBlMGI2Nzk5YjhhNGYxYjZiM2U5YzE4YzYyMDY4In0"
         }
       ]
+    },
+    {
+      "id": "claim_87d5f5cfffc2434398e9b86d391bcfce",
+      "statement": "The AGENTS.md managed block (createCodeModeAgentsSnippet) is retrieval-first rather than eager-load: it instructs the agent not to enumerate, preload, or search wikis at task start, but to use openwiki_search for just-in-time context and openwiki_read for the relevant complete sections when unfamiliar architecture or dependency behavior materially affects the task or source inspection leaves an important uncertainty, stopping once the question is grounded. When search returns workspace_required the agent asks which listed workspace to use and retries with its ID; openwiki_list_workspaces/openwiki_list_wikis are for discovering workspace membership. openwiki/quickstart.md and its links are the fallback only when retrieval tools are unavailable. Source code and tests are authoritative, and the brief's unknowns/review items are verification gaps rather than automatic requirements; the narrowest quiet validation that proves the changed behavior is preferred.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L602-L627",
+          "version": "repo-lines-v1:sha256:fe9cd264ecd39902b3afa4367807181edd5ef0ae00c2da503942d4bf0ced0092:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NzRhMWE3MzI1MTkyZWI1ZWFmYTZlYjU5OTUwZjY4MGVjNzdkMWMwNjg5Y2RiNDA0NTY3OTM5NzhhMDZkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDE1Y2U3ZTg4NDk1NDQ3NWM2ZmY3NzI3NzI0MDZkNzE0Y2M5ODZiZTY3MjhhMTQyZDljOGFjYzRkYzIwNzUifQ"
+        },
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L175-L193",
+          "version": "repo-lines-v1:sha256:80d2468955319380a800bc8245907d20d34cdda3b951dc58599955963c8e9478:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYWZlNTA2Mzk5YmU3OGIyYzk3OWI3MmJiYzBmMzg3YWU3YmU0YWQ2NDY2ZDljZmIxMjI3YzhmOGY5OTI3OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjgzMTE2OGJmNzQ5MTU0YWU4YmJkZWJhZTEyMTNmMWJjODdjZDNmMDZmY2Q4YTNkMzc5MmE0MzcwZGNmZDMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T08:09:45.637Z"
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

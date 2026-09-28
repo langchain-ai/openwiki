@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7f03d3c1ae0038f5b35e7307e9c574444ca100c2961e5041f0337a4a665d45f9",
+  "pageVersion": "sha256:2e7bc5a7b79ef3caeec82d74a54719bba3abdcbbc6d5843b0f1895b0672ac02f",
   "claims": [
     {
       "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
@@ -91,7 +91,7 @@
       "statement": "The cron CLI parser only accepts the target `all` for pause, resume, and delete; any other target or extra arguments returns a usage error.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L489-L525",
+          "resource": "repo://src/cli/commands.ts#L583-L619",
           "version": "repo-lines-v1:sha256:aaafa859d907ece31edf3ca5047d73f9186586bd24b421fde03e0335b3381c31:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NDk3Mjg4YjQ4MTAzMGE5Nzk3ODEwODM1NjgyMTFiNDQwNDkwZWNlMjEyMjE1NTg3MGY0YzQ3MTNhYmRhNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YmE2NmYwYzI1NjkyNmU4OWZhM2Q4Yjg0YTdjZGI2YjIyZWIyOTEwMGNmODUwMDUyOTEzZjZlY2I2NzNiOGYifQ"
         }
       ]
@@ -227,12 +227,12 @@
       "statement": "Repository generation/update is resumable via durable run state recorded in openwiki/.run.json only when the same checkout persists across a rerun; ephemeral CI runners discard their workspace after a job, so a failed scheduled CI run does not retain uncommitted run state and the next run starts fresh rather than resuming.",
       "evidence": [
         {
-          "resource": "repo://README.md#L35-L36",
-          "version": "repo-lines-v1:sha256:b581e87c8e82e9dc26e7ca2bcd8d73dab3bd43916524663ca61c4369c644e48f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWUzNWE1NWRhMjZjMzI5NWIxYzcxZTdhNzYyMTY4NjRlZTQ2NzAwMTFlMzBhM2ZjZTM5YjYxOWM2MmVhZjY2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFhY2EzZDJmZmQzYWEyNTU4OGU0ODhiOTVkYzljMGQ4ZTczMWNjN2MyODc0MzJlMDkwODA5MjBmYWI4NWNkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDY0ODVkMDNiOWNiZTdkNGI3ZTIyNWY5ZjUzYjNjMWJjYzgzNDBkYjZmZDg1OTA2ZGI4ZDY0YzZhOWFkNDlkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTZmYjZmMjBiNTNlZmQwNDFmNjJkMWM1MWRkOTg2NjU3MDYzOWQzYzlkMTBkYmRmZTQ4MjI1NTY3ZjI0NzU4ZSJ9"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L78-L80",
+          "version": "repo-lines-v1:sha256:9a839067f47beb1ca08c710b71e598b0402cc1fd184fbaffb0641be925ef8a7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc5Yzg4MGY2MmQ0MjI1MzhiY2E4NGNiNTVlY2U4ZmUxMGU5NjU4YjA2MTExNWMzZmFiY2RjN2IzYmVjZjQ0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg2ZTgzZTdmOTYxYjVhN2NhZDhlZWZmZDZhM2Y0MWY4NTczZjBiZWRhODQxZGQyM2YyOTZjNTc5NGVhNGJjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NkOTNkZDYxY2RiYWRhMDY1NDFjZGMzNzIwZWUxOTU5ZWJlZTgyNGFhNzYwYzliNjljNWFkZDY4Yjk1NDk5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRlZWVlZTNlMTIwZDlkMTA0Yjc2ZTVjNzFhNjIyNmU0NWMwOTM1Y2I1YzZmMjUxMjJlNTI1N2ZiMWMzODI0MiJ9"
         },
         {
-          "resource": "repo://README.md#L55-L55",
-          "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTc5ZGRkZTViNzViMGIzODQ4ZGZjMzgyYTZmYTIwMjdhMjNiNTkxNzVlYjcwMWU1YTczMmRmMGEwMjczYjZhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlOTZiNzQ1ZTg5NDg0ZWM3YzcwNmVjOTVjNDZkMWI5MDc2YWIzODA2OTgyNTc3MTkwYmE1ZmIwZjA2MTc5MSJ9"
+          "resource": "repo://README.md#L257-L257",
+          "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk2ZDFmZDFlMTA3OTg2YjJlYmM0ZTljZDQ2NGViMmE5MTIzYWMyMTZiMzkzMTI0YWMxNmNhNTdlNjlmYjNlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2M4ZWQ0OTRlYTNkMWU4MTgzMzRhNTUzYmE1Y2UxMWU0MGI1YjgyNWY5ZGMwNGM3ZjAzZWFhNTRkZThjZTJmZCJ9"
         }
       ]
     },
@@ -263,10 +263,24 @@
           "version": "repo-lines-v1:sha256:ad287a680ab4e68f70f498774f858f5a9eba03e600c228ce757127f3d617329d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTg5OGIxYWYyMWYwOWU4MjE4ZGI1NTkzMzM3NzNkNDYyYTM2Y2ZiZjU0YTA4NGZlZGFhY2YwYjQ1MGU5MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzN2NkZTM4ZGQ2YmJmNzk3NDI2MTExZGRhZmQwODk4ZTdkYjRhMDcxYmM3N2VlMjZjOWU5YTZhMmI3NzBiMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YTgxOTc1MWIzNDhmYzY0MDBkZTc2N2Q4N2E2MjFkODUxMjZhZDZhNjRkNzJiYjZjYjY3ODE1OTYxMDdkZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0YTQ1ZDcyMzdkYmQ0NjVkYzc2Mjc0NTVmMzg1OWVhNjRmNzEwMjY1NDNkZDE3YmY2Nzc3ODkxOTQyZDVjYzMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f8019a0b14994a388c1c68f71262738c",
+      "statement": "The examples/openwiki-update-auto-merge.yml variant requires repository-level setup beyond the canonical example: enable GitHub Allow auto-merge, add branch protection or a ruleset for the default branch gating the generated-docs checks, create a fine-grained personal access token or GitHub App token scoped to the target repo with Contents and Pull requests read and write permissions stored as the OPENWIKI_PR_TOKEN Actions secret, and pin OpenWiki and provider versions. The dedicated token is needed because PRs created with the default GITHUB_TOKEN do not start most pull_request workflows, so required PR checks may never run.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L220-L236",
+          "version": "repo-lines-v1:sha256:0ff4e4edb16971237e099c5ecf9cd8186dfa4dd4ee61a883ef14df195be858e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjM2VmMTIxMDAzMzRhYzVhNDRhYjYyMmY1OWEzY2EzYTMwOWQxMGQ0NzJmNTc5MjhlNWFlMDlmMTFhYzA4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjg3M2RjMGM3NzU5ZTNiMTRmNTcxNzM0YWJjYWNjYWZmNWY4NGE1ZmZmOGM4ODdmOTdkMTdhMjdhY2U5MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzYmExODVlYzVjYTExYzc2YmNlYThmM2EwMWZkNzRkN2I4NDllN2Y4NmUwYmYwZjFhYTk5OGZkZDg5MTE3ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZTlhYTkyZDcxYWQ1YmI4ZGIzMjUzNTNjZTdhOGIwZWYxMTI5Yzg4YzEzOTA3MDRmMzA4MzA5NjgxMmY1MjUifQ"
+        },
+        {
+          "resource": "repo://examples/openwiki-update-auto-merge.yml#L57-L59",
+          "version": "repo-lines-v1:sha256:bca9474e416093fc2ec4924bd1e04dd6a70fbd1530795595f2a274c01b112099:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVjNzRiMGQ3MjgyN2Y4YjM5ZWRkODY0MDZkODgwMDg1OTQzOTZlMjViY2FmM2VkMzU1YWU1NWRmZWQzYjg5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA5Y2U1ZWIyY2E2OTZiNjBhNWVmY2EwYWI4NTZkZmNlYzUyYzU1NmUyOWRjZTUyYmVjM2I3ZGJjZGU0ODU5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2I4MjZmOGU2OTFkMDBlYzhmYTI2NWJjODBmNTViOGY1MzhmMzY4ODVhMjBhNmQ0MzI3YmZiMGNjNTA3ODM2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg2YzAxZTBjZTAzYzliNWRmMzVhYjZiNTVjOWExMGIzZWM5MmM4M2VjY2FiNWExMDg0ZjE0MDU3YzkxMTczNSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.2",
-    "at": "2026-09-22T08:09:45.637Z"
+    "at": "2026-09-23T08:09:37.122Z"
   }
 }

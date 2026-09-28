@@ -6,8 +6,10 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { afterEach, describe, expect, test } from "vitest";
 import { parse } from "yaml";
 import {
@@ -116,8 +118,11 @@ function expectFailurePreservingWorkflow(workflow: string): void {
   expect(pullRequest.with?.branch).toBe("openwiki/update");
   expect(pullRequest.with?.["commit-message"]).toBe("docs: update OpenWiki");
   expect(pullRequest.with?.title).toBe("docs: update OpenWiki");
+  const paths = requireWorkflowStep(steps, "List OpenWiki update paths");
+  expect(paths.id).toBe("paths");
+  expect(paths.if).toBe("${{ !cancelled() }}");
   expect(pullRequest.with?.["add-paths"]).toBe(
-    "openwiki\nAGENTS.md\nCLAUDE.md\n.github/workflows/openwiki-update.yml\n",
+    "${{ steps.paths.outputs.list }}",
   );
   expect(pullRequest.with?.body).toContain(
     "OpenWiki result: ${{ steps.openwiki.outcome }}",
@@ -158,18 +163,31 @@ afterEach(async () => {
 });
 
 describe("ensureCodeModeRepoSetup agent files", () => {
-  test("creates both AGENTS.md and CLAUDE.md when neither exists", async () => {
+  test("creates AGENTS.md but not CLAUDE.md when neither exists", async () => {
     const repo = await createTempRepo();
 
     await ensureCodeModeRepoSetup(repo);
 
-    for (const fileName of ["AGENTS.md", "CLAUDE.md"]) {
-      const content = await readIfPresent(path.join(repo, fileName));
-      expect(content, `${fileName} should be created`).not.toBeNull();
-      expect(content).toContain(SNIPPET_START);
-      expect(content).toContain(SNIPPET_END);
-      expect(content).toContain("## OpenWiki");
-    }
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(content, "AGENTS.md should be created").not.toBeNull();
+    expect(content).toContain(SNIPPET_START);
+    expect(content).toContain(SNIPPET_END);
+    expect(content).toContain("## OpenWiki");
+    // Claude Code reads AGENTS.md when no CLAUDE.md exists, so creating one
+    // would only shadow it.
+    expect(await readIfPresent(path.join(repo, "CLAUDE.md"))).toBeNull();
+  });
+
+  test("refreshes the block in an existing CLAUDE.md", async () => {
+    const repo = await createTempRepo();
+    await writeFile(path.join(repo, "CLAUDE.md"), "# Team notes\n", "utf8");
+
+    await ensureCodeModeRepoSetup(repo);
+
+    const content = await readIfPresent(path.join(repo, "CLAUDE.md"));
+    expect(content).toMatch(/^# Team notes\n/u);
+    expect(content).toContain(SNIPPET_START);
+    expect(content).toContain("@AGENTS.md");
   });
 
   test("prefers progressive retrieval tools and keeps quickstart as fallback", async () => {
@@ -194,6 +212,7 @@ describe("ensureCodeModeRepoSetup agent files", () => {
 
   test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
     const repo = await createTempRepo();
+    await writeFile(path.join(repo, "CLAUDE.md"), "", "utf8");
 
     await ensureCodeModeRepoSetup(repo);
 
@@ -674,25 +693,39 @@ ${SNIPPET_END}
 });
 
 describe("ensureCodeModeRepoSetup workflow", () => {
-  test("generated PR includes agent files and the workflow in add-paths", async () => {
-    const repo = await createTempRepo();
+  // The step is POSIX shell run on ubuntu-latest, so it is not exercised on
+  // Windows test runners.
+  test
+    .skipIf(process.platform === "win32")
+    .each([{ hasClaude: false }, { hasClaude: true }])(
+    "generated PR lists CLAUDE.md in add-paths only when it exists (%o)",
+    async ({ hasClaude }) => {
+      const repo = await createTempRepo();
+      if (hasClaude) {
+        await writeFile(path.join(repo, "CLAUDE.md"), "", "utf8");
+      }
+      await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+      const workflow = await readIfPresent(
+        path.join(repo, ".github", "workflows", "openwiki-update.yml"),
+      );
+      const step = requireWorkflowStep(
+        parseWorkflowSteps(workflow ?? ""),
+        "List OpenWiki update paths",
+      );
+      const outputPath = path.join(repo, "github-output");
+      await writeFile(outputPath, "", "utf8");
 
-    await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+      await promisify(execFile)("bash", ["-e", "-c", step.run ?? ""], {
+        cwd: repo,
+        env: { ...process.env, GITHUB_OUTPUT: outputPath },
+      });
 
-    const workflow = await readIfPresent(
-      path.join(repo, ".github", "workflows", "openwiki-update.yml"),
-    );
-    expect(workflow).not.toBeNull();
-    expect(workflow).toContain("add-paths: |");
-    for (const managedPath of [
-      "openwiki",
-      "AGENTS.md",
-      "CLAUDE.md",
-      ".github/workflows/openwiki-update.yml",
-    ]) {
-      expect(workflow).toContain(managedPath);
-    }
-  });
+      const claude = hasClaude ? ",CLAUDE.md" : "";
+      expect(await readFile(outputPath, "utf8")).toBe(
+        `list=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml${claude}\n`,
+      );
+    },
+  );
 
   test("publishes completed pages before propagating an OpenWiki failure", async () => {
     const repo = await createTempRepo();

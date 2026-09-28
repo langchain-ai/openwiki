@@ -18,6 +18,8 @@ sources:
     resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-5d1891104d4c886504a5cc7d
+    resource: repo://src/agent/types.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
   - id: openwiki-source-9697823032111d36e2d4caa9
@@ -38,10 +40,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Repository Generation Lifecycle
@@ -547,27 +549,26 @@ is written, and a new checkpoint marks the job `skipped` without advancing the
 queue. `nextRepositoryPage` then sees the next `pending` job, so the run
 continues with the remaining pages.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 8: ...ight Runner ->> Loop: runWorkerLoops Expecting '+', '-', '()', 'ACTOR', got 'loop' -->
-```text
+```mermaid
 sequenceDiagram
     autonumber
     participant Runner as runPendingPageAgents
     participant Pool as PageWorkerPool
-    participant Loop as runWorkerLoop slot N
+    participant Worker as runWorkerLoop slot N
     participant Core as nextRepositoryPage and submitRepositoryPage
     Runner ->> Pool: initialize claimed, acquiring, size, inFlight
-    Runner ->> Loop: runWorkerLoops starts pool.size loops
+    Runner ->> Worker: runWorkerLoops starts pool.size loops
     loop until queue drained or fatal
-        Loop ->> Pool: acquireNextJob serialized
+        Worker ->> Pool: acquireNextJob serialized
         Pool ->> Core: nextRepositoryPage exclude claimed
         Core -->> Pool: pending job or complete
-        Loop ->> Loop: captureRepositoryPageSnapshot
-        Loop ->> Loop: runPageAgent
+        Worker ->> Worker: captureRepositoryPageSnapshot
+        Worker ->> Worker: runPageAgent
         alt submit_page succeeds
-            Loop ->> Core: submitRepositoryPage
-            Core -->> Loop: complete
+            Worker ->> Core: submitRepositoryPage
+            Core -->> Worker: complete
         else non-fatal error or clean exit without submit
-            Loop ->> Core: skipRepositoryPage with snapshot
+            Worker ->> Core: skipRepositoryPage with snapshot
             Pool ->> Pool: pool.skipped.push snapshot
         else fatal error
             Pool ->> Pool: pool.fatal set
@@ -580,6 +581,49 @@ sequenceDiagram
 One pass of `runPendingPageAgents` with a concurrent worker pool. Job
 acquisition is serialized; model work runs in parallel; skip and submit mutate
 shared state under the `withRunMutation` lock.
+
+## Progress events
+
+The native runner reports lifecycle progress to CLI and event consumers through
+`RepositoryGenerationProgressEvent` (a variant of `OpenWikiRunEvent`). Each event
+carries a `stage` discriminator and a `resumed` flag:
+
+- `stage` — one of `planning`, `generating`, `finalizing`, `replanning`, or
+  `noop`. `noop` is emitted exactly once when a clean update preflight proves no
+  generation is needed; `planning`/`generating`/`finalizing` mark the native
+  runner's three lifecycle phases; `replanning` is reserved for a source-drift
+  re-plan triggered by invalidation during `begin`.
+- `resumed` — `true` only when the stage is continuing a previously interrupted
+  durable run (the `resumed` flag from the begin view). It defaults to `false`
+  and is omitted from the no-op event.
+
+During `generating`, the event is enriched with `page` (the canonical page owned
+by the active worker), `pageIndex` (its one-based position in the queue), and
+`pageCount` (the total queue size). A sequential worker reports at most one
+in-flight page, so consumers rely on `page` and `pageIndex`. A concurrent worker
+pool additionally emits `completedCount` (page jobs already complete or skipped)
+and `inFlightPages` (the canonical pages currently owned by in-flight workers,
+in start order), so a renderer never has to pretend a single queue position
+describes the whole run. `emitGeneratingProgress` keeps the sequential event
+shape unchanged when `pool.concurrent` is false; only a pool configured with
+more than one worker adds the concurrent fields.
+
+```mermaid
+stateDiagram-v2
+    [*] --> noop: clean update preflight
+    [*] --> planning: begin fresh or resume
+    planning --> replanning: source drift clears plan
+    planning --> generating: submit_plan installs queue
+    generating --> generating: next_page then submit_page per job
+    generating --> finalizing: queue drained
+    finalizing --> [*]: complete or interrupted metadata
+    finalizing --> [*]: sourceChanged writes interrupted metadata
+    noop --> [*]
+```
+
+Native-runner stage progression reported through `RepositoryGenerationProgressEvent`.
+`replanning` is reachable only when a resumed run's source fingerprint has
+drifted, which deletes the plan and resets the phase to `planning`.
 
 ## Planner and worker prompts
 

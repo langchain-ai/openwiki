@@ -84,7 +84,7 @@ All integrations install at user level by default, so one installation works fro
 Host-specific locations and notes:
 
 - OpenCode uses `~/.config/opencode`.
-- IBM Bob / Bob Shell uses `~/.agents/skills` and `~/.bob/mcp.json`.
+- IBM Bob / Bob Shell uses `~/.agents/skills` and `~/.bob/settings/mcp.json` at user scope; `.agents/skills` and `.bob/mcp.json` at the project.
 - Kiro uses `~/.kiro/skills` and `~/.kiro/settings/mcp.json`.
 - Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`. This is Oh My Pi (`omp`); see [the upstream Pi integration notes](docs/pi-integration-notes.md).
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
@@ -307,7 +307,7 @@ The override selects a separate state directory; OpenWiki does not move or delet
 
 Your wiki stays in the repository as plain Markdown you own, with OpenWiki-managed grounding and run metadata versioned alongside it.
 
-- **Agents read it as context.** On each `code` run, OpenWiki maintains an `AGENTS.md` and `CLAUDE.md` at the repo root. Their managed instructions use selective, progressive `openwiki_search`/`openwiki_read` retrieval for concrete questions when available and use `openwiki/quickstart.md` as the fallback. OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
+- **Agents read it as context.** On each `code` run, OpenWiki maintains an `AGENTS.md` at the repo root, and refreshes `CLAUDE.md` when the repository already has one. Claude Code reads `AGENTS.md` when no `CLAUDE.md` exists, so OpenWiki does not create one. Their managed instructions use selective, progressive `openwiki_search`/`openwiki_read` retrieval for concrete questions when available and use `openwiki/quickstart.md` as the fallback. OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
 - **Grounding stays with the wiki.** Versioned claim sidecars under `openwiki/.claims/` travel with the Markdown, so the evidence needed to maintain factual pages is inspectable and reviewable.
 - **You set the brief.** Repository-specific instructions live in `openwiki/INSTRUCTIONS.md`, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
 - **No-op runs do not churn docs.** A clean update skips model work and leaves wiki content untouched while refreshing `.last-update.json` to record that the check ran.

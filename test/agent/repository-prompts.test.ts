@@ -140,6 +140,11 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("repo://src/auth.ts");
     expect(prompt).toContain("currently owns 7 Claim(s)");
     expect(prompt).toContain("Write only /openwiki/auth.md");
+    expect(prompt).toContain("use hrefs relative to this");
+    expect(prompt).toContain("not Markdown link destinations");
+    expect(prompt).toContain(
+      "[Model Providers](../concepts/model-providers.md)",
+    );
     expect(prompt).toContain("only the sparse Claim decisions");
     expect(prompt).toContain("inspect_claims");
     expect(prompt).toContain("retained automatically");

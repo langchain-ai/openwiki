@@ -48,10 +48,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Claims Reconciliation on Update
@@ -256,6 +256,13 @@ After applying them through the session it persists the page's dirty Claim state
 via `finalize` and proves durability with `assertPageClaimsDurable` before the
 job is recorded complete and the queue advances; any failure in that block is
 wrapped in a `RepositoryRunError` with `invalid_input`.
+
+The per-page `finalize` call excludes the pages still owned by **other pending
+jobs** (`otherPendingPages`). A concurrent worker may be mid-edit on those
+pages, so projecting a verification stamp into their front matter or rehashing
+their sidecar here would record transient bytes; their own `submit_page` (or the
+final `finish`) finalizes them. Only the submitted page is durably proved at
+this point; the strict whole-run proof waits until every job is complete.
 
 The shared rules the worker must follow — stale or unresolved markers require an
 explicit decision, omitted issue-free Claims are retained, the final page body
