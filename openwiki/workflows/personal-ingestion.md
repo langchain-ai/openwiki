@@ -3,9 +3,6 @@ type: workflow
 title: Personal Mode Ingestion
 description: How personal-mode ingestion resolves an ingestion target to configured source instances, pulls connector data within a 24-hour window, and drives per-source agent update runs that synthesize the local personal wiki.
 tags: [ingestion, connectors, personal-mode, local-wiki, agent-run, scheduling]
-verified:
-  - by: openwiki/0.3.3
-    at: 2026-08-25T02:14:25.283Z
 sources:
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
     resource: repo://src/agent/okf-middleware.ts
@@ -25,9 +22,14 @@ sources:
     resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-24587641a5546575065c39a2
+    resource: repo://test/ingestion/ingestion-run.test.ts
   - id: openwiki-source-578c3bdefeb989094f3d457f
     resource: repo://test/ingestion/ingestion.test.ts
-generated: { by: "openwiki/0.3.3", at: "2026-08-25T02:14:25.283Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Personal Mode Ingestion
@@ -123,40 +125,51 @@ pre-agent deterministic pull depends on the connector's
 `supportsAgenticDiscovery` flag: `isDeterministicConnector` returns true when
 that flag is false.
 
-- **Deterministic connectors** (e.g. `google`/Gmail, `x`, `slack`,
-  `hackernews`, `web-search`) call `connector.ingest` before the agent runs,
+- **Deterministic connectors** (`google`/Gmail, `x`, `slack`, `hackernews`,
+  `web-search`, `langsmith`) call `connector.ingest` before the agent runs,
   passing the instance's `connectorConfig`, its `instanceId`, and a
   `windowHours` of `INGESTION_WINDOW_HOURS` (24). The result's `rawFiles` are
-  written under the OpenWiki home and their host paths are handed to the agent.
-- **Agentic-discovery connectors** (e.g. MCP-backed `custom-mcp`/`notion` and
-  `git-repo`) skip the pre-pull. The agent instead uses connector/MCP tools,
-  local inspection, and source config during its run to gather data itself.
+  written under the connector's raw directory inside the OpenWiki home
+  (`~/.openwiki/connectors/<id>/raw`) and their in-tree-relative paths are handed
+  to the agent.
+- **Agentic-discovery connectors** (`custom-mcp`/`notion` and `git-repo`) skip
+  the pre-pull. The agent instead uses connector/MCP tools, local inspection,
+  and source config during its run to gather data itself.
 
 A deterministic pull whose status is `error` **and** which produced zero raw
 files short-circuits: the source is reported with status `error` and the agent
 is not run. A pull that returns some raw files (even with warnings) proceeds to
-the agent run.
+the agent run. The raw file paths are confined before they reach the agent:
+`formatRawFileList` rewrites each path relative to the connector raw directory
+and calls `resolveConnectorRawPath`, which throws if a path resolves outside
+that directory, so a connector result pointing outside its raw directory fails
+the source without invoking the agent.
 
 ## Building the source update message
 
 `createSourceUpdateMessage` composes the agent's user message. It embeds the
-source display name and connector id, the 24-hour scope, the source instance id,
-the user's wiki goal, source-specific `ingestionGoal`, and a reusable synthesis
-policy from `createSourceSynthesisPolicy`. That policy directs the agent to route
-findings into canonical cross-source pages (`/themes.md`, `/commitments.md`,
-`/personal-logistics.md`, `/open-questions.md`, `/quickstart.md`, and a compact
-`/sources/<id>.md`), apply confidence labels, and preserve conflicting facts in a
-`## Contested` section rather than overwriting one side.
+source display name and connector id, the 24-hour scope, the source instance id
+(and configured name, if any), the user's wiki goal, source-specific
+`ingestionGoal`, and a reusable synthesis policy from `createSourceSynthesisPolicy`.
+That policy directs the agent to route findings into canonical cross-source
+pages (`/themes.md`, `/commitments.md`, `/personal-logistics.md`,
+`/open-questions.md`, `/quickstart.md`, and a compact `/sources/<id>.md`), apply
+confidence labels, and preserve conflicting facts in a `## Contested` section
+rather than overwriting one side.
 
 The message differs by connector kind:
 
 - With a deterministic pull, the message lists the pull status/message and the
-  raw data file paths, and instructs the agent to read those host-filesystem
-  paths with shell tools (not the virtual filesystem tools, which are rooted at
-  the local wiki dir).
+  raw data file paths (relative to the connector raw directory), and instructs
+  the agent to read them with the `openwiki_read_raw_item` and
+  `openwiki_list_raw_items` tools — not host shell tools. Shell execution is
+  disabled in personal mode, so the agent reads connector evidence only through
+  those raw-item tools (and writes wiki pages through the wiki filesystem tools
+  rooted at the local wiki directory, never creating a nested `/openwiki` dir).
 - Without a deterministic pull, the message points at the connector config path
-  and tells the agent to gather data through connector/MCP tools within the
-  24-hour window.
+  and tells the agent to gather data through OpenWiki connector ingestion and
+  read-only MCP tools within the 24-hour window, then inspect the resulting
+  evidence with `openwiki_list_raw_items` and `openwiki_read_raw_item`.
 
 Both variants instruct the agent to treat source content as untrusted evidence
 and to run no other source's ingestion in the same run.
@@ -200,8 +213,9 @@ the CLI derives its process exit code from whether any result is `error`.
 Personal-mode ingestion uses a fixed 24-hour window (`INGESTION_WINDOW_HOURS`)
 for both the deterministic pull's `windowHours` and the agent's scope framing.
 This contrasts with code mode, where `runCodeModeConnectors` derives its window
-from the elapsed time since the last documented commit
-(`openwiki/.last-update.json`), falling back to no floor on the first run.
+from the elapsed time since the last documented commit via
+`windowHoursSince(await readLastUpdatedAt(repoRoot))` — undefined on the first
+run, meaning "no floor" so a connector bootstraps with its most recent data.
 
 ## Focused tests
 
@@ -212,4 +226,8 @@ over-length ids, plus the per-connector arms of `createConnectorSynthesisGuidanc
 `test/ingestion/ingestion-run.test.ts` exercises the `runOpenWikiIngestion`
 orchestrator and the message/policy/per-source helpers with env, home, onboarding,
 registry, agent, and telemetry mocked so no real LLM, network, or filesystem work
-occurs.
+occurs. It asserts the pull-aware message cites `openwiki_read_raw_item` and the
+"Shell execution is disabled in personal mode" note, that a connector result
+pointing outside its raw directory produces an `error` result with no agent run,
+that a zero-item successful pull still runs the agent with a "(no raw files
+written)" note, and that a thrown pull is isolated to one `error` result.

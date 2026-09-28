@@ -142,6 +142,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_STREAM_IDLE_TIMEOUT");
   });
 
+  test("manages the repository page worker concurrency", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_PAGE_CONCURRENCY");
+  });
+
   test("manages the Google Cloud settings for the gemini-enterprise provider", () => {
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_PROJECT");
     expect(MANAGED_ENV_KEYS).toContain("GOOGLE_CLOUD_LOCATION");

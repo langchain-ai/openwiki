@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import path from "node:path";
 import type {
   ConnectorId,
   ConnectorIngestResult,
@@ -70,7 +71,10 @@ vi.mock("../../src/telemetry/index.ts", async (importActual) => {
 
 import { readOpenWikiOnboardingConfig } from "../../src/setup/onboarding.ts";
 import { createConnectorRegistry } from "../../src/connectors/registry.ts";
-import { getConnectorConfigPath } from "../../src/config/openwiki-home.ts";
+import {
+  getConnectorConfigPath,
+  getConnectorRawDir,
+} from "../../src/config/openwiki-home.ts";
 import { runOpenWikiAgent } from "../../src/agent/index.ts";
 import { runOpenWikiIngestion } from "../../src/ingestion/ingestion.ts";
 
@@ -101,7 +105,7 @@ function makeIngestResult(
   return {
     connectorId: id,
     message: `${id} pulled`,
-    rawFiles: [`/home/.openwiki/connectors/${id}/raw/a.json`],
+    rawFiles: [path.join(getConnectorRawDir(id), "a.json")],
     runId: "run-1",
     statePath: `/home/.openwiki/connectors/${id}/state.json`,
     status: "success",
@@ -173,7 +177,9 @@ describe("runOpenWikiIngestion", () => {
     // so the model updates the wiki from the freshly written evidence.
     const connector = makeConnector("git-repo");
     const pull = makeIngestResult("git-repo", {
-      rawFiles: ["/raw/one.json", "/raw/two.json"],
+      rawFiles: ["one.json", "two.json"].map((name) =>
+        path.join(getConnectorRawDir("git-repo"), "run-1", name),
+      ),
     });
     vi.mocked(connector.ingest).mockResolvedValue(pull);
 
@@ -208,8 +214,13 @@ describe("runOpenWikiIngestion", () => {
     const message = runOptions.userMessage ?? "";
     expect(message).toContain("Deterministic pull result:");
     expect(message).toContain("Status: success");
-    expect(message).toContain("- /raw/one.json");
-    expect(message).toContain("- /raw/two.json");
+    expect(message).toContain('- "run-1/one.json"');
+    expect(message).toContain('- "run-1/two.json"');
+    expect(message).toContain(
+      'openwiki_read_raw_item using connectorId "git-repo"',
+    );
+    expect(message).toContain("Shell execution is disabled in personal mode");
+    expect(message).not.toContain("cat, jq, or node");
     expect(message).toContain("Watch the release branch.");
     expect(message).toContain("Track project status.");
     // The synthesis policy is inlined into the message.
@@ -250,6 +261,67 @@ describe("runOpenWikiIngestion", () => {
       `Connector config path: ${getConnectorConfigPath("web-search")}`,
     );
     expect(message).not.toContain("Deterministic pull result:");
+    expect(message).toContain("openwiki_read_raw_item");
+    expect(message).not.toContain("local repository inspection");
+  });
+
+  test("scheduled ingestion uses confined reads for public connector content", async () => {
+    const connector = makeConnector("hackernews");
+    vi.mocked(connector.ingest).mockResolvedValue(
+      makeIngestResult("hackernews"),
+    );
+    primeRun(
+      makeConfig(
+        [makeSourceInstance({ connectorId: "hackernews", id: "hn-public" })],
+        {
+          ingestionSchedule: {
+            paused: false,
+            nextRunAt: "2026-07-01T00:00:00Z",
+            recurringMinutes: 30,
+            scheduledSourceInstanceIds: ["hn-public"],
+          },
+        },
+      ),
+      { hackernews: connector },
+    );
+
+    await runOpenWikiIngestion(undefined, {
+      target: "all",
+      scheduledOnly: true,
+    });
+
+    expect(runOpenWikiAgent).toHaveBeenCalledTimes(1);
+    const options = vi.mocked(runOpenWikiAgent).mock.calls[0][2];
+    expect(options.outputMode).toBe("local-wiki");
+    expect(options.userMessage).toContain(
+      'openwiki_read_raw_item using connectorId "hackernews"',
+    );
+    expect(options.userMessage).toContain('- "a.json"');
+    expect(options.userMessage).not.toContain(getConnectorRawDir("hackernews"));
+  });
+
+  test("rejects a connector result pointing outside its raw directory", async () => {
+    const connector = makeConnector("hackernews");
+    vi.mocked(connector.ingest).mockResolvedValue(
+      makeIngestResult("hackernews", {
+        rawFiles: [
+          path.resolve(getConnectorRawDir("hackernews"), "../outside.json"),
+        ],
+      }),
+    );
+    primeRun(
+      makeConfig([
+        makeSourceInstance({ connectorId: "hackernews", id: "hackernews" }),
+      ]),
+      { hackernews: connector },
+    );
+
+    const result = await runOpenWikiIngestion(undefined, {
+      target: "hackernews",
+    });
+
+    expect(result.results[0]?.status).toBe("error");
+    expect(runOpenWikiAgent).not.toHaveBeenCalled();
   });
 
   test("includes the source instance name when one is configured", async () => {
