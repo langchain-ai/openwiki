@@ -29,6 +29,8 @@ describe("validateWikiInternalLinks dogfood", () => {
 
     const report = await validateWikiInternalLinks(backend, "repository");
 
+    expect(report.filesScanned).toBeGreaterThan(0);
+    expect(report.linksChecked).toBeGreaterThan(0);
     expect(report.issuesFound).toBe(0);
     expect(report.stampedFiles).toEqual([]);
   });
