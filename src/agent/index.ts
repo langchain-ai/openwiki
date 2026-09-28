@@ -11,7 +11,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent } from "deepagents";
+import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -495,8 +495,26 @@ function createOpenWikiAgentGraph(
     tools: createOpenWikiConnectorTools(options.outputMode),
     checkpointer: options.checkpointer,
     backend,
-    middleware:
-      options.command === "chat"
+    middleware: [
+      // DeepAgents also applies this replacement to its general-purpose
+      // subagent. Personal runs have no shell tool, regardless of command.
+      ...(options.outputMode === "local-wiki"
+        ? [
+            createFilesystemMiddleware({
+              backend,
+              permissions: AGENT_FILESYSTEM_PERMISSIONS,
+              tools: [
+                "ls",
+                "read_file",
+                "glob",
+                "grep",
+                "write_file",
+                "edit_file",
+              ],
+            }),
+          ]
+        : []),
+      ...(options.command === "chat"
         ? []
         : [
             ...(translation
@@ -535,7 +553,8 @@ function createOpenWikiAgentGraph(
               conceptType,
               options.runTimestamp,
             ),
-          ],
+          ]),
+    ],
     skills: ["/skills/"],
     subagents: [],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
@@ -1281,6 +1300,7 @@ export function createModel(
       },
       model: modelId,
       ...maxTokensOptions,
+      ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
       ...retryOptions,
     });
   }
@@ -2132,8 +2152,11 @@ type OpenRouterRequestSummary = {
 type OpenRouterResponseSummary = {
   bodyPreview: string;
   headers: Record<string, string>;
+  malformedReason?: string;
   status: number;
   statusText: string;
+  upstreamStatus?: number;
+  upstreamStatusText?: string;
 };
 
 const OPENROUTER_DEBUG_PROPERTY = "openRouterDebug";
@@ -2186,6 +2209,41 @@ function openRouterDebugFetch(
       while (true) {
         const response = await baseFetch(input, init);
 
+        if (response.ok && request.stream === false) {
+          const malformedResponse =
+            await createMalformedOpenRouterResponse(response);
+
+          if (malformedResponse) {
+            const body = await readResponseBody(response);
+            const failure: OpenRouterFetchFailure = {
+              request,
+              response: {
+                bodyPreview: body.preview,
+                headers: getSafeResponseHeaders(response.headers),
+                malformedReason: malformedResponse.reason,
+                status: malformedResponse.response.status,
+                statusText: malformedResponse.response.statusText,
+                upstreamStatus: response.status,
+                upstreamStatusText: response.statusText,
+              },
+            };
+            recordFailure(failure);
+            for (const sink of activeOpenRouterSinks) {
+              emitDebug(
+                sink.options,
+                `openrouter.http status=${malformedResponse.response.status} statusText=${JSON.stringify(
+                  malformedResponse.response.statusText,
+                )} upstreamStatus=${response.status} malformed=${JSON.stringify(
+                  malformedResponse.reason,
+                )}`,
+              );
+            }
+
+            await response.body?.cancel().catch(() => undefined);
+            return malformedResponse.response;
+          }
+        }
+
         if (!response.ok) {
           const body = await readResponseBody(response);
           const failure: OpenRouterFetchFailure = {
@@ -2237,6 +2295,109 @@ function openRouterDebugFetch(
       throw error;
     }
   })();
+}
+
+async function createMalformedOpenRouterResponse(
+  response: Response,
+): Promise<{ reason: string; response: Response } | null> {
+  let body: unknown;
+
+  try {
+    body = await response.clone().json();
+  } catch {
+    return {
+      reason: "invalid_json",
+      response: createOpenRouterMalformedSuccessResponse(
+        response,
+        "the response body was not valid JSON",
+      ),
+    };
+  }
+
+  const reason = getMalformedOpenRouterChatCompletionReason(body);
+
+  if (reason === null) {
+    return null;
+  }
+
+  return {
+    reason,
+    response: createOpenRouterMalformedSuccessResponse(
+      response,
+      describeMalformedOpenRouterReason(reason),
+    ),
+  };
+}
+
+function getMalformedOpenRouterChatCompletionReason(
+  body: unknown,
+): string | null {
+  if (!isRecord(body)) {
+    return "root_not_object";
+  }
+
+  if (!Array.isArray(body.choices) || body.choices.length === 0) {
+    return "missing_choices";
+  }
+
+  const firstChoice: unknown = body.choices[0];
+
+  if (!isRecord(firstChoice)) {
+    return "first_choice_not_object";
+  }
+
+  if (!isRecord(firstChoice.message)) {
+    return "missing_choices_0_message";
+  }
+
+  return null;
+}
+
+function describeMalformedOpenRouterReason(reason: string): string {
+  switch (reason) {
+    case "root_not_object":
+      return "the JSON root was not an object";
+    case "missing_choices":
+      return "choices was missing or empty";
+    case "first_choice_not_object":
+      return "choices[0] was not an object";
+    case "missing_choices_0_message":
+      return "choices[0].message was missing or not an object";
+    default:
+      return reason;
+  }
+}
+
+function createOpenRouterMalformedSuccessResponse(
+  upstreamResponse: Response,
+  detail: string,
+): Response {
+  const headers = new Headers({ "content-type": "application/json" });
+
+  for (const [key, value] of Object.entries(
+    getSafeResponseHeaders(upstreamResponse.headers),
+  )) {
+    headers.set(key, value);
+  }
+
+  return new Response(
+    JSON.stringify({
+      error: {
+        code: 502,
+        message: `OpenRouter returned a malformed successful non-streaming chat completion response: ${detail}.`,
+        metadata: {
+          openwiki_reason: "malformed_success_response",
+          upstream_status: upstreamResponse.status,
+          upstream_status_text: upstreamResponse.statusText,
+        },
+      },
+    }),
+    {
+      headers,
+      status: 502,
+      statusText: "Bad Gateway",
+    },
+  );
 }
 
 /**

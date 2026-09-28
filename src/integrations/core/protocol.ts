@@ -9,9 +9,13 @@ const CanonicalString = z.string().trim().min(1);
 export type HostRunMode = "init" | "update";
 
 /**
- * The complete 0.5 repository-generation MCP tool set.
+ * The complete repository retrieval and generation MCP tool set.
  */
 export type ProtocolToolName =
+  | "openwiki_list_workspaces"
+  | "openwiki_list_wikis"
+  | "openwiki_search"
+  | "openwiki_read"
   | "openwiki_begin"
   | "openwiki_submit_plan"
   | "openwiki_next_page"
@@ -176,7 +180,7 @@ export function isValidHostId(value: string): boolean {
 }
 
 /**
- * One of the complete five MCP tools exposed by OpenWiki 0.4.
+ * One of the complete repository retrieval and generation MCP tools.
  */
 export interface ProtocolTool {
   /**

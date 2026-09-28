@@ -26,6 +26,7 @@ import {
   type SubmitPlanRequest,
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
+import { createRetrievalTools } from "./retrieval-tools.js";
 
 /**
  * Stable host identity and optional deterministic clock for the MCP adapter.
@@ -48,7 +49,7 @@ export interface HostSessionManagerOptions {
 }
 
 /**
- * Thin single-run MCP adapter over the transport-neutral lifecycle core.
+ * Read-only repository memory plus a single-run generation lifecycle adapter.
  */
 export class HostSessionManager {
   /**
@@ -215,12 +216,13 @@ export class HostSessionManager {
   }
 
   /**
-   * Returns exactly the six OpenWiki 0.5 lifecycle tools.
+   * Returns read-only retrieval followed by the six generation lifecycle tools.
    *
    * @returns Ordered transport-neutral tool definitions.
    */
   tools(): readonly ProtocolTool[] {
     return [
+      ...createRetrievalTools(),
       {
         name: "openwiki_begin",
         description:

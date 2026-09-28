@@ -38,7 +38,9 @@ const OPENWIKI_LEGACY_TEMPLATE_LINES = [
 ];
 
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
-// Each is created when missing and refreshed in place when already present.
+// Each is refreshed in place when present. Only AGENTS.md is created when
+// missing: Claude Code reads AGENTS.md when no CLAUDE.md exists, but an
+// existing CLAUDE.md shadows it, so that file still needs the block.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 const CLAUDE_AGENTS_IMPORT = "@AGENTS.md";
 
@@ -246,6 +248,7 @@ async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
 ): Promise<{ agentsPath: string; nextContent: string | undefined }> {
+  const isClaude = path.basename(agentsPath) === "CLAUDE.md";
   let currentContent = "";
 
   try {
@@ -254,9 +257,10 @@ async function prepareCodeModeAgentSnippet(
     if (!isFileNotFoundError(error)) {
       throw error;
     }
+    if (isClaude) {
+      return { agentsPath, nextContent: undefined };
+    }
   }
-
-  const isClaude = path.basename(agentsPath) === "CLAUDE.md";
 
   // A CLAUDE.md that is nothing but the AGENTS.md import is already canonical:
   // leave it byte-for-byte so we never rewrite a file that has nothing to fix.
@@ -567,16 +571,22 @@ jobs:
         if: \${{ !cancelled() }}
         run: rm -f -- openwiki/.run.json
 
+      - name: List OpenWiki update paths
+        id: paths
+        if: \${{ !cancelled() }}
+        # CLAUDE.md is listed only when present: git add fails on a missing path
+        # and then stages nothing.
+        run: |
+          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
+          if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
+          echo "list=$paths" >> "$GITHUB_OUTPUT"
+
       - name: Create OpenWiki update pull request
         id: create-pr
         if: \${{ !cancelled() }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          add-paths: |
-            openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
+          add-paths: \${{ steps.paths.outputs.list }}
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"
@@ -599,6 +609,14 @@ jobs:
 `;
 }
 
+/**
+ * Creates the repository-agent guidance managed by OpenWiki.
+ *
+ * Retrieval tools take precedence over eagerly loading the local quickstart so
+ * linked workspaces remain discoverable and context stays progressive.
+ *
+ * @returns Complete fenced AGENTS.md instruction block.
+ */
 function createCodeModeAgentsSnippet(): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
@@ -606,6 +624,10 @@ function createCodeModeAgentsSnippet(): string {
 
 This repository has a generated \`openwiki/\` evidence index. It is optional just-in-time context, not required startup reading.
 
+- Do not enumerate, preload, or search wikis at task start. Use retrieval when the user asks for it, when unfamiliar architecture or dependency behavior materially affects the task, or when source inspection leaves an important uncertainty. Stop once the question is grounded.
+- When those conditions apply and OpenWiki retrieval tools are available, use \`openwiki_search\` for just-in-time context and \`openwiki_read\` for the relevant complete sections. If search returns \`workspace_required\`, ask which listed workspace to use and retry with its ID.
+- Use \`openwiki_list_workspaces\` or \`openwiki_list_wikis\` when workspace membership itself needs to be discovered.
+- If the retrieval tools are unavailable, read \`openwiki/quickstart.md\` and follow its links to the relevant pages.
 - Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 

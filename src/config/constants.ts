@@ -533,6 +533,13 @@ export function providerUsesStreaming(provider: OpenWikiProvider): boolean {
     return true;
   }
 
+  // Long generations, such as planning a large repository, can outlast the Bob
+  // endpoint's response timeout when sent as a single non-streaming completion.
+  // Streaming returns output as it is produced, including tool calls.
+  if (provider === "bob") {
+    return true;
+  }
+
   return false;
 }
 

@@ -1,5 +1,5 @@
 ---
-"openwiki": minor
+"openwiki": patch
 ---
 
-Ship OpenWiki as a native Pi package with its extension and canonical skill.
+feat: ship openwiki as a native pi package
