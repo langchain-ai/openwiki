@@ -1,0 +1,255 @@
+openwiki/quickstart.md
+  s_9ca0008bc10962::t_f5e4c3df1bc44d 39,41-42,58,97,100-131,187,223-233,237-245,249-252
+openwiki/integrations/coding-agents.md
+  s_9ca0008bc10962::t_f5e4c3df1bc44d 3,9-10,31-32,57-60,63,66-71,74-75,97-131,247-250,265-268,285-297,354,365-366,370-374,376,379
+openwiki/architecture/source-map.md
+  s_9ca0008bc10962::t_f5e4c3df1bc44d 4,45-54,75-76,93-96,105,107-108,121,180,182-185,190-200,208-218,228-261,345-366,370-388,397-406,420-427,443-451,453-475,560-571,576-580,586-588,590,596-603
+.changeset/debug-root-cause.md
+  s_9ca0008bc10962::t_ed9cde706341f3 1-5
+.changeset/fix-bob-mcp-generation.md
+  s_9ca0008bc10962::t_06143388e9ab91 1-5
+.changeset/fresh-claims-relocate.md
+  s_9ca0008bc10962::t_f0be48bb650a4d 1-5
+.changeset/no-create-claude-md.md
+  s_9ca0008bc10962::t_471d8ae42250af 1-5
+.changeset/restrict-host-shell-execute.md
+  s_9ca0008bc10962::t_99b44f1d8f201c 1-5
+.github/workflows/openwiki-update.yml
+  s_9ca0008bc10962::t_7ae4b4563b46ea 82-91,93,97,110-113
+AGENTS.md
+  s_9ca0008bc10962::t_9a3e5dddf78873 7-10
+CHANGELOG.md
+  s_9ca0008bc10962::t_08f063e4a2f2e1 3-24
+CONTRIBUTING.md
+  s_9ca0008bc10962::t_a6a21b088ae09b 40,45-47,55-56,60-62,64-65
+README.md
+  s_9ca0008bc10962::t_c3349960acba62 7,19,21,23,27-32,36,38,40,43,46,48,50,52-61,63,65,67-69,71,73-75,77,79-80,82,84,86-90,92,94,96-97,99,101,103,105,107,109,111,114-115,118,120,122,124,127,130,132-135,137,139-140,142,144,146,148-151,153,156-158,161-163,177-181,199,201,203-240,243-251,255,257,259,261,263,265-287,291,293-294,296,299,302,304,310,316-361,365-367,377-379,383-385,395-450,453-455,648,670-672,676-677
+docs/pi-integration-notes.md
+  s_9ca0008bc10962::t_08e83a8310073e 1-10
+examples/openwiki-update-auto-merge.yml
+  s_9ca0008bc10962::t_b4400a1ddd3beb 93-96
+examples/openwiki-update.yml
+  s_9ca0008bc10962::t_3561eb1a1eaabe 56-65,67,71,84-87
+integrations/openwiki/SKILL.md
+  s_9ca0008bc10962::t_ef7f86e1099e41 3,8-44
+integrations/openwiki/agents/bob.yaml
+  s_9ca0008bc10962::t_a060605f43280f 3
+integrations/openwiki/agents/openai.yaml
+  s_9ca0008bc10962::t_01811be354fba9 3
+openwiki/.claims/architecture/agent-runtime.json
+  s_9ca0008bc10962::t_560c4406a621b5 3,10-11,20-21,45,48-49,136-137,140-141,192-193,196-201,249,252-253,297,300-301,307,310-311,371,374-375,600-717,721-722
+openwiki/.claims/architecture/overview.json
+  s_9ca0008bc10962::t_81693876fc2a1d 3,10-11,14-15,53,56-61,67,70-75,78-79,99,105,108-109,112-121,137,140-141,144-145,151,154-159,162-163,166-167,209,212-213,216-217,236-237,246-247,250-255,288-289,292-293,296,338-339,342,346-347,356,364-365,368-369,390-439,444
+openwiki/.claims/architecture/source-map.json
+  s_9ca0008bc10962::t_70c7dcafc5d63c 3,64-65,68-69,72-73,76-77,86-87,90-91,94-95,98-99,102-103,106-107,152-153,170-171,243,246-271,301,304-317,320-321,324-325,328-329,332-333,336-337,346-347,350-351,396-397,400-401,404-405,414-419,422-423,426-431,470-471,474-475,501,532-533,634-715,721-722
+openwiki/.claims/concepts/grounded-claims.json
+  s_9ca0008bc10962::t_e3ae473723f596 3,463,470-471,480,515,518-519,522-523,532-533,537,543,546-555,562-573,576-577,584
+openwiki/.claims/concepts/model-providers.json
+  s_9ca0008bc10962::t_39443285037c7f 3,28,32-36,46,50-51,60,64-65,68,134-135,138,156,170,174,178-179,188,206-207,210,220-221,224,228-229,256-257,260-261,300-301,304-305,308,312,319,322-327,330-331,340,354-355,358,372-373,376,384-385,394-395,398,416-479,483-484
+openwiki/.claims/concepts/two-modes.json
+  s_9ca0008bc10962::t_285abdf61b639f 3,119,122-123,126-127,133,136-137,214-269,273-274
+openwiki/.claims/integrations/coding-agents.json
+  s_9ca0008bc10962::t_62c6c2daaf3899 3,7,11,14-15,21,24-25,28-33,39,42-43,46-47,56-65,74-75,78-83,195,198-199,303,306-311,314-315,338-343,347,365,371,378-379,389,393,410-437,442
+openwiki/.claims/integrations/visualizer.json
+  s_9ca0008bc10962::t_792f5042283148 3,30,75,82-83,411-412
+openwiki/.claims/operations/ci-scheduling.json
+  s_9ca0008bc10962::t_a3a67e1815a984 3,94,169,197,217,230-231,234-235,245,266-279,283-284
+openwiki/.claims/operations/cli-reference.json
+  s_9ca0008bc10962::t_da286aafaa1463 3,11,14-15,21,24-25,28-29,35,38-39,45,48-49,52-53,496-545,549-550
+openwiki/.claims/operations/configuration.json
+  s_9ca0008bc10962::t_6f1e1bc94b1f4f 3,65,68-69,171,174,178-179,231,234-235,238-239,259,262-263,266-267,270-271,274,322-323,326,410-445,450
+openwiki/.claims/quickstart.json
+  s_9ca0008bc10962::t_aa07fedc50d874 3,7,11,18,28-29,39,42-43,46-47,90-91,100-101,114-115,125,128-129,132-133,136-137,146-151,154,169,229-230
+openwiki/.claims/testing/overview.json
+  s_9ca0008bc10962::t_11accf0f71a67b 3,318-319,322-323,326,459,481,495,498-499,502-503,506-511,517,520-521,524-525,528-533,603,606-607,610-611,823,827-921,924-959,962-963,970
+openwiki/.claims/workflows/claims-reconciliation.json
+  s_9ca0008bc10962::t_43d6f118f1867e 3,125,132-137,330-331,334-335,344,348-353,378
+openwiki/.claims/workflows/onboarding.json
+  s_9ca0008bc10962::t_9f40434e2a0342 3,233,236-237,240,244-248,252-253,277-281,284-285,364-395,400
+openwiki/.claims/workflows/personal-ingestion.json
+  s_9ca0008bc10962::t_b6fb5ebab95cde 3,151,154-171,289-290
+openwiki/.claims/workflows/repository-generation.json
+  s_9ca0008bc10962::t_34eeee167a96c6 3,10-11,14-15,18-22,26-27,30-31,34-35,79,82-83,86-87,90-91,94-95,171,174-175,181,184-185,214-215,361,364-365,368-369,389,392-393,396-397,400-401,410-411,415,418-419,457,460,464-465,468-469,476-477,486-487,493,496-497,500-501,604-719,724
+openwiki/.claims/workflows/wiki-finalization.json
+  s_9ca0008bc10962::t_402ec307a11bb5 3,86-87,246-251,260,264,268-269,278-279,292-293,296,300,302-309,318,328-329,332,342,366-367,380-381,384-385,394-395,398,402,410
+openwiki/.last-update.json
+  s_9ca0008bc10962::t_59ac82fa69cad1 2,4
+openwiki/.page-manifest.json
+  s_9ca0008bc10962::t_b4e3f2ffb9540a 5-9,12,14-16,19-23,26,28-30,33-37,43-44,47-51,54,56-58,64-65,68-72,75-79,82-86,89,91-93,99-100,103-107,113-114,117,119-121,124,126-128,131,133-135,138-142,145,147-149,152,154-156
+openwiki/architecture/agent-runtime.md
+  s_9ca0008bc10962::t_672af4ff97aca5 14-15,31-32,41-46,53,76,94,134,138-164,203-254,257,260,262,270,272
+openwiki/architecture/index.md
+  s_9ca0008bc10962::t_624592e391081a 5
+openwiki/architecture/overview.md
+  s_9ca0008bc10962::t_6ca79a1d40dc71 16,35-36,47,50,76-80,85-89,94,97-105,108-109,120-156,160-166,170-173,181-198,205-236,269-272,276-292
+openwiki/concepts/grounded-claims.md
+  s_9ca0008bc10962::t_4ac02fc594b4c4 45,48,59-65,236-241,272-283,370-399
+openwiki/concepts/model-providers.md
+  s_9ca0008bc10962::t_40529513d43704 23-24,31,33-34,131-139,229-233,310-407
+openwiki/concepts/two-modes.md
+  s_9ca0008bc10962::t_f72138b769058d 11-12,19-20,25-26,33,35-36,57-59,70,105-136,161-166,168-171,182-198
+openwiki/integrations/index.md
+  s_9ca0008bc10962::t_c9cb4f5892a604 3
+openwiki/integrations/visualizer.md
+  s_9ca0008bc10962::t_9601eec3b63e6f 6-8,42,88-100
+openwiki/operations/ci-scheduling.md
+  s_9ca0008bc10962::t_3a17419c3fd13a 38,40-41,267-292
+openwiki/operations/cli-reference.md
+  s_9ca0008bc10962::t_dc8dcd559e2093 17-18,33,35-36,60,63-67,74,77-78,83,94-99,179-205,274-275
+openwiki/operations/configuration.md
+  s_9ca0008bc10962::t_30ede471e81a40 34,37,86-88,191-201,203-218,245-258,311-313,321-327
+openwiki/testing/index.md
+  s_9ca0008bc10962::t_6fe533636dadd1 4
+openwiki/testing/overview.md
+  s_9ca0008bc10962::t_8e2667966596ff 4,61-72,99-104,107-108,125-126,133,136,220-222,280,285-286,297-398,470-478,612-615,628,631-675,694,715-716,733-742,768-778,800-852,855-859,865-866,880-882,885-895,897-900,904,906-907,1004,1006-1007,1011,1022-1026,1028,1032-1033
+openwiki/workflows/claims-reconciliation.md
+  s_9ca0008bc10962::t_5089e83fc61073 51,54,260-266
+openwiki/workflows/index.md
+  s_9ca0008bc10962::t_6baf16f5a09715 6
+openwiki/workflows/onboarding.md
+  s_9ca0008bc10962::t_c9237928ab5b94 37,40,226-238,254-276
+openwiki/workflows/personal-ingestion.md
+  s_9ca0008bc10962::t_359d1b5717fa38 25-26,29-32,128-129,132-137,142-146,151-158,163-168,170-172,216-218,229-233
+openwiki/workflows/repository-generation.md
+  s_9ca0008bc10962::t_9e5dcf87e5be07 4,14,21-22,43,46,250-257,444-452,467-627
+openwiki/workflows/wiki-finalization.md
+  s_9ca0008bc10962::t_ab4ee564f2ce4a 28
+package.json
+  s_9ca0008bc10962::t_443c227c9ddd18 3
+scripts/install-local-integration.mjs
+  s_9ca0008bc10962::t_d4ae0c7602ebbf 20
+src/agent/docs-only-backend.ts
+  s_9ca0008bc10962::t_f3830f14f83f4d 62,64-73,75,77,152,155-157,159-160,162,164,166,485-486,489-500,510,513,690,692,695
+src/agent/index.ts
+  s_9ca0008bc10962::t_95ce85af7f1ad3 14,131,214,296,355-359,376,498-517,556-557,1303
+src/agent/prompt.ts
+  s_9ca0008bc10962::t_3b14f54a9e2e72 155,161,181,200
+src/agent/prompts/code.ts
+  s_9ca0008bc10962::t_6ecbd43e18be1c 18
+src/agent/prompts/personal.ts
+  s_9ca0008bc10962::t_6c364c2904d5e4 13,20,24-25,40,89,96,141,148,152-153,168,247,264,326,351,363,370,374-375,390,469,486,548
+src/agent/repository-runner.ts
+  s_9ca0008bc10962::t_9249d9192b3a58 292-313,374-375,506-508,510-571,577-579,586-587,589-726,728-804,806,813,816,823,915,918,922,925,929,949,955,965-970
+src/agent/types.ts
+  s_9ca0008bc10962::t_dcd3a3f930d035 51-67,83-88,94-99
+src/claims/evidence/repository/resolver.ts
+  s_9ca0008bc10962::t_c248ab2f4c598f 320,389,396-415
+src/cli/cli.tsx
+  s_9ca0008bc10962::t_746337714ae020 30,81-85
+src/cli/commands.ts
+  s_9ca0008bc10962::t_2b56082969891f 102-163,171-172,245-275,1196-1198,1228-1237
+src/cli/components/wiki-workspace-manager.tsx
+  s_9ca0008bc10962::t_0e46a2b29cf4ea 1-1232
+src/cli/diagnostics/error-diagnostics.ts
+  s_9ca0008bc10962::t_38dff1148ffa20 36,75,83-119
+src/cli/link.tsx
+  s_9ca0008bc10962::t_aa262a28590cad 1-152
+src/cli/run-log/progress.ts
+  s_9ca0008bc10962::t_7771215c614be8 68-71,78-83
+src/cli/run-log/reducer.ts
+  s_9ca0008bc10962::t_3157d39cdb9379 31-36
+src/cli/run-log/types.ts
+  s_9ca0008bc10962::t_6a15925be00f77 67-80
+src/config/constants.ts
+  s_9ca0008bc10962::t_3f19fd34fbf9ea 77-90,536-542,1029-1075,1078,1083-1085
+src/config/env.ts
+  s_9ca0008bc10962::t_c9fb3b4d35300d 69,76,151,434-439,505,572-583
+src/generation/repository-run.ts
+  s_9ca0008bc10962::t_ebe9a152a5acd1 296-361,1023,1038-1054,1057-1058,1062,1072-1075,1100,1107,1114,1122,1128,1161-1164,1170-1171,1174,1178-1186,1188,1190-1195,1197-1208,1210-1233,1256,1258-1262,1265,1293,1329-1350,1352-1375,1377-1383,1385-1410
+src/ingestion/code-mode.ts
+  s_9ca0008bc10962::t_6d44a028c93882 22-39,41-43,251,260-262,265-267,271-284,286-311,317-318,328,332-454,574-583,585,589,602-605,612-619,627-630
+src/ingestion/ingestion.ts
+  s_9ca0008bc10962::t_25ff16354309cb 1,20,23,311,315,329,450-453,458-469
+src/integrations/core/protocol.ts
+  s_9ca0008bc10962::t_4a2f59d9d09e25 12,15-18,121,164,183
+src/integrations/core/retrieval-tools.ts
+  s_9ca0008bc10962::t_9e3607299051de 1-230
+src/integrations/core/session-manager.ts
+  s_9ca0008bc10962::t_d5037acfb2faf4 29,52,182,219,225,250,258
+src/integrations/install/atomic-file.ts
+  s_9ca0008bc10962::t_7614fe15f18ae8 10,15,21-23
+src/integrations/install/registry.ts
+  s_9ca0008bc10962::t_4e8a88cc3b3862 17,108-141
+src/integrations/install/types.ts
+  s_9ca0008bc10962::t_6687c8b04049a4 5-12
+src/integrations/mcp/server.ts
+  s_9ca0008bc10962::t_4882a00b1e4f84 11-28
+src/linking/wiki-workspaces.ts
+  s_9ca0008bc10962::t_9d8452e51d9f43 1-1671
+src/retrieval/wiki.ts
+  s_9ca0008bc10962::t_3c90545cc77907 1-1116
+src/visualize/graph.ts
+  s_9ca0008bc10962::t_a1e241e6403613 309-316
+static/openwiki-link.svg
+  s_9ca0008bc10962::t_bad961bef95c0e 1-108
+test/agent/docs-only-backend.test.ts
+  s_9ca0008bc10962::t_ae038c588e68de 209-256
+test/agent/personal-shell-boundary.test.ts
+  s_9ca0008bc10962::t_b032f61a3ddc65 1-244
+test/agent/prompt.test.ts
+  s_9ca0008bc10962::t_5f74d74cb1e33e 70-88
+test/agent/repository-runner.test.ts
+  s_9ca0008bc10962::t_0c5c1a4bdf7630 86-92,126-131,222-229,232-235,428-438,440,449-457,472-479,497,508-510,519-524,529-563,592-598,960-1195
+test/claims/evidence/repository/resolver.test.ts
+  s_9ca0008bc10962::t_ff525245088f33 119,186-207
+test/cli/commands.test.ts
+  s_9ca0008bc10962::t_754f3cd91bf036 73-140
+test/cli/components/wiki-workspace-manager.test.tsx
+  s_9ca0008bc10962::t_c4e3d6c5a8661e 1-303
+test/cli/diagnostics/error-diagnostics.test.ts
+  s_9ca0008bc10962::t_256c7fc4fae937 116-153
+test/cli/integrations-runners.test.ts
+  s_9ca0008bc10962::t_ae18b5485dfc71 71-72,91-93,95,226
+test/cli/run-log/progress.test.ts
+  s_9ca0008bc10962::t_e18e06035004a7 1-72
+test/cli/run-log/reducer.test.ts
+  s_9ca0008bc10962::t_b107b41732089b 127-156
+test/config/constants.test.ts
+  s_9ca0008bc10962::t_5521fd1a6c9e95 7,9-10,49,281-318,320-337,712-717
+test/config/env.test.ts
+  s_9ca0008bc10962::t_dca5ed18a7663c 145-148
+test/generation/repository-run.test.ts
+  s_9ca0008bc10962::t_f2220230c20414 635,1432,1451-1453,1455-1471,1492-1697
+test/ingestion/code-mode.test.ts
+  s_9ca0008bc10962::t_68fad3028348e3 9,12,24-43,103-106,113,121-123,125,136-141,147-148,166,171-210,215,313-633,696-728
+test/ingestion/ingestion-run.test.ts
+  s_9ca0008bc10962::t_640ff74af05ff0 2,74-77,108,180-182,217-223,264-324
+test/integrations/cli-dogfood.test.ts
+  s_9ca0008bc10962::t_e5051df09baf4d 92-94
+test/integrations/config-adapters.test.ts
+  s_9ca0008bc10962::t_baff0772770322 52-55,265-307
+test/integrations/installer.test.ts
+  s_9ca0008bc10962::t_7b454c771254f2 395,475-502,513-514
+test/integrations/mcp-server.test.ts
+  s_9ca0008bc10962::t_24f415a3ec34ba 97,102-125,169-172,181-194,294
+test/integrations/package-contents.test.ts
+  s_9ca0008bc10962::t_cc7c5e3f85b206 62-63
+test/integrations/retrieval-tools.test.ts
+  s_9ca0008bc10962::t_a16a10ef067407 1-76
+test/integrations/session-manager.test.ts
+  s_9ca0008bc10962::t_820d3ee002a07a 215,221-224,234-297
+test/integrations/skill.test.ts
+  s_9ca0008bc10962::t_cc4f1cab21dfc5 54,56-71,94-102,175
+test/linking/wiki-workspaces.test.ts
+  s_9ca0008bc10962::t_cd63ae87d36480 1-490
+test/retrieval/wiki.test.ts
+  s_9ca0008bc10962::t_7eb2edf85dc673 1-514
+test/visualize/visualize-graph.test.ts
+  s_9ca0008bc10962::t_1edc0e01e51b5d 112-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "dec92198d8358d31238a4e3545633d704118e9a5",
+  "prompts": {},
+  "sessions": {
+    "s_9ca0008bc10962": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e937-ff8d-71b0-9131-efa66f4db7cd",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
