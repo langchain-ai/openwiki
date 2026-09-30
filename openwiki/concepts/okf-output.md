@@ -22,10 +22,10 @@ sources:
     resource: repo://src/okf/index-labels.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.4.0", at: "2026-08-26T20:17:27.397Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-28T03:39:43.412Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Open Knowledge Format Output
@@ -45,6 +45,21 @@ links, synchronizes claim sources, and finalizes generated provenance. See
 [wiki finalization](../workflows/wiki-finalization.md) for the surrounding
 lifecycle and [architecture overview](../architecture/overview.md) for where OKF
 output sits in the system.
+
+```mermaid
+flowchart LR
+    A["migrate frontmatter to OKF"] --> B["snapshot generated provenance"]
+    B --> C["agent authors pages"]
+    C --> D["validate Mermaid fences"]
+    D --> E["synchronize indexes"]
+    E --> F["validate internal links"]
+    F --> G["synchronize claim sources"]
+    G --> H["finalize generated provenance"]
+```
+
+Preparation migrates pages and snapshots provenance; finalization then runs
+Mermaid validation, index sync, link validation, claim-source sync, and
+provenance finalization in that fixed order.
 
 ## Frontmatter fields and validation
 
@@ -166,9 +181,28 @@ labels are Markdown-escaped. An index is written only when its rendered content
 differs from what already exists, so unchanged indexes produce no diff noise.
 
 Index synchronization also normalizes each concept file it visits (via the same
-`normalizeConceptContent` path) so it can read clean metadata. The root
-directory's index additionally carries an `okf_version: "0.2"` frontmatter
-marker; nested indexes have no frontmatter.
+`normalizeConceptFile`/`normalizeConceptContent` path) so it can read clean
+metadata. The root directory's index additionally carries an `okf_version:
+"0.2"` frontmatter marker; nested indexes have no frontmatter.
+
+`synchronizeWikiIndexes` is the post-authoring counterpart of the pre-run
+`migrateWikiToOkf`. `migrateWikiToOkf` normalizes every concept page's
+frontmatter in place without touching indexes, so the agent authors over an
+already-conformant wiki; `synchronizeWikiIndexes` runs after authoring, re-normalizes
+each concept file it visits (to read a clean `title`/`description` for the index
+links), and renders the directory indexes. Both passes share the same
+`normalizeConceptFile`/`normalizeConceptContent` repair path, so a page is
+normalized at least once per run regardless of which pass reaches it first.
+
+While synchronizing, `synchronizeWikiIndexes` also collects report-only
+frontmatter signals into a `WikiFrontmatterReport`: `generatedPages` lists
+pages still carrying `openwiki_generated: true` (meaning their `type`/`title`
+were code-derived rather than authored), and `missingDescriptionPages` lists
+pages indexed without a usable `description`, matching what the index actually
+renders. These signals let an operator see metadata quality the deterministic
+pass leaves as-is by design; they do not affect `validateOkfFrontmatter` or the
+OKF repair it feeds, and they never fail the run — a page with a code-derived
+type or a missing description is still indexed and still finalized.
 
 The two section headings ("Files" and "Directories") and the derived concept
 `type` word ("Reference") are treated as structural navigation chrome rather than

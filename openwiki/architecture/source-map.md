@@ -102,10 +102,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-25T08:09:49.344Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Source Map
@@ -165,7 +165,14 @@ before anything else.
   `resolveOpenAiCompatibleStreamMessages` (the
   `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` resolver), which opts an
   `openai-compatible` endpoint back into LangGraph's `"messages"` stream mode.
-  Nearly every subsystem imports its identifiers from here.
+  It also resolves repository page-worker concurrency (`resolvePageConcurrency`,
+  clamping `OPENWIKI_PAGE_CONCURRENCY` between `DEFAULT_PAGE_CONCURRENCY` of 1
+  and the `MAX_PAGE_CONCURRENCY` cap of 8) and the provider retry count
+  (`resolveProviderRetryAttempts`, which raises the default from
+  `DEFAULT_PROVIDER_RETRY_ATTEMPTS` to `PARALLEL_PROVIDER_RETRY_ATTEMPTS` when
+  more than one worker runs, since concurrent workers make transient rate
+  limits the common failure). Nearly every subsystem imports its identifiers
+  from here.
 - **`src/generation/repository-run.ts`** owns the repository-generation
   lifecycle. It drives the plan-then-page workflow across a six-operation
   surface: `beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
@@ -275,21 +282,23 @@ reconciles per-page Claims (`reconcilePageClaims`), turning sparse
 confirm/update/add/retract operations while retaining omitted issue-free
 Claims. `src/generation/page-manifest.ts`
 owns the committed page-correctness ledger (`openwiki/.page-manifest.json`,
-schema-versioned), recording each completed page's source fingerprint, page
-version, and producer provenance. `src/generation/errors.ts` defines
-`RepositoryRunError`. The lifecycle exposes a six-operation surface
-(`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
-`inspectRepositoryPageClaims`, `submitRepositoryPage`, `finishRepositoryRun`).
-`nextRepositoryPage` returns `claimsRequiringAttention` and
-`existingClaimCount` rather than the full Claim set; `inspectRepositoryPageClaims`
-returns the complete compact Claim set on demand. Its snapshot/skip/restore
-operations (`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
-`restoreRepositoryPageMarkdown`) let a failed page worker be rolled back to its
-pre-work state and marked `skipped` rather than failing the whole run;
-`restoreRepositoryPageMarkdown` tolerates a not-found page when the snapshot
-held no markdown, so deleting a newly added page counts as a clean restore;
-`finishRepositoryRun` requires a snapshot for every skipped job and re-applies
-those snapshots before finalizing.
+schema-versioned via `REPOSITORY_PAGE_MANIFEST_SCHEMA_VERSION`), recording each
+completed page's git head, source fingerprint, page version, and producer
+provenance (`completedBy`, `completedRunId`), and is read and rewritten by
+`finishRepositoryRun` to reconcile coverage after skipped pages.
+`src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle exposes a
+six-operation surface (`beginRepositoryRun`, `submitRepositoryPlan`,
+`nextRepositoryPage`, `inspectRepositoryPageClaims`, `submitRepositoryPage`,
+`finishRepositoryRun`). `nextRepositoryPage` returns `claimsRequiringAttention`
+and `existingClaimCount` rather than the full Claim set;
+`inspectRepositoryPageClaims` returns the complete compact Claim set on demand.
+Its snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
+`skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
+be rolled back to its pre-work state and marked `skipped` rather than failing the
+whole run; `restoreRepositoryPageMarkdown` tolerates a not-found page when the
+snapshot held no markdown, so deleting a newly added page counts as a clean
+restore; `finishRepositoryRun` requires a snapshot for every skipped job
+(matching `jobId` and `path`) and re-applies those snapshots before finalizing.
 
 ### claims — grounded-claim persistence, reconciliation guidance, and evidence resolution
 
@@ -301,13 +310,14 @@ sidecars with a schema version; `session.ts` inspects and replaces page claims;
 `preflight.ts` computes stable grounding issues. `src/claims/core/` holds
 mutations, error types, and the resolver cache. `src/claims/evidence/repository/`
 resolves and relocates `repo://` evidence resources (`resolver.ts`,
-`resource.ts`), including opaque line-range relocation metadata.
-`src/claims/guidance.ts` is the shared model-facing Claims standard: it exports
-`CLAIMS_SUBSTANCE_GUIDANCE` (the rules for selecting substantive, atomic
-propositions over shallow per-symbol facts) and `CLAIMS_RECONCILIATION_GUIDANCE`
-(the sparse-reconciliation rules), consumed verbatim by the page-worker prompt
-(`repository-prompts.ts`), the `submit_page` tool description, and the MCP
-server `INSTRUCTIONS` so the model sees one standard across every surface.
+`resource.ts`), including opaque line-range relocation metadata encoded into
+evidence versions. `src/claims/guidance.ts` is the shared model-facing Claims
+standard: it exports `CLAIMS_SUBSTANCE_GUIDANCE` (the rules for selecting
+substantive, atomic propositions over shallow per-symbol facts) and
+`CLAIMS_RECONCILIATION_GUIDANCE` (the sparse-reconciliation rules), consumed
+verbatim by the page-worker prompt (`repository-prompts.ts`), the `submit_page`
+tool description, and the MCP server `INSTRUCTIONS` so the model sees one
+standard across every surface.
 
 ### okf — Open Knowledge Format frontmatter, indexing, and verification
 
@@ -472,7 +482,10 @@ repository root. `src/integrations/mcp/server.ts` exposes OpenWiki over MCP,
 advertising an `INSTRUCTIONS` preamble that incorporates
 `CLAIMS_RECONCILIATION_GUIDANCE` from `claims/guidance.ts` so the host model
 follows the same sparse-reconciliation standard as the native page-worker prompt
-(stdio in `stdio.ts`); `src/integrations/install/` handles host installation.
+(stdio in `stdio.ts`); `src/integrations/install/` handles host installation,
+with `registry.ts` (`HOST_TARGETS`) mapping supported host targets (bob, codex,
+claude, opencode, cursor, kiro, omp, antigravity) to their skill/MCP config
+locations.
 
 ### visualize — local graph viewer
 

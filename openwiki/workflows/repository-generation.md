@@ -34,16 +34,18 @@ sources:
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-5835357b69a5869be210533b
+    resource: repo://src/okf/index-sync.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Repository Generation Lifecycle
@@ -425,16 +427,26 @@ touching `initialPages`), applies the plan's explicit deletions, reconciles
 Claims sidecars for deleted pages, finalizes wiki artifacts (indexes and
 provenance), restores any skipped pages, finalizes Claims (excluding skipped
 pages), and proves the whole repository has no orphaned or partially durable
-Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages). It
-then rebuilds the page manifest so that only pages this run actually regenerated
-are restamped with this run's source checkpoint, while skipped and untouched
-pages retain their prior checkpoint via `preserveSourcePages` (a
-deterministic-finalization rewrite still refreshes `pageVersion`). It
-then persists completion metadata — `interrupted` when any page was skipped or
-source changed during the finish window, otherwise `complete` — and, last of
-all, removes `openwiki/.run.json`. The checkpoint is deleted last on purpose:
-every earlier failure leaves the run resumable so `begin` can reconstruct and
-retry.
+Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages).
+During the deterministic index-sync pass finish also captures a
+`WikiFrontmatterReport` — which pages still carry code-derived
+`openwiki_generated: true` front matter and which indexed pages have no usable
+`description`. It then rebuilds the page manifest so that only pages this run
+actually regenerated are restamped with this run's source checkpoint, while
+skipped and untouched pages retain their prior checkpoint via
+`preserveSourcePages` (a deterministic-finalization rewrite still refreshes
+`pageVersion`). It then persists completion metadata — `interrupted` when any
+page was skipped or source changed during the finish window, otherwise
+`complete` — and, last of all, removes `openwiki/.run.json`. The checkpoint is
+deleted last on purpose: every earlier failure leaves the run resumable so
+`begin` can reconstruct and retry.
+
+After the checkpoint is removed, finish emits the captured frontmatter report
+as a non-fatal `text` event (when an `onEvent` consumer was supplied) listing
+the affected pages, using the same operator-visible channel as the
+source-changed notice. The report only describes metadata quality the
+deterministic pass leaves as-is by design; it never changes what the run
+persisted.
 
 ## One lifecycle, two drivers
 
@@ -445,11 +457,12 @@ stable OpenWiki producer actor, then loops: it runs a bounded planning agent whe
 the phase is `planning`, runs every remaining page job via
 `runPendingPageAgents` (up to `pageConcurrency` fresh non-delegating workers at
 once, each bounded to writing only its assigned page and calling `submit_page`,
-with `inspect_claims` available on demand), and then calls `finish`. When
-`finish` reports `sourceChanged: true`, the runner emits a user-facing message
-explaining that the wiki was finalized without advancing the source checkpoint
-and a later `--update` will reconcile the drift. Workers reuse the supplied model
-but keep no repository-generation state beyond the durable core.
+with `inspect_claims` available on demand), and then calls `finish`, forwarding
+its own `onEvent` consumer so finish can surface frontmatter-quality signals.
+When `finish` reports `sourceChanged: true`, the runner emits a user-facing
+message explaining that the wiki was finalized without advancing the source
+checkpoint and a later `--update` will reconcile the drift. Workers reuse the
+supplied model but keep no repository-generation state beyond the durable core.
 
 The **host integration** (`HostSessionManager`) exposes the same six operations
 as the OpenWiki MCP tools, including `openwiki_inspect_page_claims`. It holds one

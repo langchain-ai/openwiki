@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-25T08:09:49.344Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -50,7 +50,7 @@ sources:
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -254,12 +254,13 @@ The six lifecycle tools exposed by the host session manager (preceded by read-on
 
 ## The docs-only filesystem backend
 
-`OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers four independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
+`OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers five independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
 
-1. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and while any ignore rule is active, shell `execute` is restricted to a tiny anchored allowlist (`pwd`, `git rev-parse HEAD`) because arbitrary shell cannot be proven not to read an ignored path.
-2. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
-3. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
-4. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
+1. **Shell confinement.** The upstream `LocalShellBackend` runs `execute` directly on the host, so its `rootDir`/`virtualMode` options do not confine shell. In repository mode `execute` is therefore restricted to a small fully-anchored allowlist (`pwd`, `git rev-parse HEAD`) — a deliberate allowlist, not a denylist, because variable expansion, command substitution, `find -exec`, and `cd` + relative paths all defeat naive command scanning. Each entry is anchored `^...$` so it cannot be prefixed or chained with a second command; anything else is refused and the agent is steered to the gated filesystem tools (and, when `.openwikiignore` is active, reminded that ignore rules are enforced there too).
+2. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and uploads/downloads reject ignored paths.
+3. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
+4. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
+5. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
 
 The backend also refuses unbounded root globs and globs that target `.git` metadata, steering the agent toward `ls` at the root followed by targeted searches. Every successful write/edit/delete records the mutated path in the tool-result metadata (`openwikiMutationPath`) so downstream validation knows which page changed.
 

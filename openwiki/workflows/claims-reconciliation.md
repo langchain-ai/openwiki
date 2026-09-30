@@ -48,10 +48,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Claims Reconciliation on Update
@@ -432,6 +432,61 @@ This ordering matters because `assertRepositoryClaimsDurable` discovers current
 pages from the working tree: by restoring skipped-page Markdown first, the
 durability proof does not mistake a skipped page's absent Markdown for a
 missing page and fail the run.
+
+### Detecting partial persistence
+
+Both durability proofs compare the session's authoritative projection against
+what was actually written to disk; a mismatch means persistence was partial and
+the run must be retried rather than recording a false success. The per-page gate
+is `assertPageClaimsDurable`, invoked at `submit_page` for the page just
+submitted and at `finish` for every page the session still owns. For one page it:
+
+- loads the persisted sidecar and fails fast (`invalid_state`) if none exists —
+  the Claims were "not durably persisted";
+- re-hashes the current Markdown and rejects a `pageVersion` mismatch — the
+  sidecar must ground the exact bytes on disk;
+- requires a `verification` record on the sidecar, then confirms that
+  verification was projected into the page frontmatter: the Markdown's `verified`
+  field must contain an event whose `by` and `at` match the sidecar's
+  `verification`, otherwise the Claim set was "not durably projected";
+- runs the **session-projection comparison**: `inspectClaims(page)` is the
+  authoritative complete Claim set. An id index of the persisted claims is built,
+  and a count mismatch fails immediately. Each session Claim must have a
+  persisted claim with the same id, an identical statement, and an evidence
+  resource set that matches as an order-independent set via `sameResourceSet`
+  (resources are deduplicated and sorted by UTF-16 code-unit order; only resource
+  identity is compared, never opaque version tokens). Any missing id, changed
+  statement, or divergent resource set throws `invalid_state` reporting the page
+  was "only partially persisted."
+
+`assertRepositoryClaimsDurable` is the whole-run gate. It discovers current
+pages and sidecar pages from the working tree and rejects any sidecar whose
+Markdown page no longer exists (an orphan sidecar). It then iterates every page
+in the session's `getEvidenceResourcesByPage()` projection — the authoritative
+set of pages the run still claims — skipping `excludedPages` and any page whose
+session Claim count is zero. Every remaining page must still exist on disk and
+pass `assertPageClaimsDurable`.
+
+```mermaid
+flowchart TD
+  A["assertPageClaimsDurable(page)"] --> B{"sidecar persisted?"}
+  B -->|"no"| X1["invalid_state: not durably persisted"]
+  B -->|"yes"| C{"pageVersion == hashPage(page)?"}
+  C -->|"no"| X2["invalid_state: bytes mismatch"]
+  C -->|"yes"| D{"verification record?"}
+  D -->|"no"| X3["invalid_state: not verified"]
+  D -->|"yes"| E{"verification projected into frontmatter?"}
+  E -->|"no"| X4["invalid_state: not durably projected"]
+  E -->|"yes"| F["inspectClaims(page) = authoritative set"]
+  F --> G{"persisted count == session count?"}
+  G -->|"no"| X5["invalid_state: partially persisted"]
+  G -->|"yes"| H["per Claim: same id, same statement, sameResourceSet(evidence)"]
+  H --> I{"all match?"}
+  I -->|"no"| X5
+  I -->|"yes"| OK["page durable"]
+```
+
+How `assertPageClaimsDurable` proves one page's Claims, page version, and verification are durable, detecting partial persistence by diffing the session projection against the persisted sidecar.
 
 `finalize` accepts an `excludedPages` set (empty by default) and skips every
 page it names across all of its work, so callers can exclude pages whose

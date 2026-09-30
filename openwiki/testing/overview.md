@@ -130,10 +130,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Testing Guide
@@ -553,7 +553,15 @@ streams:
   with a redundant `restore()` being a no-op that does not prematurely restore
   while another run is still active) — that an OpenRouter failure fans out to
   every active run's sink while each run can clear its own failure, and that
-  non-OpenRouter requests pass through untouched.
+  non-OpenRouter requests pass through untouched. It also pins the transient-404
+  retry contract (only a provider `404` carrying `error.metadata.provider_name`
+  is retried, not an ordinary `404`, and a non-cloneable request body is never
+  resent) and the malformed-success classification: a `200` body that is invalid
+  JSON, missing `choices`, or has a non-object first choice/message is converted
+  to a retryable `502` `OpenRouterError` (surfaced both through the raw `fetch`
+  response and through `ChatOpenRouter.invoke`), while a transient provider 404
+  that precedes such a malformed success is retried first before the malformed
+  response is classified.
 
 ### OKF: frontmatter and index
 
@@ -613,14 +621,18 @@ agent files and workflow/provider blocks (including ordered steps, the
 failure-propagation `propagate` step, and the PR annotation), and asserts the
 OpenWiki `<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` managed-snippet
 contract around legacy sections and hand-written content. It also pins
-`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when both agent files are
-absent it creates `CLAUDE.md` as a simple `@AGENTS.md` reference rather than a
-copy of `AGENTS.md`'s content (it contains `@AGENTS.md`, not an inert Markdown
-link, and is shorter than `AGENTS.md`); when `CLAUDE.md` is a symlink to
-`AGENTS.md` it inlines the instructions instead of emitting an `@AGENTS.md`
-import (which would point the file at itself); and a pre-existing `CLAUDE.md`
-that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved unchanged rather
-than overwritten — so an import-only `CLAUDE.md` survives a re-setup. Sibling files
+`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when neither agent file
+exists only `AGENTS.md` is created — `CLAUDE.md` is deliberately **not** created,
+because Claude Code reads `AGENTS.md` when no `CLAUDE.md` exists and creating one
+would only shadow it; when `CLAUDE.md` already exists but `AGENTS.md` does not,
+setup creates `AGENTS.md` and rewrites `CLAUDE.md` as a simple `@AGENTS.md`
+reference rather than a copy of `AGENTS.md`'s content (it contains `@AGENTS.md`,
+not an inert Markdown link, and is shorter than `AGENTS.md`); when `CLAUDE.md`
+is a symlink to `AGENTS.md` it inlines the instructions instead of emitting an
+`@AGENTS.md` import (which would point the file at itself); and a pre-existing
+`CLAUDE.md` that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved
+unchanged rather than overwritten — so an import-only `CLAUDE.md` survives a
+re-setup. Sibling files
 (`test/ingestion/ingestion-run.test.ts`, `test/ingestion/ingestion.test.ts`,
 `test/ingestion/langsmith-modes.test.ts`) cover the ingestion run,
 `parseIngestionTarget`/`createConnectorSynthesisGuidance`, and connector modes.
@@ -688,8 +700,13 @@ The non-run-log CLI test worth knowing about:
   debug off, redaction of secret-like keys inside stringified metadata
   (`metadata.raw`), previous-errors capping (only the first five
   `previous_errors` are kept, with a `metadata.previous_errors.more` note
-  counting the remainder), and nested response fields surfaced under a dotted
-  prefix (`response.status`/`response.statusText`).
+  counting the remainder), nested response fields surfaced under a dotted
+  prefix (`response.status`/`response.statusText`), and — in debug mode only —
+  `rootCause` extraction that walks an error's `cause` chain to its innermost
+  non-cyclic cause (surfacing `rootCause.message`/`rootCause.code`, e.g. the
+  `getaddrinfo ENOTFOUND …` system error buried under SDK/`fetch failed`
+  wrappers), redacts secret-like patterns in the root-cause message, and stops
+  on a cause cycle rather than looping.
 
 ### Config: env parsing, formatting, and provider constants
 

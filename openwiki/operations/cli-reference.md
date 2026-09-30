@@ -32,8 +32,8 @@ sources:
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
 generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # CLI Commands and Flags

@@ -1,19 +1,19 @@
 ---
 type: integration guide
 title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
-description: How OpenWiki runs inside a host coding agent through the six-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
+description: How OpenWiki runs inside a host coding agent through the ten-tool MCP page-job protocol, how install writes host config and the shared skill bundle, the Pi package extension, the AGENTS.md/CLAUDE.md managed markers, and the divided ownership between host research and OpenWiki finalization.
 tags: [integrations, mcp, coding-agents, installation, page-job, host]
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
-  - id: openwiki-source-d55cae2851a4bac00040906e
-    resource: repo://docs/pi-integration-notes.md
   - id: openwiki-source-77c4fabfc00b27b92aa6311c
     resource: repo://integrations/openwiki/agents/bob.yaml
   - id: openwiki-source-da19cf14a1041f6d06ffc9a5
     resource: repo://integrations/openwiki/agents/openai.yaml
   - id: openwiki-source-438fff4d79b8ab99f5c88c73
     resource: repo://integrations/openwiki/SKILL.md
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
   - id: openwiki-source-638173446de4138fa3a622a8
     resource: repo://src/claims/guidance.ts
   - id: openwiki-source-ada18c62d92003b613355e30
@@ -22,6 +22,8 @@ sources:
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-85064d6a188fa56bcc282f11
+    resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-5c32d5425e61a6c32d810844
     resource: repo://src/integrations/core/errors.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
@@ -52,12 +54,14 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
+  - id: openwiki-source-4072ea10a7d7d1352adfe32c
+    resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
@@ -288,9 +292,10 @@ actor, per-scope skill directory and MCP config, and a documentation URL:
   User-scope installation targets Oh My Pi's default profile only — named
   profiles and `PI_CODING_AGENT_DIR` overrides use another agent directory, so
   install with `--project` when that is the intended repository-local
-  configuration. The `omp` target is distinct from upstream Pi
-  (`earendil-works/pi`); this integration adds no upstream Pi target, generated
-  extension, or other Pi-specific artifact.
+  configuration. The `omp` install target is distinct from upstream Pi
+  (`@earendil-works/pi-coding-agent`): upstream Pi is not a `HOST_TARGETS`
+  entry and is not installed by the integration CLI — it consumes the
+  separate Pi package extension described below.
 - **Antigravity CLI** — user config `.gemini/config/mcp_config.json` (`json`)
   with skill under `.gemini/antigravity-cli/skills/openwiki`; project scope uses
   `.agents/mcp_config.json` with skill under `.agents/skills/openwiki`;
@@ -298,6 +303,27 @@ actor, per-scope skill directory and MCP config, and a documentation URL:
 
 `defaultMcpServerCommand(target)` produces the published invocation
 `openwiki mcp --host <target>`, which is what installed configs launch.
+
+### The Pi package extension
+
+Upstream Pi (`@earendil-works/pi-coding-agent`) is **not** a `HOST_TARGETS`
+entry and is not installed by `openwiki integrations install`. It consumes
+OpenWiki as a Pi package extension declared in `package.json` under the `pi`
+key, which points the host at `dist/integrations/pi/openwiki.js` and the shared
+`integrations/openwiki` skill bundle. The extension
+(`src/integrations/pi/openwiki.ts`) is a thin in-process bridge: it registers
+the six generation lifecycle tools (no retrieval tools) with Pi's tool API,
+lazily spawns one stdio MCP client transport that runs
+`node dist/cli/cli.js mcp --host pi`, and forwards each tool call to the MCP
+server, surfacing `isError` results as thrown errors. The bridge is a singleton
+per Pi session — `bridge()` caches one `StdioClientTransport`/`Client` pair and
+resets it on transport close or a call failure; `session_shutdown` closes the
+bridge. Because `--host pi` is not in `HOST_TARGETS`, `getHostTarget("pi")`
+returns `undefined` and the MCP command falls back to `producerActor: "pi"`,
+so Pi-authored pages are stamped with the `pi` producer actor. The CLI accepts
+any `[a-z0-9-]{1,64}` host id for `openwiki mcp --host`, which is how the
+non-registered `pi` host reaches the same `HostSessionManager` lifecycle as the
+eight installed targets.
 
 ### Config adapters
 
@@ -364,6 +390,33 @@ skill under `~/.agents` and the MCP entry under `~/.bob`, Codex writes under
 `~/.config/opencode` (OpenCode's global configuration directory on every
 supported platform), Cursor under `~/.cursor`, Kiro under `~/.kiro`, Oh My Pi
 under `~/.omp/agent` (default profile), and Antigravity CLI under `~/.gemini`.
+
+## AGENTS.md / CLAUDE.md managed markers
+
+Separate from per-host installation, OpenWiki's code-mode ingestion keeps the
+repository's root agent-instruction files pointed at the generated wiki. When
+`openwiki code` runs, `writeCodeModeAgentSnippets` refreshes two files in place
+— `AGENTS.md` (created when missing) and `CLAUDE.md` (refreshed only when it
+already exists, because Claude Code reads `AGENTS.md` only when no `CLAUDE.md`
+shadows it). Each file carries a managed block delimited by the markers
+`<!-- OPENWIKI:START -->` and `<!-- OPENWIKI:END -->`.
+
+The `AGENTS.md` block holds the full just-in-time retrieval guidance (prefer
+`openwiki_search`/`openwiki_read` over eager loading, treat source as
+authoritative). The `CLAUDE.md` block is intentionally minimal — a single
+`@AGENTS.md` import — because Claude Code expands its own `@path` syntax but
+not Markdown links, so a link would leave the block inert. When `CLAUDE.md` is a
+filesystem link to `AGENTS.md` (a common convention), the import would
+self-reference, so the block carries the full `AGENTS.md` snippet instead.
+
+`prepareCodeModeAgentSnippet` validates markers before writing either file so
+setup fails atomically rather than half-refreshing a sibling: it accepts either
+no markers (appends a fresh block) or exactly one ordered `START`/`END` pair
+(replaces the block in place). Malformed or duplicated markers abort with an
+error and leave the file unchanged. Legacy pre-marker (0.0.x) `## OpenWiki`
+sections are detected by their heading plus the exact released template
+sentence and removed before marker validation, so an old bare section never
+sits beside a fresh managed block.
 
 ## Contributing a new host
 

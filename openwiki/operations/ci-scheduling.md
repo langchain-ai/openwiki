@@ -35,10 +35,10 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # CI Scheduling and Self-Update
@@ -318,6 +318,15 @@ workflow additionally restores the protected workflow file with `git checkout --
 regenerates that file from an internal template and would otherwise drop the
 fork guard; the discard runs `if: ${{ !cancelled() }}` so the guard survives
 whether the run succeeded or failed.
+
+The dogfood run is currently configured for OpenRouter with the model
+`z-ai/glm-5.2` (`OPENWIKI_PROVIDER: openrouter`, `OPENWIKI_MODEL_ID:
+z-ai/glm-5.2`, keyed by `OPENROUTER_API_KEY`). The workflow file documents a
+GitHub Copilot alternative in comments: set the `COPILOT_API_KEY` repository
+secret (a GitHub OAuth token) and switch to `OPENWIKI_PROVIDER: copilot` with
+`OPENWIKI_MODEL_ID: claude-sonnet-5`. The published-package examples use the
+same OpenRouter/GLM defaults, so external repositories can keep them or
+substitute their own provider and model.
 
 ### Ephemeral-runner resume caveat
 
