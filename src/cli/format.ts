@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import {
   getDefaultModelId,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -32,8 +34,20 @@ export function formatCount(
 export function formatCwd(cwd: string): string {
   const home = process.env.HOME;
 
-  if (home && cwd.startsWith(home)) {
-    return `~${cwd.slice(home.length)}`;
+  if (home) {
+    const relative = path.relative(home, cwd);
+
+    if (relative === "") {
+      return "~";
+    }
+
+    if (
+      relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative)
+    ) {
+      return `~${path.sep}${relative}`;
+    }
   }
 
   return cwd;
