@@ -317,9 +317,15 @@ describe("createModel OpenAI-compatible transport selection", () => {
     }
   });
 
-  test("does not install content normalization for other ChatOpenAI providers", () => {
+  test("does not install content normalization for other ChatOpenAI providers", async () => {
     const savedApiKey = process.env.NVIDIA_API_KEY;
     process.env.NVIDIA_API_KEY = "test-nvidia-key";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
 
     try {
       const model = createModel(
@@ -328,9 +334,29 @@ describe("createModel OpenAI-compatible transport selection", () => {
         0,
       ) as { clientConfig?: { fetch?: typeof fetch } };
 
-      expect(model.clientConfig?.fetch).toBeUndefined();
+      // The provider retry wrapper installs a fetch on every ChatOpenAI-backed
+      // provider, but content normalization must not: a body the normalizer
+      // would flatten reaches the underlying fetch unchanged.
+      const providerFetch = model.clientConfig?.fetch;
+      expect(providerFetch).toBeTypeOf("function");
+      if (!providerFetch) {
+        throw new Error("Expected the provider retry fetch wrapper.");
+      }
+
+      const normalizableBody = JSON.stringify({
+        messages: [{ content: [[{ type: "text", text: "would normalize" }]] }],
+      });
+      await providerFetch(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        { body: normalizableBody, method: "POST" },
+      );
+
+      expect(
+        (fetchMock.mock.calls[0]?.[1] as { body?: string } | undefined)?.body,
+      ).toBe(normalizableBody);
     } finally {
       restoreEnv("NVIDIA_API_KEY", savedApiKey);
+      vi.unstubAllGlobals();
     }
   });
 
@@ -413,7 +439,7 @@ describe("createModel OpenAI-compatible transport selection", () => {
     }
   });
 
-  test("does not install content normalization for OpenAI-compatible Responses API requests", () => {
+  test("does not install content normalization for OpenAI-compatible Responses API requests", async () => {
     const savedApiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
     const savedBaseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
     const savedUseResponsesApi =
@@ -421,6 +447,12 @@ describe("createModel OpenAI-compatible transport selection", () => {
     process.env.OPENAI_COMPATIBLE_API_KEY = "test-compatible-key";
     process.env.OPENAI_COMPATIBLE_BASE_URL = "https://vllm.example/v1";
     process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY] = "true";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
 
     try {
       const model = createModel("openai-compatible", "local-model", 0) as {
@@ -429,11 +461,31 @@ describe("createModel OpenAI-compatible transport selection", () => {
       };
 
       expect(model.useResponsesApi).toBe(true);
-      expect(model.clientConfig?.fetch).toBeUndefined();
+
+      // Responses-API compatible runs get the retry wrapper but not content
+      // normalization: a would-be-normalized body passes through unchanged.
+      const providerFetch = model.clientConfig?.fetch;
+      expect(providerFetch).toBeTypeOf("function");
+      if (!providerFetch) {
+        throw new Error("Expected the provider retry fetch wrapper.");
+      }
+
+      const normalizableBody = JSON.stringify({
+        messages: [{ content: [[{ type: "text", text: "would normalize" }]] }],
+      });
+      await providerFetch("https://vllm.example/v1/chat/completions", {
+        body: normalizableBody,
+        method: "POST",
+      });
+
+      expect(
+        (fetchMock.mock.calls[0]?.[1] as { body?: string } | undefined)?.body,
+      ).toBe(normalizableBody);
     } finally {
       restoreEnv("OPENAI_COMPATIBLE_API_KEY", savedApiKey);
       restoreEnv("OPENAI_COMPATIBLE_BASE_URL", savedBaseUrl);
       restoreEnv(OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY, savedUseResponsesApi);
+      vi.unstubAllGlobals();
     }
   });
 
