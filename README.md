@@ -25,7 +25,7 @@ For repository wikis, OpenWiki tracks facts back to source evidence so updates c
 ## 🎉 What's new
 
 - **Linked wiki workspaces:** group related repositories with `openwiki link`, search across their wikis, and read relevant sections through MCP. [See how it works →](#create-wiki-workspaces)
-- **More coding-agent integrations:** Oh My Pi, Antigravity, IBM Bob / Bob Shell, and Kiro join Codex, Claude Code, OpenCode, and Cursor. [Connect your agent →](#coding-agent-integrations)
+- **More coding-agent integrations:** Oh My Pi, Antigravity, IBM Bob / Bob Shell, and Kiro join Codex, Claude Code, OpenCode, GitHub Copilot and Cursor. [Connect your agent →](#coding-agent-integrations)
 - **Parallel page workers:** native CLI runs can now document multiple pages concurrently while saving progress page by page and adapting to provider rate limits. [Configure concurrency →](#parallel-page-workers)
 - **Resumable updates and grounded Claims:** completed pages survive interruptions, and versioned source evidence identifies facts that need attention. [Explore the architecture →](#how-it-works)
 
@@ -62,6 +62,7 @@ Choose the integration for your agent:
 | Kiro                | `openwiki integrations install kiro`        |
 | Oh My Pi            | `openwiki integrations install omp`         |
 | Antigravity         | `openwiki integrations install antigravity` |
+| GitHub Copilot CLI  | `openwiki integrations install copilot`     |
 | Pi                  | `pi install npm:openwiki`                   |
 
 ### 3. Create your wiki
@@ -92,6 +93,7 @@ Host-specific locations and notes:
 - Kiro uses `~/.kiro/skills` and `~/.kiro/settings/mcp.json`.
 - Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`.
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
+- GitHub Copilot CLI uses `~/.copilot/skills` and `~/.copilot/mcp-config.json` at user scope; `.github/skills` and `.github/mcp.json` at the project.
 - Pi is separate from Oh My Pi. Pi loads OpenWiki's skill and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
 
 On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
@@ -678,8 +680,8 @@ openwiki workspace current|clear  # inspect or clear the active workspace
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki integrations list       # show installed coding-agent integrations
-openwiki integrations install <bob|codex|claude|opencode|cursor|kiro|omp|antigravity> [--project [path]]
-openwiki integrations uninstall <bob|codex|claude|opencode|cursor|kiro|omp|antigravity> [--project [path]]
+openwiki integrations install <bob|codex|claude|opencode|cursor|kiro|omp|antigravity|copilot> [--project [path]]
+openwiki integrations uninstall <bob|codex|claude|opencode|cursor|kiro|omp|antigravity|copilot> [--project [path]]
 openwiki --help                  # full help
 ```
 

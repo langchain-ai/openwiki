@@ -72,6 +72,8 @@ describe("published host integration bundle", () => {
             file.startsWith(".opencode/") ||
             file.startsWith(".cursor/") ||
             file.startsWith(".kiro/") ||
+            file.startsWith(".copilot/") ||
+            file.startsWith(".github/") ||
             file.startsWith(".omp/") ||
             file.startsWith(".gemini/") ||
             file.startsWith(".config/") ||

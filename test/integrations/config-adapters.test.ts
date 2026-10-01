@@ -49,6 +49,10 @@ const KIRO_ENTRY: HostMcpServerCommand = {
   command: "openwiki",
   args: ["mcp", "--host", "kiro"],
 };
+const COPILOT_ENTRY: HostMcpServerCommand = {
+  command: "openwiki",
+  args: ["mcp", "--host", "copilot"],
+};
 const OMP_ENTRY: HostMcpServerCommand = {
   command: "openwiki",
   args: ["mcp", "--host", "omp"],
@@ -236,6 +240,27 @@ describe("JSON MCP config ownership", () => {
     expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
       mcpServers: { other: { command: "other" } },
     });
+  });
+
+  test("round-trips a Copilot entry in .copilot/mcp-config.json", async () => {
+    const root = await createRoot();
+    const filePath = path.join(root, ".copilot", "mcp-config.json");
+    await mkdir(path.dirname(filePath), { recursive: true });
+    await writeFile(
+      filePath,
+      `${JSON.stringify({ mcpServers: { other: { command: "other" } } })}\n`,
+      "utf8",
+    );
+
+    await expect(installJsonMcpEntry(filePath, COPILOT_ENTRY)).resolves.toBe(
+      true,
+    );
+    expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
+      mcpServers: { other: { command: "other" }, openwiki: COPILOT_ENTRY },
+    });
+    await expect(
+      uninstallJsonMcpEntry(filePath, COPILOT_ENTRY),
+    ).resolves.toBe(true);
   });
 
   test("round-trips a Kiro entry in .kiro/settings/mcp.json", async () => {

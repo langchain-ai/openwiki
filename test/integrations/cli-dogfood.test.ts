@@ -91,7 +91,8 @@ describe("host integration CLI dogfood", () => {
         "cursor\tnot-installed\tCursor\n" +
         "kiro\tnot-installed\tKiro\n" +
         "omp\tnot-installed\tOh My Pi\n" +
-        "antigravity\tmodified\tAntigravity CLI\n",
+        "antigravity\tmodified\tAntigravity CLI\n" +
+        "copilot\tnot-installed\tGitHub Copilot CLI\n",
     );
 
     stdout = [];
