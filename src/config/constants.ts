@@ -73,6 +73,7 @@ export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const OPENWIKI_REASONING_EFFORT_ENV_KEY = "OPENWIKI_REASONING_EFFORT";
+export const OPENWIKI_FAST_MODE_ENV_KEY = "OPENWIKI_FAST_MODE";
 export const DEFAULT_PROVIDER_RETRY_ATTEMPTS = 3;
 /**
  * Model retry count used when several page workers share one provider key and
@@ -1182,6 +1183,46 @@ export function resolveOpenAiCompatibleStreaming(
     env[OPENAI_COMPATIBLE_STREAMING_ENV_KEY]?.trim().toLowerCase() ===
     TRUE_ENV_VALUE
   );
+}
+
+/**
+ * Resolves the Codex service tier from `OPENWIKI_FAST_MODE`.
+ *
+ * `true` requests the `priority` tier, which Codex labels Fast mode and bills
+ * at a higher ChatGPT usage rate. `false` and an unset variable send no tier,
+ * which is how the Codex CLI requests standard routing.
+ *
+ * @param provider - Active model provider.
+ * @param env - Environment containing the optional setting.
+ * @returns `"priority"` when fast mode is on, otherwise `undefined`.
+ * @throws When the value is not `true` or `false`, or the provider is not the
+ * ChatGPT login.
+ */
+export function resolveCodexServiceTier(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): "priority" | undefined {
+  const rawValue = env[OPENWIKI_FAST_MODE_ENV_KEY];
+
+  if (rawValue === undefined) {
+    return undefined;
+  }
+
+  const value = rawValue.trim().toLowerCase();
+
+  if (value !== TRUE_ENV_VALUE && value !== "false") {
+    throw new Error(
+      `Invalid ${OPENWIKI_FAST_MODE_ENV_KEY}. Expected true or false.`,
+    );
+  }
+
+  if (provider !== "openai-chatgpt") {
+    throw new Error(
+      `${OPENWIKI_FAST_MODE_ENV_KEY} is not supported for provider "${provider}". Fast mode requires the openai-chatgpt provider.`,
+    );
+  }
+
+  return value === TRUE_ENV_VALUE ? "priority" : undefined;
 }
 
 // Caps per-request output tokens for OpenRouter. Without a cap, OpenRouter's

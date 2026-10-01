@@ -801,3 +801,73 @@ function restoreEnv(key: string, value: string | undefined): void {
     process.env[key] = value;
   }
 }
+
+describe("createModel ChatGPT fast mode", () => {
+  const FAST_MODE_KEY = "OPENWIKI_FAST_MODE";
+  let savedFastMode: string | undefined;
+  let savedOpenAiKey: string | undefined;
+  let savedChatGptTokens: Record<string, string | undefined>;
+
+  beforeEach(() => {
+    savedFastMode = process.env[FAST_MODE_KEY];
+    savedOpenAiKey = process.env.OPENAI_API_KEY;
+    savedChatGptTokens = Object.fromEntries(
+      CHATGPT_TOKEN_KEYS.map((key) => [key, process.env[key]]),
+    );
+    delete process.env[FAST_MODE_KEY];
+    process.env.OPENAI_CHATGPT_ACCESS_TOKEN = "test-access-token";
+    process.env.OPENAI_CHATGPT_REFRESH_TOKEN = "test-refresh-token";
+    process.env.OPENAI_CHATGPT_ACCOUNT_ID = "test-account-id";
+  });
+
+  afterEach(() => {
+    restoreEnv(FAST_MODE_KEY, savedFastMode);
+    restoreEnv("OPENAI_API_KEY", savedOpenAiKey);
+    for (const key of CHATGPT_TOKEN_KEYS) {
+      restoreEnv(key, savedChatGptTokens[key]);
+    }
+    vi.unstubAllGlobals();
+  });
+
+  async function codexRequestBody(): Promise<Record<string, unknown>> {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response("rejected", { status: 400 })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const model = createModel("openai-chatgpt", "gpt-5.6-terra", 0);
+
+    await expect(model.invoke("hello")).rejects.toThrow();
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string | URL,
+      { body: string },
+    ];
+    return JSON.parse(init.body) as Record<string, unknown>;
+  }
+
+  test("requests the priority service tier when fast mode is on", async () => {
+    process.env[FAST_MODE_KEY] = " TRUE ";
+
+    expect(await codexRequestBody()).toMatchObject({
+      service_tier: "priority",
+    });
+  });
+
+  test("rejects a fast mode value other than true or false before a request", () => {
+    process.env[FAST_MODE_KEY] = "on";
+
+    expect(() => createModel("openai-chatgpt", "gpt-5.6-terra", 0)).toThrow(
+      /Invalid OPENWIKI_FAST_MODE/u,
+    );
+  });
+
+  test("rejects fast mode for a provider other than ChatGPT login", () => {
+    process.env[FAST_MODE_KEY] = "true";
+    process.env.OPENAI_API_KEY = "test-openai-key";
+
+    expect(() => createModel("openai", "gpt-5.6-terra", 0)).toThrow(
+      /OPENWIKI_FAST_MODE is not supported for provider "openai"/u,
+    );
+  });
+});
