@@ -34,17 +34,14 @@ export function createSystemPrompt(
       : PERSONAL_SYSTEM_PROMPTS[command];
 
   const prompt = template
-    .replace(
-      "{OUTPUT_LANGUAGE_INSTRUCTIONS}",
+    .replace("{OUTPUT_LANGUAGE_INSTRUCTIONS}", () =>
       formatLanguageInstructions(language),
     )
-    .replace("{GIT_HISTORY_HINT}", formatGitHistoryHint(openWikiIgnore))
-    .replace(
-      "{DISCOVERY_INSTRUCTION}",
+    .replace("{GIT_HISTORY_HINT}", () => formatGitHistoryHint(openWikiIgnore))
+    .replace("{DISCOVERY_INSTRUCTION}", () =>
       formatDiscoveryInstruction(openWikiIgnore),
     )
-    .replace(
-      "{OPENWIKIIGNORE_INSTRUCTIONS}",
+    .replace("{OPENWIKIIGNORE_INSTRUCTIONS}", () =>
       formatOpenWikiIgnoreInstructions(openWikiIgnore),
     )
     .trim();
@@ -81,17 +78,18 @@ export function createUserPrompt(
       : PERSONAL_USER_PROMPTS[command];
 
   return template
-    .replace("{USER_MESSAGE}", userMessage?.trim() || "Start an OpenWiki chat.")
-    .replace("{WIKI_GOAL}", context.wikiGoal?.trim() || "(not provided)")
-    .replace("{LAST_UPDATE}", formatLastUpdate(context.lastUpdate))
     .replace(
-      "{ADDITIONAL_USER_REQUEST}",
+      "{USER_MESSAGE}",
+      () => userMessage?.trim() || "Start an OpenWiki chat.",
+    )
+    .replace("{WIKI_GOAL}", () => context.wikiGoal?.trim() || "(not provided)")
+    .replace("{LAST_UPDATE}", () => formatLastUpdate(context.lastUpdate))
+    .replace("{ADDITIONAL_USER_REQUEST}", () =>
       userMessage?.trim()
         ? `Additional user instruction:\n${userMessage.trim()}`
         : "",
     )
-    .replace(
-      "{RUNTIME_CONTEXT}",
+    .replace("{RUNTIME_CONTEXT}", () =>
       runtimeRoot ? formatRuntimeContext(runtimeRoot, outputMode) : "",
     )
     .trim();
