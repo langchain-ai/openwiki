@@ -1,0 +1,70 @@
+test/config/constants.test.ts
+  s_a98d74af14fe12::t_36c0fe9d86c7ed 61-63,73-75,80,84-90,101-104
+  s_a98d74af14fe12::t_be22b020c2758a 44-45
+  s_a98d74af14fe12::t_1b820cce360958 64-72,76-79,81-83,91-100
+src/agent/entra-auth.ts
+  s_a98d74af14fe12::t_57565c44682b4f 1-14,18,27-35,39-41,45-47
+  s_a98d74af14fe12::t_1b820cce360958 15-17,19-26,36-38,42-44
+test/cli/startup.test.ts
+  s_a98d74af14fe12::t_36c0fe9d86c7ed 25-26,32-33,112-116,120
+  s_a98d74af14fe12::t_1b820cce360958 117-119
+  s_a98d74af14fe12::t_dfc4a556b1cba7 121
+src/config/constants.ts
+  s_a98d74af14fe12::t_1b820cce360958 514-516,522-525,533-535,652-656,697-698,701-702
+  s_a98d74af14fe12::t_57565c44682b4f 20-24,502-513,517-521,526-531,536-543,696,699-700,703
+test/config/env.test.ts
+  s_a98d74af14fe12::t_36c0fe9d86c7ed 86,91-95
+  s_a98d74af14fe12::t_1b820cce360958 87-90
+src/setup/credentials/format.ts
+  s_a98d74af14fe12::t_57565c44682b4f 8,53-55
+src/config/env.ts
+  s_a98d74af14fe12::t_57565c44682b4f 39-40,131-132,505-506
+.changeset/entra-gateway-auth.md
+  s_a98d74af14fe12::t_51661ac9ddd49f 1-5
+test/agent/entra-auth.test.ts
+  s_a98d74af14fe12::t_2889cfd66d1ab4 228-231,233,235,237
+  s_a98d74af14fe12::t_1b820cce360958 16-18,63-65,74-82,89-91,99-103,106-110,112-120,123-143,147-166,169-177,179-202,211-227,232,234,236,238-254,272,274-293,300-307
+  s_a98d74af14fe12::t_e613ec9a2d57d9 255-271,273
+  s_a98d74af14fe12::t_be22b020c2758a 1-15,19-29,33-36,43-62,66-73,83-88,92-98,104-105,111,121-122,144-146,167-168,178,203-210,294-299,308-310
+  s_a98d74af14fe12::t_51661ac9ddd49f 30-32
+  s_a98d74af14fe12::t_ad66548701f31a 37-42
+src/platform/diagnostics.ts
+  s_a98d74af14fe12::t_2889cfd66d1ab4 54-55
+test/setup/credentials.test.ts
+  s_a98d74af14fe12::t_1b820cce360958 17-20,65-67
+  s_a98d74af14fe12::t_36c0fe9d86c7ed 21,24-25,60-64,68
+test/ingestion/code-mode.test.ts
+  s_a98d74af14fe12::t_36c0fe9d86c7ed 884-890,894-895,899-900
+  s_a98d74af14fe12::t_1b820cce360958 891-893
+  s_a98d74af14fe12::t_ad66548701f31a 896-898
+README.md
+  s_a98d74af14fe12::t_1b820cce360958 473
+  s_a98d74af14fe12::t_57565c44682b4f 595-612
+src/agent/index.ts
+  s_a98d74af14fe12::t_57565c44682b4f 11,108-111,1314-1316,2761-2762
+src/ingestion/code-mode.ts
+  s_a98d74af14fe12::t_57565c44682b4f 7-10,474-481
+package.json
+  s_a98d74af14fe12::t_57565c44682b4f 71
+test/platform/diagnostics.test.ts
+  s_a98d74af14fe12::t_51661ac9ddd49f 1,6-8,13,19-24
+  s_a98d74af14fe12::t_421584da2eabba 2-5,9-12,14-18
+pnpm-lock.yaml
+  s_a98d74af14fe12::t_60212252e9d6f4 26-28,271-318,1203-1206,1347-1350,1668-1679,2029-2032,2114-2118,2140-2144,2159-2162,2224-2227,2364-2384,2531-2534,2794-2797,3200-3203,3477-3561,4460-4467,4633-4636,4958-4966,5389-5395,5474-5475,5490-5493,5502-5505,5577-5589,5703-5716,5847-5853,6084-6085,6439-6442
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5de51e8df5a9ba8eea547d1d9d26ad2ff9265f4f",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
