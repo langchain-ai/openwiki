@@ -16,6 +16,7 @@ import {
   BOB_BASE_URL_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
+  OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY,
   OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY,
@@ -69,6 +70,7 @@ const KEYS_UNDER_TEST = [
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY,
   OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
@@ -549,6 +551,32 @@ describe("getCredentialDiagnostics", () => {
 
     expect(entry?.preview).toBe('"0"');
     expect(entry?.warnings).toContain("invalid output token limit");
+  });
+
+  test("surfaces and validates the Bedrock cache TTL as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY]: "10m",
+    });
+
+    let diagnostics = await env.getCredentialDiagnostics();
+    let entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"10m"');
+    expect(entry?.warnings).toContain("invalid prompt cache TTL");
+
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY]: "1h",
+    });
+
+    diagnostics = await env.getCredentialDiagnostics();
+    entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_BEDROCK_CACHE_TTL_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"1h"');
+    expect(entry?.warnings).toEqual([]);
   });
 
   test("surfaces and validates the stream idle timeout as non-secret", async () => {

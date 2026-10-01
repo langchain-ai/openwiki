@@ -36,9 +36,15 @@ vi.mock("../../src/setup/onboarding.js", async (importOriginal) => ({
 
 import { runOpenWikiAgent } from "../../src/agent/index.ts";
 import {
+  AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../../src/config/constants.ts";
+import {
+  runModelCallChain,
+  type ChainMiddleware,
+} from "../helpers/model-call-chain.ts";
 
 const temporaryDirectories: string[] = [];
 const originalProvider = process.env[OPENWIKI_PROVIDER_ENV_KEY];
@@ -71,6 +77,10 @@ beforeEach(() => {
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  delete process.env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY];
+  delete process.env[OPENWIKI_MODEL_ID_ENV_KEY];
+  delete process.env.AWS_REGION;
+  delete process.env.OPENWIKI_BEDROCK_CACHE_TTL;
   if (originalProvider === undefined) {
     delete process.env[OPENWIKI_PROVIDER_ENV_KEY];
   } else {
@@ -117,6 +127,47 @@ describe("runOpenWikiAgent repository routing", () => {
       expect.objectContaining({ root, mode: "update" }),
     );
     expect(harness.createDeepAgent).not.toHaveBeenCalled();
+  });
+
+  test("caches the prompt prefix on every shared-graph command under Bedrock", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "openwiki-routing-"));
+    temporaryDirectories.push(root);
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "bedrock";
+    process.env[AWS_BEARER_TOKEN_BEDROCK_ENV_KEY] = "test-token";
+    process.env[OPENWIKI_MODEL_ID_ENV_KEY] = "us.anthropic.claude-sonnet-5";
+    process.env.AWS_REGION = "us-east-1";
+
+    for (const command of ["init", "chat"] as const) {
+      await runOpenWikiAgent(command, root, { outputMode: "local-wiki" });
+    }
+
+    expect(harness.createDeepAgent).toHaveBeenCalledTimes(2);
+    for (const [{ middleware, model }] of harness.createDeepAgent.mock.calls) {
+      const sent = await runModelCallChain(middleware as ChainMiddleware[], {
+        model,
+      });
+
+      expect(sent.modelSettings).toMatchObject({
+        cache_control: { type: "ephemeral", ttl: "5m" },
+      });
+    }
+  });
+
+  test("caches nothing, and never reads the Bedrock TTL, on another provider", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "openwiki-routing-"));
+    temporaryDirectories.push(root);
+    process.env.OPENWIKI_BEDROCK_CACHE_TTL = "nonsense";
+
+    await runOpenWikiAgent("init", root, { outputMode: "local-wiki" });
+
+    expect(harness.createDeepAgent).toHaveBeenCalledTimes(1);
+    for (const [{ middleware, model }] of harness.createDeepAgent.mock.calls) {
+      const sent = await runModelCallChain(middleware as ChainMiddleware[], {
+        model,
+      });
+
+      expect(sent.modelSettings?.cache_control).toBeUndefined();
+    }
   });
 
   test("retains personal init on the shared graph path", async () => {
