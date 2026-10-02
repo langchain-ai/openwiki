@@ -50,6 +50,7 @@ import {
   refreshChatGptTokens,
 } from "./openai-chatgpt-oauth.js";
 import { createBobFetch } from "./bob.js";
+import { createEntraTokenProvider } from "./entra-auth.js";
 import { createSystemPrompt, createUserPrompt } from "./prompt.js";
 import { syncBundledSkills } from "./skills.js";
 import {
@@ -103,7 +104,9 @@ import {
   normalizeModelId,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
@@ -117,12 +120,14 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesEntraId,
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
   providerUsesStreaming,
   resolveConfiguredMaxOutputTokens,
   resolveConfiguredProvider,
   resolveOpenAiCompatibleStreamMessages,
+  resolveOpenAICompatibleEntraScope,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -1306,7 +1311,9 @@ export function createModel(
   }
 
   return new ChatOpenAI({
-    apiKey: getProviderApiKey(provider),
+    apiKey: providerUsesEntraId(provider)
+      ? createEntraTokenProvider(baseURL, resolveOpenAICompatibleEntraScope())
+      : getProviderApiKey(provider),
     configuration,
     model: modelId,
     useResponsesApi: chatOpenAiUsesResponsesApi,
@@ -2755,6 +2762,8 @@ export function formatEnvironmentDebugValue(
     key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_AUTH_ENV_KEY ||
+    key === OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY ||
     key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
     key === BEDROCK_AWS_REGION_ENV_KEY
   ) {
