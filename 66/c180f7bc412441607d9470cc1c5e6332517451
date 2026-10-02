@@ -1,0 +1,79 @@
+src/setup/credentials/persistence.ts
+  s_a98d74af14fe12::t_6ea9c0346e318f 61-62
+  s_a98d74af14fe12::t_c64feefa830aa5 9-10,39,41,59-60,63-66
+test/setup/credentials/persistence.test.ts
+  s_a98d74af14fe12::t_b2841f683ee858 85
+  s_a98d74af14fe12::t_5f149800bb0340 66-84,86-105
+src/setup/credentials/types.ts
+  s_a98d74af14fe12::t_35e0206eaa7374 4,45,50,160,162
+src/setup/credentials/use-init-setup.ts
+  s_a98d74af14fe12::t_cad477d43655c4 9,21,27-28,124,182-186,189,234-239
+  s_a98d74af14fe12::t_5bb8a04e7ecb39 2726-2727,2734
+  s_a98d74af14fe12::t_bb065e4a7e4e63 1346,1394-1400
+  s_a98d74af14fe12::t_958a4297bac3d5 1381
+  s_a98d74af14fe12::t_1834bad0190863 6,920,1653-1663,1708-1726
+  s_a98d74af14fe12::t_19b56698995b07 454,1301,1456,1516-1522,1600,1668-1674
+  s_a98d74af14fe12::t_0772c9d8785cf4 2403-2409
+  s_a98d74af14fe12::t_736342df68feca 575-577,660-666,769-771,911-917
+  s_a98d74af14fe12::t_ff8b6b7c48aca4 1265-1270,1274,1344-1345,1347-1361
+  s_a98d74af14fe12::t_55745bd5546d2e 918-919,921-923,1362-1364,1727-1729
+src/setup/credentials/steps.ts
+  s_a98d74af14fe12::t_9089ace82a7ba2 29,113-116,121-126,272,384-392
+  s_a98d74af14fe12::t_b8f07763e3f26b 30-31,36-37,135-136,138-139,143-144,174-176,243-247,271,308
+  s_a98d74af14fe12::t_4d77d4d8ca7f0a 137,140-142,233,267-270,303
+  s_a98d74af14fe12::t_bd00fb7851dfa1 127
+  s_a98d74af14fe12::t_95ae8ca427c549 393
+src/setup/credentials/constants.ts
+  s_a98d74af14fe12::t_5cf144d6cff1d2 13,76-81
+  s_a98d74af14fe12::t_3098360e2a4bca 82-83
+test/setup/credentials/init-setup-entra.test.tsx
+  s_a98d74af14fe12::t_185c9ea976e42d 1-23,33-52,54-83,85-102,104-106,108-109,111-120
+  s_a98d74af14fe12::t_d0dc276619a15f 53,84
+  s_a98d74af14fe12::t_9e8930d59ea1c1 24-32,107
+  s_a98d74af14fe12::t_304d5b9bf5d24b 103
+  s_a98d74af14fe12::t_b36baa1e62b974 110
+src/setup/credentials/view.tsx
+  s_a98d74af14fe12::t_b553e5ea4cdecd 410
+  s_a98d74af14fe12::t_32c4334ad3c430 87-89,92-94,115-117
+  s_a98d74af14fe12::t_6e2a54521a8043 10,13,90-91,95-96,118-119,265-266,273,329,404-406,408-409,411-414,508-525,656-657
+  s_a98d74af14fe12::t_bb065e4a7e4e63 407
+  s_a98d74af14fe12::t_83710adb56ee12 321,432,440-441
+test/setup/credentials.test.ts
+  s_a98d74af14fe12::t_3fcfefa40f90dc 200,202,208
+test/setup/credentials/view.test.tsx
+  s_a98d74af14fe12::t_03e9e4fa093819 195-210
+  s_a98d74af14fe12::t_ae97d6de486a45 34-35,42,181-185
+src/setup/credentials/components.tsx
+  s_a98d74af14fe12::t_98f2d91b573007 6,17,19,63,79-80,116-117,194-212,299-319
+test/setup/credentials/steps.test.ts
+  s_a98d74af14fe12::t_32c4334ad3c430 312-319
+  s_a98d74af14fe12::t_edd93ca13bc110 172-199,201-215,217,222-223
+  s_a98d74af14fe12::t_3fff559b280a2a 102,120-121
+  s_a98d74af14fe12::t_bb065e4a7e4e63 200,216
+  s_a98d74af14fe12::t_e4a905152e3694 218-221
+test/setup/credentials/components.test.tsx
+  s_a98d74af14fe12::t_cb7a2f8ddb8995 276-277
+  s_a98d74af14fe12::t_a9c69242c7f2bd 333-343,402-419
+  s_a98d74af14fe12::t_05c45e2400e184 420
+README.md
+  s_a98d74af14fe12::t_10e067f608b9d4 597-600,603-620
+  s_a98d74af14fe12::t_62faf814ce6687 601-602
+src/setup/credentials/format.ts
+  s_a98d74af14fe12::t_414412ec361503 17,53,55-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "66c180f7bc412441607d9470cc1c5e6332517451",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
