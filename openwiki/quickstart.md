@@ -36,10 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 verified:
   - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+    at: 2026-10-02T08:09:47.640Z
 ---
 
 # OpenWiki Quickstart
@@ -152,6 +152,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                                                          | Read                                                        |
 | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Get the top-level picture of how the CLI, agent, modes, resumable generation, Claims, finalization, connectors, and the visualizer fit together | [Architecture Overview](./architecture/overview.md) |
+| Understand the agent runtime: model provider resolution, the DeepAgents graph, the sandboxed docs-only filesystem, middleware, stream parsing, and the native repository runner's planner and page workers | [Agent Runtime, Models, and Middleware](./architecture/agent-runtime.md) |
 | Find which subsystem lives where under `/src`                                                                       | [Source Map](./architecture/source-map.md)          |
 
 ### Learn the core concepts
@@ -160,6 +161,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Understand grounded Claims: material facts tied to versioned repository evidence   | [Grounded Claims](./concepts/grounded-claims.md)             |
 | See what OKF output looks like (frontmatter, provenance, validated Mermaid)        | [Open Knowledge Format Output](./concepts/okf-output.md)     |
+| Look up supported model providers, their env keys, base URLs, auth methods, and credentials | [Model Providers and Credentials](./concepts/model-providers.md) |
 
 ### Follow a workflow end to end
 
@@ -167,6 +169,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Set up OpenWiki for the first time (provider/model, credentials, repo setup)                                            | [First-Run Onboarding](./workflows/onboarding.md)             |
 | Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`, with on-demand `inspect_page_claims`)                  | [Repository Generation Lifecycle](./workflows/repository-generation.md) |
+| Understand repository-run tracing: how one planner and one page worker per page share a single LangSmith thread named "planning agent" and "worker agent: <page>", resolved from `OPENWIKI_TRACE_THREAD_ID` or the durable run id | [Agent Runtime, Models, and Middleware](./architecture/agent-runtime.md) and [Repository Generation Lifecycle](./workflows/repository-generation.md) |
 | Understand how a failing or early-exiting page worker is skipped and restored without losing completed pages            | [Repository Generation Lifecycle](./workflows/repository-generation.md) |
 | Understand how repository source drift during a run is detected and why the run finalizes without advancing the source checkpoint | [Repository Generation Lifecycle](./workflows/repository-generation.md) |
 | Understand how Claims are reconciled on update and how a page submits sparse Claim decisions (`confirmedClaimIds` / `claims` / `retractedClaimIds`) with issue-free Claims retained automatically and full Claims available via on-demand inspect | [Claims Reconciliation](./workflows/claims-reconciliation.md) |
