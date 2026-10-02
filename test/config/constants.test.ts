@@ -4,6 +4,7 @@ import {
   BOB_BASE_URL_ENV_KEY,
   BEDROCK_DEFAULT_MAX_TOKENS,
   DEFAULT_MODEL_ID,
+  DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE,
   DEFAULT_PAGE_CONCURRENCY,
   DEFAULT_PROVIDER_RETRY_ATTEMPTS,
   MAX_PAGE_CONCURRENCY,
@@ -15,6 +16,7 @@ import {
   getMissingProviderEnvKey,
   getProviderApiKeyEnvKey,
   getProviderAuthMethod,
+  getProviderCredentialHint,
   getProviderModelOptions,
   getProviderRegionEnvKey,
   FIREWORKS_BASE_URL_ENV_KEY,
@@ -30,6 +32,7 @@ import {
   normalizeModelId,
   normalizeProvider,
   providerRequiresApiKey,
+  providerUsesEntraId,
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
@@ -41,6 +44,8 @@ import {
   resolveOpenAiCompatibleReasoningEffortSupported,
   resolveOpenAiCompatibleStreaming,
   resolveOpenAiCompatibleUseResponsesApi,
+  resolveOpenAICompatibleAuthMode,
+  resolveOpenAICompatibleEntraScope,
   resolveOpenRouterMaxTokens,
   resolveOpenRouterProviderOnly,
   resolveProviderBaseUrl,
@@ -980,9 +985,89 @@ describe("providerRequiresApiKey / getProviderApiKeyEnvKey", () => {
     expect(providerRequiresApiKey("openrouter")).toBe(true);
     expect(getProviderApiKeyEnvKey("anthropic")).toBe("ANTHROPIC_API_KEY");
   });
+
+  test("Entra removes only the OpenAI-compatible static-key requirement", () => {
+    const entraEnv = { OPENAI_COMPATIBLE_AUTH: "entra-id" };
+    expect(providerRequiresApiKey("openai-compatible", {})).toBe(true);
+    expect(providerRequiresApiKey("openai-compatible", entraEnv)).toBe(false);
+    expect(providerRequiresApiKey("anthropic", entraEnv)).toBe(true);
+    expect(providerUsesEntraId("openai-compatible", entraEnv)).toBe(true);
+    expect(providerUsesEntraId("anthropic", entraEnv)).toBe(false);
+  });
+});
+
+describe("OpenAI-compatible authentication configuration", () => {
+  test("defaults missing or blank auth mode to the existing API-key mode", () => {
+    expect(resolveOpenAICompatibleAuthMode({})).toBe("api-key");
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: "  " }),
+    ).toBe("api-key");
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: " API-KEY " }),
+    ).toBe("api-key");
+  });
+
+  test("accepts Entra mode case-insensitively", () => {
+    expect(
+      resolveOpenAICompatibleAuthMode({ OPENAI_COMPATIBLE_AUTH: " EnTrA-Id " }),
+    ).toBe("entra-id");
+  });
+
+  test("rejects an invalid mode even if a static key is present", () => {
+    const env = {
+      OPENAI_COMPATIBLE_AUTH: "entra",
+      OPENAI_COMPATIBLE_API_KEY: "existing-key",
+    };
+    expect(() => resolveOpenAICompatibleAuthMode(env)).toThrow(
+      "OPENAI_COMPATIBLE_AUTH must be one of: api-key, entra-id.",
+    );
+    expect(() => providerRequiresApiKey("openai-compatible", env)).toThrow();
+    expect(() => getMissingProviderEnvKey("openai-compatible", env)).toThrow();
+  });
+
+  test("trims a custom scope and defaults a missing or blank scope", () => {
+    expect(resolveOpenAICompatibleEntraScope({})).toBe(
+      DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE,
+    );
+    expect(
+      resolveOpenAICompatibleEntraScope({
+        OPENAI_COMPATIBLE_ENTRA_SCOPE: "  ",
+      }),
+    ).toBe(DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE);
+    expect(
+      resolveOpenAICompatibleEntraScope({
+        OPENAI_COMPATIBLE_ENTRA_SCOPE: " api://gateway/.default ",
+      }),
+    ).toBe("api://gateway/.default");
+  });
+
+  test("explains how to configure Entra credentials and gateway scope", () => {
+    expect(getProviderCredentialHint("openai-compatible")).toContain(
+      "OPENAI_COMPATIBLE_AUTH=entra-id",
+    );
+    expect(getProviderCredentialHint("openai-compatible")).toContain(
+      "OPENAI_COMPATIBLE_ENTRA_SCOPE",
+    );
+  });
 });
 
 describe("getMissingProviderEnvKey", () => {
+  test("requires a key by default, but not in Entra mode", () => {
+    expect(getMissingProviderEnvKey("openai-compatible", {})).toBe(
+      "OPENAI_COMPATIBLE_API_KEY",
+    );
+    expect(
+      getMissingProviderEnvKey("openai-compatible", {
+        OPENAI_COMPATIBLE_AUTH: "entra-id",
+      }),
+    ).toBeNull();
+    expect(
+      getMissingProviderEnvKey("anthropic", {
+        OPENAI_COMPATIBLE_AUTH: "entra-id",
+      }),
+    ).toBe("ANTHROPIC_API_KEY");
+  });
+
   test("reports the missing API key for key-based providers", () => {
     expect(getMissingProviderEnvKey("anthropic", {})).toBe("ANTHROPIC_API_KEY");
     expect(
