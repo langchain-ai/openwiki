@@ -70,6 +70,7 @@
   "dependencies": {
     "@anthropic-ai/vertex-sdk": "^0.19.6",
     "@aws-sdk/client-bedrock-runtime": "^3.1120.0",
+    "@azure/identity": "^4.13.3",
     "@langchain/anthropic": "^1.5.8",
     "@langchain/aws": "^1.4.4",
     "@langchain/core": "^1.2.9",

@@ -17,6 +17,14 @@ export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
 export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
+export const OPENAI_COMPATIBLE_AUTH_ENV_KEY = "OPENAI_COMPATIBLE_AUTH";
+export const OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY =
+  "OPENAI_COMPATIBLE_ENTRA_SCOPE";
+/**
+ * Azure OpenAI's standard Entra scope, used unless a gateway scope is configured.
+ */
+export const DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE =
+  "https://cognitiveservices.azure.com/.default";
 export const OPENAI_COMPATIBLE_STREAMING_ENV_KEY =
   "OPENWIKI_OPENAI_COMPATIBLE_STREAMING";
 export const OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY =
@@ -499,8 +507,67 @@ export function getProviderExternalCliAuthAdapter(
   return getProviderConfig(provider).externalCliAuthAdapter;
 }
 
-export function providerRequiresApiKey(provider: OpenWikiProvider): boolean {
+/**
+ * Authentication mechanisms supported by the OpenAI-compatible provider.
+ */
+export type OpenAICompatibleAuthMode = "api-key" | "entra-id";
+
+/**
+ * Resolve the OpenAI-compatible authentication mode. A missing or blank value
+ * retains API-key behavior; an invalid explicit value fails closed.
+ */
+export function resolveOpenAICompatibleAuthMode(
+  env: NodeJS.ProcessEnv = process.env,
+): OpenAICompatibleAuthMode {
+  const mode = env[OPENAI_COMPATIBLE_AUTH_ENV_KEY]?.trim().toLowerCase();
+
+  if (!mode || mode === "api-key") {
+    return "api-key";
+  }
+  if (mode === "entra-id") {
+    return mode;
+  }
+
+  throw new Error(
+    `${OPENAI_COMPATIBLE_AUTH_ENV_KEY} must be one of: api-key, entra-id.`,
+  );
+}
+
+/**
+ * Resolve the Microsoft Entra token scope. Enterprise gateways normally use
+ * their own application ID URI; Azure OpenAI uses the Cognitive Services scope.
+ */
+export function resolveOpenAICompatibleEntraScope(
+  env: NodeJS.ProcessEnv = process.env,
+): string {
   return (
+    env[OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY]?.trim() ||
+    DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE
+  );
+}
+
+/**
+ * Return whether this provider delegates authentication to Azure Identity.
+ */
+export function providerUsesEntraId(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    provider === "openai-compatible" &&
+    resolveOpenAICompatibleAuthMode(env) === "entra-id"
+  );
+}
+
+/**
+ * Return whether a provider needs a static API key in the supplied environment.
+ */
+export function providerRequiresApiKey(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    !providerUsesEntraId(provider, env) &&
     getProviderAuthMethod(provider) === "api-key" &&
     getProviderConfig(provider).apiKeyEnvKey !== undefined
   );
@@ -609,7 +676,11 @@ export function getMissingProviderEnvKey(
     return null;
   }
 
-  if (config.apiKeyEnvKey && !env[config.apiKeyEnvKey]) {
+  if (
+    !providerUsesEntraId(provider, env) &&
+    config.apiKeyEnvKey &&
+    !env[config.apiKeyEnvKey]
+  ) {
     return config.apiKeyEnvKey;
   }
 
@@ -649,6 +720,15 @@ export function resolveProviderLocation(
 export function getProviderCredentialHint(
   provider: OpenWikiProvider,
 ): string | null {
+  if (provider === "openai-compatible") {
+    return (
+      "For Microsoft Entra ID authentication, set " +
+      `${OPENAI_COMPATIBLE_AUTH_ENV_KEY}=entra-id and configure Azure Identity ` +
+      "with az login, managed identity, workload identity, or environment credentials. " +
+      `Set ${OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY} to your gateway's token scope.`
+    );
+  }
+
   if (provider === "gemini-enterprise") {
     return (
       "Authenticate to Google Cloud with Application Default Credentials " +
