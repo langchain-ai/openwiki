@@ -1,0 +1,31 @@
+test/config/constants.test.ts
+  s_a98d74af14fe12::t_2857390adcc997 7,19,35,47-48,988-1051,1055-1070
+src/config/env.ts
+  s_a98d74af14fe12::t_8c1825f543306b 39-40,131-132,517-518
+test/config/env.test.ts
+  s_a98d74af14fe12::t_2857390adcc997 133-140,186-193
+test/config/env-behavior.test.ts
+  s_a98d74af14fe12::t_2857390adcc997 21-22,69-70,437-454
+package.json
+  s_a98d74af14fe12::t_365c36bfc1eae6 73
+src/config/constants.ts
+  s_a98d74af14fe12::t_8c1825f543306b 20-25,508-538,540-562,671-675,715-723
+pnpm-lock.yaml
+  s_a98d74af14fe12::t_207bd1f985362d 26-28,271-318,1203-1206,1347-1350,1668-1679,2029-2032,2114-2118,2140-2144,2159-2162,2224-2227,2364-2384,2531-2534,2794-2797,3200-3203,3477-3561,4460-4467,4633-4636,4958-4966,5389-5395,5474-5475,5490-5493,5502-5505,5577-5589,5703-5716,5847-5853,6084-6085,6439-6442
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f55d1aa9b37e1408c36696f3a3ca8a249bc6f6e5",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
