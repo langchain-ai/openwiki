@@ -74,9 +74,18 @@ function skipEscapeSequence(input: string, index: number): number {
     return skipStringSequence(input, index + 1);
   }
 
-  // For a two-byte escape (for example, a charset select), discard the
-  // sequence introducer and its final byte.
-  return Math.min(input.length, index + 1);
+  // Generic ESC sequences have zero or more intermediate bytes (0x20-0x2f)
+  // followed by a final byte (0x30-0x7e), as in ESC ( B for a charset select.
+  while (index < input.length) {
+    const code = input.charCodeAt(index);
+    if (code >= 0x20 && code <= 0x2f) {
+      index += 1;
+      continue;
+    }
+    return code >= 0x30 && code <= 0x7e ? index + 1 : index;
+  }
+
+  return index;
 }
 
 function skipC1Sequence(input: string, index: number): number {
