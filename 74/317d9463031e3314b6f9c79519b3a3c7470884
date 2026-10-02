@@ -1,0 +1,28 @@
+test/agent/environment-debug-value.test.ts
+  s_a98d74af14fe12::t_8546c8112ea19f 4-5,17-28
+test/platform/diagnostics.test.ts
+  s_a98d74af14fe12::t_8546c8112ea19f 1-24
+src/agent/index.ts
+  s_a98d74af14fe12::t_29e88d8228c09f 53,107,109,123,130,1314-1316,2765-2766
+src/platform/diagnostics.ts
+  s_a98d74af14fe12::t_29e88d8228c09f 53-54
+test/agent/create-model-entra.test.ts
+  s_a98d74af14fe12::t_8546c8112ea19f 1-7,22-33,35-36,39-52,54-55,62-85
+  s_a98d74af14fe12::t_5d7c66cd140e5b 8-21,34,37-38,53,56-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "74317d9463031e3314b6f9c79519b3a3c7470884",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
