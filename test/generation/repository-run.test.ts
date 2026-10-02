@@ -1694,7 +1694,7 @@ describe("repository page queue", () => {
     );
     await expect(
       finishRepositoryRun(run, { skippedPageSnapshots: [tailSnapshot] }),
-    ).resolves.toEqual({ status: "complete" });
+    ).resolves.toEqual({ status: "complete", skippedPages: [tailJob.path] });
   });
 });
 
