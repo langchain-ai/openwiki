@@ -16,6 +16,7 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createMiddleware } from "langchain";
 import { z } from "zod";
+import { resolveTraceThreadId } from "../config/constants.js";
 import { RepositoryRunError } from "../generation/errors.js";
 import {
   beginRepositoryRun,
@@ -492,6 +493,7 @@ async function runPlanningAgent(
 
   const backend = createAgentBackend(wikiBackend);
   const agent = createDeepAgent({
+    name: PLANNER_AGENT_NAME,
     model,
     tools: [submitPlanTool],
     backend,
@@ -512,12 +514,26 @@ async function runPlanningAgent(
   await streamWorkerTools(
     agent,
     [{ role: "user", content: "Plan this repository wiki now." }],
+    resolveTraceThreadId(run.state.runId),
     onEvent,
   );
 
   if (!submitted || !run.state.plan) {
     throw new Error("Repository planning worker exited without submit_plan.");
   }
+}
+
+/** The planner's trace name in LangSmith (otherwise the graph default, "LangGraph"). */
+export const PLANNER_AGENT_NAME = "planning agent";
+
+/**
+ * A page worker's trace name in LangSmith: the page it owns, so a run's thread
+ * reads as one planner and one worker per page.
+ *
+ * @param page - Canonical page path, such as `/openwiki/coverage/forms/ho-3.md`.
+ */
+export function workerAgentName(page: string): string {
+  return `worker agent: ${page.replace(/^\/openwiki\//u, "").replace(/\.md$/u, "")}`;
 }
 
 const QUICKSTART_PAGE_PATH = "/openwiki/quickstart.md";
@@ -898,6 +914,7 @@ async function runPageAgent(
 
   const backend = createAgentBackend(wikiBackend);
   const agent = createDeepAgent({
+    name: workerAgentName(job.path),
     model,
     tools: [inspectClaimsTool, submitPageTool],
     backend,
@@ -928,6 +945,7 @@ async function runPageAgent(
           content: "Research and document the assigned page, then submit it.",
         },
       ],
+      resolveTraceThreadId(run.state.runId),
       onEvent,
       job.path,
     );
@@ -962,18 +980,27 @@ function emitDeferredPageWarning(
  *
  * @param agent - Fresh planner or page agent.
  * @param messages - Single worker instruction message.
+ * @param traceThreadId - LangSmith thread shared by every worker of this run.
  * @param onEvent - Optional CLI event consumer.
  * @param page - Canonical page owned by a page worker, tagged onto its events.
  */
 async function streamWorkerTools(
   agent: ReturnType<typeof createDeepAgent>,
   messages: Array<{ role: "user"; content: string }>,
+  traceThreadId: string,
   onEvent?: (event: OpenWikiRunEvent) => void,
   page?: string,
 ): Promise<void> {
+  // LangGraph copies `configurable.thread_id` into every run's metadata, which
+  // is what LangSmith groups a thread by. Safe to share across concurrent
+  // workers only because they have no checkpointer.
   const stream = await agent.stream(
     { messages },
-    { streamMode: ["tools"], subgraphs: true },
+    {
+      streamMode: ["tools"],
+      subgraphs: true,
+      configurable: { thread_id: traceThreadId },
+    },
   );
 
   for await (const chunk of stream) {

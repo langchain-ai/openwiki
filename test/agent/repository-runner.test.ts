@@ -29,6 +29,7 @@ type HarnessRun = {
     phase: "planning" | "generating";
     mode: "update";
     language: string;
+    runId: string;
     planningContext?: string;
     plan?: HarnessPlan;
   };
@@ -51,6 +52,7 @@ type CapturedMiddleware = {
 };
 
 type CapturedAgentOptions = {
+  name?: string;
   tools: CompletionTool[];
   systemPrompt: unknown;
   subagents: unknown[];
@@ -66,6 +68,8 @@ type HarnessPlanInput = {
   }>;
   deletePages?: string[];
 };
+
+const HARNESS_RUN_ID = vi.hoisted(() => "00000000-0000-4000-8000-000000000001");
 
 const harness = vi.hoisted(() => ({
   agentOptions: [] as CapturedAgentOptions[],
@@ -99,6 +103,7 @@ const harness = vi.hoisted(() => ({
   planPaths: ["/openwiki/quickstart.md", "/openwiki/architecture.md"],
   resumed: false,
   restoreCalls: 0,
+  streamConfigs: [] as Array<{ configurable?: Record<string, unknown> }>,
   workerExitsWithoutSubmit: false,
 }));
 
@@ -298,7 +303,15 @@ vi.mock("deepagents", async (importOriginal) => {
           },
         }),
       );
-      return { stream };
+      return {
+        stream(
+          input: unknown,
+          config: { configurable?: Record<string, unknown> },
+        ) {
+          harness.streamConfigs.push(config);
+          return stream(input, config);
+        },
+      };
     },
   };
 });
@@ -340,6 +353,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
           phase: "planning",
           mode: "update",
           language: "en",
+          runId: HARNESS_RUN_ID,
           planningContext: "User and connector context",
         },
       };
@@ -349,7 +363,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       run,
       view: {
         status: "active",
-        runId: "00000000-0000-4000-8000-000000000001",
+        runId: HARNESS_RUN_ID,
         root: "/repo",
         mode: "update",
         language: "en",
@@ -527,7 +541,9 @@ vi.mock("../../src/generation/repository-run.js", () => ({
 import {
   isRateLimitError,
   parseWorkerToolEvent,
+  PLANNER_AGENT_NAME,
   runNativeRepositoryGeneration,
+  workerAgentName,
 } from "../../src/agent/repository-runner.ts";
 import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 
@@ -606,6 +622,7 @@ async function getNoDelegationWrapModelCall(): Promise<
 
 beforeEach(() => {
   harness.agentOptions = [];
+  harness.streamConfigs = [];
   harness.beginCalls = 0;
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
@@ -1305,5 +1322,47 @@ describe("parseWorkerToolEvent", () => {
     expect(
       parseWorkerToolEvent([[], "messages", { text: "private narration" }]),
     ).toBeNull();
+  });
+});
+
+describe("LangSmith thread grouping", () => {
+  test("tags the planner and every concurrent page worker with the run's thread id", async () => {
+    await runHarness({ pageConcurrency: 2 });
+
+    // One planner plus one worker per planned page, each its own root trace.
+    expect(harness.streamConfigs).toHaveLength(1 + harness.planPaths.length);
+    for (const config of harness.streamConfigs) {
+      expect(config.configurable).toEqual({ thread_id: HARNESS_RUN_ID });
+    }
+  });
+
+  test("uses OPENWIKI_TRACE_THREAD_ID when CI sets it", async () => {
+    vi.stubEnv("OPENWIKI_TRACE_THREAD_ID", " ingest-3280b3e ");
+    try {
+      await runHarness();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    expect(harness.streamConfigs.length).toBeGreaterThan(0);
+    for (const config of harness.streamConfigs) {
+      expect(config.configurable).toEqual({ thread_id: "ingest-3280b3e" });
+    }
+  });
+});
+
+describe("LangSmith trace names", () => {
+  test("names the planner and each page worker after its page", async () => {
+    await runHarness({ pageConcurrency: 2 });
+
+    const [planner, ...workers] = harness.agentOptions.map(({ name }) => name);
+    expect(planner).toBe(PLANNER_AGENT_NAME);
+    // Order is the pool's (concurrent workers write the quickstart last).
+    expect(workers.sort()).toEqual(
+      harness.planPaths.map((path) => workerAgentName(path)).sort(),
+    );
+    expect(workerAgentName("/openwiki/coverage/forms/ho-3.md")).toBe(
+      "worker agent: coverage/forms/ho-3",
+    );
   });
 });
