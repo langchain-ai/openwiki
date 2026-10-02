@@ -645,14 +645,28 @@ function setFrontmatterValue(
 }
 
 /**
- * Finds the first non-indented line after a top-level YAML field.
+ * Matches a compact block-sequence item written at the parent key's own column,
+ * the form PyYAML emits by default. The front-matter root is a mapping, so such a
+ * line can only belong to the preceding key's sequence.
+ */
+const COMPACT_SEQUENCE_ITEM = /^-(?:\s|$)/u;
+
+/**
+ * Finds the first line after a top-level YAML field that does not continue it.
+ * Continuation lines are blank lines, indented lines, and compact sequence items
+ * (`- ` at the parent key's column), which PyYAML writes unindented.
  */
 function findFrontmatterFieldEnd(
   lines: readonly string[],
   start: number,
 ): number {
   let end = start + 1;
-  while (end < lines.length && (lines[end] === "" || /^\s/u.test(lines[end]))) {
+  while (
+    end < lines.length &&
+    (lines[end] === "" ||
+      /^\s/u.test(lines[end]) ||
+      COMPACT_SEQUENCE_ITEM.test(lines[end]))
+  ) {
     end += 1;
   }
   return end;
