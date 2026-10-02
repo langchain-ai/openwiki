@@ -233,6 +233,52 @@ describe("prepareClaimsRuntime", () => {
     ]);
   });
 
+  test("preserves an excluded page's verified Markdown and Claims exactly", async () => {
+    const page = "/openwiki/page.md";
+    await writePage(page, "---\ntype: Reference\n---\n\n# Page\n");
+    await writeFile(
+      path.join(rootDir, "source.ts"),
+      "export const value = 1;\n",
+    );
+    const runtime = await prepareClaimsRuntime(
+      "init",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+    );
+    expect(runtime).toBeDefined();
+    await runtime!.session.resolveClaims({
+      page,
+      operations: [
+        {
+          op: "add",
+          statement: "The source exports a value.",
+          evidence: [{ resource: "repo://source.ts" }],
+        },
+      ],
+    });
+    await runtime!.finalize("2026-08-20T12:00:00.000Z");
+    const store = new ClaimsStore(rootDir);
+    const original = await readPage(page);
+    const claims = await store.loadPage(page);
+    expect(claims?.verification).toBeDefined();
+
+    const resumed = await prepareClaimsRuntime(
+      "update",
+      "repository",
+      rootDir,
+      new OpenWikiIgnore([]),
+    );
+    expect(resumed).toBeDefined();
+    await resumed!.finalize("2026-08-20T13:00:00.000Z", new Set([page]));
+
+    expect(await readPage(page)).toBe(original);
+    expect(await store.loadPage(page)).toEqual(claims);
+    expect((await store.loadPage(page))?.pageVersion).toBe(
+      await store.hashPage(page),
+    );
+  });
+
   test("clean preflight preserves the prior event while debt removes only OpenWiki's event", async () => {
     const page = "/openwiki/page.md";
     await writePage(page, "---\ntype: Reference\n---\n\n# Page\n");
