@@ -14,6 +14,7 @@ import {
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
   OPENAI_CHATGPT_PLAN_ENV_KEY,
+  type OpenAICompatibleAuthMode,
   type OpenWikiProvider,
 } from "../../config/constants.js";
 import { openWikiEnvPath } from "../../config/env.js";
@@ -49,8 +50,13 @@ export function getAwsCredentialRepairMessage(
 export function getCredentialSetupDetail(
   provider: OpenWikiProvider,
   tokens: CodexTokens | null = null,
+  authMode?: OpenAICompatibleAuthMode,
 ): string {
-  if (providerUsesEntraId(provider)) {
+  if (
+    provider === "openai-compatible" &&
+    (authMode ?? (providerUsesEntraId(provider) ? "entra-id" : "api-key")) ===
+      "entra-id"
+  ) {
     return "Microsoft Entra ID via Azure Identity (checked on first request)";
   }
 

@@ -197,13 +197,15 @@ describe("orderedSetupSteps", () => {
 
     expect(orderedSetupSteps("openai-compatible", "code", false)).toEqual([
       "provider",
+      "auth-mode",
       "base-url",
+      "entra-scope",
       "model",
       "langsmith",
       "code-repo-confirm",
     ]);
     expect(nextSetupStep("provider", "openai-compatible", "code", false)).toBe(
-      "base-url",
+      "auth-mode",
     );
   });
 
