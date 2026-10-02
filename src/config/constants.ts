@@ -20,7 +20,9 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const OPENAI_COMPATIBLE_AUTH_ENV_KEY = "OPENAI_COMPATIBLE_AUTH";
 export const OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY =
   "OPENAI_COMPATIBLE_ENTRA_SCOPE";
-/** Azure OpenAI's standard Entra scope, used unless a gateway scope is configured. */
+/**
+ * Azure OpenAI's standard Entra scope, used unless a gateway scope is configured.
+ */
 export const DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE =
   "https://cognitiveservices.azure.com/.default";
 export const OPENAI_COMPATIBLE_STREAMING_ENV_KEY =
@@ -505,7 +507,9 @@ export function getProviderExternalCliAuthAdapter(
   return getProviderConfig(provider).externalCliAuthAdapter;
 }
 
-/** Authentication mechanisms supported by the OpenAI-compatible provider. */
+/**
+ * Authentication mechanisms supported by the OpenAI-compatible provider.
+ */
 export type OpenAICompatibleAuthMode = "api-key" | "entra-id";
 
 /**
@@ -542,7 +546,9 @@ export function resolveOpenAICompatibleEntraScope(
   );
 }
 
-/** Return whether this provider delegates authentication to Azure Identity. */
+/**
+ * Return whether this provider delegates authentication to Azure Identity.
+ */
 export function providerUsesEntraId(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv = process.env,
@@ -553,7 +559,9 @@ export function providerUsesEntraId(
   );
 }
 
-/** Return whether a provider needs a static API key in the supplied environment. */
+/**
+ * Return whether a provider needs a static API key in the supplied environment.
+ */
 export function providerRequiresApiKey(
   provider: OpenWikiProvider,
   env: NodeJS.ProcessEnv = process.env,
