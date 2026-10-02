@@ -5,6 +5,7 @@ import { createEntraTokenProvider } from "../../src/agent/entra-auth.ts";
 
 const identityMocks = vi.hoisted(() => ({
   construct: vi.fn(),
+  workloadConstruct: vi.fn(),
   getToken:
     vi.fn<
       (
@@ -28,6 +29,15 @@ vi.mock("@azure/identity", async (importOriginal) => {
         return identityMocks.getToken(scopes, options);
       }
     },
+    WorkloadIdentityCredential: class {
+      constructor(options: unknown) {
+        identityMocks.workloadConstruct(options);
+      }
+
+      getToken(scopes: string | string[], options?: unknown) {
+        return identityMocks.getToken(scopes, options);
+      }
+    },
   };
 });
 
@@ -42,11 +52,16 @@ function accessToken(token: string, lifetimeMs = TOKEN_LIFETIME_MS) {
 
 beforeEach(() => {
   identityMocks.construct.mockReset();
+  identityMocks.workloadConstruct.mockReset();
   identityMocks.getToken.mockReset();
+  vi.stubEnv("AZURE_FEDERATED_TOKEN_FILE", undefined);
+  vi.stubEnv("AZURE_CLIENT_ID", undefined);
+  vi.stubEnv("AZURE_TENANT_ID", undefined);
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 describe("createEntraTokenProvider", () => {
@@ -68,6 +83,51 @@ describe("createEntraTokenProvider", () => {
       [SCOPE],
       expect.any(Object),
     );
+    expect(identityMocks.workloadConstruct).not.toHaveBeenCalled();
+  });
+
+  test("prefers workload identity and refreshes its token when a federated file is configured", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    vi.stubEnv("AZURE_FEDERATED_TOKEN_FILE", "/ci/federated-token");
+    vi.stubEnv("AZURE_CLIENT_ID", "fixture-client-id");
+    vi.stubEnv("AZURE_TENANT_ID", "fixture-tenant-id");
+    identityMocks.getToken
+      .mockResolvedValueOnce(accessToken("first-token", 5 * 60 * 1000))
+      .mockResolvedValueOnce(accessToken("refreshed-token"));
+    const getToken = createEntraTokenProvider(BASE_URL, SCOPE);
+
+    expect(identityMocks.workloadConstruct).not.toHaveBeenCalled();
+    expect(await getToken()).toBe("first-token");
+    expect(await getToken()).toBe("first-token");
+    vi.setSystemTime(new Date("2026-01-01T00:06:00.000Z"));
+    expect(await getToken()).toBe("refreshed-token");
+    expect(identityMocks.workloadConstruct).toHaveBeenCalledExactlyOnceWith({
+      clientId: "fixture-client-id",
+      tenantId: "fixture-tenant-id",
+      tokenFilePath: "/ci/federated-token",
+    });
+    expect(identityMocks.construct).not.toHaveBeenCalled();
+    expect(identityMocks.getToken).toHaveBeenCalledTimes(2);
+  });
+
+  test("does not fall back to another identity when workload identity fails", async () => {
+    vi.stubEnv("AZURE_FEDERATED_TOKEN_FILE", "/ci/federated-token");
+    vi.stubEnv("AZURE_CLIENT_ID", "fixture-client-id");
+    vi.stubEnv("AZURE_TENANT_ID", "fixture-tenant-id");
+    identityMocks.getToken.mockRejectedValueOnce(
+      new Error("private federated assertion"),
+    );
+    const getToken = createEntraTokenProvider(BASE_URL, SCOPE);
+
+    const failure = await getToken().catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toContain("AZURE_FEDERATED_TOKEN_FILE");
+    expect((failure as Error).message).not.toContain(
+      "private federated assertion",
+    );
+    expect(identityMocks.workloadConstruct).toHaveBeenCalledTimes(1);
+    expect(identityMocks.construct).not.toHaveBeenCalled();
   });
 
   test("reuses the cached token while it remains valid", async () => {

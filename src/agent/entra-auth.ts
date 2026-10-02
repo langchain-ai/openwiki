@@ -4,7 +4,9 @@
  * Azure Identity caches tokens and refreshes them before expiry. The OpenAI
  * SDK calls the returned function for each request, allowing a long-running
  * OpenWiki model to use refreshed credentials without reconstruction.
- * Identity is loaded only when the callback is first invoked.
+ * Identity is loaded only when the callback is first invoked. A configured
+ * federated token file selects workload identity explicitly; otherwise the
+ * default Azure credential chain is used.
  *
  * @param baseURL - OpenAI-compatible endpoint that will receive the token.
  * @param scope - Entra OAuth scope accepted by the target gateway.
@@ -44,8 +46,24 @@ export function createEntraTokenProvider(
   return async () => {
     try {
       tokenProvider ??= import("@azure/identity")
-        .then(({ DefaultAzureCredential, getBearerTokenProvider }) =>
-          getBearerTokenProvider(new DefaultAzureCredential(), scope),
+        .then(
+          ({
+            DefaultAzureCredential,
+            WorkloadIdentityCredential,
+            getBearerTokenProvider,
+          }) => {
+            const tokenFilePath =
+              process.env.AZURE_FEDERATED_TOKEN_FILE?.trim();
+            const credential = tokenFilePath
+              ? new WorkloadIdentityCredential({
+                  clientId: process.env.AZURE_CLIENT_ID?.trim(),
+                  tenantId: process.env.AZURE_TENANT_ID?.trim(),
+                  tokenFilePath,
+                })
+              : new DefaultAzureCredential();
+
+            return getBearerTokenProvider(credential, scope);
+          },
         )
         .catch((error: unknown) => {
           // An import or constructor failure must not poison future attempts.
@@ -60,7 +78,7 @@ export function createEntraTokenProvider(
       // Identity errors can contain response details and credential material.
       // Never attach or log the original error in model diagnostics.
       throw new Error(
-        "Unable to obtain a Microsoft Entra ID access token. Configure Azure Identity (az login, managed/workload identity, or environment credentials) and check OPENAI_COMPATIBLE_ENTRA_SCOPE and gateway access permissions.",
+        "Unable to obtain a Microsoft Entra ID access token. For workload identity, check AZURE_CLIENT_ID, AZURE_TENANT_ID, and AZURE_FEDERATED_TOKEN_FILE. Otherwise configure Azure Identity (az login, managed identity, or environment credentials). Check OPENAI_COMPATIBLE_ENTRA_SCOPE and gateway access permissions.",
       );
     }
   };

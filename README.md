@@ -619,6 +619,13 @@ token on model requests, so no `OPENAI_COMPATIBLE_API_KEY` is needed in Entra
 mode. Generated CI workflows retain the mode and scope but still require you to
 configure an unattended Azure Identity credential in CI.
 
+For workload identity federation, provide `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+and `AZURE_FEDERATED_TOKEN_FILE` in the environment running OpenWiki. The file
+variable must point to the runner-provided federated token file; do not paste
+the token into OpenWiki or commit the file. When the file variable is set,
+OpenWiki uses `WorkloadIdentityCredential` rather than another credential in
+the default chain. If it is not set, OpenWiki uses `DefaultAzureCredential`.
+
 **Streaming-only gateways.** Some gateways serve only the streaming transport: a non-streaming request is either rejected outright (`Stream must be set to true`) or answered with HTTP 200 and empty content, which leaves you with a blank wiki and no error. OpenWiki issues non-streaming requests internally, so force the streaming transport for those endpoints:
 
 ```bash
