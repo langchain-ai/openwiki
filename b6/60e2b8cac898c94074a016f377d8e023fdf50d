@@ -1,0 +1,39 @@
+test/setup/credentials.test.ts
+  s_a98d74af14fe12::t_37308e1e8efe06 32-34,194-217
+test/cli/startup.test.ts
+  s_a98d74af14fe12::t_6b3c353981db00 23-25,48-50
+  s_a98d74af14fe12::t_37308e1e8efe06 136-138,157-163,167-183
+  s_a98d74af14fe12::t_e7d75af268043d 164-166
+test/setup/credentials/view.test.tsx
+  s_a98d74af14fe12::t_8b395e93efa3aa 3,95,175-185
+  s_a98d74af14fe12::t_fed7b5b75a9dbe 186-187
+src/setup/credentials/view.tsx
+  s_a98d74af14fe12::t_7c933cbff3f73a 17,393-396
+  s_a98d74af14fe12::t_c20d3a0ef2b3cd 397-398
+test/ingestion/code-mode.test.ts
+  s_a98d74af14fe12::t_8b395e93efa3aa 54,887-889,892-893,908
+  s_a98d74af14fe12::t_e7d75af268043d 883-886,894-907,909-920
+  s_a98d74af14fe12::t_352688144a6235 921
+src/setup/credentials/format.ts
+  s_a98d74af14fe12::t_7c933cbff3f73a 7,53-56
+test/setup/credentials/format.test.ts
+  s_a98d74af14fe12::t_37308e1e8efe06 17,47,177-184
+src/ingestion/code-mode.ts
+  s_a98d74af14fe12::t_7c933cbff3f73a 6-7,11,13,474-483
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b660e2b8cac898c94074a016f377d8e023fdf50d",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
