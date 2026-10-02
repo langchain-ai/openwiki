@@ -531,6 +531,42 @@ describe("reasoning capabilities", () => {
     });
   });
 
+  test("resolves the Codex effort levels for GPT-6 models with ChatGPT login", () => {
+    expect(
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-luna", {
+        OPENWIKI_REASONING_EFFORT: "max",
+      }),
+    ).toEqual({ effort: "max", transport: "responses-reasoning" });
+    expect(
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-sol", {
+        OPENWIKI_REASONING_EFFORT: "ultra",
+      }),
+    ).toEqual({ effort: "ultra", transport: "responses-reasoning" });
+    expect(
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-astra", {
+        OPENWIKI_REASONING_EFFORT: "ultra",
+      }),
+    ).toEqual({ effort: "ultra", transport: "responses-reasoning" });
+  });
+
+  test("rejects effort levels a model does not advertise", () => {
+    expect(() =>
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-luna", {
+        OPENWIKI_REASONING_EFFORT: "ultra",
+      }),
+    ).toThrow(/Supported values: low, medium, high, xhigh, max\./u);
+    expect(() =>
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-sol", {
+        OPENWIKI_REASONING_EFFORT: "none",
+      }),
+    ).toThrow(/Supported values: low, medium, high, xhigh, max, ultra\./u);
+    expect(() =>
+      resolveReasoningConfig("openai-chatgpt", "gpt-5.6-terra", {
+        OPENWIKI_REASONING_EFFORT: "ultra",
+      }),
+    ).toThrow(/Supported values: none, low, medium, high, xhigh, max\./u);
+  });
+
   test("resolves OpenAI-compatible reasoning to chat completions when opted in", () => {
     expect(
       getReasoningCapability("openai-compatible", "Qwen/Qwen3.7-235B", {

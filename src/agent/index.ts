@@ -1150,6 +1150,14 @@ export function createModel(
     reasoningConfig?.transport === "responses-reasoning"
       ? { reasoning: { effort: reasoningConfig.effort as never } }
       : {};
+  // @langchain/openai drops `reasoning` for model names it does not classify
+  // as reasoning models (only o-series and gpt-5*), which includes GPT-6.
+  // modelKwargs is merged into the Responses payload for every model, so it
+  // carries the effort for those names.
+  const codexReasoningModelKwargs =
+    reasoningConfig?.transport === "responses-reasoning"
+      ? { modelKwargs: { reasoning: { effort: reasoningConfig.effort } } }
+      : {};
   const chatCompletionsReasoningOptions =
     reasoningConfig?.transport === "chat-completions-reasoning-effort"
       ? { modelKwargs: { reasoning_effort: reasoningConfig.effort } }
@@ -1235,6 +1243,7 @@ export function createModel(
       streaming: true,
       ...maxTokensOptions,
       ...responsesReasoningOptions,
+      ...codexReasoningModelKwargs,
       ...retryOptions,
       configuration: {
         baseURL: CODEX_RESPONSES_BASE_URL,
