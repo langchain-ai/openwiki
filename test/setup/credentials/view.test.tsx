@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "ink-testing-library";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   InitSetupView,
@@ -92,6 +92,7 @@ describe("InitSetupView", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     if (originalLangSmithKey === undefined) {
       delete process.env.LANGSMITH_API_KEY;
     } else {
@@ -169,6 +170,19 @@ describe("InitSetupView", () => {
     expect(frame).toContain("AWS credentials");
     expect(frame).toContain("Region");
     expect(frame).toContain("us-west-2");
+  });
+
+  test("Entra mode displays delegated auth without a provider-key row", () => {
+    vi.stubEnv("OPENAI_COMPATIBLE_AUTH", "entra-id");
+    const frame = frameOf(
+      makeProps({ provider: "openai-compatible", step: "base-url" }),
+    );
+
+    expect(frame).toContain("Authentication");
+    expect(frame).toContain(
+      "Microsoft Entra ID via Azure Identity (checked on first request)",
+    );
+    expect(frame).not.toContain("Provider key");
   });
 
   test("an OAuth provider renders the ChatGPT login row", () => {

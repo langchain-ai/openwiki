@@ -14,6 +14,7 @@ import {
   providerRequiresRegion,
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
+  providerUsesEntraId,
   providerUsesOAuth,
 } from "../../config/constants.js";
 import type { CodexTokens } from "../../agent/openai-chatgpt-oauth.js";
@@ -387,6 +388,12 @@ export function InitSetupView({
               state={
                 getMissingProviderEnvKey(provider) === null ? "done" : "pending"
               }
+              detail={getCredentialSetupDetail(provider)}
+            />
+          ) : providerUsesEntraId(provider) ? (
+            <SetupStep
+              label="Authentication"
+              state="done"
               detail={getCredentialSetupDetail(provider)}
             />
           ) : providerUsesOAuth(provider) || primaryCredentialStep ? (

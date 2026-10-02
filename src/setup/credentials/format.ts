@@ -4,6 +4,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderSecretKeyEnvKey,
   providerUsesAwsSdkCredentials,
+  providerUsesEntraId,
   providerUsesOAuth,
   AWS_ACCESS_KEY_ID_ENV_KEY,
   AWS_SECRET_ACCESS_KEY_ENV_KEY,
@@ -49,6 +50,10 @@ export function getCredentialSetupDetail(
   provider: OpenWikiProvider,
   tokens: CodexTokens | null = null,
 ): string {
+  if (providerUsesEntraId(provider)) {
+    return "Microsoft Entra ID via Azure Identity (checked on first request)";
+  }
+
   if (providerUsesOAuth(provider)) {
     if (!isCredentialConfigured(provider) && !tokens) {
       return "sign in with your ChatGPT account";

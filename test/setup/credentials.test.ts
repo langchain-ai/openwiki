@@ -29,6 +29,9 @@ const ENV_KEYS = [
   "BEDROCK_AWS_SECRET_ACCESS_KEY",
   "LANGSMITH_API_KEY",
   "OPENROUTER_API_KEY",
+  "OPENAI_COMPATIBLE_API_KEY",
+  "OPENAI_COMPATIBLE_AUTH",
+  "OPENAI_COMPATIBLE_BASE_URL",
   "OPENWIKI_MODEL_ID",
   "OPENWIKI_PROVIDER",
 ] as const;
@@ -188,6 +191,30 @@ describe("resolveStepStatus", () => {
 });
 
 describe("orderedSetupSteps", () => {
+  test("preconfigured Entra mode skips the API-key prompt", () => {
+    process.env.OPENAI_COMPATIBLE_AUTH = "entra-id";
+    delete process.env.OPENAI_COMPATIBLE_API_KEY;
+
+    expect(orderedSetupSteps("openai-compatible", "code", false)).toEqual([
+      "provider",
+      "base-url",
+      "model",
+      "langsmith",
+      "code-repo-confirm",
+    ]);
+    expect(nextSetupStep("provider", "openai-compatible", "code", false)).toBe(
+      "base-url",
+    );
+  });
+
+  test("API-key mode keeps the provider-key prompt", () => {
+    delete process.env.OPENAI_COMPATIBLE_AUTH;
+
+    expect(orderedSetupSteps("openai-compatible", "code", false)).toContain(
+      "api-key",
+    );
+  });
+
   test("openai (code mode): provider, key, model, langsmith, then the tail", () => {
     expect(orderedSetupSteps("openai", "code", false)).toEqual([
       "provider",
