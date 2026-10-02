@@ -86,13 +86,13 @@
     "cronstrue": "3.27.0",
     "deepagents": "1.13.2",
     "google-auth-library": "^11.0.2",
-    "ink": "^5.2.1",
+    "ink": "^7.1.1",
     "jsonc-parser": "^3.3.1",
     "langchain": "^1.5.10",
     "langsmith": "^0.10.5",
     "marked": "^18.0.11",
     "posthog-node": "^5.51.4",
-    "react": "^18.3.1",
+    "react": "^19.3.0",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
@@ -115,17 +115,17 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.4.0",
-    "@types/react": "^18.3.31",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@types/react": "^19.3.0",
+    "@vitest/coverage-v8": "^5.0.2",
     "eslint": "^10.9.1",
     "ink-testing-library": "^4.0.0",
     "jsdom": "^30.0.1",
-    "mermaid": "^11.17.2",
+    "mermaid": "^12.0.0",
     "prettier": "^3.9.6",
     "tsx": "^4.23.12",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.68.0",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.2"
   },
   "packageManager": "pnpm@11.25.0"
 }
