@@ -1,0 +1,19 @@
+test/integrations/config-adapters.test.ts
+  s_a98d74af14fe12::t_eaf0d493126365 261-263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "18a0e44a5836015ab33fd32e851f5ab29489b3fc",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
