@@ -1,0 +1,23 @@
+test/agent/entra-auth.test.ts
+  s_a98d74af14fe12::t_728088f7805cfc 8,28-36,55,57-59,64,86-130
+src/agent/entra-auth.ts
+  s_a98d74af14fe12::t_728088f7805cfc 7-9,49-66,81
+README.md
+  s_a98d74af14fe12::t_728088f7805cfc 622-628
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "393f123e1edde17b02ec21a8050c96ab786e7f1d",
+  "prompts": {},
+  "sessions": {
+    "s_a98d74af14fe12": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f929-481d-7591-b665-c498665278d1",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
