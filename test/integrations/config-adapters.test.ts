@@ -258,9 +258,9 @@ describe("JSON MCP config ownership", () => {
     expect(JSON.parse(await readFile(filePath, "utf8"))).toMatchObject({
       mcpServers: { other: { command: "other" }, openwiki: COPILOT_ENTRY },
     });
-    await expect(
-      uninstallJsonMcpEntry(filePath, COPILOT_ENTRY),
-    ).resolves.toBe(true);
+    await expect(uninstallJsonMcpEntry(filePath, COPILOT_ENTRY)).resolves.toBe(
+      true,
+    );
   });
 
   test("round-trips a Kiro entry in .kiro/settings/mcp.json", async () => {
