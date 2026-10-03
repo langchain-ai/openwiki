@@ -42,10 +42,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Grounded Claims
@@ -145,10 +145,24 @@ refuses symbolic links and filesystem aliases — raising an
 root — then produces an opaque `version` token. Whole-file evidence is versioned
 by a SHA-256 hash of the entire file (`repo-file-v1:sha256:...`). Line-range
 evidence is versioned by a hash of the selected content plus resolver-owned
-relocation anchors (`repo-lines-v1:sha256:...`), so that when edits move or
-resize a range the resolver can relocate the same selected text using its first
-and last selected lines and surrounding context, keeping the version stable when
-the content did not actually change.
+relocation anchors (`repo-lines-v1:sha256:...`) — the number of selected lines,
+hashes of the first and last selected lines, and hashes of the surrounding
+context on each side. On each resolution the resolver rewrites the resource's
+`#Lx-Ly` fragment to the current location of the cited block, so persisted
+evidence references stay in sync when the block moves.
+
+Relocation is a two-stage search driven by those anchors
+(`resolveLineRangeEvidence`). First it tries to locate the *unchanged* selected
+text: at the line range hinted by the persisted URI, then anywhere else in the
+file, prefiltering candidates by the first and last selected-line hashes and
+confirming the full content hash, with the surrounding-context hashes
+disambiguating when more than one span matches. When the selected text is found
+unchanged, the version is kept stable and only the line numbers are updated. If
+the selected text itself changed, the resolver instead relocates the range
+*between* its unchanged exterior context anchors (`locateChangedLineRange`); a
+relocated-but-changed range gets a fresh version and updated line numbers, and an
+ambiguous anchor pair resolves to `null`, so the owning Claim is reported for
+reconciliation rather than silently pinning stale line numbers.
 
 Because versions are content-derived, a version mismatch is exactly a content
 change. Resolution returns `null` when a file or range no longer exists, which is

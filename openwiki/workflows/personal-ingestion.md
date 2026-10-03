@@ -4,6 +4,8 @@ title: Personal Mode Ingestion
 description: How personal-mode ingestion resolves an ingestion target to configured source instances, pulls connector data within a 24-hour window, and drives per-source agent update runs that synthesize the local personal wiki.
 tags: [ingestion, connectors, personal-mode, local-wiki, agent-run, scheduling]
 sources:
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
     resource: repo://src/agent/okf-middleware.ts
   - id: openwiki-source-3fc16f0371ced4d94330f06c
@@ -12,8 +14,14 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-3632bcf6292cc01fef69c5b7
     resource: repo://src/connectors/registry.ts
+  - id: openwiki-source-ebd2b316d3147e7fde3920a4
+    resource: repo://src/connectors/sources/git-repo.ts
   - id: openwiki-source-0dd970ab1b5ab5ad763ca199
     resource: repo://src/connectors/sources/gmail.ts
+  - id: openwiki-source-e322f3319b9736ea1a0793af
+    resource: repo://src/connectors/sources/langsmith/index.ts
+  - id: openwiki-source-208e19767098e36e721f4333
+    resource: repo://src/connectors/sources/mcp.ts
   - id: openwiki-source-01c7d07d9800df0261f20efb
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-d66b21ba71e9866a0b433226
@@ -26,10 +34,10 @@ sources:
     resource: repo://test/ingestion/ingestion-run.test.ts
   - id: openwiki-source-578c3bdefeb989094f3d457f
     resource: repo://test/ingestion/ingestion.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Personal Mode Ingestion
@@ -46,6 +54,14 @@ local wiki (`outputMode: "local-wiki"`) and **does not turn connector-derived
 facts into grounded Claims**. Connector data is treated as untrusted evidence
 and synthesized under confidence labels (confirmed, source-backed, contested,
 watchlist, saved-context), not as verifiable repository-anchored propositions.
+
+Because repository generation is gated on `outputMode === "repository"` and
+runs only for the code-mode `init`/`update` commands, the resumable host-driven
+page-job lifecycle (see [repository generation](./repository-generation.md))
+does not support personal brains: a personal run always takes the agent
+`runOpenWikiAgentCore` path with `outputMode: "local-wiki"`, never the
+`runNativeRepositoryGeneration` page-job runner.
+
 See [connectors](../integrations/connectors.md),
 [onboarding](./onboarding.md), and
 [CI scheduling](../operations/ci-scheduling.md) for related surfaces.
@@ -126,15 +142,26 @@ pre-agent deterministic pull depends on the connector's
 that flag is false.
 
 - **Deterministic connectors** (`google`/Gmail, `x`, `slack`, `hackernews`,
-  `web-search`, `langsmith`) call `connector.ingest` before the agent runs,
-  passing the instance's `connectorConfig`, its `instanceId`, and a
-  `windowHours` of `INGESTION_WINDOW_HOURS` (24). The result's `rawFiles` are
-  written under the connector's raw directory inside the OpenWiki home
+  `web-search`) call `connector.ingest` before the agent runs, passing the
+  instance's `connectorConfig`, its `instanceId`, and a `windowHours` of
+  `INGESTION_WINDOW_HOURS` (24). The result's `rawFiles` are written under the
+  connector's raw directory inside the OpenWiki home
   (`~/.openwiki/connectors/<id>/raw`) and their in-tree-relative paths are handed
   to the agent.
 - **Agentic-discovery connectors** (`custom-mcp`/`notion` and `git-repo`) skip
   the pre-pull. The agent instead uses connector/MCP tools, local inspection,
   and source config during its run to gather data itself.
+
+The split tracks each connector's `mode`: the built-in personal connectors are
+`google`, `x`, `slack`, `hackernews`, `web-search`, `git-repo`, `custom-mcp`,
+and `notion`. LangSmith (`langsmith`) is a `mode: "code"` connector — it is run
+by code-mode ingestion (see [code vs personal modes](../concepts/two-modes.md)
+and [repository generation](./repository-generation.md)), not personal
+ingestion. It returns a `skipped` status when `connector.ingest` is invoked
+without a `repoRoot`, so even if it reached the personal path it would produce
+no raw files. Connector ingestion tools themselves are disabled for repository
+(`code`) output mode; see [connectors](../integrations/connectors.md) for the
+`ConnectorRuntime` contract and the full registry.
 
 A deterministic pull whose status is `error` **and** which produced zero raw
 files short-circuits: the source is reported with status `error` and the agent
@@ -176,8 +203,10 @@ and to run no other source's ingestion in the same run.
 
 `createConnectorSynthesisGuidance` appends per-connector guidance selected by
 connector id (Gmail classification/priority rules, Notion page-selection rules,
-X saved-context handling, Hacker News watchlist defaults, LangSmith runtime
-analysis, etc.). This same guidance builder is reused by code-mode ingestion in
+X saved-context handling, Hacker News watchlist defaults, etc.). It has one arm
+per built-in connector id, including the LangSmith runtime-analysis guidance,
+but that LangSmith arm only fires in code mode (LangSmith is not a personal
+connector). This same guidance builder is reused by code-mode ingestion in
 `runCodeModeConnectors`.
 
 ## Agent run and telemetry

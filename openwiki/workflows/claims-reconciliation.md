@@ -1,7 +1,7 @@
 ---
 type: workflow
 title: Claims Reconciliation on Update
-description: How an OpenWiki update no-ops by checking persisted evidence versions, and how the page worker turns a sparse Claim decision payload into confirm, update, add, and retract operations that keep stable identifiers and refresh code-owned evidence versions.
+description: How an OpenWiki update no-ops by checking persisted evidence versions, how the repository evidence resolver keeps cited line ranges in sync when source moves, and how the page worker turns a sparse Claim decision payload into confirm, update, add, and retract operations that keep stable identifiers and refresh code-owned evidence versions.
 tags:
   [
     claims,
@@ -46,12 +46,14 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
+  - id: openwiki-source-b29e22b2bea9905b27e8e8e8
+    resource: repo://test/claims/evidence/repository/resolver.test.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Claims Reconciliation on Update
@@ -83,8 +85,65 @@ as canonical non-empty strings, and each page sidecar also stores a
 `pageVersion` hash of the Markdown it grounds.
 
 The version token is deliberately opaque: reconciliation compares tokens for
-equality but never interprets them. When source changes, the resolver returns a
+equality but never interprets it. When source changes, the resolver returns a
 different token for the same resource, which is how staleness is detected.
+
+## Line-range relocation: keeping cited blocks in sync when source moves
+
+A line-range evidence resource is a `repo://path#Lx-Ly` identity. The naive
+problem with pinning a Claim to fixed line numbers is that any unrelated edit
+above the cited block shifts it down (or up) and would force a `stale` issue —
+even though the cited text itself never changed. The repository evidence
+resolver avoids that by encoding relocation metadata into the opaque version
+token and reusing it on every resolve that carries a `previousVersion`.
+
+For a range, `formatLineRangeVersion` writes a `repo-lines-v1:sha256:` version
+containing the SHA-256 of the selected content plus seven base64url-encoded
+anchors: the selected line count, hashes of the first and last selected lines,
+and up to three lines of surrounding context on each side (the
+`RANGE_CONTEXT_LINE_COUNT` constant). `parseLineRangeVersion` validates this
+strictly — fixed field count, safe-integer counts, and 64-hex SHA-256 digests —
+and an unknown algorithm prefix falls back to the URI's current line hint rather
+than guessing. When a resolve supplies a `previousVersion`,
+`resolveLineRangeEvidence` runs two relocation passes:
+
+1. `locateUnchangedLineRange` first checks the URI's own hint; if the selected
+   content hash still matches there, the range stayed put. Otherwise it scans the
+   file for a unique block of the same line count whose first/last lines hash
+   match and whose content hash matches, then disambiguates ties with the
+   surrounding-context anchors. A unique match returns the new span **with the
+   same version token** — the cited block moved but is unchanged, so preflight
+   sees no staleness.
+2. If the content itself changed, `locateChangedLineRange` locates the new span
+   between the unchanged preceding- and following-context anchors; a single
+   unambiguous candidate returns a freshly minted version (new line numbers and
+   a new content hash), so the Claim is correctly reported `stale`. Ambiguous
+   anchors, or an inserted block that duplicates the context, deliberately
+   resolve to `null` rather than guessing.
+
+The returned `resource` is rewritten to the **actual current line numbers**
+(`formatLineRangeResource`), so persistence of a confirmed Claim refreshes the
+sidecar with current `#Lx-Ly` references even when no staleness was reported.
+Whole-file evidence (`repo-file-v1:sha256:`) has no line numbers to relocate: it
+is stable unless the file content changes, in which case the hash changes.
+
+```mermaid
+flowchart TD
+  A["resolve(repo://path#Lx-Ly, previousVersion)"] --> B{"prior range version parses?"}
+  B -->|"no"| C["use URI line hint, mint fresh version"]
+  B -->|"yes"| D["hinted span content hash unchanged?"]
+  D -->|"yes"| E["return same version token, refresh resource to current lines"]
+  D -->|"no"| F["locateUnchangedLineRange by content + line anchors"]
+  F -->|"unique match"| E
+  F -->|"no unique match"| G["locateChangedLineRange between context anchors"]
+  G -->|"unique candidate"| H["mint new version, refresh resource to current lines"]
+  G -->|"ambiguous or deleted"| I["return null - unresolved"]
+  H --> J["preflight reports stale"]
+```
+
+How the resolver relocates a cited line range using the anchors encoded in the
+opaque prior version, returning the same token when the block merely moved but a
+fresh token (stale) when its content changed.
 
 ## Preflight: checking persisted evidence before any work
 

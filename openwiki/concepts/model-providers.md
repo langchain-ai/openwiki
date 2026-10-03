@@ -1,11 +1,13 @@
 ---
 type: reference
 title: Model Providers and Credentials
-description: Reference for OpenWiki's supported model providers (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, external CLI, and the IBM Bob Apikey adapter), their environment keys, base URLs, authentication methods, the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
-tags: [model-providers, credentials, oauth, authentication, configuration, env, reasoning]
+description: Reference for OpenWiki's supported model providers (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, external CLI, the IBM Bob Apikey adapter, and the OpenAI-compatible Entra ID token provider), their environment keys, base URLs, authentication methods, the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
+tags: [model-providers, credentials, oauth, authentication, configuration, env, reasoning, entra-id]
 sources:
   - id: openwiki-source-f8b008ed89162a0e204fc02d
     resource: repo://src/agent/bob.ts
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-91bd3ea533c00a8366f8d420
@@ -24,14 +26,18 @@ sources:
     resource: repo://src/model-availability.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
+  - id: openwiki-source-7388b63c6f928737a7109779
+    resource: repo://src/setup/credentials/steps.ts
+  - id: openwiki-source-7c7ce1305f8f14f43fec29de
+    resource: repo://src/setup/credentials/use-init-setup.ts
   - id: openwiki-source-a302ab67124df4839d320111
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.6.0", at: "2026-09-25T08:09:49.344Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Model Providers and Credentials
@@ -42,7 +48,12 @@ source of truth for every provider's display label, model options, environment
 keys, base URL, and authentication method. The agent's model factory
 (`createModel` in `src/agent/index.ts`) consumes that registry to build the
 right LangChain chat model, and all persisted credentials live in a single
-`0600` file at `~/.openwiki/.env`.
+`0600` file at `~/.openwiki/.env`. Most providers authenticate with a pasted API
+key; `openai-chatgpt` uses a ChatGPT OAuth login, `gemini-enterprise` and
+`bedrock` are keyless (Google ADC and the AWS SDK chain), `copilot` reuses the
+`gh` CLI token, and the `openai-compatible` provider can additionally switch to
+Microsoft Entra ID, supplying the API key through a renewable token provider
+rather than a static secret.
 
 ## Provider registry and selection
 
@@ -55,7 +66,7 @@ hardcoding provider knowledge elsewhere. Two transport-selecting accessors
 take a model ID in addition to the provider: `providerUsesResponsesApi`
 (`true` for `openai`, the `gpt-5` pattern for `copilot`, and a configurable
 flag for `openai-compatible`) and `providerUsesStreaming` (forced on for
-`copilot` and configurable for `openai-compatible`).
+`copilot` and `bob`, configurable for `openai-compatible`).
 
 The active provider is resolved by `resolveConfiguredProvider`: it prefers the
 explicit `OPENWIKI_PROVIDER` value (normalized case-insensitively by
@@ -76,7 +87,7 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `gemini`                       | Gemini (AI Studio)            | api-key       | `GEMINI_API_KEY`                            | (SDK default)                                                  |
 | `gemini-enterprise`            | Gemini Enterprise (Vertex AI) | ADC (keyless) | none — `GOOGLE_CLOUD_PROJECT`               | derived from project/location                                  |
 | `openrouter`                   | OpenRouter                    | api-key       | `OPENROUTER_API_KEY`                        | `https://openrouter.ai/api/v1`                                 |
-| `openai-compatible`            | OpenAI-compatible             | api-key       | `OPENAI_COMPATIBLE_API_KEY`                 | required via `OPENAI_COMPATIBLE_BASE_URL`                      |
+| `openai-compatible`            | OpenAI-compatible             | api-key / entra-id | `OPENAI_COMPATIBLE_API_KEY` (api-key mode)  | required via `OPENAI_COMPATIBLE_BASE_URL`                      |
 | `bedrock`                      | AWS Bedrock                   | aws-sdk       | `BEDROCK_AWS_ACCESS_KEY_ID` (legacy pair)   | AWS SDK credential chain                                       |
 | `fireworks`                    | Fireworks                     | api-key       | `FIREWORKS_API_KEY`                         | `https://api.fireworks.ai/inference/v1` / `FIREWORKS_BASE_URL` |
 | `baseten`                      | Baseten                       | api-key       | `BASETEN_API_KEY`                           | `https://inference.baseten.co/v1` / `BASETEN_BASE_URL`         |
@@ -93,20 +104,28 @@ entirely, so Bob's model step never appears in the wizard.
 `ProviderAuthMethod` is one of `"api-key"`, `"oauth"`, `"aws-sdk"`, or
 `"external-cli"`; a provider config omitting `authMethod` is implicitly
 `"api-key"`. The method drives which setup step runs, which env keys are
-required, and how `createModel` constructs the client.
+required, and how `createModel` constructs the client. The `openai-compatible`
+provider is a special case: its `authMethod` in the registry stays
+`"api-key"`, but it has a second, environment-selected auth mode — Microsoft
+Entra ID — chosen with `OPENAI_COMPATIBLE_AUTH` (`resolveOpenAICompatibleAuthMode`
+returns `"api-key"` or `"entra-id"`). `providerUsesEntraId` is true only when the
+provider is `openai-compatible` **and** the resolved mode is `"entra-id"`, and
+`providerRequiresApiKey` excludes that case so a missing static key is not
+treated as a configuration error.
 
 ### API key providers
 
 Most providers just need a pasted secret persisted to their `*_API_KEY`
 variable. `providerRequiresApiKey` is true when the method is `api-key` and an
-`apiKeyEnvKey` exists. `getMissingProviderEnvKey` reports the first required-but-
-unset variable so setup and startup can prompt for it. `resolveProviderBaseUrl`
-prefers the provider's `baseUrlEnvKey` override over the built-in `baseURL`, so
-self-hosted or proxied endpoints can be pointed at without code changes. The
-`openai-compatible` provider has no default endpoint and requires
-`OPENAI_COMPATIBLE_BASE_URL` (`requiresBaseUrl`); its base-URL validation rejects
-a URL that already ends in `/chat/completions`, since the SDK appends that path
-itself.
+`apiKeyEnvKey` exists (and Entra ID is not selected). `getMissingProviderEnvKey`
+reports the first required-but-unset variable so setup and startup can prompt
+for it; when Entra ID is selected the `openai-compatible` key check is skipped.
+`resolveProviderBaseUrl` prefers the provider's `baseUrlEnvKey` override over
+the built-in `baseURL`, so self-hosted or proxied endpoints can be pointed at
+without code changes. The `openai-compatible` provider has no default endpoint
+and requires `OPENAI_COMPATIBLE_BASE_URL` (`requiresBaseUrl`); its base-URL
+validation rejects a URL that already ends in `/chat/completions`, since the SDK
+appends that path itself.
 
 ### IBM Bob (`bob`)
 
@@ -206,6 +225,75 @@ Responses-API integration pointed at `CODEX_RESPONSES_BASE_URL`: it forces
 wrapper adapts the request body at the final fetch boundary (rewriting `system`
 roles to `developer`, stripping `prompt_cache_retention` for GPT-5.6, and
 applying the Codex Luna protocol for `gpt-5.6-luna`).
+
+### OpenAI-compatible Entra ID (`openai-compatible`)
+
+The `openai-compatible` provider targets arbitrary OpenAI-compatible gateways
+and defaults to a static `OPENAI_COMPATIBLE_API_KEY`, exactly like the other
+api-key providers. For enterprise gateways fronted by Microsoft Entra ID it can
+instead authenticate through Azure Identity: setting
+`OPENAI_COMPATIBLE_AUTH=entra-id` switches the provider into Entra ID mode, and
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` selects the OAuth scope the gateway accepts
+(defaulting to `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE`,
+`https://cognitiveservices.azure.com/.default`, the Azure OpenAI Cognitive
+Services scope). An invalid explicit value for `OPENAI_COMPATIBLE_AUTH` fails
+closed with `must be one of: api-key, entra-id.`.
+
+In Entra ID mode no static key is read or required. `createModel` builds the
+same `ChatOpenAI` client as in api-key mode, but passes `apiKey:
+createEntraTokenProvider(baseURL, resolveOpenAICompatibleEntraScope())` instead
+of `getProviderApiKey(provider)`. The OpenAI SDK accepts a function for
+`apiKey`, so `createEntraTokenProvider` (`src/agent/entra-auth.ts`) returns an
+async callback the SDK invokes per request — the API key is supplied through a
+renewable token provider rather than a static secret. Azure Identity caches and
+auto-refreshes the bearer token before expiry, and the callback lazily imports
+`@azure/identity` only on first invocation; a configured
+`AZURE_FEDERATED_TOKEN_FILE` selects `WorkloadIdentityCredential` explicitly,
+otherwise the `DefaultAzureCredential` chain is used. Token-acquisition failures
+are masked with a generic message (Entra errors can contain response details and
+credential material), directing operators to `az login`, managed identity,
+workload identity, or environment credentials.
+
+```mermaid
+sequenceDiagram
+    participant Model as createModel
+    participant Provider as createEntraTokenProvider
+    participant Azure as Azure Identity
+    participant Gateway as OpenAI-compatible gateway
+
+    Model->>Provider: build apiKey callback (validates HTTPS baseURL)
+    Note over Provider: lazily import @azure/identity on first call
+    Model->>Gateway: request (no static key)
+    Gateway->>Provider: SDK invokes apiKey callback
+    Provider->>Azure: getBearerTokenProvider(credential, scope)
+    Azure-->>Provider: cached/refreshed bearer token
+    Provider-->>Gateway: Authorization: Bearer <token>
+```
+
+Diagram: how `createEntraTokenProvider` supplies a renewable Entra bearer token as the OpenAI SDK's `apiKey` callback.
+
+The token provider validates the endpoint before construction: Entra ID
+authentication requires an HTTPS `OPENAI_COMPATIBLE_BASE_URL` without embedded
+credentials or a metadata-host hostname (it rejects `http://`,
+`169.254.169.254`, and `metadata.google.internal`), throwing before any model is
+built. The setup wizard mirrors this: in `entra-id` mode it skips the `api-key`
+step, collects the base URL (validating it through `createEntraTokenProvider`
+so an unsafe endpoint is caught interactively), then collects the optional
+`entra-scope`. `buildCredentialEnvUpdates` writes
+`OPENAI_COMPATIBLE_AUTH` and (when an Entra scope was entered)
+`OPENAI_COMPATIBLE_ENTRA_SCOPE`, and suppresses the provider's API-key write in
+`entra-id` mode so a stale `OPENAI_COMPATIBLE_API_KEY` in the file is left
+untouched rather than overwritten with a blank. When the key is missing at run
+startup, `getProviderCredentialHint` for `openai-compatible` returns the Entra
+configuration guidance (set `OPENAI_COMPATIBLE_AUTH=entra-id`, configure Azure
+Identity, set the scope), so the error message covers both auth modes.
+
+The Entra mode reuses the same transport selection as api-key mode:
+`providerUsesResponsesApi("openai-compatible", modelId)` still reads
+`OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`, and the chat-completions branch
+still attaches the `createOpenAiCompatibleFetch` body-normalizing wrapper. So a
+single Entra credential works for both the Responses and chat-completions
+transports.
 
 ### Vertex AI / Gemini Enterprise (keyless ADC)
 
@@ -448,10 +536,17 @@ the request transport always agree.
 
 All managed settings and credentials are read from and written to
 `~/.openwiki/.env`. `MANAGED_ENV_KEYS` in `src/config/env.ts` is the single
-ordered list of every variable OpenWiki reads or persists; the credential
-diagnostics list (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and the agent's debug key
-dump (`DEBUG_ENV_KEYS`) are derived from it so they cannot drift as new keys are
-added.
+ordered list of every variable OpenWiki reads or persists — including the
+OpenAI-compatible Entra pair `OPENAI_COMPATIBLE_AUTH` /
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` and the `BOB_API_KEY` / `BOB_BASE_URL` keys.
+The credential diagnostics list (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and the
+agent's debug key dump (`DEBUG_ENV_KEYS`) are both derived from it, so they
+cannot drift as new keys are added. The diagnostics panel surfaces every
+managed key except the LangChain project/tracing settings (`LANGCHAIN_PROJECT`,
+`LANGCHAIN_TRACING_V2`), which are managed but not credentials; the Entra auth
+mode and scope keys are treated as non-secret and shown in full (they are
+configuration, not tokens), while the static `OPENAI_COMPATIBLE_API_KEY` is
+masked like any other secret.
 
 `loadOpenWikiEnv` reads the file into `process.env`, but only for keys not
 already set — a shell export wins over the saved value. It also snapshots the
@@ -471,7 +566,13 @@ The setup wizard computes the update map purely via `buildCredentialEnvUpdates`
 selected provider's env keys (API key, base URL, secret key, region, GCP
 project/location), writes the provider key only when it actually changes, and —
 for the ChatGPT provider — expands the collected `CodexTokens` through
-`codexTokensToEnv`. The caller then persists the result via `saveOpenWikiEnv`.
+`codexTokensToEnv`. For `openai-compatible` it also writes the auth mode and,
+in `entra-id` mode, the Entra scope, while suppressing the static API-key write
+so a previously saved key is not blanked. It additionally threads the selected
+model id, reasoning effort, and the optional LangSmith tracing key (toggling
+`LANGCHAIN_TRACING_V2` on a non-empty key and forcing it `false` on a blank one
+so an earlier `true` does not linger). The caller then persists the result via
+`saveOpenWikiEnv`.
 
 ## Related pages
 

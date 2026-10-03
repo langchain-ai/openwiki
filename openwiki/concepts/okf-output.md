@@ -4,8 +4,16 @@ title: Open Knowledge Format Output
 description: How OpenWiki produces OKF-compliant pages — validated YAML frontmatter, code-owned generation provenance, synchronized directory indexes, and Mermaid diagrams that are validated and degraded before they reach a renderer.
 tags: [okf, frontmatter, provenance, index, mermaid, wiki-finalization]
 sources:
+  - id: openwiki-source-6fd9c8ed42336141de43b3c2
+    resource: repo://src/agent/okf-middleware.ts
   - id: openwiki-source-adcadc660c1888613ec50f9a
     resource: repo://src/agent/wiki-finalizer.ts
+  - id: openwiki-source-674d6e5badef7368ab04f064
+    resource: repo://src/generation/page-manifest.ts
+  - id: openwiki-source-7c5ecb56558cc061dab24f9d
+    resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-080c4525024a9b689e361cbb
+    resource: repo://src/generation/run-state.ts
   - id: openwiki-source-1324a62ac93d0625148b498e
     resource: repo://src/mermaid/dom-shim.ts
   - id: openwiki-source-4fbeebe90bb8c6910ecd1b3d
@@ -14,6 +22,10 @@ sources:
     resource: repo://src/mermaid/validate.ts
   - id: openwiki-source-3fe3d5f6fe125af314c54067
     resource: repo://src/mermaid/wiki.ts
+  - id: openwiki-source-9bac7069736f3ea19ed36748
+    resource: repo://src/okf/claim-sources.ts
+  - id: openwiki-source-95484b6dcd037757691dcbb2
+    resource: repo://src/okf/claims-verification.ts
   - id: openwiki-source-54432f9303757678a104d85f
     resource: repo://src/okf/frontmatter.ts
   - id: openwiki-source-bed0edb2a7279f0e40a56c2f
@@ -22,10 +34,12 @@ sources:
     resource: repo://src/okf/index-labels.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+  - id: openwiki-source-de7a4526fa69e1956c196942
+    resource: repo://src/telemetry/errors.ts
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Open Knowledge Format Output
@@ -210,6 +224,87 @@ translated prose. `resolveIndexLabels` and `resolveConceptTypeLabel` look them u
 from curated per-language tables keyed by BCP-47 tag, trying the full tag, then
 the primary subtag, then falling back to English — so an unlisted or malformed
 language degrades to English headings deterministically and without a model call.
+
+## Durable run and page manifests
+
+OKF output is anchored by two JSON checkpoints OpenWiki owns beside the wiki,
+each written atomically (temp file plus rename) and validated with a strict Zod
+schema so a malformed file aborts with `invalid_state` rather than silently
+discarding committed coverage. They are control state, not documentation, and the
+agent never authors them.
+
+`openwiki/.run.json` (`RepositoryRunState`, `schemaVersion: 1`) is the resumable
+run checkpoint. It records the `runId`, `mode` (`init`/`update`), current `phase`
+(`planning`/`generating`), `startedAt`, resolved `language` and
+`languageChanged`, `initialPages`, the active `sourceFingerprint` (`sha256:…`)
+with optional `targetGitHead`, the `actor` (`{producerActor, metadataModel}`),
+`previousLastUpdate`, `baseGitHead`, the `wikiGoal`, a `beforeContentSnapshot`
+used for final change detection, and the serialized `preparedWiki` state. That
+`preparedWiki.generatedProvenance` array is exactly the pre-authoring body hashes
+and prior `generated` events captured by `snapshotGeneratedProvenance` — the
+same state `deserializePreparedWikiState` rebuilds so `finalizeGeneratedProvenance`
+can resume after a process restart. The checkpoint is removed only after the run
+fully completes (`removeRepositoryRunState`); if anything earlier fails, `begin()`
+can reconstruct and retry from it.
+
+`openwiki/.page-manifest.json` (`RepositoryPageManifest`, `schemaVersion: 1`) is
+the durable page-correctness ledger: a sorted map of canonical page path to a
+`RepositoryPageManifestEntry` carrying `pageVersion` (a SHA-256 of the Markdown
+bytes whose Claims were verified), optional `completedBy`/`completedRunId`, and
+the `gitHead`/`sourceFingerprint` checkpoint the page was checked against. An entry
+is built only from mutually consistent, durable Markdown and verified Claims state
+— `buildManifestEntry` re-reads the page, recomputes its hash, and throws
+`invalid_state` when the Markdown and verified Claims sidecar disagree — so a
+manifest entry can never record coverage for a page that is not actually verified.
+`getCurrentRepositoryPageCompletion` rechecks the current page hash and Claims
+verification against the stored entry before letting a pending page job claim
+durable coverage, which prevents a stale entry from promoting pending work. On a
+successful whole-run finish, `replaceRepositoryPageManifest` rewrites the ledger
+for the surviving factual page set, preserving the exact prior entry for skipped
+pages and retaining the prior source checkpoint for pages this run never
+recompleted.
+
+## Provenance and trust frontmatter
+
+The `generated`, `verified`, and `sources` frontmatter families are OpenWiki-owned
+provenance. `generated` (`{by, at}`) is stamped by `finalizeGeneratedProvenance`
+only on new or body-changed pages, using the run's single shared `at` timestamp so
+every page written in one run shares one `generated.at`. `verified` is reconciled
+by the Claims runtime's `synchronizeClaimsVerification`: it keeps human, process,
+and other producer events, drops only events in the `openwiki/<version>` actor
+family, normalizes a bare verifier mapping to the canonical list form when the
+field is touched, and writes nothing when the projected set already matches. See
+[grounded claims](grounded-claims.md) for the Claims lifecycle that produces these
+events. `sources` is projected by `synchronizeClaimSources` from page-owned Claims
+evidence: producer-authored source entries are retained, while OpenWiki-owned
+entries get deterministic `openwiki-source-<digest>` IDs derived from their
+`resource` so a later reconciliation can replace or remove only its own
+projection. Because both projections route through `repairOkfFrontmatter`, the
+resulting frontmatter stays valid even when the input was malformed.
+
+## Telemetry and error classification
+
+Every deterministic OKF wiki operation runs inside the finalizer middleware's
+telemetry wrapper, so an owned throw is tagged at its origin rather than falling
+to the run stage's raw error classifier. `prepareWikiForAuthoring` runs its tasks
+under `inStage("build", …, { errorClass: "okf_error", errorDetail: operation })`
+with `operation` being `migrate` or `provenance_snapshot`; `finalizeWikiArtifacts`
+runs under `inStage("finalize", …, { errorClass: "okf_error", errorDetail:
+operation })` with `operation` being one of `mermaid`, `index_sync`,
+`link_validation`, `claims_sources`, or `generated_provenance`. The stable
+`errorDetail` is the same identifier exposed by `WikiFinalizerOperation` and
+`WikiPreparationOperation`, so a failure in, say, index synchronization classifies
+as `okf_error` / `index_sync` regardless of the underlying message. The first
+origin tag wins, so the innermost owned classification is preserved as the error
+unwinds.
+
+The middleware's `wrapToolCall` does not throw: it runs the tool, then
+`addFrontmatterWarning` deterministically repairs any wiki Markdown the agent just
+wrote via `repairPersistedFile`. Only when that repair cannot be persisted or
+re-read is a `WARNING:` block (listing each `[code]` and optional line) appended to
+the tool message instructing the agent to rewrite the file. Recoverable tool
+errors stay recoverable — nothing here turns a thrown tool error into a fatal run
+failure.
 
 ## Mermaid validation pipeline
 

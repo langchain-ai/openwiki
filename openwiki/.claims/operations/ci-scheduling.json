@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e019452f85e4ce529eadff2c558ae91ab11d7291e426175047096d3e06850b23",
+  "pageVersion": "sha256:9aa4bc503a6540d959dab146dca87c7be0af53801833e6f8ae9e48b45eeff746",
   "claims": [
     {
       "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
@@ -231,7 +231,7 @@
           "version": "repo-lines-v1:sha256:9a839067f47beb1ca08c710b71e598b0402cc1fd184fbaffb0641be925ef8a7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc5Yzg4MGY2MmQ0MjI1MzhiY2E4NGNiNTVlY2U4ZmUxMGU5NjU4YjA2MTExNWMzZmFiY2RjN2IzYmVjZjQ0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg2ZTgzZTdmOTYxYjVhN2NhZDhlZWZmZDZhM2Y0MWY4NTczZjBiZWRhODQxZGQyM2YyOTZjNTc5NGVhNGJjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NkOTNkZDYxY2RiYWRhMDY1NDFjZGMzNzIwZWUxOTU5ZWJlZTgyNGFhNzYwYzliNjljNWFkZDY4Yjk1NDk5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRlZWVlZTNlMTIwZDlkMTA0Yjc2ZTVjNzFhNjIyNmU0NWMwOTM1Y2I1YzZmMjUxMjJlNTI1N2ZiMWMzODI0MiJ9"
         },
         {
-          "resource": "repo://README.md#L262-L262",
+          "resource": "repo://README.md#L264-L264",
           "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk2ZDFmZDFlMTA3OTg2YjJlYmM0ZTljZDQ2NGViMmE5MTIzYWMyMTZiMzkzMTI0YWMxNmNhNTdlNjlmYjNlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2M4ZWQ0OTRlYTNkMWU4MTgzMzRhNTUzYmE1Y2UxMWU0MGI1YjgyNWY5ZGMwNGM3ZjAzZWFhNTRkZThjZTJmZCJ9"
         }
       ]
@@ -269,7 +269,7 @@
       "statement": "The examples/openwiki-update-auto-merge.yml variant requires repository-level setup beyond the canonical example: enable GitHub Allow auto-merge, add branch protection or a ruleset for the default branch gating the generated-docs checks, create a fine-grained personal access token or GitHub App token scoped to the target repo with Contents and Pull requests read and write permissions stored as the OPENWIKI_PR_TOKEN Actions secret, and pin OpenWiki and provider versions. The dedicated token is needed because PRs created with the default GITHUB_TOKEN do not start most pull_request workflows, so required PR checks may never run.",
       "evidence": [
         {
-          "resource": "repo://README.md#L225-L241",
+          "resource": "repo://README.md#L227-L243",
           "version": "repo-lines-v1:sha256:0ff4e4edb16971237e099c5ecf9cd8186dfa4dd4ee61a883ef14df195be858e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjM2VmMTIxMDAzMzRhYzVhNDRhYjYyMmY1OWEzY2EzYTMwOWQxMGQ0NzJmNTc5MjhlNWFlMDlmMTFhYzA4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjg3M2RjMGM3NzU5ZTNiMTRmNTcxNzM0YWJjYWNjYWZmNWY4NGE1ZmZmOGM4ODdmOTdkMTdhMjdhY2U5MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzYmExODVlYzVjYTExYzc2YmNlYThmM2EwMWZkNzRkN2I4NDllN2Y4NmUwYmYwZjFhYTk5OGZkZDg5MTE3ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZTlhYTkyZDcxYWQ1YmI4ZGIzMjUzNTNjZTdhOGIwZWYxMTI5Yzg4YzEzOTA3MDRmMzA4MzA5NjgxMmY1MjUifQ"
         },
         {
@@ -291,10 +291,70 @@
           "version": "repo-lines-v1:sha256:4a6023e49c33d9f69d5ac51e86320e8b793a5ad0aaa2546712a919c2abcdd4b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMDc4NDhhNDM2NjY1NmIyYmE2MTk3YmUwMmI5MjA4MTQ1NDZmOWQ5YWQwYjUzMzllNGMyNmEyYzk0NjUxMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ZjhiODAyNzQxYWZjN2ZiMzg0MGZlY2RjNDNkN2Y4ZTQwMjNiYmZjYjViN2VjNjVlZTA4ODc5OGQ4NTE3MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2M2QwM2YzNTE3MTY3ZGRhYmExZGIxOWFiMTYwODQyZjNjNmY0YmRlZjVlYjFhMDJlNDhkYjk2OWE3OTYwMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ZTc5NGRkZjMyYTNlMmRhYWFkODgyNjMxM2MyNGY0ZTRjZGE2ZjYxYWJmNDE3ZTQ4OWJlMzlkNWI5OGE1NTkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_884feb42cbc84151837fc7b415fc1be4",
+      "statement": "The release pipeline (.github/workflows/release.yml) is a separate, push-to-main-triggered (not scheduled) workflow gated to the origin repo or OPENWIKI_ENABLE_RELEASE forks. It uses changesets/action with two paths: a version-PR path that opens/updates a \"chore: version packages\" PR bumping package.json and CHANGELOG via pnpm run changeset:version, and a publish path (pnpm release -> changeset publish -> npm publish) that runs when no changesets remain. Publishing is tokenless via the job's id-token: write permission (npm OIDC trusted publishing, npm pinned to 11.5.1) with provenance via NPM_CONFIG_PROVENANCE: true, and concurrency is keyed by workflow-ref.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/release.yml#L1-L27",
+          "version": "repo-lines-v1:sha256:3a5203337b403e85da1475e057958f602949934c83cd1c40de9502939bf16071:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWVmOTAzMGQwYzcwMjkwMTBjNDYzNTY4OWY1ODMyOGQxMDllNmE4NWVkMWE5MjQ1YjIwZjM5NTViN2RiMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMDk3NWM3ZTIwZWJhODg1N2VmZDMxZTYyYjY2NWY3ODdlNTE2NDE5NTFhNjYwNzg5ZmJhOTMzYTYzNDcyMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYmJhMmU1YTVkMDRiM2M5ZjlhZGEzNWE0OThhNjQxMWY5OWZlZWQ3YTYyNWQ1NzQxOGY0Mjc4M2U0MjQzZTcifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/release.yml#L42-L65",
+          "version": "repo-lines-v1:sha256:842f7eebf1685050809973a94be8bf1029c56cdccbc9171493d52cc0bdf591b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NGVmODdjMGQyZjY4MjdmMjVkY2NhNDQ4Y2E3MzMwNWI3MTAzNDhmNmRiYzkzOWIwZmYzZDk1MDkwODhkZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MTZlYzk0NDFkYmYwOTdkNGFlZjgxNWQ0ODM0NmY1MmY5YTFkZjg5NzkxMTVjNzIxYmIwNDE2M2E4OWU4OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NDIwYTRkNzJlODZhNjFkOWM3N2U0ZGMwMjI2NzU4MGIwMWQ2YzhkNzk5MmU2M2VmYjJkMWNhYThlYTViNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZjU4ZmEzZTI5N2JhNDY3OGJmODdiNDhmNmQyNGNiNmRjNWVlYzgxMWY4NmFiYTRjOTRmNjYyZTBjNDk5ZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ba17d46eec3b48d2be9d84b2d8b0e56d",
+      "statement": "The release pipeline bakes a distribution channel into the published build via OPENWIKI_BUILD_CHANNEL: the origin repo (langchain-ai/openwiki) stamps \"official\" while a fork opting into release (OPENWIKI_ENABLE_RELEASE) still publishes \"community\". The stamp runs only inside pnpm release (publish path), never on the version-PR path, so it is never committed back; buildChannel() surfaces it on telemetry events so fork-originated runs can be filtered out.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/release.yml#L66-L72",
+          "version": "repo-lines-v1:sha256:f34af0a29b8e3763a0260c5febaf10198539978dd8e89878e3ebb85e49eb4417:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTJiZDBiMjhmMGUzZjk5NThjOWIzYjlmNTI0ZTMwOWRkMjk2MTcwNTM4ZDZkMzBiZTRjNGU3Yjg3ZWUxNzYyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDVjZDc5NjdjMjBkZWJhOTg1NzM1ZGJjYzY4OWJiMWQyOWJjMzQ1YzAzNThhOTkzYmYyMDhhZDRjOTY1NzVlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQzOWQ1Y2U5YTI3YjY1MWUxOWMxZDYyM2U0MGNkY2JiOGM4MjEzNjU4ZDhlMWEzYjZhZWUyNTk1MjBkYjQyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L5-L23",
+          "version": "repo-lines-v1:sha256:ab6129f5a74ecafd12fb278240cd6479c5e90e9a9fcda47a0d474339082fd560:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5Zjk0NmMwZmFkNmIzNjlhNGI1YjUxOWRkMGQ5ZmVjNmJmZjYyZDA5NjQzMmUyYzQwYmYyMTM0MWMyMTI1YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MGUzMGY3MmE2MTUyMTRlZTc3NjU0NTg4NmI3YTFjMzM3ZjM0MjJmYmQ2MzU0ZDdiMmQ3NTgxNTFhZGU5YTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_182ec8ad008a4cd3995d2003711c2224",
+      "statement": "A scheduled CI run executing openwiki code --update emits one anonymous openwiki_run telemetry event per run. Telemetry is on by default and not suppressed in CI: isCiEnvironment (delegating to ci-info plus the OPENWIKI_SCHEDULED escape hatch) still sends events but tags them execution: \"ci\" and attributes them to a per-provider sentinel id (ci-<provider>, e.g. ci-github-actions) instead of a unique install id, so ephemeral runners never inflate human install counts. The canonical GitHub example exposes OPENWIKI_TELEMETRY_DISABLED: \"1\" as a commented-out env var to opt out.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update.yml#L40-L44",
+          "version": "repo-lines-v1:sha256:8c3263d59d9b4d019121900e1048485b9b48aa6a97e02ea7b1893d1b5a4e3a93:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IwNzg0OGE0MzY2NjU2YjJiYTYxOTdiZTAyYjkyMDgxNDU0NmY5ZDlhZDBiNTMzOWU0YzI2YTJjOTQ2NTExNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQwZGQyOGQ4OTA3OGQ2OWE2OTEzNWY4Yjg4MzcxYjAxNjI2MWY1MjQ1Y2RkNzc5MGZmNjFlMGUzZDBkZjUwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDYzZDAzZjM1MTcxNjdkZGFiYTFkYjE5YWIxNjA4NDJmM2M2ZjRiZGVmNWViMWEwMmU0OGRiOTY5YTc5NjAzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM5NTE5NzVkZjRjNWY1NDU5NzM1ZGM1ODIzMjYyYTA1ZjA2Nzc1ZDQ2NDA1ZjY5YzdhZjBhYzZmYjYxOWUyMyJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L35-L59",
+          "version": "repo-lines-v1:sha256:d54e4b0034cf2992d5718bca2ba4d45c628a33c60474eb03757d7ed65c4f371d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiY2FhYzQ3OThkNzk1NjY0YWZlNTA5OGMwZGFmYTIyYWYzOWMwY2JlYTFmOTliODA0ZmJkMGYzY2U1Yzg1NmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_954f8ba859aa484094761aea49c9fbf7",
+      "statement": "Every telemetry event is stamped with build provenance: isProductionBuild (true only when running from dist/) drives the production flag, and buildChannel() reports \"official\" only for npm-published upstream builds (committed value \"community\", rewritten by the release stamp). The live dogfood workflow runs node dist/cli/cli.js against a locally built dist/, so it reports production: true and channel: \"official\"; a fork or source run reports \"community\" and stays filterable.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L46-L54",
+          "version": "repo-lines-v1:sha256:88b47019694c46fd99bcddbddba9cb185ae3c6469e5afa97f0e3e86ff00daf67:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmM5NDY0MmZmMjI1Yzg4YTUyNGUzNmNjNjVhNjM5YjEzMWMzYmU5OWRkYWI5NWM3NWYxMzAwMTUzOTQ4NGYwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjlhZmEzYjgzNWYzNDQyYzY0ZTBiZWJhZTNhYmRiZGU3NGNhYzQ1NjBiMTFmYTliMjY5YWIzNDg3NDg1ZDVmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M0NDNkZmQxOWJkYzZhZTFjMjZlZjU0NGMwNjMzNDhmNmE5ZWY5MjY0ODdhODYxNTBjNzgzZWNiNWE0MTU0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYyYjFmMTA3ZWE0MTVmMTgwNmRhNTE1NTQ3ZjFjOWVlYmJjYTAzOWQ2MmU4NDczYTEyNWRkNzdkNmY4Yzg3NyJ9"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L5-L23",
+          "version": "repo-lines-v1:sha256:ab6129f5a74ecafd12fb278240cd6479c5e90e9a9fcda47a0d474339082fd560:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5Zjk0NmMwZmFkNmIzNjlhNGI1YjUxOWRkMGQ5ZmVjNmJmZjYyZDA5NjQzMmUyYzQwYmYyMTM0MWMyMTI1YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MGUzMGY3MmE2MTUyMTRlZTc3NjU0NTg4NmI3YTFjMzM3ZjM0MjJmYmQ2MzU0ZDdiMmQ3NTgxNTFhZGU5YTYifQ"
+        },
+        {
+          "resource": "repo://src/telemetry/gates.ts#L61-L79",
+          "version": "repo-lines-v1:sha256:69b33280e56805e95d71c79bc9634dcb07c5d4686be1ef1ff871a8a50021002b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxOGZhY2MzMjY3Mjg2MDJiM2QzZTVkMDk5NjJmNjBkNjljOTdlYTkxYzE1ZmE4MWZmYjAxMTI0MzI1MjEzNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyOGE0YTFhYmJlMzI0MTQyMDQ5MGJjZTAzYWU4ZTY3MDQyZDZmMDUwMzU1MWViYjY1MTcwNzA1MDJmMmQ3ZGEifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }

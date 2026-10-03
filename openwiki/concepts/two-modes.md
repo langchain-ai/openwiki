@@ -26,14 +26,22 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-7d433875b0854d0b8b951be0
     resource: repo://src/config/openwiki-home.ts
+  - id: openwiki-source-e322f3319b9736ea1a0793af
+    resource: repo://src/connectors/sources/langsmith/index.ts
   - id: openwiki-source-01c7d07d9800df0261f20efb
     resource: repo://src/connectors/tools.ts
+  - id: openwiki-source-7c5ecb56558cc061dab24f9d
+    resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-85064d6a188fa56bcc282f11
+    resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+  - id: openwiki-source-224b03172757408e1b558fa7
+    resource: repo://test/ingestion/code-mode.test.ts
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Code vs Personal Modes
@@ -169,6 +177,48 @@ apply to code repository wikis only:
   repository code wikis only, not personal brains, and uses only repository
   source and tests as context; connector-sourced context (including LangSmith)
   is not yet supported in that path.
+- **Repository setup.** Code mode is the only mode that rewrites repository
+  agent-instruction files and ships a scheduled-update workflow. See the next
+  section.
+
+## Code-mode repository setup
+
+Every code-mode run calls `ensureCodeModeRepoSetup` against the repository root
+before the agent starts — in both the interactive (`App`) and non-interactive
+(`runPrintCommand`) paths, gated on `mode === "code"`, and again at the start of
+the native repository generation run. Personal runs never touch the repository.
+It performs two jobs:
+
+- **Managed agent-instruction snippets.** OpenWiki keeps `AGENTS.md` and
+  `CLAUDE.md` pointed at the generated wiki through `<!-- OPENWIKI:START -->` …
+  `<!-- OPENWIKI:END -->` managed markers. Both files are refreshed _in place_
+  when present, but only `AGENTS.md` is **created** when missing. `CLAUDE.md` is
+  never created: Claude Code falls back to reading `AGENTS.md` when no
+  `CLAUDE.md` exists beside it, so creating one would only shadow the canonical
+  instructions. When a `CLAUDE.md` _does_ exist, its managed block is a minimal
+  `@AGENTS.md` import (Claude Code's own `@path` syntax, not a Markdown link) so
+  one file remains canonical; if `CLAUDE.md` is a symlink to `AGENTS.md`, the
+  full instructions are inlined instead to avoid an import that points the file
+  at itself. Pre-marker `## OpenWiki` sections written by older releases are
+  stripped, and malformed or duplicated markers abort setup without partially
+  rewriting either file.
+- **Scheduled-update workflow.** The `.github/workflows/openwiki-update.yml`
+  GitHub Actions workflow is created only by `openwiki code --init`
+  (`createWorkflow: true`); `--update` and chat runs leave an existing file
+  untouched so operator customizations (fork guards, pinned actions, custom
+  steps) are never silently overwritten. The workflow runs `openwiki code
+  --update --print` on a schedule (default `0 8 * * *`), opens an update pull
+  request, and intentionally preserves partial progress when the run fails.
+
+Code mode also pulls connector evidence before the agent runs. `runCodeModeConnectors`
+iterates connectors registered with `mode: "code"` (currently LangSmith), reads
+each connector's committed repo config, derives an ingestion window from
+`openwiki/.last-update.json`, and appends synthesis guidance to the agent
+message. A connector that throws is skipped, never allowed to break the update,
+and a repo that has not configured a connector simply skips. This is distinct
+from personal-mode connector ingestion: code-mode connectors document the
+codebase from committed repository config, whereas personal connectors are
+credentialed external fetches exposed to the agent as tools.
 
 ## Capabilities that apply to personal mode only
 

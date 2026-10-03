@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6f89e931db8f4437a3a71d7aecad379cb0365b3ed2e6eee8b832ebf7fbbe27ec",
+  "pageVersion": "sha256:2823027f7ece071bc4ec7127b05f3522afa30bb5b8e484bbe8aa7cf44e19e9d5",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
       "statement": "OpenWiki's test suite is run by Vitest, using the vitest runner and @vitest/coverage-v8 as dev dependencies rather than any separate test framework.",
       "evidence": [
         {
-          "resource": "repo://package.json#L110-L128",
+          "resource": "repo://package.json#L111-L129",
           "version": "repo-lines-v1:sha256:892c66e812a71ac6de003f776c7c9a84c8a85ec589e2fe369e1ad2d71c7b5d78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NzYxMWQ0YWM4YTI1ODgyMDA5M2NjZmNhNDQ2MDNhODQ1YTE5OWJiMTkyNjNlNGY3MTE0NjNjNGNhM2U4M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwYzY4NTE2MDUyOWZmYWJjYzMyMTIxZThlNmU2MDM4OWY5NzgxYzM3OTg4NDAxNzAxY2MzNDkyOWU4ODc2ZjAifQ"
         },
         {
@@ -21,7 +21,7 @@
       "statement": "Ink terminal-UI components are tested by rendering them with `render` from ink-testing-library and asserting on the rendered frame via `lastFrame()`.",
       "evidence": [
         {
-          "resource": "repo://package.json#L120-L120",
+          "resource": "repo://package.json#L121-L121",
           "version": "repo-lines-v1:sha256:b8f2ea1b0b6af30f7f06e21c322af13bd1d36469fb476ce9f0973054a371892c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhmMmVhMWIwYjZhZjMwZjdmMDZlMjFjMzIyYWYxM2JkMWQzNjQ2OWZiNDc2Y2U5ZjA5NzMwNTRhMzcxODkyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjhmMmVhMWIwYjZhZjMwZjdmMDZlMjFjMzIyYWYxM2JkMWQzNjQ2OWZiNDc2Y2U5ZjA5NzMwNTRhMzcxODkyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDljMTJlNWQ3NTFmMDY1NTM3NWMwZWNhNWRkZmY3MzE2NzdmODJlYzQ0NmUzMWZmZGY1ZTBjMDFlNWJhZjA4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmJhYTEyMDdjZGFiNTllYmFkNDllNDc0NGNmMjRiMDFiYzljNDk1N2U5Njg2MTBlNWZkN2Y1NWEzMjFiZTA1MyJ9"
         },
         {
@@ -459,19 +459,19 @@
           "version": "repo-lines-v1:sha256:af45e8faadf62a0e0443b19a8eaa6082b19b9807ae93e738c722e9bcd3e01524:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMTg5ZmMxNDNkZWMxNWYwZDdhMTg5NWE4ODkxMGJjMjVkMTM1YTJiMWQwZDRiOWM4MzcxNDQ1MDM2MmJkNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyODBjZTdkOGM1YWE4YzQyNDg1ZmU5MjIwNTlhNTEzY2NhYmU5ODBjMmRmY2EwNTYyNjcwNGQ4MWU3MjdiMTQifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L165-L311",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L166-L312",
           "version": "repo-lines-v1:sha256:ea4b1a4aff080db173a7e0a6c141d88388045b49424fed26cab98a69302d7874:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYjAxOTA0ZjVlNTkwMGM5MGMwOGNmYWUzMTY2MTYwMmYzMmIwMTRlOWEwNzcxOWY5ZDgzZjBhODUwZTFiODUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NTliMjA1YjEzNjc0YWJlYTU0MGM5NDE3ZjM2ZDA5OTMzYjExYzVhMDYxNWU1NDg0OWRkMjNmYmRlMjM1N2VjIn0"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L695-L839",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L696-L840",
           "version": "repo-lines-v1:sha256:0f2d3db307e41d1b4434b87f0f1ab6ddd818f518f035bf34b8422c3b806f9fa2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ODZlN2JkZDU0N2ZhNGMwNGI1OGQ5MjQzNjk2NmQwYjlhYWYwMDY3ZTFjMWYwZTc5NDNkOGNlZDQ0NDJhZWFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYjFlYTE1YTBmN2IxZDc3NDFjMDkyZGU4MDJkMzlmZGE0NDM0ZWNmMDVmOTQzNThjNmYzNjljYTkxMTZlMjJmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2Y2U0MzE3NTZjYzBjMDMxOWFhZTA5ZDYzOWQ0YWUyNWFmNTgwZGMwN2JjYTdkYTJlNGNmY2RhODliOWY4M2NhIn0"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L70-L155",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L71-L156",
           "version": "repo-lines-v1:sha256:9379ee496f7c2d9c5adc10860ed71f3322b1fa2987abefab694d0cbf2b96d5c5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0NWU2ZWRhYmFmNmI1Y2MzNzc4OTc4NTBhZTI3YmYxNDJkMDY5NjQ1Mzc0OTg5ZTE4NDE3ZmRkZTY5YjBiZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNzhiODc3MTg2Y2MzMTcxYTU3YzBlMzgwYWEzZjZmZGYwZjA2MzI5OWYyNjQ2ZDU5MGFmYTg3ODY2NTNlMjIifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L941-L995",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L979-L1033",
           "version": "repo-lines-v1:sha256:5c81fe0990e00b5d9cdbf7617ad02054a8b649452f10a30dd5381ef51c346e8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwOWQ1OTY5YTA3OTllODZhYzc2MjBhOTc3YzBkOTFkY2VjM2QyMGY3NjFiOWQ4NjVhYmVlYTU0MzJjMmFlMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -669,8 +669,8 @@
       "statement": "test/config/env.test.ts exercises parseEnv/formatEnv: parseEnv does atomic single-pass unescaping of backslash escapes in double-quoted values, including carriage return (\\r) handling and the Windows-path corruption regression where a raw backslash escaped to \\\\ immediately before a path segment starting with n or r (e.g. C:\\name\\creds.json) must not be misread as the \\n/\\r escape sequence on parse; the parseEnv <-> formatEnv round-trip suite confirms values, carriage returns, and the Windows path regression survive a format -> parse round-trip.",
       "evidence": [
         {
-          "resource": "repo://test/config/env.test.ts#L177-L208",
-          "version": "repo-lines-v1:sha256:9926d150187eefa4452bc2d246fed8a28c662f4d65561e95e8b15e7c91fbf554:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NGVmOTA0MjZkYzM4OWEyZDYwOTk4ODNjZGRhOTU2ZTM5YzNlMjk1ZDViZjBiNjg2ZGZmMWFjMTVhNDk2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://test/config/env.test.ts#L185-L223",
+          "version": "repo-lines-v1:sha256:35c923c1a1ca35d67b67067931225b6c1eeb33c35af58fb89b6917baa4e7ec03:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2NGVmOTA0MjZkYzM4OWEyZDYwOTk4ODNjZGRhOTU2ZTM5YzNlMjk1ZDViZjBiNjg2ZGZmMWFjMTVhNDk2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyM2ViMDJlMTExNzhhNDJlMDlmMzk3Yzk0YjE1ZTIxNjU3N2E4NzdhYmFmMWZkNmYzYTkzY2EyNmNkZjUzYzAifQ"
         },
         {
           "resource": "repo://test/config/env.test.ts#L32-L57",
@@ -693,11 +693,11 @@
       "statement": "test/ingestion/code-mode.test.ts pins CLAUDE.md handling in ensureCodeModeRepoSetup: when neither agent file exists only AGENTS.md is created — CLAUDE.md is deliberately not created, because Claude Code reads AGENTS.md when no CLAUDE.md exists and creating one would only shadow it; when CLAUDE.md already exists but AGENTS.md does not, setup creates AGENTS.md and rewrites CLAUDE.md as a simple @AGENTS.md reference rather than a copy of AGENTS.md's content (it contains @AGENTS.md, not an inert Markdown link, and is shorter than AGENTS.md); when CLAUDE.md is a symlink to AGENTS.md it inlines the instructions instead of emitting an @AGENTS.md import that would point the file at itself (resolvesToSameFile); and a pre-existing CLAUDE.md that only imports AGENTS.md (e.g. @AGENTS.md) is preserved unchanged rather than overwritten, so an import-only CLAUDE.md survives a re-setup.",
       "evidence": [
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L165-L179",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L166-L180",
           "version": "repo-lines-v1:sha256:a34f78ba62137f6ff0fd2c5e48c8c05513b8848f8e0521a05070750234dac626:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMDE5MDRmNWU1OTAwYzkwYzA4Y2ZhZTMxNjYxNjAyZjMyYjAxNGU5YTA3NzE5ZjlkODNmMGE4NTBlMWI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNzE2NWEzOTlkMGFkZTdlODhlNGQ2NzAwYzdiYmZmZTgxOWEyMDc5ZDVkYmZiMDFhNzBlNDc4ODY3ZmIzNzAifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L213-L259",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L214-L260",
           "version": "repo-lines-v1:sha256:eca5fee4b227d6a8c44f153cd4d2f97807ae1762ab24393a61e8ae81abdbc44c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzIwMTJmMmMwYWJhNjQ1ZTNjYWQxMWRlYjU5ZjFjYzcyZTIxNTQ5NmIyODRkODgyMTYwNWVjMDgyNGQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwNTBhN2M0ZTc5Mjg4N2Q2MjM4MDg2YWFiNzQwNjdlNzdlYzM4ZTE0OTY3NzcyMDNhNGI3MDEyZjRlMThhNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
         }
       ]
@@ -840,19 +840,19 @@
     },
     {
       "id": "claim_f74b9301ec134192a029d80790866ff1",
-      "statement": "test/config/env.test.ts pins the MANAGED_ENV_KEYS membership: the output-token limits (OPENWIKI_MAX_OUTPUT_TOKENS, OPENWIKI_BEDROCK_MAX_TOKENS), the stream idle timeout (OPENWIKI_STREAM_IDLE_TIMEOUT), the repository page-worker concurrency (OPENWIKI_PAGE_CONCURRENCY), the gemini-enterprise (Vertex) Google Cloud settings (GOOGLE_CLOUD_PROJECT/GOOGLE_CLOUD_LOCATION/GOOGLE_APPLICATION_CREDENTIALS), the AI-Studio GEMINI_API_KEY, the hosted OpenAI-compatible provider base URLs (BASETEN_BASE_URL, BOB_BASE_URL, FIREWORKS_BASE_URL, NVIDIA_BASE_URL), and the reasoning-effort settings (OPENWIKI_REASONING_EFFORT, OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED). test/config/constants.test.ts pins resolveProviderBaseUrl defaults and overrides for the hosted OpenAI-compatible providers, where BOB_BASE_URL (via BOB_BASE_URL_ENV_KEY) and the baseten/fireworks/nvidia keys override the built-in defaults while a whitespace-only override falls back to the default, plus resolvePageConcurrency (defaults to DEFAULT_PAGE_CONCURRENCY===1, accepts trimmed integers up to MAX_PAGE_CONCURRENCY, rejects out-of-range/non-integer) and resolveProviderRetryAttempts (raises its default to PARALLEL_PROVIDER_RETRY_ATTEMPTS for pageConcurrency>1 unless overridden), alongside model-id validation, provider normalization/resolution, per-provider max-output-token ceilings, stream-idle-timeout resolution, reasoning capability flags, base-URL validation (rejecting /chat/completions endpoints for openai-compatible), and the Bedrock AWS-SDK credential/region surface.",
+      "statement": "test/config/env.test.ts pins the MANAGED_ENV_KEYS membership: the output-token limits (OPENWIKI_MAX_OUTPUT_TOKENS, OPENWIKI_BEDROCK_MAX_TOKENS), the stream idle timeout (OPENWIKI_STREAM_IDLE_TIMEOUT), the repository page-worker concurrency (OPENWIKI_PAGE_CONCURRENCY), the gemini-enterprise (Vertex) Google Cloud settings (GOOGLE_CLOUD_PROJECT/GOOGLE_CLOUD_LOCATION/GOOGLE_APPLICATION_CREDENTIALS), the AI-Studio GEMINI_API_KEY, the hosted OpenAI-compatible provider base URLs (BASETEN_BASE_URL, BOB_BASE_URL, FIREWORKS_BASE_URL, NVIDIA_BASE_URL), the reasoning-effort settings (OPENWIKI_REASONING_EFFORT, OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED), and the OpenAI-compatible Entra authentication mode and scope (OPENAI_COMPATIBLE_AUTH immediately followed by OPENAI_COMPATIBLE_ENTRA_SCOPE in provider order). test/config/constants.test.ts pins resolveProviderBaseUrl defaults and overrides for the hosted OpenAI-compatible providers, where BOB_BASE_URL (via BOB_BASE_URL_ENV_KEY) and the baseten/fireworks/nvidia keys override the built-in defaults while a whitespace-only override falls back to the default, plus resolvePageConcurrency (defaults to DEFAULT_PAGE_CONCURRENCY===1, accepts trimmed integers up to MAX_PAGE_CONCURRENCY, rejects out-of-range/non-integer) and resolveProviderRetryAttempts (raises its default to PARALLEL_PROVIDER_RETRY_ATTEMPTS for pageConcurrency>1 unless overridden), alongside model-id validation, provider normalization/resolution, per-provider max-output-token ceilings, stream-idle-timeout resolution, reasoning capability flags, base-URL validation (rejecting /chat/completions endpoints for openai-compatible), and the Bedrock AWS-SDK credential/region surface.",
       "evidence": [
         {
-          "resource": "repo://test/config/constants.test.ts#L232-L275",
-          "version": "repo-lines-v1:sha256:e2a09823c2cd0f692e8ef05f8090dddfc9fce128468e25c7dc22614454d3915c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzdkMmYwMzFlOThiNWU5MTFjNWFkNGZiOWIyMTg2YTkzMjUyMmU4ZjQ2ZWU0MGJhYmZhZTNkYTAwZmMxMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMzI0ZTc0OGQ0ODRiYWZlMTExZTViMGIxNDFlOTA5MWQwMmNkYWE4MmMxMTdhNmY2NDllZDNiYjc1NGUyOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NzlkZWFlZWQ2YTA4ODc4MWU4Zjk5MjEyNzdkMTNiYjVlNmJmNjI2OGZkMzU4ODMwNzhiZTFkMzQxNDNkNzEifQ"
+          "resource": "repo://test/config/constants.test.ts#L232-L280",
+          "version": "repo-lines-v1:sha256:b5fe481c011fa2c4a45a56a345b2d7810bb2e35d2a317956e585c48d6e64040e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzdkMmYwMzFlOThiNWU5MTFjNWFkNGZiOWIyMTg2YTkzMjUyMmU4ZjQ2ZWU0MGJhYmZhZTNkYTAwZmMxMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMmMyMGE2MmQwODUwNTRiNjhhMGJiMmM3ZjkzYTY5OTVjZmJjNWI5OTBiZGMxZTkwY2E4ZWZjNzU1YjgzZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NzlkZWFlZWQ2YTA4ODc4MWU4Zjk5MjEyNzdkMTNiYjVlNmJmNjI2OGZkMzU4ODMwNzhiZTFkMzQxNDNkNzEifQ"
         },
         {
-          "resource": "repo://test/config/constants.test.ts#L302-L357",
+          "resource": "repo://test/config/constants.test.ts#L307-L362",
           "version": "repo-lines-v1:sha256:e5596e2afc515fc83bf69ded603c1b0a019cdf5cc763309724131ae93f651e01:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0MTRlZWYwODM4NThjMzc2NTc0N2I3NDE1NjhmNjM0Zjc4YTUyYzRhODFkMGQyMGYwZGMyNmZiOGJkMDFlODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYTY3NmQ2ZmFkYzdmMTViMTgyYzEzODUwNTQxNWVlMWY2YmY3OTdmNDg5NDVjMGQwZmZiZDBkMTgyNGEyOGMifQ"
         },
         {
-          "resource": "repo://test/config/env.test.ts#L132-L175",
-          "version": "repo-lines-v1:sha256:9523529c5749e61252ab2ee8811786f89ea5e7de42e6851ca05fe1c74e79696c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkN2YwNDM4MmUwNzdlZTYwZTI2OTYyMzYxYWUxZGNkZWFiMDU4MDg2YjRiZGEzMDFkOGIzZDdhZGUwNzgzYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjYmE0YjNhYzE1ZWE2NTcxNThhNmIwYzczOGIzYWU1YWFhZjE3NTA5YjgzNGIzNTMwYjVjMWVkYzRlMzI3YmYifQ"
+          "resource": "repo://test/config/env.test.ts#L132-L183",
+          "version": "repo-lines-v1:sha256:d5c6978dbd4afb091c42bef88cd84218b93c58709abb4db471134964fcc58704:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkN2YwNDM4MmUwNzdlZTYwZTI2OTYyMzYxYWUxZGNkZWFiMDU4MDg2YjRiZGEzMDFkOGIzZDdhZGUwNzgzYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMWQ1OWZiOGMxMmZkOTIyNzY4ODY5MDBmODBlMjkzOWUzZTEzYmVhNjA5M2E1YjNhNDhmOTIxZmMxYTlkYWEifQ"
         }
       ]
     },
@@ -902,19 +902,19 @@
     },
     {
       "id": "claim_f6788aeb8bd84721833b46517281c46a",
-      "statement": "test/integrations/installer.test.ts is the broad host-installer suite for src/integrations/install/installer.ts. It pins the host integration registry: the eight supported targets (bob, codex, claude, opencode, cursor, kiro, omp, antigravity) with their producerActor identities, per-scope skill directories and MCP-config files, getHostTarget resolution, and that bob shares codex's .agents/skills/openwiki directory while every other host's user skill directory is distinct. It exercises HostIntegrationInstaller install/uninstall/status across every target, asserting a project install from a subdirectory writes at the Git root (not the subdirectory) and rejects installation outside a Git repository, that user and project installations are independent (uninstalling one leaves the other intact), that a modified receipt (whitespace-only MCP command, removed skill, or removed MCP entry) reports modified, that uninstalling a modified integration rejects with conflict leaving files in place, that host directory cleanup preserves the host root derived from the skill path, and that resolveCanonicalSkillBundle resolves the same on-disk integrations/openwiki bundle from both source (installer.ts) and built (installer.js) layouts.",
+      "statement": "test/integrations/installer.test.ts is the broad host-installer suite for src/integrations/install/installer.ts. It pins the host integration registry: the nine supported targets (bob, codex, claude, opencode, cursor, kiro, omp, antigravity, copilot) with their producerActor identities, per-scope skill directories and MCP-config files, getHostTarget resolution, and that bob shares codex's .agents/skills/openwiki directory while every other host's user skill directory is distinct. It exercises HostIntegrationInstaller install/uninstall/status across every target, asserting a project install from a subdirectory writes at the Git root (not the subdirectory) and rejects installation outside a Git repository, that user and project installations are independent (uninstalling one leaves the other intact), that a modified receipt (whitespace-only MCP command, removed skill, or removed MCP entry) reports modified, that uninstalling a modified integration rejects with conflict leaving files in place, that host directory cleanup preserves the host root derived from the skill path, and that resolveCanonicalSkillBundle resolves the same on-disk integrations/openwiki bundle from both source (installer.ts) and built (installer.js) layouts.",
       "evidence": [
         {
-          "resource": "repo://test/integrations/installer.test.ts#L1008-L1037",
-          "version": "repo-lines-v1:sha256:8c48493785275ba905d5337de2fa677b0c8e0a995b65014fd6813b9dd5934a89:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlODY1MDE5Nzc2ZDAzZTcxYjk1NDc5MzhlZjZlMTIyOTViNjZhYTNhODk3MGFiNmEzMTcxZTIzZjg0NTU4ZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://test/integrations/installer.test.ts#L1008-L1021",
+          "version": "repo-lines-v1:sha256:f8aa57a077d7ba906304d1e59d6a40f85719f2dd4370579e97d724b564e70507:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZTEyNDYxZDFhYTI0ZmQ2MDUyZWY5NmU5ZTQwMDM2ZmNjODViYmY3ZGY3NmM5ODUwNTVhZjhkZWNmOGRkOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNzRlY2Q1YzRkYjVjMTBmY2I1OTc3ODkzNDM2ZDRkZDI0YjY5N2NiMjI2ODczMTM3Y2FmODhkYmYyNTk4ZGYifQ"
         },
         {
-          "resource": "repo://test/integrations/installer.test.ts#L388-L523",
-          "version": "repo-lines-v1:sha256:30fef13a396723def38c35c30a6304f5c6ea637473413b82e2639ddc939ff164:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5OTJmNjQ4MjE0ZTc1NWFlNDIwN2U0MzNiZGI5Nzk3ZDEwOTkzMjFmZjVhM2I0Njk2MDYxY2ExMTg0MTY3MDYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWEzODgwNzM3MzY0N2MwNmJjNzA1M2E1ZTE2YjQ2NTc5ODE4ODkyMWNiMzY4NTVhZTRkZjYyMjAzZTg1NmJjIn0"
+          "resource": "repo://test/integrations/installer.test.ts#L388-L538",
+          "version": "repo-lines-v1:sha256:5a744b1baf76270cd8e73ef369e320a21f272b308d6c174fedbbbd13cad31231:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5OTJmNjQ4MjE0ZTc1NWFlNDIwN2U0MzNiZGI5Nzk3ZDEwOTkzMjFmZjVhM2I0Njk2MDYxY2ExMTg0MTY3MDYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODBkMmRkNGYyODlkMjZkYzc1N2MyYjY1YTA2YzM5MjI3YTY3MTdjNGI0OGI1YTM5NzkyYzlmMTFlNDFhZWE2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWEzODgwNzM3MzY0N2MwNmJjNzA1M2E1ZTE2YjQ2NTc5ODE4ODkyMWNiMzY4NTVhZTRkZjYyMjAzZTg1NmJjIn0"
         },
         {
           "resource": "repo://test/integrations/installer.test.ts#L953-L1006",
-          "version": "repo-lines-v1:sha256:05dfd47845455ed176935156d6ed020744d2d441de55fb365ff42aeeadd7a94a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMDU5MzA4OTRlMjQzMTYyODEzMGI0OWE0ZWFmMWNhNzI0NTQxN2ViNjFlYzcyYTZjZTA4NTBiZTQ1ZDE2ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNzRlY2Q1YzRkYjVjMTBmY2I1OTc3ODkzNDM2ZDRkZDI0YjY5N2NiMjI2ODczMTM3Y2FmODhkYmYyNTk4ZGYifQ"
+          "version": "repo-lines-v1:sha256:973db8ad91777ed028b222b56fe6e32facbde88b88a2cebf7145239aa6d146fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MTM2Y2I2NjZmZWM1ZGE3OWQ1NTdlOGZmZjczZjVhMWZlNWIyOTNiNDk1ZDc4YWI1MWUzYjMwYzRhMGZhMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxM2FiMzEwOTczMjkzNTA1YmEyYjAxOTc3MWJjMDJmN2FmMzE3YzVkMWExZTg4ZjQwNTkzNzUzZmVjYjU3MWEifQ"
         }
       ]
     },
@@ -923,50 +923,50 @@
       "statement": "test/integrations/config-adapters.test.ts exercises the per-format MCP-config adapters in src/integrations/install. The atomic-write suite pins that writeTextAtomic preserves file mode bits and leaves no temporary sibling. The JSON, Codex TOML, and OpenCode JSONC ownership suites each pin create/preserve/recognize/remove of the exact OpenWiki entry, that property order is irrelevant but shape drift (a non-matching command) rejects with conflict without changing bytes, that malformed config rejects with invalid_input leaving bytes unchanged (reported as modified), and that a recognized prior entry is replaced while an unrecognized one is left alone. It also round-trips host-specific layouts like Cursor's .cursor/mcp.json.",
       "evidence": [
         {
-          "resource": "repo://test/integrations/config-adapters.test.ts#L82-L95",
+          "resource": "repo://test/integrations/config-adapters.test.ts#L86-L99",
           "version": "repo-lines-v1:sha256:e918df76276749aee17632d79c6be2389fd1f8654e0f5fdc8e92bc008a57005f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDM0NzhjMDcyOGEzYTM5NjRhZTdkY2VhOGJjYjE5ZDM5M2NkYjY5NGY4M2FhYjlmZGU1ZjEyN2MzMzY2ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MGQyZGQ0ZjI4OWQyNmRjNzU3YzJiNjVhMDZjMzkyMjdhNjcxN2M0YjQ4YjVhMzk3OTJjOWYxMWU0MWFlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmN2Y3NWViYWE2Mjg2MDgxZjU1MDk3MDZhZTllOWI4ZDgxM2EzODJlNzY5MGExMGU5MDczMjgwODFlNjVjMDcifQ"
         },
         {
-          "resource": "repo://test/integrations/config-adapters.test.ts#L97-L200",
+          "resource": "repo://test/integrations/config-adapters.test.ts#L101-L204",
           "version": "repo-lines-v1:sha256:e5dc023044034bdff1fc6312e1902c0dcb02e68d4b576ca5a05c89f977d456c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5YTEzMTgxNDgxMGE2NWU1ZGJkNWVmOWZlNzdkNzFhMmM0M2UzMjBjYmM2MzczNDkxNDY3Y2E2ZmEzZGRlYzIxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3MzIzNmVkMDAxYmYyMzgwOTFmM2M2NzliYTExNGZmMjg0ZjBiMWM0N2Q2MTY3MGZmNWMzMDBlZDRmYTc5YTcwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNzc5ZDExOGQ2ZTNjYmY0NTA1Mzk3NDhkZWU3YTQzMDdhY2JlNjQ0NmNiYTI5N2YyNzYwZmE1ZDBiYmExYmMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYzhhMjU2NWEyYWNhZGVkMmNjY2FhNmY3MjZhMWMwYjU2ZTc5ODg2YTI2NDk4YzY5MzM4YTYwZTk5YzM3Zjc5In0"
         }
       ]
     },
     {
       "id": "claim_1314146d71a9414f82ac1732ebcde569",
-      "statement": "test/integrations/cli-dogfood.test.ts drives the real runIntegrationsCommand (no installer mock) against a disposable Git repository, installing Codex at project scope and asserting the on-disk artifacts (SKILL.md, .codex/config.toml with args = [\"mcp\", \"--host\", \"codex\"]), then listing, reinstalling as unchanged, and uninstalling (removing .agents/skills/openwiki). A parameterized suite across every host reports/repairs/uninstalls partial states (removed skill or MCP entry) and ends not-installed with no stderr.",
+      "statement": "test/integrations/cli-dogfood.test.ts drives the real runIntegrationsCommand (no installer mock) against a disposable Git repository, installing Codex at project scope and asserting the on-disk artifacts (SKILL.md, .codex/config.toml with args = [\"mcp\", \"--host\", \"codex\"]), then listing (a tabular row per registry host, including bob modified, codex installed, and copilot not-installed), reinstalling as unchanged, and uninstalling (removing .agents/skills/openwiki). A parameterized suite across every host (listHostTargets()) reports/repairs/uninstalls partial states (removed skill or MCP entry) and ends not-installed with no stderr.",
       "evidence": [
         {
-          "resource": "repo://test/integrations/cli-dogfood.test.ts#L139-L165",
-          "version": "repo-lines-v1:sha256:fdbfc4064cb23efb32746f95d06b3f417b8dbc9d271ce84d91631634b8d7646a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZDk2Y2U5OGQyZTZmNjYyZDBmNWJiZThmOWNlYjIwN2MxYTBkNDU4YzAwMGM4Y2EyODUzNWI1NWYwZWFiNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiZDBhZGVlZjk5MjE1ZDVmY2M2YTlhZDRmNDE1MWM3ZTI2MzE3NDRiYzUzMzRiM2E3ZjBhZTZiOGY3OTRhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiY2JjMmRmYjcyNDI2YTViNDFlYzVkNzAwMWI5ZWI1Mjc3MWI4ZWMxOWViMjE3ZTkxNDIwOGU4ZmM5MDUzNzkifQ"
+          "resource": "repo://test/integrations/cli-dogfood.test.ts#L140-L165",
+          "version": "repo-lines-v1:sha256:9c414624fc020c0a8099c5b985ba66094838d677b41393d02d173f7c6875a59d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZDk2Y2U5OGQyZTZmNjYyZDBmNWJiZThmOWNlYjIwN2MxYTBkNDU4YzAwMGM4Y2EyODUzNWI1NWYwZWFiNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiZDBhZGVlZjk5MjE1ZDVmY2M2YTlhZDRmNDE1MWM3ZTI2MzE3NDRiYzUzMzRiM2E3ZjBhZTZiOGY3OTRhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4YjdkNzgzMmE4MTQwYTJhYjMwYTJjYTI0OTk2NzEyYTc0NjIyMzFhOWYwMmMyYTA5N2YzNjI5NjZkNzQzYjMifQ"
         },
         {
-          "resource": "repo://test/integrations/cli-dogfood.test.ts#L55-L137",
-          "version": "repo-lines-v1:sha256:3791ca7fcf5c597f19e043788bca2df178e5e3ee2ffd670c74c6bb5201c8c017:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNThmOWM3Y2U1NTVhOWY0ZmI5ZjUzYjQ3MDY4NTkwMGU5MmNhMTNjNmM1Mzk5ZWE0NzlkYmFmN2I1NDdjY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkYmNlZmRhMjFlZTcwZjVlNDgxMzM1ZTA0MmFkZjAxNTZmZTE2YmQwNDRmNjFjN2YxOWJlNTlkZWZlMzhjNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmOWFmZWI2Y2ZhZTczNjRiYWJkMDVjZWQ5NDVjMmNlYzkwMmUwMjAyYzBjNGEyYzczNDA0N2E1ODdjYTg5N2UifQ"
+          "resource": "repo://test/integrations/cli-dogfood.test.ts#L56-L138",
+          "version": "repo-lines-v1:sha256:bc147699d2d59dcd2685b5c85dceb3d198b21716a9a41f1c152177f14ca5b180:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZWIxZDA4ZTc3ZWY4NWUyYjIyMjU1NTZiN2VlNjQ2MmMzYWNjMDUyMDEyZTcxYTYxNjRmN2UzMjZjMGZlZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MjcxNzRiMDQzMjRmMzAzZWYxMjY0ODNlNjJjNzVlYTA5NmY2ZTE1YTgxNzAxM2RiOTA3NDU3OWQyNTQzM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmOWFmZWI2Y2ZhZTczNjRiYWJkMDVjZWQ5NDVjMmNlYzkwMmUwMjAyYzBjNGEyYzczNDA0N2E1ODdjYTg5N2UifQ"
         }
       ]
     },
     {
       "id": "claim_ac74b6f651e142dcae23f61c1085ad73",
-      "statement": "test/integrations/package-contents.test.ts runs `npm pack --dry-run --json` to pin the published bundle: every canonical integrations/openwiki/... skill file is packed, package.json is packed, no packed path is absolute, and the bundle excludes generated installation state (.openwiki-install.json, .agents/, .claude/, .codex/, .opencode/, .cursor/, .kiro/, .omp/, .gemini/, .config/, .deepagents/, staging, rollback, fixture) and any file leaking the absolute package root.",
+      "statement": "test/integrations/package-contents.test.ts runs `npm pack --dry-run --json` to pin the published bundle: every canonical integrations/openwiki/... skill file is packed, package.json is packed, the pi extension (dist/integrations/pi/openwiki.js) is packed, no packed path is absolute, and the bundle excludes generated installation state (.openwiki-install.json, .agents/, .claude/, .codex/, .opencode/, .cursor/, .kiro/, .copilot/, .github/, .omp/, .gemini/, .config/, .deepagents/, staging, rollback, fixture) and any file leaking the absolute package root.",
       "evidence": [
         {
-          "resource": "repo://test/integrations/package-contents.test.ts#L33-L92",
-          "version": "repo-lines-v1:sha256:de9c09b74eac498e5cb5563b1e91bb4309b9fe69a2071c828c00d8619361d1f6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OWE5MDg0MjBlMjQzNGZlOWVkNWNkYTc0MzI3ZGU3YmUwMDg4OTMzYzJkNmJhYzQ0YzZhNzdlY2UzODU3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTEzMmY5NzU4ZDlmNDA3ZjAyMTQ3M2EwM2ZmZmRkMzBkOGE5MzQ1NWM1NTQ2YTM4MmUyNjg1MDJhMTMyMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZWEyMzhjOWMzMzc4NzgwODJjNDMyYzEyMjhlNjAwNzM4NDc5MGFmYWE4ZjczYTU4MDJhMDM4NzVjMDg2YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4YjdkNzgzMmE4MTQwYTJhYjMwYTJjYTI0OTk2NzEyYTc0NjIyMzFhOWYwMmMyYTA5N2YzNjI5NjZkNzQzYjMifQ"
+          "resource": "repo://test/integrations/package-contents.test.ts#L33-L94",
+          "version": "repo-lines-v1:sha256:f97fdb21cb31bb78482ee9fa4fc22694b79e2eea5051befa1390c9c4d5015ac0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OWE5MDg0MjBlMjQzNGZlOWVkNWNkYTc0MzI3ZGU3YmUwMDg4OTMzYzJkNmJhYzQ0YzZhNzdlY2UzODU3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NTEzMmY5NzU4ZDlmNDA3ZjAyMTQ3M2EwM2ZmZmRkMzBkOGE5MzQ1NWM1NTQ2YTM4MmUyNjg1MDJhMTMyMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZWEyMzhjOWMzMzc4NzgwODJjNDMyYzEyMjhlNjAwNzM4NDc5MGFmYWE4ZjczYTU4MDJhMDM4NzVjMDg2YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4YjdkNzgzMmE4MTQwYTJhYjMwYTJjYTI0OTk2NzEyYTc0NjIyMzFhOWYwMmMyYTA5N2YzNjI5NjZkNzQzYjMifQ"
         }
       ]
     },
     {
       "id": "claim_e229c50c20174a6b8aab1f3bf33ef1ac",
-      "statement": "test/cli/integrations-runners.test.ts exercises runIntegrationsCommand and runMcpCommand from src/cli/integrations.ts with the installer and MCP stdio entry mocked. runIntegrationsCommand asserts the tabular list output across every registry host with stable installed/modified/not-installed statuses, the install/uninstall messages, that reinstalling an installed host reports unchanged, that uninstall omits the install Next: steps, and that a thrown installation error writes only to stderr and sets exit code one. runMcpCommand asserts each host (claude→claude-code, opencode→opencode, antigravity→antigravity, custom-host→custom-host) starts a rootless MCP server with the resolved producer actor.",
+      "statement": "test/cli/integrations-runners.test.ts exercises runIntegrationsCommand and runMcpCommand from src/cli/integrations.ts with the installer and MCP stdio entry (runOpenWikiMcp) mocked. runIntegrationsCommand asserts the tabular list output across every registry host with stable installed/modified/not-installed statuses (nine rows through copilot not-installed), the install output (skill and MCP paths plus registry-derived Next: steps), that a retained-backup install reports unchanged and surfaces the backup path, that uninstall omits the install Next: steps, and that a thrown installation error writes only to stderr and sets exit code one. runMcpCommand asserts each host (claude→claude-code, opencode→opencode, antigravity→antigravity, custom-host→custom-host) starts a rootless MCP server with the resolved producer actor.",
       "evidence": [
         {
-          "resource": "repo://test/cli/integrations-runners.test.ts#L222-L245",
+          "resource": "repo://test/cli/integrations-runners.test.ts#L224-L247",
           "version": "repo-lines-v1:sha256:ef03658d55e80a449a1c56b650c850515639ac92f331d1ae522a3fa4469cfad7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZDg2NjQ5ODhkMTM4YjUzMTgyMmI2ZmI2NmE0YzljYjgwMmIwYWJjMzVmOWYxMDdlZTdmYWMwNWE1NjQ1NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://test/cli/integrations-runners.test.ts#L63-L220",
-          "version": "repo-lines-v1:sha256:67891dc509cd8a38b35eccfb0fe5ec1cc61908ba3eee7fa632baa2dd441a3b23:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0OTQzNzU4NGU1ZWIyYTc1ODk1MWVhODY0YzAyYzk2ZTVlNjQ0MGM1MzFhMDIyODY1MGI0NDEwNTNjMzZkMjdiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmIzNDlmOWZiNzc3ZDFjNDkwNjZmMzQzY2NiZjdkY2UwM2QyOTE4ZTI5Y2ZiZGZjOTFhZWJiYjk3NWM3MTJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NzcyZjczYjViZDliMDMxOThmM2UwNWVlNTUxNjNjMzM5OGJmZTllYWM1NmJlZTE3NTQ0NzI3MjE2MTNiODU5In0"
+          "resource": "repo://test/cli/integrations-runners.test.ts#L63-L222",
+          "version": "repo-lines-v1:sha256:98f5b6b20cb3b5b7d19831ccec15cbbe3aa3b2dc4ee4cd6471f29523bdcfa148:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0OTQzNzU4NGU1ZWIyYTc1ODk1MWVhODY0YzAyYzk2ZTVlNjQ0MGM1MzFhMDIyODY1MGI0NDEwNTNjMzZkMjdiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmIzNDlmOWZiNzc3ZDFjNDkwNjZmMzQzY2NiZjdkY2UwM2QyOTE4ZTI5Y2ZiZGZjOTFhZWJiYjk3NWM3MTJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NzcyZjczYjViZDliMDMxOThmM2UwNWVlNTUxNjNjMzM5OGJmZTllYWM1NmJlZTE3NTQ0NzI3MjE2MTNiODU5In0"
         }
       ]
     },
@@ -1007,11 +1007,11 @@
       "statement": "resolveTraceThreadId in src/config/constants.ts returns the trimmed OPENWIKI_TRACE_THREAD_ID env override when it is set and non-empty, otherwise the durable runId, so CI can name a run's LangSmith thread after the change that caused the run while local runs default to the run id.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L1030-L1048",
+          "resource": "repo://src/config/constants.ts#L1110-L1128",
           "version": "repo-lines-v1:sha256:3aa1da04673a12082d448dc4c71f115c41e2184c9ea567bf29adfdb36a848351:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2NiNjgyNmVjN2RkZTcyMGFkYmZhNzc2YTkzYzA3YjUwNmJhOTczMTkxYzk5YTE0ZWUyZjFjNmE0MDUxZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3YzkzOWNhYzZjMmMzNGY5YmZkYzgxY2NlN2U4OTg5NGI3Yjc0NGMyYTZiM2RmNThiYTdjNTllNTJjMDY4Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNGQ5Yjg5NjliNDc3NTM4MTIzYWY0MTc2ZGNiYjU3YTk4N2IyMGRmMTBmNzg5NWMwNzMwNDk3MDlhYWYwMmMifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L91-L95",
+          "resource": "repo://src/config/constants.ts#L99-L103",
           "version": "repo-lines-v1:sha256:a5860b1fa427e49f391fc9d044410cb514e1ab931400499bac2a509d4f96762d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGE3Y2MwMWNjN2I1ZDBkNDYwZDIxMGMzNTRjNWUwYzEyMjJmMTc0MjY5NTMwODQwMjNiM2RmZjA1NGI5ZTQ1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTYzZGI2NTBlMmE0NGU3M2ZmM2ZkODNiMjExZWYzNjJjMzM1ZmEwNDAyMzcyMDE1NTliYTgxNjY0OGU2YWFhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQ0OGEwYTc0NGJmNjAxZmZkMjQyZTNmNmViMzFjMjQ4MjFhZjQxNjE4MTFmMDVmYWJhNmE1MmU0OWExODIwNSJ9"
         }
       ]
@@ -1065,10 +1065,94 @@
           "version": "repo-lines-v1:sha256:164846d7ae91cbee9c4f2a3328b1f4efb2c4c7c08b00bc86dacb811a7e301fe8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMzQwZTZlMTEwMTJjYjU4Njk0N2IzNmU0ZmY5MzM5ZDAyM2NlMWU1ZjU0Y2JiZWRhM2E3YzU3YmU3MzliMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_bc7366145dd94886ad3cb2bf6bf4d349",
+      "statement": "test/agent/create-model.test.ts constructs LangChain chat models (no network call — auth/clients resolve lazily) to pin the gemini-enterprise (Vertex) surface dispatch (Claude→ChatAnthropic, MaaS→ChatOpenAI, Gemini/Gemma→ChatGoogle, publisher-path stripping, the explicit max-output-token limit across all Vertex surfaces, the global endpoint when location is unset, and the missing-project guard), the gemini (AI Studio) surface, the Anthropic output-token ceiling, the OpenAI-compatible transport selection (Chat Completions vs. Responses, redundant content-array normalization, streaming opt-in), the provider-neutral maxTokens mapping, the reasoning configuration, and the OpenRouter output-token cap. Its companion test/agent/create-model-entra.test.ts pins the OpenAI-compatible Entra ID authentication wiring in createModel: default and explicit api-key modes preserve the static key, while entra-id mode passes a renewable callback (not the static key) as apiKey/clientConfig.apiKey honoring the Responses-API and streaming opt-ins and binding clientConfig.baseURL; it rejects a non-HTTPS OPENAI_COMPATIBLE_BASE_URL before model construction and rejects an invalid OPENAI_COMPATIBLE_AUTH mode.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/create-model-entra.test.ts#L26-L85",
+          "version": "repo-lines-v1:sha256:9fbac6a2cb8b246e70163cd6f0f39e9e86a34a7f2fb88de62c397567a6260f65:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyOTgwZGY0ODAzY2I3ZTNjNGYxNjE5Mzc2YjBjMWYyOWQ0OWZmNDM2ODgyYjRlYzQ0NjBhMjkxYjNlMTliOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwYzgyYzEyODU1MWI2N2E3Y2U1YWM3M2Y0MTA4NGRkMjE5NGI2YWU2Y2ZkM2RiYjc4YjU4ZTljNTVkZDA5OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/agent/create-model.test.ts#L256-L335",
+          "version": "repo-lines-v1:sha256:ee3a89aadf1151e63f07318e460fdde4873a454760b4456079c77657a9396438:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MTE1MTA2OWRlNmFjZDFkZmIzYTAzMTU3MTk4ZDNkNWE1NmZjMWIxMzIwMTAxYTI5Y2IyNjllZjI4MmQ2OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlOTIxMjgyOGE4NmMyMDA5MzUzNTEzYzYyZjBjNzU4NDg4MzBmYWRjMGRhNDQ0ZWI1MDFjZjg4MzQ1MjNjNDkifQ"
+        },
+        {
+          "resource": "repo://test/agent/create-model.test.ts#L49-L167",
+          "version": "repo-lines-v1:sha256:ee1b229864386cd4b0c213e003f2d5e48975215afe4e7bc6608f7aa2ae159c27:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNGM5ZjYyZGU1OWIyNjE0ODM1Yjk3YmIxOTk5Y2RmMTFlOTc2YjhiNWU0YTAxNzJiNWFlZTAwN2JhZTU5NjIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMGFkNjI3MDQ0OTdmMTI1ZTg1M2ZmNzdjNzY5NDUwMzA1NWJkNWNlOWJjYjUxYWRmN2FkMDNjNGYxNDYwMGFhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0YzhkNzRiZWVlNmE0YTg3MzFhOWI4N2FiNzY1YmI0ODI1Yzk1NDliZjM5MjkzNDI4MTQ5MjE3Y2I2NTI3ZGZiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c0098d027984e369d09ad1342dc6e31",
+      "statement": "test/agent/entra-auth.test.ts is the dedicated suite for createEntraTokenProvider in src/agent/entra-auth.ts, mocking @azure/identity (DefaultAzureCredential, WorkloadIdentityCredential) via vi.hoisted. It pins lazy one-time Azure Identity construction with concurrent first-request coalescing (a single getToken for parallel callers), workload-identity preference when AZURE_FEDERATED_TOKEN_FILE/AZURE_CLIENT_ID/AZURE_TENANT_ID are set (refreshing past expiry without reconstructing the provider, never falling back to DefaultAzureCredential on workload failure), cached-token reuse while valid, expiry-driven refresh, failure recovery (a failed acquisition is retried and the SDK error is wrapped as 'Unable to obtain a Microsoft Entra ID access token.' without leaking the private cause), and a parameterized endpoint-safety guard rejecting non-HTTPS, credentials-in-URL, and cloud-metadata endpoints before credentials are acquired. A second describe block drives a real model invocation through a stubbed gateway fetch to prove token refresh across the chat/responses × JSON/SSE matrix: two requests past the token lifetime use two distinct bearer tokens, the request URL/stream body match the selected surface/transport, and a token-acquisition failure never reaches the gateway.",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/entra-auth.test.ts#L326-L439",
+          "version": "repo-lines-v1:sha256:a8db9ee156ea1c3ac2d1ce7f86da6d8e074fd642a50315afcc4101a842cddf08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOWNkMmNlYzY4NDgwYjIzYjcwM2M0YWEwMTNmNjQwN2RiNGRkM2I3NTAzNGRkN2IxZDIxN2Q0ZmU4OWFhZmMwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyOWVjM2Y3NDc0OGMwY2ExMjlhMzc0OTUyOGJiYWYwMmMxNTA1NzQ0ZDNmYWE1ZGQxYjYxYmY2ZTA2ZTE1YjMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://test/agent/entra-auth.test.ts#L67-L212",
+          "version": "repo-lines-v1:sha256:316ce3a8d4156f16a3afd1eff7d79ffb1e314bf7906be287dab08878e504f83c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZWU5YzExYzFjNTRkYzdmZWIyMWRlYzYxMDcwODg2NTEzMGMxMWUxMjg3ODFjMDVjNzI2N2I3ZmEzYmNmNWYzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MGM4MmMxMjg1NTFiNjdhN2NlNWFjNzNmNDEwODRkZDIxOTRiNmFlNmNmZDNkYmI3OGI1OGU5YzU1ZGQwOThjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYjFkYmQ5MWVjMzE5YmRiMWE3YjkzOTg0MzhmOTBiMTZhM2ViNDgwZGY1MzQyYmM0Yjg4OGM2MjYzYTJmYmU4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_73aad98730a44efda32c808a2b12ff23",
+      "statement": "test/agent/environment-debug-value.test.ts pins formatEnvironmentDebugValue, the helper behind the --debug env dump that can end up in pasted bug reports: it classifies the Entra auth mode and scope as non-secret configuration (printed verbatim), echoes model/provider selectors verbatim, reports an unset variable as 'unset', previews unknown short values by length only and long values by head/tail, and scrubs URL values (stripping credentials, query, and fragment with a 'redacted=auth+query+hash' marker, degrading to a length preview when the value is not a parseable URL).",
+      "evidence": [
+        {
+          "resource": "repo://test/agent/environment-debug-value.test.ts#L16-L101",
+          "version": "repo-lines-v1:sha256:9be0f086724018edf264b61aba4b7129e45cce2556d520a59548c82dc8dbe780:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlYTcxMmIyMWZhNzk4NzQ0YTcwOTU3ZmM3ZmQ5NGZjMjZiOTBjZGJhYzJkMzhiNDU0Zjk1ZjQ0OGFiZGMzNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZGVkODM2MjJlYzEzNjExYjJjNWE0MTI2ZTcyZDdiMzBjZTcyNDM1MGJhMmI1YjhlZTNiN2UwYzAxZDczNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e52ebde92ae94eebaeefdaddc05a9455",
+      "statement": "test/setup/credentials/init-setup-entra.test.tsx renders the InitSetup wizard with walkAllSteps and mocks getSavedEnvValue to walk the OpenAI-compatible Entra path (provider → Entra ID auth → base URL → scope) without ever prompting for an API key: the base-URL step seeds the saved OPENAI_COMPATIBLE_BASE_URL and the scope step shows OPENAI_COMPATIBLE_ENTRA_SCOPE, so the Entra flow never requests a static key.",
+      "evidence": [
+        {
+          "resource": "repo://test/setup/credentials/init-setup-entra.test.tsx#L83-L120",
+          "version": "repo-lines-v1:sha256:879764eb1dfb20ab5dbcf117f898be65ab69d734699a7beb731f1cee42396956:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwYTdjNmExYTA1YzdiOWEzZGYzOTZmMTY5ZTM0MGQ5NmZjZTkxYmE5M2U4ZDUwOGRlODQ0YTkwOTVmYWYzOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5Y2FiMGJhMTM5MmI1MmQyZTU5ZGVmNTE5YmFmNDc5MGY4MWIxZWQ0YjRhMTFkNDMyZTRhNDAzYmYxYjRhNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b006ca593e141a48fc9b04a536bdeaf",
+      "statement": "test/config/env-behavior.test.ts is the runtime-behavior counterpart to the pure parseEnv/formatEnv suite: it resets the module registry and mocks os.homedir() before dynamically importing src/config/env.ts so every test binds ~/.openwiki/.env to a throwaway temp directory (the path is computed at module load). It pins loadOpenWikiEnv (a saved managed key loads into process.env but never overwrites a key already present, and OPENAI_BASE_URL is loaded while OPENAI_ORG_ID/OPENAI_PROJECT remain deprecated and dropped), saveOpenWikiEnv (owner-only file permissions, deprecated-key stripping, in-process seeding, dropping empty values rather than persisting KEY='', an ENOSPC atomic-swap failure that leaves the original file intact, and serialized overlapping saves that preserve disjoint updates), the shell/file snapshot helpers (getShellEnvValue/getSavedEnvValue), and getCredentialDiagnostics — which surfaces the Entra auth mode and scope, each provider credential key, and the hosted OpenAI-compatible base URLs; masks secrets by length while echoing base URLs verbatim; validates the model id, provider, output-token limits, Bedrock max tokens, stream-idle timeout (zero disables the watchdog with a warning only for the active Bedrock provider), the /chat/completions base-URL warning, the Bob base-URL warning, and the OpenAI-compatible Responses-API/streaming/reasoning-effort boolean opt-ins; and reports the source precedence of process.env over ~/.openwiki/.env.",
+      "evidence": [
+        {
+          "resource": "repo://test/config/env-behavior.test.ts#L133-L177",
+          "version": "repo-lines-v1:sha256:db8f72bf961f20a51a6cd6d27f9b864d7684243cf7bff9b01a163f5ddd90265d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhOThmNTdjNDBhYzNlNjJkM2FiZTY0YjMzZmU3MTc1ZmRmYmM4MGY5MjgxM2M2MzNjNGNmMzhkNGNhYmQwYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZWI0Y2FhNTExNWU3MGI4MzgxMWMyZjY1MGU2MTc2M2E5NDcwZGQ1MGI5N2I3MDgyY2M1NmVhNmNjZDg1YzgifQ"
+        },
+        {
+          "resource": "repo://test/config/env-behavior.test.ts#L179-L384",
+          "version": "repo-lines-v1:sha256:56c515b61a2564dc6e2af5881c197b48ba9d30eb792304f27c7f5c929a48d531:eyJzZWxlY3RlZExpbmVDb3VudCI6MjA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMDlkYTFiNGM2NDBjYTQ1YmZhM2Y5MDhmZWZlZGYxYzMyY2ViZWUyYjI4NzhiMDYwODA4NWQwYTEzYmJjM2ZjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNzc5ZDExOGQ2ZTNjYmY0NTA1Mzk3NDhkZWU3YTQzMDdhY2JlNjQ0NmNiYTI5N2YyNzYwZmE1ZDBiYmExYmMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2NmY5YjMyYjU2MDhlN2RiODYzMDE5NjBkYWQ3YzQ2Y2IzMzQxMDA3MjQ0NTlhMDFhOTY3Yjk4ZDgxYzljOGI0In0"
+        },
+        {
+          "resource": "repo://test/config/env-behavior.test.ts#L436-L783",
+          "version": "repo-lines-v1:sha256:088af567e43fb160ff548c289d50306006e7defef4baf314910992f2314ce40e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNDEzMWRlNDQxYjNkYjliZmMxMGIyYjYwNGVkMjZjZWZlYjM1NTBlMzdlNTM0Mzk1MmJlNTRlOTk1NDY5NzhjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiNzc5ZDExOGQ2ZTNjYmY0NTA1Mzk3NDhkZWU3YTQzMDdhY2JlNjQ0NmNiYTI5N2YyNzYwZmE1ZDBiYmExYmMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://test/config/env-behavior.test.ts#L92-L123",
+          "version": "repo-lines-v1:sha256:f2571d2a594f740054adcd22b783f0fd69cd43837aa545901f6eefbb83e46821:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZTA4MGMxMzgyZjZmNGM5YjlkYjZkOTk1YjgwNDdmYTQ5YjVlNjk2NjgyOGY2OTRlOTJiY2EwYzAyMTEwODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYTQxZjNjYWJhOTJlM2YwMWM1NTUzYzMwY2QzMDI5ODI4MTkwZjcxMGVmZWFmY2JiZDQwMTcwMDkwODkyMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwYTcyMjFkODA2NWUwZmRjMDdhMTk1MDM4MmRjMTMyOGE5YWM0Nzk3YWEzMDUyNjM5MjJjMDZjMmE3MDE5NWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8fb29e89ee864a07afc085c7bd9dfb97",
+      "statement": "test/config/constants.test.ts OpenAI-compatible authentication configuration block pins the Entra surface: resolveOpenAICompatibleAuthMode defaults missing/blank to api-key, accepts entra-id case-insensitively, and rejects any other mode; resolveOpenAICompatibleEntraScope trims a custom scope and defaults to DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE; providerUsesEntraId is true only for openai-compatible in Entra mode; and getMissingProviderEnvKey returns null for openai-compatible in Entra mode (no static key required) but still requires the key for other providers.",
+      "evidence": [
+        {
+          "resource": "repo://test/config/constants.test.ts#L989-L1069",
+          "version": "repo-lines-v1:sha256:530d7521c01e51d41fdcaedb0f3e03bfd588a7bd92f359b8b5a60251a5dde8f6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZDdlYzBhZjA0YWZiYWZlYjE1MGUyMzY0MjU5ZjVkNmEwY2U1MGY4ZWQxZjEzM2FmN2ExYTdjNzg0MWY1YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmYWM1YmQ2ZGRhZDJhMWM0YzRmNTYwMjBjMmM1M2VhYzZkZDVjOThmOTA5ZWRkMzUzZWY3N2RhZGRhYjI2MzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzZWRkNDQyYzg2OThmOWExZmUzNGNhNjY3MzQ2NDk1NjQ5MzVkYTdiNDA5MGQ1ZTBkNGQ3NTdiMjhhZTk4MjgifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-10-02T08:09:47.640Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }

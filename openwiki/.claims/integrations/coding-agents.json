@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c99bcdea502357a0f2fa924ad431b8390ee1f24b188378f8cc9509abe224f84f",
+  "pageVersion": "sha256:53c29cb007b1c7244d4676ad28b92830c3321c57020f93441ccbf92569a08300",
   "claims": [
     {
       "id": "claim_244d2a0a18984ed9bfac7bdabf596487",
@@ -192,15 +192,15 @@
     },
     {
       "id": "claim_5a1894ce8f96451ca6f1879cda0b7abf",
-      "statement": "HOST_TARGETS is the immutable registry of supported install hosts (IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro, Oh My Pi, Antigravity CLI), each declaring per-scope skill directory and MCP config kind: IBM Bob uses user config .bob/settings/mcp.json and project config .bob/mcp.json (json) with skill under .agents/skills/openwiki at both scopes, Codex uses .codex/config.toml (codex-toml) at both scopes with skill under .agents/skills/openwiki, Claude Code uses .claude.json (user) and .mcp.json (project) (json) with skill under .claude/skills/openwiki, OpenCode uses .config/opencode/opencode.jsonc (user) and opencode.jsonc (project) (opencode-json) with distinct skill directories, Cursor uses .cursor/mcp.json (json) at both scopes with skill under .cursor/skills/openwiki, Kiro uses .kiro/settings/mcp.json (json) at both scopes with skill under .kiro/skills/openwiki, Oh My Pi uses .omp/agent/mcp.json (user, default profile) and .omp/mcp.json (project) (json) with skills under .omp/agent/skills/openwiki and .omp/skills/openwiki, and Antigravity CLI uses .gemini/config/mcp_config.json (user) and .agents/mcp_config.json (project) (json) with skills under .gemini/antigravity-cli/skills/openwiki and .agents/skills/openwiki. Upstream Pi is not a HOST_TARGETS entry.",
+      "statement": "HOST_TARGETS is the immutable registry of supported install hosts (IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro, Oh My Pi, Antigravity CLI, GitHub Copilot CLI), each declaring per-scope skill directory and MCP config kind: IBM Bob uses user config .bob/settings/mcp.json and project config .bob/mcp.json (json) with skill under .agents/skills/openwiki at both scopes, Codex uses .codex/config.toml (codex-toml) at both scopes with skill under .agents/skills/openwiki, Claude Code uses .claude.json (user) and .mcp.json (project) (json) with skill under .claude/skills/openwiki, OpenCode uses .config/opencode/opencode.jsonc (user) and opencode.jsonc (project) (opencode-json) with distinct skill directories (.config/opencode/skills/openwiki vs .opencode/skills/openwiki), Cursor uses .cursor/mcp.json (json) at both scopes with skill under .cursor/skills/openwiki, Kiro uses .kiro/settings/mcp.json (json) at both scopes with skill under .kiro/skills/openwiki, Oh My Pi uses .omp/agent/mcp.json (user, default profile) and .omp/mcp.json (project) (json) with skills under .omp/agent/skills/openwiki and .omp/skills/openwiki, Antigravity CLI uses .gemini/config/mcp_config.json (user) and .agents/mcp_config.json (project) (json) with skills under .gemini/antigravity-cli/skills/openwiki and .agents/skills/openwiki, and GitHub Copilot CLI uses .copilot/mcp-config.json (user) and .github/mcp.json (project) (json) with skills under .copilot/skills/openwiki and .github/skills/openwiki. Upstream Pi is not a HOST_TARGETS entry.",
       "evidence": [
         {
-          "resource": "repo://src/integrations/install/registry.ts#L10-L142",
-          "version": "repo-lines-v1:sha256:ee32e21452b6bfe4a1b9928cd15fd0e8be4004e3fc2f1a49df5cda53ebb3d565:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0N2VkZjNmYWU5ZGVkMDdjYTQzYTQwNGY0MDJlNDE1OWQ1NzY0ODU4MWE1YmExZmIwMDcwN2RiZTI2Y2U2NDU5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYjdjODc4MzA3YWIwN2YzYTMyYWY0ZTViMjQzMWVlYmRjNzNkZWQzNmE3NjU5MTdiOTJmNTRmYWJkYzY0YTQ5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNDBmNjMwMzQ1MjgwOTU2ZWRkYWRjNjIxMzUzYTMxNjU1YzIwZmExZTY3ODgwMzk0MzAyNDg4OTYyOTcwY2UzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNDkzMDc0ZDA4YzQ2NzdhMTZiMzlkZjUyZDc1ZGU0ZmE4Mjc5OGVhYzVlZTFhMGE4ZWViMzkxMmViYTI5ZDAxIn0"
+          "resource": "repo://src/integrations/install/registry.ts#L10-L157",
+          "version": "repo-lines-v1:sha256:e14e85b492de74b7036f7b71c87b0c236cbe8b696642489791ed4b37e22f5f3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0N2VkZjNmYWU5ZGVkMDdjYTQzYTQwNGY0MDJlNDE1OWQ1NzY0ODU4MWE1YmExZmIwMDcwN2RiZTI2Y2U2NDU5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYjdjODc4MzA3YWIwN2YzYTMyYWY0ZTViMjQzMWVlYmRjNzNkZWQzNmE3NjU5MTdiOTJmNTRmYWJkYzY0YTQ5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNDBmNjMwMzQ1MjgwOTU2ZWRkYWRjNjIxMzUzYTMxNjU1YzIwZmExZTY3ODgwMzk0MzAyNDg4OTYyOTcwY2UzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNDkzMDc0ZDA4YzQ2NzdhMTZiMzlkZjUyZDc1ZGU0ZmE4Mjc5OGVhYzVlZTFhMGE4ZWViMzkxMmViYTI5ZDAxIn0"
         },
         {
           "resource": "repo://src/integrations/install/types.ts#L1-L13",
-          "version": "repo-lines-v1:sha256:de4172ec4e08dfeeea3dcbbe5e9f6f940a2d3fff02f1254b8b294d867a30ddcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ZTg2OTRiM2YxMmNkNTk2ZGQxODQyYTE0NWEzZTAyNWRmNjU1YmYzNmFjNzhiMjA1MzVkOWUxYmI5NjA3ODMifQ"
+          "version": "repo-lines-v1:sha256:60f1cea3b1ebf248d0006e078edc7fa80613b6cbb74f834677a25c4c94ebee2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMTFkNmIyZWU0ZDRlNTIyY2E2MTA0OGVhZDRkYWM2MWJkZGJmNzA0MDk4NzYxNzhiNDc5YzQ2ZDhlNDRlOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4YWY3YTdhOWE3NjY0YWRmZGYxZjAzZTI3ZWE1ZmY1YmQ5NWJkNGVhMTM1YzZjYTJmMjhjOWM4MGMzYTExYjIifQ"
         }
       ]
     },
@@ -209,7 +209,7 @@
       "statement": "defaultMcpServerCommand produces the published installed invocation `openwiki mcp --host <target>`, which is the command written into managed host config entries.",
       "evidence": [
         {
-          "resource": "repo://src/integrations/install/registry.ts#L163-L176",
+          "resource": "repo://src/integrations/install/registry.ts#L178-L191",
           "version": "repo-lines-v1:sha256:bb14bf04ebc97674d8cffbaee3081824fd7fe177bd965e17c94f014e9632926d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNjcxOWM0ZmI0OWM0ZDc1ZTU3NmZmYWI4YzllMjA3MThhNzVhNzVmODZhMTdlZWFkOTU1OThkMjU5OTRjMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -297,18 +297,18 @@
           "version": "repo-lines-v1:sha256:8a7cb33018e455a164d284119c16fb81d3c914937c8ea8aa2120269debdc6d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MjMyMzcxYWRlZmE3NzFiYTFhNTg3NWQ0OGZkOGE5N2EzMzMwOTcxYzNmMTQyMTdhMmIyMGRkOWIyNzlhNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YzczNjFiMjhiYzhkZGE5YThhOTM4OGM0M2Y3MzE2N2U1MDRhZjUwNDAzNGIzZDM1MWYxMzQ3YmUwMmYyOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NWMyOWQ0ZTZhZGM1NzA5NDEwZGQxNjcxM2E3MTAyOTgyYzcwMjNmY2FjMTIwY2Q4ZThmMzk4YjlhOWQ0YmUifQ"
         },
         {
-          "resource": "repo://src/integrations/install/types.ts#L90-L103",
+          "resource": "repo://src/integrations/install/types.ts#L91-L104",
           "version": "repo-lines-v1:sha256:3f96c8e050d9d55188e43a203a2372d482f16489f0ac916baaf380cb15bf2fa1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2OWFjZGZiNGViMDk5YzE4NmZkNjUzN2MyMDNlMDUwNjc4MjFmMDM4ZDQ2YmIyYWExYzZjM2Y5MjE2YTBmOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwOTI3ZTg1ZGY2OGNmYTE4MDJjNmQ0MTllYTRlMzMzMzE1MTU5ZWYyYTUzYzEyZDc4Y2M5MmE4YTBjNjEwYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4YmQ3NTVkZWNkMWM0ZGZlYjhkNTJlNDg4OWU4MzIxYWZhZDVkMzg1OGU3MjNmZjIxZTVkZmVkZGJlNGQzMDAifQ"
         }
       ]
     },
     {
       "id": "claim_7f51d96921ab409a99f51e7a14f81783",
-      "statement": "Adding a new host is a registry-and-config change rather than a new skill or new tools — hosts share one canonical skill, four read-only retrieval tools, and the six generation lifecycle tools (ten ProtocolToolName tools in all) — and the local dogfood command pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity> builds OpenWiki, refreshes the host skill at user scope, and records absolute paths to the current Node executable and dist/cli/cli.js so only pnpm build is needed after later source changes unless the bundled skill changes; all eight current hosts install at user scope.",
+      "statement": "Adding a new host is a registry-and-config change rather than a new skill or new tools — hosts share one canonical skill, four read-only retrieval tools, and the six generation lifecycle tools (ten ProtocolToolName tools in all) — and the local dogfood command pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity|copilot> builds OpenWiki, refreshes the host skill at user scope, and records absolute paths to the current Node executable and dist/cli/cli.js so only pnpm build is needed after later source changes unless the bundled skill changes; all nine current hosts install at user scope.",
       "evidence": [
         {
           "resource": "repo://CONTRIBUTING.md#L35-L49",
-          "version": "repo-lines-v1:sha256:052cf1fb1f2f31378558c45667466fa1a3df6e9e8872a18e61bd828bfcdc9d38:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE2OWQwZDAwZjJjNjc0ODg5NTk3MTI4NTA3ZDlkNDcxZjg5ZGI4MzY3YWE0YmEwNzQwY2JiYmZiYjc2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDgyYzlkMjFiYjAxYWFkYzI4NDkwMGEzZTNiNjMxNmMyODRhODYyMzNhMjQ4YmQxODI4OGI2NzdiZTJhYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZTY4NzM1ZGYzZTgxZGNiNjBhNzFmZGQ4MTM5MWViMjUwMTlkNDY1NDc2N2UzOThjYmEzMGI3MDhkOWVmYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlYzBkNTliM2M2NWJhNDM5MjAyODRlYmZmNmQ0NDM0M2VmYWNiZWVjMTQzMjMxZmQ4YTBkNTQxNjY0ZGUwZDEifQ"
+          "version": "repo-lines-v1:sha256:83b68c553906356c9a1d57d32a7797442c81bbba596b0d8cd7ca27e0bccc3c17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZjE2OWQwZDAwZjJjNjc0ODg5NTk3MTI4NTA3ZDlkNDcxZjg5ZGI4MzY3YWE0YmEwNzQwY2JiYmZiYjc2ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDgyYzlkMjFiYjAxYWFkYzI4NDkwMGEzZTNiNjMxNmMyODRhODYyMzNhMjQ4YmQxODI4OGI2NzdiZTJhYWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZTY4NzM1ZGYzZTgxZGNiNjBhNzFmZGQ4MTM5MWViMjUwMTlkNDY1NDc2N2UzOThjYmEzMGI3MDhkOWVmYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlYzBkNTliM2M2NWJhNDM5MjAyODRlYmZmNmQ0NDM0M2VmYWNiZWVjMTQzMjMxZmQ4YTBkNTQxNjY0ZGUwZDEifQ"
         },
         {
           "resource": "repo://CONTRIBUTING.md#L60-L66",
@@ -471,22 +471,22 @@
       "statement": "OpenWiki's code-mode ingestion keeps root agent-instruction files pointed at the generated wiki via managed marker blocks delimited by `<!-- OPENWIKI:START -->` and `<!-- OPENWIKI:END -->`. writeCodeModeAgentSnippets refreshes AGENTS.md (created when missing) and CLAUDE.md (refreshed only when present) in place: AGENTS.md carries the full just-in-time retrieval guidance, while CLAUDE.md carries a minimal `@AGENTS.md` import unless CLAUDE.md is a filesystem link to AGENTS.md, in which case it carries the full snippet. prepareCodeModeAgentSnippet validates markers atomically before writing either file, accepting either no markers (append a fresh block) or exactly one ordered START/END pair (replace in place); malformed or duplicated markers abort and leave the file unchanged. Legacy pre-marker (0.0.x) `## OpenWiki` sections are detected by their exact template sentence and removed before marker validation.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L18-L45",
+          "resource": "repo://src/ingestion/code-mode.ts#L22-L49",
           "version": "repo-lines-v1:sha256:cc97229667c93efaa5454f2fe3653fb2eedb7740162d3a5bf910d63279a566a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MjZjOTg1MzIyMzRiMjQyNTkyYzIzN2I0MTJjYmNmYjFjZGMxZDFhMzJkZmU1MTNhNzJjZjExNzJhMTY2YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZGU4OGI0YWMzMWMxNDkxMjA5NWViYWQ5ODZlMmJhZjk1MGU1MjAyMjkxMTM2NzNiNDY2MGQ3YTY4Nzk2NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiYzFiYjljMjUxODI0ZGVkOGI2MGVkYmRjZDc0MmY3Mjc0MzI5MWY4ZGNhNjM2MzhkYWFkZTU1MGVmMTM2ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkYjJmZTk1YjJjZWY2YWI2MmNjZDMwZDc3M2YxNWJhZGJhNmQzNDAzMmZlYWEyMDM0ZDZkNmY1ZmM3YzI5MzUifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L212-L330",
+          "resource": "repo://src/ingestion/code-mode.ts#L216-L334",
           "version": "repo-lines-v1:sha256:155b2fe53d32051f26e4491c83cd85173c32c2349008ff6c083f5e3aafc39b64:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZWVmYjJjOGU4YjQ2OTZmYTA2NzA5MTUyYzU1YmMxMjYzOWIxMmFmNzJmNzg5YWNiNTE4MWRiYjljZDJkNjUyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NWE0YTRlNGQ5YWVhMWZjMDg4NDFjZWQ2MTc4NjY2MDUyMDVjYzZiYjIwYzVhZjEzYmI1ODFiMmMyZWRiODdjIn0"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L620-L658",
+          "resource": "repo://src/ingestion/code-mode.ts#L633-L671",
           "version": "repo-lines-v1:sha256:d75c1d750de94233bcf3b3661cc7be0a16b1e9f1182d00479ed84fc6f20d9b48:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjliYTYwYjUxNDM1ODM2YTZhNzNhZDJjNjE1NjUwNGVmNmE1MDUyODU5MzBjMWI2YTQ0YjBkMGY0YzllNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWEyMjc0YmYzNmEwOWMyMjI3ZWRkNGI2M2E1YjgzZDFkZmUyNTIzYjFmOTE3NmE4NGMyY2M0N2IwYTlkODYifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }

@@ -14,6 +14,8 @@ tags:
     parallel-workers,
   ]
 sources:
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
     resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -44,10 +46,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Repository Generation Lifecycle
@@ -482,9 +484,28 @@ the missing-snapshot `invalid_state` unless the host supplies snapshots itself.
 ## Parallel page workers
 
 The native runner drives page generation through `runPendingPageAgents`, which
-runs up to `pageConcurrency` worker loops at once (default 1). Each worker still
-owns exactly one page; concurrency is about how many pages are in flight, not
-about splitting a single page.
+runs up to `pageConcurrency` worker loops at once. Each worker still owns exactly
+one page; concurrency is about how many pages are in flight, not about splitting
+a single page.
+
+### Concurrency configuration
+
+The worker count is `resolvePageConcurrency` from the `OPENWIKI_PAGE_CONCURRENCY`
+environment variable: an integer from 1 to `MAX_PAGE_CONCURRENCY` (8), defaulting
+to `DEFAULT_PAGE_CONCURRENCY` (1) when unset. A non-integer or out-of-range value
+throws before any model is built, so a bad setting fails fast rather than
+silently degrading. The CLI resolves it once in `resolveRunConfig` alongside the
+provider and model, then threads the value into `runNativeRepositoryGeneration`
+as `pageConcurrency`; the runner floors it at 1 and derives the pool's
+`concurrent` flag from `size > 1`.
+
+Concurrency also changes the default provider retry budget. When no explicit
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` is set, a run with more than one worker uses
+`PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5) instead of the single-worker
+`DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3), because concurrent workers sharing one
+provider key make transient rate limits the common failure. The runner then
+shrinks the live pool size at runtime when a worker fails on a recognized
+rate-limit error (below).
 
 ### Worker pool ownership
 

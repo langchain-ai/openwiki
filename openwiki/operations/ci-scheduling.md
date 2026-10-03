@@ -17,6 +17,8 @@ tags:
 sources:
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-4d1d392666be6dfdd7a91a2e
+    resource: repo://.github/workflows/release.yml
   - id: openwiki-source-aef084bf3022fb942ad29b90
     resource: repo://examples/openwiki-update-auto-merge.yml
   - id: openwiki-source-0f426585cfb8a1150869ea30
@@ -33,12 +35,14 @@ sources:
     resource: repo://src/cli/runners.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
+  - id: openwiki-source-983a7ea90223cb0c0bfc6faa
+    resource: repo://src/telemetry/gates.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # CI Scheduling and Self-Update
@@ -184,9 +188,10 @@ The live workflow the OpenWiki repository itself runs is
 `.github/workflows/openwiki-update.yml`, which builds from the checked-out
 source to dogfood unreleased changes rather than installing the published
 package. The OpenWiki repository also runs its own release pipeline in
-`.github/workflows/release.yml`, the npm trusted-publishing pipeline; the
-examples above are what an external repository should copy, and the live repo
-runs both workflows separately.
+`.github/workflows/release.yml` (described below in [Release and changeset
+pipeline](#release-and-changeset-pipeline)); the examples above are what an
+external repository should copy, and the live repo runs both workflows
+separately.
 
 ### What the scheduled job does
 
@@ -328,6 +333,74 @@ secret (a GitHub OAuth token) and switch to `OPENWIKI_PROVIDER: copilot` with
 same OpenRouter/GLM defaults, so external repositories can keep them or
 substitute their own provider and model.
 
+### Release and changeset pipeline
+
+`.github/workflows/release.yml` is a separate workflow from the update job: it
+triggers on every push to `main` (not on a schedule) and is gated with the same
+fork pattern used elsewhere — the release job only runs in the origin repo
+(`langchain-ai/openwiki`) or when a fork opts in via the
+`OPENWIKI_ENABLE_RELEASE` repository variable, because this job can create
+release PRs, push tags, and publish to npm. It pins Node 22, upgrades npm to
+`11.5.1` for npm trusted publishing (OIDC token exchange inside the npm CLI),
+and runs `pnpm install --frozen-lockfile`.
+
+The workflow uses `changesets/action` with two scripts wired to a single job:
+
+- **Version PR path.** When changesets exist on `main`, the action opens/updates
+  a "chore: version packages" PR (bumping `package.json` and `CHANGELOG` via
+  `pnpm run changeset:version`). The job runs with `contents: write` and
+  `pull-requests: write` to push that PR branch.
+- **Publish path.** When that PR merges and no changesets remain, the action
+  runs the `publish-script` (`pnpm release`) instead: that builds OpenWiki and
+  runs `changeset publish`, which performs `npm publish`. Publishing is
+  **tokenless**: the job's `id-token: write` permission lets npm exchange the
+  GitHub OIDC id-token for a short-lived publish credential, and provenance is
+  emitted via `NPM_CONFIG_PROVENANCE: true`.
+
+The pipeline also bakes a **distribution channel** into the published build
+via `OPENWIKI_BUILD_CHANNEL`: the origin repo stamps `"official"`, while a fork
+that opts into releasing still publishes `"community"`. The stamp runs inside
+`pnpm release` (publish path only), never on the version-PR path, so the
+committed value is never written back to the repo. This channel ends up on
+every telemetry event (`buildChannel()`), letting the dashboard filter
+fork-originated runs out of the official signal (see
+[Telemetry and Diagnostics](./telemetry.md)).
+
+`concurrency: ${{ github.workflow }}-${{ github.ref }}` ensures only one
+release run per branch is in flight at a time. The blocking audit gate and
+all other checks that gate merges into `main` live in
+`.github/workflows/checks.yml` (format, lint, build/typecheck/CLI smoke across
+Node 22 and 24, tests, Windows portability tests, and a Trivy dependency
+audit); those are not scheduled jobs, but they are the checks the auto-merge
+variant's branch protection should require before an update PR auto-merges.
+
+## Telemetry on scheduled runs
+
+A scheduled CI run that executes `openwiki code --update` is, from the
+telemetry pipeline's point of view, an ordinary `update` run: it emits exactly
+one anonymous `openwiki_run` event carrying the command, outcome, environment
+provenance, and (on failure) a closed error classification (see
+[Telemetry and Diagnostics](./telemetry.md)). Two scheduling-specific details
+matter for operators:
+
+- **CI tagging, not suppression.** Telemetry is on by default and is not
+  silenced in CI. `isCiEnvironment` (delegating to `ci-info`, plus the
+  `OPENWIKI_SCHEDULED` escape hatch) still lets events be sent, but they are
+  tagged `execution: "ci"` and attributed to a **per-provider sentinel id**
+  (`ci-<provider>`, e.g. `ci-github-actions`) rather than a unique install id,
+  so ephemeral runners never inflate the human install count. The canonical
+  GitHub example documents the explicit opt-out switch
+  (`OPENWIKI_TELEMETRY_DISABLED: "1"`) as a commented-out env var on the update
+  step; uncomment it to stop sending.
+- **Build provenance.** Each event is stamped with whether the build is
+  production (`isProductionBuild`, true only when running from `dist/`) and its
+  distribution channel (`buildChannel()`, `"official"` only for npm-published
+  upstream builds). The live dogfood workflow runs `node dist/cli/cli.js …`
+  against a locally built `dist/`, so it reports `production: true` and
+  `channel: "official"`; a published-package example that installs the npm
+  package also reports `production: true` and `channel: "official"`. A fork or
+  source run reports `"community"`, so its telemetry stays filterable.
+
 ### Ephemeral-runner resume caveat
 
 Repository generation and update are resumable: OpenWiki records in-progress work
@@ -343,6 +416,8 @@ plus full git history, as the only durable state carried between runs.
 
 - [CLI reference](./cli-reference.md) — the `cron`, `ingest`,
   and `code --update` commands invoked by these schedules.
+- [Telemetry and Diagnostics](./telemetry.md) — the `openwiki_run` event,
+  CI sentinel ids, and build/channel provenance stamped on scheduled runs.
 - [Repository generation](../workflows/repository-generation.md) — what
   `code --update` regenerates and its resumable page-job architecture.
 - [Personal ingestion](../workflows/personal-ingestion.md) — the

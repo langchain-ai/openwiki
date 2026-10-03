@@ -30,6 +30,14 @@ sources:
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-eab9328975981f427c4218d0
     resource: repo://src/integrations/mcp/server.ts
+  - id: openwiki-source-76702f01df0808033c14cf17
+    resource: repo://test/agent/create-model-entra.test.ts
+  - id: openwiki-source-21fe6d4741a8225393c37599
+    resource: repo://test/agent/create-model.test.ts
+  - id: openwiki-source-6e76d6023798412a72871e94
+    resource: repo://test/agent/entra-auth.test.ts
+  - id: openwiki-source-020713ad302308d875b26a62
+    resource: repo://test/agent/environment-debug-value.test.ts
   - id: openwiki-source-6cc520117b0eb03bfd36a7c8
     resource: repo://test/agent/frontmatter-validator.test.ts
   - id: openwiki-source-e25b880bed632d812ac9f1a8
@@ -74,6 +82,8 @@ sources:
     resource: repo://test/cli/run-log/tool-input.test.ts
   - id: openwiki-source-5fc87e9739dab52c4e447110
     resource: repo://test/config/constants.test.ts
+  - id: openwiki-source-3782823f29993efcdedd20ac
+    resource: repo://test/config/env-behavior.test.ts
   - id: openwiki-source-507f854511667d512b3fa0ee
     resource: repo://test/config/env.test.ts
   - id: openwiki-source-7813b7a34b04f73e9967e3c9
@@ -120,6 +130,8 @@ sources:
     resource: repo://test/openrouter-debug-fetch.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
+  - id: openwiki-source-b2b8fb38376a171a6364d058
+    resource: repo://test/setup/credentials/init-setup-entra.test.tsx
   - id: openwiki-source-e3be493bc871948f42420690
     resource: repo://test/visualize/client-interaction.test.ts
   - id: openwiki-source-1904eaebd82125a3a3881dac
@@ -132,10 +144,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Testing Guide
@@ -279,12 +291,12 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, skip/restore, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, and the wiki finalizer |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation (incl. the OpenAI-compatible Entra ID auth wiring and token provider), middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, skip/restore, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, and the `--debug` environment-value dump |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
-| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution), host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
+| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution), host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, the packaged skill contracts, and the CLI integrations/MCP runners (mocked installer and MCP stdio) |
 | `test/cli/` (incl. `test/cli/run-log/`)                                                                                                                    | `src/cli/` — CLI wiring, Ink components, the run-log reducer/progress/summary/activity/tool-input helpers, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
@@ -463,6 +475,53 @@ The remaining agent tests guard the prompts and adjacent surfaces:
   the prior value — or prior absence — even if construction throws), and
   `createVertexAuthFetch` (injects a fresh bearer token per request and throws
   before the request when no access token is available).
+- `test/agent/create-model.test.ts` constructs LangChain chat models (no network
+  call — auth/clients resolve lazily) to pin the `gemini-enterprise` (Vertex)
+  surface dispatch (Claude→`ChatAnthropic`, MaaS→`ChatOpenAI`, Gemini/Gemma→
+  `ChatGoogle`, publisher-path stripping, the explicit max-output-token limit
+  across all Vertex surfaces, the global endpoint when location is unset, and
+  the missing-project guard), the gemini (AI Studio) surface, the Anthropic
+  output-token ceiling, the OpenAI-compatible transport selection (Chat
+  Completions vs. Responses, redundant content-array normalization, and the
+  streaming opt-in), the provider-neutral `maxTokens` mapping, the reasoning
+  configuration, and the OpenRouter output-token cap. Its Entra-focused
+  companion `test/agent/create-model-entra.test.ts` pins the OpenAI-compatible
+  Entra ID authentication wiring in `createModel`: default and explicit
+  `api-key` modes preserve the static key, while `entra-id` mode passes a
+  **renewable callback** (not the static key) as `apiKey`/`clientConfig.apiKey`,
+  honoring the Responses-API and streaming opt-ins and binding
+  `clientConfig.baseURL`; it rejects a non-HTTPS `OPENAI_COMPATIBLE_BASE_URL`
+  before model construction and rejects an invalid `OPENAI_COMPATIBLE_AUTH`
+  mode.
+- `test/agent/entra-auth.test.ts` is the dedicated suite for
+  `createEntraTokenProvider` in `src/agent/entra-auth.ts`, mocking
+  `@azure/identity` (`DefaultAzureCredential`, `WorkloadIdentityCredential`)
+  via `vi.hoisted`. It pins lazy one-time Azure Identity construction with
+  concurrent first-request coalescing (a single `getToken` for parallel
+  callers), workload-identity preference when `AZURE_FEDERATED_TOKEN_FILE`/
+  `AZURE_CLIENT_ID`/`AZURE_TENANT_ID` are set (refreshing the token past
+  expiry without reconstructing the provider, and never falling back to
+  `DefaultAzureCredential` on workload failure), cached-token reuse while
+  valid, expiry-driven refresh, failure recovery (a failed acquisition is
+  retried on the next call and the underlying SDK error text is wrapped as
+  "Unable to obtain a Microsoft Entra ID access token." without leaking the
+  private cause), and a parameterized endpoint-safety guard that rejects
+  non-HTTPS, non-HTTP(S), credentials-in-URL, and cloud-metadata endpoints
+  before any credentials are acquired. A second describe block drives a real
+  model invocation through a stubbed gateway `fetch` to prove token refresh
+  across the chat/responses × JSON/SSE matrix: two requests past the token
+  lifetime use two distinct bearer tokens, the request URL/`stream` body match
+  the selected surface/transport, and a token-acquisition failure never reaches
+  the gateway.
+- `test/agent/environment-debug-value.test.ts` pins
+  `formatEnvironmentDebugValue`, the helper behind the `--debug` env dump that
+  can end up in pasted bug reports. It classifies the Entra auth mode and
+  scope as non-secret configuration (printed verbatim), echoes
+  model/provider selectors verbatim, reports an unset variable as `unset`
+  rather than printing `undefined`, previews unknown short values by length
+  only and long values by head/tail, and scrubs URL values (stripping
+  credentials, query, and fragment with a `redacted=auth+query+hash` marker,
+  degrading to a length preview when the value is not a parseable URL).
 - `test/agent/update-noop.test.ts` is the dedicated suite for the update no-op
   fast-skip path: it builds a real committed Git repository with an OpenWiki
   tree and exercises `getUpdateNoopStatus` across the conditions that should and
@@ -681,7 +740,13 @@ re-setup. Sibling files
 from Ink components and the run-log rendering helpers. The Ink components live
 under `test/cli/components/` and the credentials setup wizard's component tests
 live under `test/setup/credentials/` (see the tooling section above for the
-`ink-testing-library` pattern).
+`ink-testing-library` pattern). The Entra additions to the setup wizard are
+covered there: `test/setup/credentials/init-setup-entra.test.tsx` renders
+`InitSetup` with `walkAllSteps` and mocks `getSavedEnvValue` to walk the
+OpenAI-compatible Entra path (provider → Entra ID auth → base URL → scope)
+without ever prompting for an API key — the base-URL step seeds the saved
+`OPENAI_COMPATIBLE_BASE_URL` and the scope step shows
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` — so the Entra flow never requests a static key.
 
 The **run-log** helpers reduce the `OpenWikiRunEvent` stream into the items the
 Ink App renders, and `test/cli/run-log/` tests each one in isolation:
@@ -774,7 +839,10 @@ Google Cloud settings (`GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/
 OpenAI-compatible provider base URLs (`BASETEN_BASE_URL`, `BOB_BASE_URL`,
 `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`), and the reasoning-effort settings
 (`OPENWIKI_REASONING_EFFORT`,
-`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`).
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), and the
+OpenAI-compatible Entra authentication mode and scope
+(`OPENAI_COMPATIBLE_AUTH` immediately followed by
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` in provider order).
 
 `test/config/constants.test.ts` is the broad provider-constants suite for
 `src/config/constants.ts`. It pins model-id validation, provider normalization
@@ -794,12 +862,42 @@ worker (`DEFAULT_PAGE_CONCURRENCY === 1`), accepts trimmed integers up to
 explicit `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` override is set. Base-URL
 validation (`isValidBaseUrl`/`isValidProviderBaseUrl`) accepts API root URLs
 for openai-compatible providers and rejects `/chat/completions` endpoints,
-keeping generic `http(s)` validation for other providers. Sibling files
+keeping generic `http(s)` validation for other providers. The
+`OpenAI-compatible authentication configuration` block pins the Entra surface:
+`resolveOpenAICompatibleAuthMode` defaults missing/blank to `api-key`, accepts
+`entra-id` case-insensitively, and rejects any other mode;
+`resolveOpenAICompatibleEntraScope` trims a custom scope and defaults to
+`DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE`; `providerUsesEntraId` is true only for
+`openai-compatible` in Entra mode; and `getMissingProviderEnvKey` returns null
+for `openai-compatible` in Entra mode (no static key required) but still
+requires the key for other providers. Sibling files
 (`test/config/env-behavior.test.ts`, `test/config/copilot-provider.test.ts`,
 `test/config/openai-chatgpt-provider.test.ts`, `test/config/openwiki-home.test.ts`)
 cover `loadOpenWikiEnv`/`saveOpenWikiEnv`, credential preview/diagnostics (with
 the bob base URL surfaced in diagnostics), the GitHub Copilot and OpenAI-ChatGPT
 provider configs, and the OpenWiki home/connector path helpers.
+
+`test/config/env-behavior.test.ts` is the runtime-behavior counterpart to the
+pure `parseEnv`/`formatEnv` suite: it resets the module registry and mocks
+`os.homedir()` before dynamically importing `src/config/env.ts` so every test
+binds `~/.openwiki/.env` to a throwaway temp directory (the path is computed at
+module load, so a static import would bind the developer's real home). It pins
+`loadOpenWikiEnv` (a saved managed key loads into `process.env` but never
+overwrites a key already present, and `OPENAI_BASE_URL` is now loaded while
+`OPENAI_ORG_ID`/`OPENAI_PROJECT` remain deprecated and dropped),
+`saveOpenWikiEnv` (owner-only file permissions, deprecated-key stripping,
+in-process seeding, dropping empty values rather than persisting `KEY=""`, an
+ENOSPC atomic-swap failure that leaves the original file intact, and serialized
+overlapping saves that preserve disjoint updates), the shell/file snapshot
+helpers (`getShellEnvValue`/`getSavedEnvValue`), and `getCredentialDiagnostics`
+— which surfaces the Entra auth mode and scope, each provider credential key,
+and the hosted OpenAI-compatible base URLs; masks secrets by length while
+echoing base URLs verbatim; validates the model id, provider, output-token
+limits, Bedrock max tokens, stream-idle timeout (including a zero that disables
+the watchdog with a warning, only for the active Bedrock provider), the
+`/chat/completions` base-URL warning, the Bob base-URL warning, and the
+OpenAI-compatible Responses-API/streaming/reasoning-effort boolean opt-ins; and
+reports the source precedence of `process.env` over `~/.openwiki/.env`.
 
 ### Visualize: page, graph, and client interaction
 
@@ -855,18 +953,19 @@ parts that can run in plain Node and the browser-only client glue that cannot:
 surface by concern: the on-disk installer and its config adapters, the CLI
 install/dogfood path, the published package-contents guard, the
 transport-neutral protocol schema, the single-run session manager that adapts
-it, and the MCP transport server that exposes it.
+it, the MCP transport server that exposes it, and the CLI integrations/MCP
+runners (the mocked-installer command surface tested under `test/cli/`).
 
 ### Integrations: installer, config adapters, dogfood, and package contents
 
 - `test/integrations/installer.test.ts` is the broadest host-installer suite. It
-  pins the `HOST_TARGETS` registry — the eight supported hosts (bob, codex,
-  claude, opencode, cursor, kiro, omp, antigravity) with their per-host
-  `producerActor`, user/project skill-directory and MCP-config destinations
-  (JSON for most, Codex TOML, OpenCode JSONC) — pins that bob shares Codex's
-  `.agents/skills/openwiki` directory while every other host's user skill
-  directory is distinct, and exercises `HostIntegrationInstaller` install /
-  uninstall / status across every target. It asserts a project install from a
+  pins the `HOST_TARGETS` registry — the nine supported hosts (bob, codex,
+  claude, opencode, cursor, kiro, omp, antigravity, copilot) with their
+  per-host `producerActor`, user/project skill-directory and MCP-config
+  destinations (JSON for most, Codex TOML, OpenCode JSONC) — pins that bob
+  shares Codex's `.agents/skills/openwiki` directory while every other host's
+  user skill directory is distinct, and exercises `HostIntegrationInstaller`
+  install / uninstall / status across every target. It asserts a project install from a
   subdirectory writes at the Git root (not the subdirectory) and rejects
   installation outside a Git repository, that user and project installations are
   independent (uninstalling one leaves the other intact), that a modified
@@ -891,18 +990,34 @@ it, and the MCP transport server that exposes it.
   `runIntegrationsCommand` (no installer mock) against a disposable Git
   repository, installing Codex at project scope and asserting the on-disk
   artifacts (`SKILL.md`, `.codex/config.toml` with
-  `args = ["mcp", "--host", "codex"]`), then listing, reinstalling as
-  `unchanged`, and uninstalling (removing `.agents/skills/openwiki`). A
-  parameterized suite across every host reports/repairs/uninstalls partial
-  states (removed skill or MCP entry) and ends `not-installed` with no stderr.
+  `args = ["mcp", "--host", "codex"]`), then listing (a tabular row per registry
+  host, including `bob\tmodified`, `codex\tinstalled`, and
+  `copilot\tnot-installed`), reinstalling as `unchanged`, and uninstalling
+  (removing `.agents/skills/openwiki`). A parameterized suite across every host
+  (`listHostTargets()`) reports/repairs/uninstalls partial states (removed skill
+  or MCP entry) and ends `not-installed` with no stderr.
 - `test/integrations/package-contents.test.ts` runs `npm pack --dry-run --json`
   to pin the published bundle: every canonical
   `integrations/openwiki/...` skill file is packed, `package.json` is packed,
-  no packed path is absolute, and the bundle excludes generated installation
-  state (`.openwiki-install.json`, `.agents/`, `.claude/`, `.codex/`,
-  `.opencode/`, `.cursor/`, `.kiro/`, `.omp/`, `.gemini/`, `.config/`,
+  the `pi` extension (`dist/integrations/pi/openwiki.js`) is packed, no packed
+  path is absolute, and the bundle excludes generated installation state
+  (`.openwiki-install.json`, `.agents/`, `.claude/`, `.codex/`, `.opencode/`,
+  `.cursor/`, `.kiro/`, `.copilot/`, `.github/`, `.omp/`, `.gemini/`, `.config/`,
   `.deepagents/`, staging, rollback, fixture) and any file leaking the
   absolute package root.
+- `test/cli/integrations-runners.test.ts` exercises `runIntegrationsCommand`
+  and `runMcpCommand` from `src/cli/integrations.ts` with the installer and
+  the MCP stdio entry (`runOpenWikiMcp`) mocked. The `runIntegrationsCommand`
+  suite asserts the tabular list output across every registry host with stable
+  `installed`/`modified`/`not-installed` statuses (nine rows through
+  `copilot\tnot-installed\tGitHub Copilot CLI`), the install output (skill and
+  MCP paths plus registry-derived "Next:" steps), that a retained-backup install
+  reports `unchanged` and surfaces the backup path, that uninstall omits the
+  install "Next:" steps, and that a thrown installation error writes only to
+  stderr and sets exit code one. The `runMcpCommand` suite asserts each host
+  (`claude`→`claude-code`, `opencode`→`opencode`, `antigravity`→`antigravity`,
+  `custom-host`→`custom-host`) starts a rootless MCP server with the resolved
+  `producerActor`.
 
 ### Integrations: protocol, session manager, and MCP server
 
@@ -1078,16 +1193,21 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
 - **Host installer (registry, scope, skill bundle):** `pnpm exec vitest run test/integrations/installer.test.ts`.
 - **Host config adapters (JSON/TOML/JSONC ownership):** `pnpm exec vitest run test/integrations/config-adapters.test.ts`.
-- **Integrations CLI dogfood:** `pnpm exec vitest run test/integrations/cli-dogfood.test.ts`.
+- **Integrations CLI dogfood:** `pnpm exec vitest run test/integrations/cli-dogfood.test.ts` (real `runIntegrationsCommand` install/list/reinstall/uninstall against a disposable Git repo; per-host partial-state repair).
 - **Published package-contents guard:** `pnpm exec vitest run test/integrations/package-contents.test.ts`.
-- **Integrations/MCP CLI runners:** `pnpm exec vitest run test/cli/integrations-runners.test.ts`.
+- **Integrations/MCP CLI runners:** `pnpm exec vitest run test/cli/integrations-runners.test.ts` (mocked installer/MCP stdio; tabular list, install/uninstall output, stderr+exit-code failure, rootless MCP `runMcpCommand` per host).
 - **Code-mode ingestion setup:** `pnpm exec vitest run test/ingestion/code-mode.test.ts`.
 - **Visualizer graph builder:** `pnpm exec vitest run test/visualize/visualize-graph.test.ts`.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
-- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, `MANAGED_ENV_KEYS` membership including `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, and the hosted OpenAI-compatible base URLs).
-- **Provider constants (incl. page-concurrency and Bob base-URL override):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia, retry/max-token/stream-timeout/reasoning surfaces).
+- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, `MANAGED_ENV_KEYS` membership including `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, the hosted OpenAI-compatible base URLs, and `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`).
+- **Env runtime behavior and credential diagnostics:** `pnpm exec vitest run test/config/env-behavior.test.ts` (`loadOpenWikiEnv`/`saveOpenWikiEnv` atomic/serialized saves, deprecated-key dropping, and `getCredentialDiagnostics` secret masking, Entra auth/scope surfacing, and boolean opt-in validation).
+- **Provider constants (incl. page-concurrency and Bob base-URL override):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia, retry/max-token/stream-timeout/reasoning surfaces, and the OpenAI-compatible Entra auth/scope configuration).
+- **OpenAI-compatible Entra model wiring:** `pnpm exec vitest run test/agent/create-model-entra.test.ts` (static-key preservation in API-key mode, renewable `apiKey` callback in `entra-id` mode, HTTPS base-URL guard).
+- **Entra token provider:** `pnpm exec vitest run test/agent/entra-auth.test.ts` (lazy Azure Identity construction, workload-identity preference, token refresh, endpoint safety, gateway token rotation across chat/responses × JSON/SSE).
+- **Setup wizard Entra flow:** `pnpm exec vitest run test/setup/credentials/init-setup-entra.test.tsx` (the OpenAI-compatible Entra wizard walk without a key prompt).
+- **`--debug` env dump:** `pnpm exec vitest run test/agent/environment-debug-value.test.ts` (non-secret Entra/config classification, length/preview masking, URL credential/query/fragment scrubbing).
 - **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
 - **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 

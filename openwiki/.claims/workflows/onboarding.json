@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f23f8ffb0ec037052597945ad1638de11e76be870596def83f5c23a1e8cab5db",
+  "pageVersion": "sha256:fe036efd7772dc71ef4484d7c247104e00106ba27926467245f77cbd632173f3",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -37,7 +37,7 @@
       "statement": "Provider credentials and model configuration are persisted to ~/.openwiki/.env, where the env directory is the OpenWiki home directory itself.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L86-L87",
+          "resource": "repo://src/config/env.ts#L88-L89",
           "version": "repo-lines-v1:sha256:a2ffa84893c018b2aa12449c6459b02d00e466196c96449c3fd5d87af8809da7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThkYzE3NzY1OGY3ODIwNTg0ZTdjMjczZWI0ZmY2MDMzZTlkYTQ5YmEwZDI2YWQwMDA2MmM4MWRkYTBlYWQ3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxZTM2OWFlM2ZkZGUyYWE4OWRjYjNlYTRhZTYwODkwN2NkOTkzNjkwY2EwZGVlNjRlMTk0MzhjNzcyYjAwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmVkYzlkMjc0MDU0ZmY3NTExNWI5OGI4YjlkOGQyODI2M2U2YjQ1ZTY3NWIyMmZlZWQ2ZTAzZTIyMWM2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTEzNzZhNGMwOWE3MTU0MmIxNmRiM2ExYzM3ZDc4MTRlZDNlMzg2ZGNhNTQyMTNkODVkZDQ0MTAxNGNlZjliNCJ9"
         }
       ]
@@ -47,7 +47,7 @@
       "statement": "saveOpenWikiEnv serializes writes through an internal queue that is reset after a failed save, writes the credential file to a same-directory temp file at 0o600 and atomically renames it into place to avoid truncation, and drops empty values rather than persisting KEY=\"\".",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L312-L367",
+          "resource": "repo://src/config/env.ts#L316-L371",
           "version": "repo-lines-v1:sha256:fe8878926ca8deb6ed1ad36d717ce5e4328c06d50190af331f2fd9b812096b0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzUxZDljMDg0ZGVkYzJkMGFiNDNmM2QzNWMxMmIwYzY1YjNlN2I3OGJmMzI4YzFmOGYxM2JlMDcxNmY1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OGQwMWQwMmEyZGE3MjNhZjNkOGIzNTc4ZTU1NGIzY2U5NzJjMTJhMTNkNjhjYzlkOTA2OWJhZTIyYzcxOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNWRkNjU0YzU4ZTMyZjE0MjhhODhmZTk3MzA3MmRmOWQ4NGU5YTBjNjhkZmJlYWU0NTJhYjcwY2Q5MGIyMzQifQ"
         }
       ]
@@ -57,18 +57,18 @@
       "statement": "saveOpenWikiEnv does not overwrite a key present in the launch shell environment within process.env, treating the saved value only as a fallback for when the shell variable is unset.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L369-L374",
+          "resource": "repo://src/config/env.ts#L373-L378",
           "version": "repo-lines-v1:sha256:7e62d6de447e15981c2b8e1a15d8426bacf3d67dac3583431c9f67fe331bac11:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEwMmExMTA0NGEwYWIwZTlkYzVlNDQ4N2I0ZTNhYzRmZTFkMmYwYjAwOWRlMDExNzUxMzBiMzc4NTNlMmY1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgzYzcyOGRkMDYzN2U1MWJmYmM5NmU1MjU4NjM2YjI3MzE3NDA3ZGNjNTE0MjdkMzA0M2JmYTI5YTI1NWZjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRiYWE1YmQ3NTg4YWI2NWY0MTAyOThiZDc5YWIwMzIwMzAwYWIzNzFhYWU1ZGZjNTEzMjhjZjI5YWFmZDA1OCJ9"
         }
       ]
     },
     {
       "id": "claim_8b1a80b455794b54b3b91663d79b6080",
-      "statement": "buildCredentialEnvUpdates is a pure function that computes the ~/.openwiki/.env update map from wizard-collected values (provider, primary credential, base URL, secret key, region, GCP project/location, model id, reasoning effort, LangSmith key) and performs no IO, leaving persistence to saveOpenWikiEnv.",
+      "statement": "buildCredentialEnvUpdates is a pure function that computes the ~/.openwiki/.env update map from wizard-collected values (provider, the OpenAI-compatible auth mode and Entra token scope, primary credential, base URL, secret key, region, GCP project/location, model id, reasoning effort, LangSmith key) and performs no IO, leaving persistence to saveOpenWikiEnv. For the OpenAI-compatible provider it persists OPENAI_COMPATIBLE_AUTH whenever set, persists OPENAI_COMPATIBLE_ENTRA_SCOPE only when the auth mode is entra-id, and an entra-id choice suppresses writing the API key.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/persistence.ts#L31-L129",
-          "version": "repo-lines-v1:sha256:a69111ef913e68abd8bddfec517c3402808f5aaea2e6dcdb48c34767b5a74c5a:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MmIxNTk4Y2YyODg1YTQ4NGE3MDI4Yjk0MDdlM2U0MDQ1YzQyYmRmNzI3MjRkZjA5MjgwNzc2NmU2ZDM0MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzZjkwOTcwNDI4ZWIxMjAyZjdhMzQ3ZTMyMjRkNjVlOGEwYThmYjBiMzU2MjllZTlhM2NhNDVjNjBhNGIzZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5YTBlODY1M2NkZGJjY2M4NTRhYmQxNjNhMjJhMDkxYzM4YTUwNzA5NzRhNGExOTA2ZjU1NWZkYmE4NzI0ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://src/setup/credentials/persistence.ts#L33-L141",
+          "version": "repo-lines-v1:sha256:f523cc30e6640041cd97c34b733cf5e14de750ccd83f3e952f633002370c344f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ODJiMTU5OGNmMjg4NWE0ODRhNzAyOGI5NDA3ZTNlNDA0NWM0MmJkZjcyNzI0ZGYwOTI4MDc3NjZlNmQzNDI4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5OWEwZTg2NTNjZGRiY2NjODU0YWJkMTYzYTIyYTA5MWMzOGE1MDcwOTc0YTRhMTkwNmY1NTVmZGJhODcyNDgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -77,7 +77,7 @@
       "statement": "buildCredentialEnvUpdates writes the provider key only when it differs from the current environment, so re-running setup with the same provider does not churn the .env file.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/persistence.ts#L51-L53",
+          "resource": "repo://src/setup/credentials/persistence.ts#L55-L57",
           "version": "repo-lines-v1:sha256:cef83abc3f9fa3b56e645f7a45e9269169eac967d13ac69b648e05adeea05a01:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU0ZDYzOTg0NDk3YmY1MmU5YjJmMTYzZWQ3Y2E1MTdlZTQyYmUzOWY3ZDQ4NGExZjYzMmJlMmMwNGIyOWFiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTlhYjQ3NTMzMWUyYzY3NWNjOGE2ZDVmYTdkNmJjNzMxYTRlOTE0MDRmY2YzMjUyODlmZWFkMDJlNGJiNWYzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQwOTc4OTM5OWI5MWVhOTAxMGI3MDA0YzM5OTExZWEwMGQ3NTBlMmNlNGRiYWFjZGUyZTE1ZThhMzRlMDE2MiJ9"
         }
       ]
@@ -87,28 +87,28 @@
       "statement": "A non-empty LangSmith key also sets LANGCHAIN_PROJECT=openwiki and LANGCHAIN_TRACING_V2=true, while a blank LangSmith input sets LANGCHAIN_TRACING_V2=false to explicitly disable tracing rather than leaving an earlier true value in place.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/persistence.ts#L115-L127",
+          "resource": "repo://src/setup/credentials/persistence.ts#L126-L138",
           "version": "repo-lines-v1:sha256:df401e975c895584fa14c063d27a813d6ec3044bc4d9df12cc4584358cadc70b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNWM0NzBhM2NkNTcwOGEzNTYzOWVlNjFhNTk0YjczYjM3N2VhMjJjMGJiMGVkNzUzZmU4YTgwMzMxNTU3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNmJiZjkyODgyYmQ2ZDc5MmYxNmJkYTIwMDkzNDJlNjJhMDRiNzFlYWM1ODUwMjViYjIyOGZjYWFjYzgyYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDBiN2I1ODRkZDhhZTRiOGYyNGM1OGJkMjJjOWUyZGRhNjMxOGI1NjY0YWU4Zjc4MTE5ODJiYjliMGIwOWEifQ"
         }
       ]
     },
     {
       "id": "claim_6639b83d4b33474c89d0061190db1bfd",
-      "statement": "orderedSetupSteps returns the wizard's steps in walk order for a given provider and run mode: an optional run-mode chooser, the provider, its primary credential step, provider-specific steps (secret key, GCP project/location, base URL, region), the model step (skipped when providerHasFixedModel is true, e.g. for the IBM Bob provider), the LangSmith step, and a code-repo-confirm step only in code mode.",
+      "statement": "orderedSetupSteps returns the wizard's steps in walk order for a given provider, run mode, and OpenAI-compatible auth mode: an optional run-mode chooser, the provider, an auth-mode chooser only for the openai-compatible provider, its primary credential step, provider-specific steps (secret key, GCP project/location, base URL, an entra-scope step for openai-compatible/entra-id, region), the model step (skipped when providerHasFixedModel is true, e.g. for the IBM Bob provider), the LangSmith step, and a code-repo-confirm step only in code mode.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L201-L252",
-          "version": "repo-lines-v1:sha256:5f74dccca36c88ea1f620ff6a72fbfaa981adb145a310f311a663dadc2b2a6c0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljMjk2Njk2MTQ3NTUwYWRkNmRlYzVjNWU2MThmM2FlNjI5YjM0Y2RhYjk2ZDc0Njg5ZTQxZTUwNzcxYmI0NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YjJkZDMwMmZlYWU5NjFjNjM5OTllNjlmNTgxZGUyYWJhMzYwYjE5MTllZmZlYzQwYWNiMWVlMDdhZDAxYzYifQ"
+          "resource": "repo://src/setup/credentials/steps.ts#L229-L290",
+          "version": "repo-lines-v1:sha256:67778d575b6f3948e8ed2a217d1b493989aa692c6355934f68211a7b3792a016:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NDZmZjgxZjEyYTMxNDA3ZGI0MTczMjFlNmJjNDlhZjdkOWEyMzI4NGNmMDA5NjQ3NzZiMWM2ZjRlZTlmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZjM4MTBjZGY5ZmViYTJiNmY3ZWFiMzQ1YmRmYzQ5NDA0YmM0Mjc2MDI5NWNkYTBjNWNmNWY2OGJhNWYwZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YjJkZDMwMmZlYWU5NjFjNjM5OTllNjlmNTgxZGUyYWJhMzYwYjE5MTllZmZlYzQwYWNiMWVlMDdhZDAxYzYifQ"
         }
       ]
     },
     {
       "id": "claim_5ce91910189d44a0a5846bb792e4523c",
-      "statement": "credentialStep selects a provider's primary credential step by auth style: oauth-login for OAuth providers, no step for AWS-SDK providers, external-cli-auth for external-CLI providers, api-key for API-key providers, and gcp-project for keyless providers that require a GCP project.",
+      "statement": "credentialStep selects a provider's primary credential step by auth style, special-casing the openai-compatible provider first (null for entra-id since no token is collected, api-key otherwise), then oauth-login for OAuth providers, no step for AWS-SDK providers, external-cli-auth for external-CLI providers, api-key for API-key providers, and gcp-project for keyless providers that require a GCP project.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L119-L138",
-          "version": "repo-lines-v1:sha256:23c715c3d60a2840c7533d3faf3028695ee33f2bb9dbaaafd6b4bad4f488f3ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiM2U3YWQ3YjM3NmZhM2JiMTVmM2QyZWZjMGVhOTQ4MDJjYWJjNDAyNzA1MDcyMjJmOWRlYWRiYThhMWYwZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNWY2YTdkNWRhMGFlZmRkMmU4MmVkNmY2ZTI1YjUwOWU3ZDRiOWZlZGFhYTNmMzUyMjcwNDVkMjU5NDI3NWQifQ"
+          "resource": "repo://src/setup/credentials/steps.ts#L135-L162",
+          "version": "repo-lines-v1:sha256:63ec8094e6efe332cdb2ee74ed9b3dc59ede77d341f133bdec7b2e15d1e52347:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMjdmYWM5ZWVkZWRiZjljZmYwY2I0YTUwOTA3NTY2YjI1NmMyYTNlZmMwYWMzNDdjODNhOTBhNDk4Zjg0NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1YTk0ZTA2MTVjYzM3OGQ3NzA2YjkyNTY5ZWFkMGE1ZWMxZDRmMWQyMjQ0MWRlZmJjNzM5ZjU4OGQ1NTJkMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNWY2YTdkNWRhMGFlZmRkMmU4MmVkNmY2ZTI1YjUwOWU3ZDRiOWZlZGFhYTNmMzUyMjcwNDVkMjU5NDI3NWQifQ"
         }
       ]
     },
@@ -117,7 +117,7 @@
       "statement": "getInitialStep is a skip-based waterfall that lands on the first unsatisfied setup step, but when walkAll (explicit --init) is set it starts at the top and walks every applicable step even ones already configured.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L371-L423",
+          "resource": "repo://src/setup/credentials/steps.ts#L419-L471",
           "version": "repo-lines-v1:sha256:f52fa98d6e82d13fed1622453ea8ff8e36508c86a52f0141a2f31723b0cd0466:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGE5YjQ0NDhiYTQ3Mjc2YzQ1M2Y4YWNiNjA4YjgwYWUyZGQ5MWY0ZTQ2ZjIyNzg4MzFkY2IxZGMzYzBlYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYTVjODE4NjcwMGU4ZjBjZWFlNzU3ZjJmZjM3ZjIwOTA3MmIxMDQ0Y2JjNTU4Zjg0MGYwOGIxZmMyMjBlNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwOWY1YTVlODg0NzkyM2E1Zjg0MThjNDhhYTFhYTRhZTJiYzAxYzgzNWE3M2UzY2NjOTVkYTdkYzliNzNlOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZWViN2Q1MjdhZTY1NDNlYzc1ZjNiZjE2YjdkZjVhMmRlYjFjODg5OWYwZGJhNzM0MjIyMTc2NmJlOTA2NTQifQ"
         }
       ]
@@ -127,7 +127,7 @@
       "statement": "needsCredentialSetup returns true when the provider is invalid or any required credential/model/LangSmith input is missing, and otherwise returns whether onboarding is incomplete for the mode (repository code onboarding for code mode, personal onboarding otherwise).",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L69-L93",
+          "resource": "repo://src/setup/credentials/steps.ts#L74-L98",
           "version": "repo-lines-v1:sha256:e3ce1cb70e5acdb82e307ba126021f42d05aacb3c47faa03ba5a09f94ce89d2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhNTBjNTBiYjMwMTAxZjQ4YzQ0ZWZhMzI0M2IyZDdjYTI3M2ZjNDFjNThlZTg5MjYxNmM1M2ZhZGY5ZTcxZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5Zjk2MDllM2I0YmE1ZjQ5OTllZjFiOWE3MzkwMjRmNDU4NzU2ZjQ1NWQ1ODUyOGY1ZWFlMTk5OTk4ZDk1M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1YjZiNWU5OGVkYTA0MjdiNGQ3YmRiODkyMTQ0MDc4YmFlMWFjYTdhM2Q4ZTE2MjIyY2ZhYmI1NjY3YWNjOTEifQ"
         }
       ]
@@ -191,7 +191,7 @@
       "statement": "In code mode the wiki brief is written to <repo>/openwiki/INSTRUCTIONS.md at mode 0o644 via saveRepositoryWikiInstructions, and the setup controller saves onboarding.json with wikiGoal cleared so the brief lives with the repository rather than in the home directory.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2544-L2565",
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2678-L2699",
           "version": "repo-lines-v1:sha256:45145b0a58106a9cd22718e0017454c94d87b2a8301548d4342afb45967dad53:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmZTJkMzUxMzlmZThhMzRjYzAxMzU5MTcwNmRhNjAxMjM5ZTc3ZTJiYmYyMzc2MjE3YjdmYWJjYjNiNTQxNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3N2UwNTA3NDZhYzc4OWFmZjI5NTczNWQwYzZkNDgzMGJiNjI0NzQ2OTM1OTQxMmI0YmU0MzBjNTM1MTczNDYifQ"
         },
         {
@@ -205,7 +205,7 @@
       "statement": "The default code-mode target repository is the nearest ancestor of the working directory containing a .git directory (findNearestGitRepoRoot), falling back to the current directory when none is found.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L690-L709",
+          "resource": "repo://src/setup/credentials/steps.ts#L738-L757",
           "version": "repo-lines-v1:sha256:10d23d0ba74c18dcdf07c9944fc741c59c2239374ab641f8a7f6b22fe7a95321:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0Mjc3ZWQ1MjI5NTc0OWM3NDRlY2FlOGRkZWM3OWVlYTNhY2QwYjdmNzA2YTdiZWMwOThkM2E5MzBjY2I4ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYTQ4NGE5Yzg2OTQ2MmFhZTdjOWE4ZTg3NmQ1NmQ4NWEwM2I0ZGIwYmY0M2YyOGEzOTY1NGM0MDJjMGZmMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYzliM2YzNjU1NTEzNGExNTQwYmEyNDI1NWFmYjE1ZTVlYmY0YjdhNTk0MTE2YTNiNzdmYzllNTU1ZDczY2UifQ"
         }
       ]
@@ -223,7 +223,7 @@
           "version": "repo-lines-v1:sha256:7139580478dfa8d0eaf197c59cd29eb61d1019dd49604b8425b99a7af85d37a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU0YWNjMWM3YTI3YTM5ODQ5ZTAwNjdhM2ZmOTczNmY3MGQ3ZDY4N2Q4MjNhYjEwY2EwMWM0OTA5ZThkNmM4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY0NzA5Y2ZkMzQ1MTk1N2U5Nzc1NzM5M2RlNDljNWNlN2VlZDczYTIwYjc4NDg4NDMzNzI0MTcxZDQ0YjUwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODMzZGRhNGIwMjRhYTdhMTFjMDY0MjZjZWQxMTEyOTBjYWI1NTYwODkwMDIwOTAxMWRmZmNiYjUxMGFhYzU2MSJ9"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L71-L83",
+          "resource": "repo://src/ingestion/code-mode.ts#L75-L87",
           "version": "repo-lines-v1:sha256:49de11d9f62ae54c088eb4ede5cbe8cb5e1bf150aeee5252ad7862029cbd4a2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNzhkMzEzMWVhYmIyY2NmM2FiODc4NGUwZmVlYzE0YjQ0Zjc5YTM2YjA0NzdkYWU1MTgxOWIwZmE4MDFlM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODI0M2U3NmY3NjM5NDNhNTA5ZDUxOTI1MzFhZmM3NjBlNTQ5NWM1MWIxMDVkZjJhOGRkYTAxMDNmYTY4MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZjU4YjgwZGUwMDlhZjk2MjNhNzIwZWNhYTY0Y2E5OWNlNDhlM2EyNDg4NmU4Y2Y1ZTczMmY5Mzg4MjBkY2QifQ"
         }
       ]
@@ -233,31 +233,31 @@
       "statement": "writeCodeModeAgentSnippets creates AGENTS.md when missing but not CLAUDE.md (a missing CLAUDE.md returns nextContent undefined because Claude Code falls back to reading AGENTS.md when no CLAUDE.md sits beside it, so creating one would only shadow it), and otherwise replaces only the content between the <!-- OPENWIKI:START --> and <!-- OPENWIKI:END --> markers, preparing and validating both files before writing either and aborting with the file unchanged when markers are malformed or duplicated. A CLAUDE.md whose trimmed content is exactly @AGENTS.md (CLAUDE_AGENTS_IMPORT) is left unchanged (nextContent undefined). When CLAUDE.md and AGENTS.md resolve to the same file on disk (e.g. CLAUDE.md is a symlink to AGENTS.md, detected by resolvesToSameFile via matching inode and device, with inode 0 treated as unknown), the CLAUDE.md snippet carries the full instructions inline (the same snippet as AGENTS.md) instead of the @AGENTS.md pointer, because the import would point the file at itself; otherwise the CLAUDE.md snippet is the minimal @AGENTS.md pointer. A CLAUDE.md with marker regions or other content is refreshed in place.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L18-L45",
+          "resource": "repo://src/ingestion/code-mode.ts#L22-L49",
           "version": "repo-lines-v1:sha256:cc97229667c93efaa5454f2fe3653fb2eedb7740162d3a5bf910d63279a566a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MjZjOTg1MzIyMzRiMjQyNTkyYzIzN2I0MTJjYmNmYjFjZGMxZDFhMzJkZmU1MTNhNzJjZjExNzJhMTY2YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZGU4OGI0YWMzMWMxNDkxMjA5NWViYWQ5ODZlMmJhZjk1MGU1MjAyMjkxMTM2NzNiNDY2MGQ3YTY4Nzk2NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiYzFiYjljMjUxODI0ZGVkOGI2MGVkYmRjZDc0MmY3Mjc0MzI5MWY4ZGNhNjM2MzhkYWFkZTU1MGVmMTM2ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkYjJmZTk1YjJjZWY2YWI2MmNjZDMwZDc3M2YxNWJhZGJhNmQzNDAzMmZlYWEyMDM0ZDZkNmY1ZmM3YzI5MzUifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L212-L245",
+          "resource": "repo://src/ingestion/code-mode.ts#L216-L249",
           "version": "repo-lines-v1:sha256:c01ee7202d4cbd4185ec50b4d1fab659b390a829f5716fb67867d520247966bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTU0YzdkZjI5NmI4NDgyOTNmNzRiZmE2ODRjYjUyMDRjOWVmZGE0ZDZjNzRlNjA2MDUzZDA1NmU4MzMwMzQifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L260-L262",
+          "resource": "repo://src/ingestion/code-mode.ts#L264-L266",
           "version": "repo-lines-v1:sha256:a2c72165539ca07b0c7ffca4b95cbc3ca9a30447e7137f67ff5a41e25466dfda:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU5ODg3OTkxMzdiYmY4MzdhMjA2NmVkMGFkNGE3YWM2YjQwMjVmOGQ1ZWMyM2MzM2QxMmUwMjRkOGUyZWY4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNlMmU4Y2Y1ZjcwOTQzZWRlMzdjMTAxOTUxNzBlNTQxMTU5YTIxM2MyZDlkZTY4MDQ2ZjA2ZTExNWVmNjhiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTAwMTY4ZDM2MDgxY2EyYmNkZDI2ODQ4YTMzOTIwOTU0NjI5OGQ3NWQ1NmJlMjg5YWU4NGJhMzBkYTVhOTdhYiJ9"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L620-L658",
+          "resource": "repo://src/ingestion/code-mode.ts#L633-L671",
           "version": "repo-lines-v1:sha256:d75c1d750de94233bcf3b3661cc7be0a16b1e9f1182d00479ed84fc6f20d9b48:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjliYTYwYjUxNDM1ODM2YTZhNzNhZDJjNjE1NjUwNGVmNmE1MDUyODU5MzBjMWI2YTQ0YjBkMGY0YzllNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWEyMjc0YmYzNmEwOWMyMjI3ZWRkNGI2M2E1YjgzZDFkZmUyNTIzYjFmOTE3NmE4NGMyY2M0N2IwYTlkODYifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L660-L675",
+          "resource": "repo://src/ingestion/code-mode.ts#L673-L688",
           "version": "repo-lines-v1:sha256:6fbe418899b3765b168479960f11cadfb70bf9564640b5501a4e16c99ce5a05d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MmQ5YTZmNDcyZDc2NmFiMzRmYjU1ZTA2ZGNjOTk3NTc2NzMwNmIwOTI3NTE0ZDQzMDlhYmU2NzRkYTY5NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L166-L191",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L167-L192",
           "version": "repo-lines-v1:sha256:4056f4903c0866bda2d04d8d7c9803159980d549d37a733fb51096f1b46ddeca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiY2EzZDdmMjQwZjI0YWY1ZDk3ZDRiMTY0Zjg1NjBjMjA1YWMxMjA4Mzk1Y2U4NTBlOTU0MzZhOWM5YTk0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MjQ1NmZhYWE1ODY4YTA3ZGI0ZDlhOTg5NzU3NzAxN2FlNTMwYTYxNDVhMzhhMWQzNmJiZDFlNjYyOGRiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMmZjNmNlODE3Mzk1ZWE5MmMwZjg4MDc3YmU5NmQ5YjhjMjNlMjI0YTFlMGIzZTJlNzc0NGIxMjEyMjFiZGYifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L238-L259",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L239-L260",
           "version": "repo-lines-v1:sha256:1d5ef7a8b7c24bca0fe25f357c1c932a18e00999686d3e7532f6704834984f1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxODQ4Y2RjOGY1MjdmNDQzNmUxNTU1YjQ5YmMwNjZlZGIyMDVkYzFmZWZhOGRjMDBjYjE3YWMwYWQzMWY5NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZDM5MjQzNjdhMzUxYjU5OGU5NmJiZTZkOGE5NDljYzE2NGZkNmU3NDFiOGI4NDkzZTkzY2EwOWJiZGU5OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
         }
       ]
@@ -271,7 +271,7 @@
           "version": "repo-lines-v1:sha256:9743270287998ae1c18d25c03788d6be89d1e15aed480ea98e8bea1f47391d41:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I5NTkyNWUwNjcyNzIzNmMyY2UyNjVlMjA0NDdkNTdhNzU3MzM3Y2RmYmNmZmY3MmY1ZGFiNTAxZDRiOWI2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2NWNkMDg2MTE5YzhiYWI1NGJiNWUzOTU3YjlmYmI5ZjRkMTk3NGU4OTgzODA3OGIwZWZjMWI0ZWMzOWY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y2YTJiZTljZGUzODIzOWJiOGUzYTJmOWNhY2NiNjY0NGIyZTJkNWYwY2Y0ZjRmNDMzNDg1NjIwNmRjYzVjMSJ9"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L47-L117",
+          "resource": "repo://src/ingestion/code-mode.ts#L51-L121",
           "version": "repo-lines-v1:sha256:c8231e9b3aeb38b9acd8cb4af635c8762f18577113454b379498e5928fd6d4e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjFlNDQ0NjA5ZGQ3YTRjYTBmMTA1M2FjN2FjZmZlMzE1MTc0MjM3ZDM2YTk4ZDg5NGQxMTg1NGMwOTc1ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiYjBiNTg0MjFhZjM0YzhiYTA0NTNhOWFkMjNlZWVmYTUzMjFlZDUwYjY1OTBlYTNlNmU1YjI0NDU2OWE4YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MGQwYTA0Mzg4YmJjZDgxZjYyODFjMDMwNTQ1ODc0MDEwZmFmYzZmMzM2ODkwNzU4NmEzYjM3MzhiYjlhZWQifQ"
         }
       ]
@@ -281,30 +281,30 @@
       "statement": "createCodeModeWorkflow emits a workflow_dispatch-plus-scheduled GitHub Actions job running openwiki code --update --print on a default cron of 0 8 * * *, with contents/pull-requests write permissions; it pins actions to commit SHAs (actions/checkout v4 with fetch-depth 0, actions/setup-node v4 on Node 22, peter-evans/create-pull-request v7), installs openwiki plus optional mermaid/jsdom, runs with continue-on-error so a page failure does not abort, deletes openwiki/.run.json, opens a PR scoped to openwiki/AGENTS.md/CLAUDE.md/the workflow file even on failure, and a final step exits 1 when steps.openwiki.outcome == 'failure' to propagate the failure.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L20-L20",
+          "resource": "repo://src/ingestion/code-mode.ts#L24-L24",
           "version": "repo-lines-v1:sha256:571c98fac2ff49e5aa6313fb45505bdc24fd7d310b51331ad9cdd3032fd12b79:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcxYzk4ZmFjMmZmNDllNWFhNjMxM2ZiNDU1MDViZGMyNGZkN2QzMTBiNTEzMzFhZDljZGQzMDMyZmQxMmI3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcxYzk4ZmFjMmZmNDllNWFhNjMxM2ZiNDU1MDViZGMyNGZkN2QzMTBiNTEzMzFhZDljZGQzMDMyZmQxMmI3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTViYjVmNDJlNDk2OTMyNzQxMzk4NjhlZmY0ZTcxY2VmMjQyZWYxZDc4ZDlhM2Y3YmMzMWZiNjNjNmY5YmI3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGNjYmJkNTZhOTEyMjU2NjdhYTVmZTYwNzliNTdkMjE3NGE4MmFjYTRiNjg3NDNkODdlNjIzYjdjNTlkODY4YiJ9"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L519-L610",
+          "resource": "repo://src/ingestion/code-mode.ts#L532-L623",
           "version": "repo-lines-v1:sha256:5f4d7ad5a74e6ca35e97a213e549115c7ea15a1113a86dd09044bd4bf205ce62:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWUwMDZmMmE4YTJlZDc5MmRiMWFkNzkyM2ZiNzA4ZjgxMDRiMzVlNDczNzFiZDQ5MDUwN2Q0ZjQ0NDdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODQ1ZjZlNGEyYjkzODdmMDRmZmJkOWY5ZTI2MWZjOTMwMTU1Y2IyNjc3OGNkMDhiZTY5MGE3MTExNzc5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2YmUyN2U1NjM1MDAxODY0ODRiNThiZTc0MDI0NjI0NzE3ZDZhMDRmMGE0ZjI0ODg4ZDIyMjdiZTEzMmJiZjEifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L695-L786",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L696-L787",
           "version": "repo-lines-v1:sha256:d5795fd065f11d8a90bceceae9635df59ca0a0017de0e2a807bda458a1f1d365:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NmU3YmRkNTQ3ZmE0YzA0YjU4ZDkyNDM2OTY2ZDBiOWFhZjAwNjdlMWMxZjBlNzk0M2Q4Y2VkNDQ0MmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3NjUxZTQ1NmZhM2VhZjM5MjdiN2NlODk5NjI5MTQ0ZmE3YzE4MDQ2Y2FhYzU5NWFmZWQ4MjQ1ZTQyNmQ1YWUifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L92-L155",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L93-L156",
           "version": "repo-lines-v1:sha256:8bde1b7368c880333712e22d6c0a8928a58edefa46ebf366591ddc49b36072fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyYTQ2MzYzZjU4YjQzMzQwNjE2OWRhYzBlMjRhY2JmMWY1NWQ1NWM2MGYwMjJhZTRiNTljNzljMGM0MjMyYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0Y2JlOGNjMmRhYjJjMDBlODZjZmVjYTQzZTlhZmZlZjkxZDhkMWI1MTkyMjFmOTVjYWE1Y2I5MjZlZmFhM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNzhiODc3MTg2Y2MzMTcxYTU3YzBlMzgwYWEzZjZmZGYwZjA2MzI5OWYyNjQ2ZDU5MGFmYTg3ODY2NTNlMjIifQ"
         }
       ]
     },
     {
       "id": "claim_9579377838cc4264a0f94e5fdf6b74b3",
-      "statement": "createWorkflowProviderEnv derives the workflow provider env block from the operator's configured provider, wiring secrets through secrets., non-sensitive settings (base URL, project, region) through vars., quoting the model id (some IDs like Cloudflare Workers AI's leading @ are not plain YAML scalars), and emitting a comment for OAuth providers instead of pinning a short-lived rotated token; an opted-in OPENAI_COMPATIBLE_STREAMING override is also propagated.",
+      "statement": "createWorkflowProviderEnv derives the workflow provider env block from the operator's configured provider, wiring secrets through secrets., non-sensitive settings (base URL, project, region) through vars., quoting the model id (some IDs like Cloudflare Workers AI's leading @ are not plain YAML scalars), and emitting a comment for OAuth providers instead of pinning a short-lived rotated token. The openai-compatible provider in entra-id mode is its own keyless branch: it emits OPENAI_COMPATIBLE_AUTH: entra-id, the quoted Entra token scope (configured or the Azure OpenAI default), and a comment directing the operator to configure unattended Azure Identity, with no API-key line; an opted-in OPENAI_COMPATIBLE_STREAMING override is also propagated.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L455-L517",
-          "version": "repo-lines-v1:sha256:ea7fe720bce828018048eb40efb760ed6202881e02348740fc76aa8752e99822:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjYTUxZmI5NTE0NzhiMjM3MzA2MmVhZDFmOTE2ZDA5NDYwYWI2YzQ3ODRkMjdkOGE3MWJlNzJkM2I2OTFlN2QifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L469-L530",
+          "version": "repo-lines-v1:sha256:e94c1d1cececd19361225a0a036ff8ddf94d310f5a94e8940a9517773dd638f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3ZWM4YWExM2FkNDBmNmNhYzE0ZmM2M2ExOGUzNThiNjZjYjQzN2FkYzhlZWU1NzRiZDk0NjM2MjllNzczZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllYTA3NTg3MzE1OTYxNjI2NjgwOGJmZjE3MGYwYTc1ODZhZjRhODc4NjVkZTg3OThiMWM2OWRjYmNkZGZlMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjYTUxZmI5NTE0NzhiMjM3MzA2MmVhZDFmOTE2ZDA5NDYwYWI2YzQ3ODRkMjdkOGE3MWJlNzJkM2I2OTFlN2QifQ"
         }
       ]
     },
@@ -337,7 +337,7 @@
       "statement": "The setup wizard offers two run modes, Personal (a local personal brain wiki built in ~/.openwiki/wiki) and Code (repository documentation in ./openwiki), with code mode's default source being a local Git repository plus LangSmith.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/constants.ts#L20-L73",
+          "resource": "repo://src/setup/credentials/constants.ts#L21-L74",
           "version": "repo-lines-v1:sha256:7ca19f6cba1c305ee6e25a7600214fbc997a817b29d8999b0a12e6368be7c525:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhOGI0MmRlYTQ1YWU1NTcwMTIyYzllMDQwMTY5NDliNTMwNmY3ODAwMWRkMmMzNGJmMTNiMWQwODU3NjBjMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyOWQ1MmJlM2JmZDVlNzg3MjU2ODQwZDc3N2I2Mzg0NWRkNGQ0NmMyYmMyNDdmZjM4NGZhY2JlMDQxOTM0NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0OWUwNDc3YTVmYmQ5OGFhYTE4ZDE5ZjliNDA4NDE0YzY4YjJiYTljMGIwYmQ2ODUwY2QzYzcwZjczYzc0Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2ZWIzMWE3MDhmM2U3NmZiMWVhNjQ4NzE2ZTdkMTJlYjE5ZDhkYjBmZDIxOGRkNzU4MTM5YmU0MzA5OTMxNzEifQ"
         }
       ]
@@ -361,15 +361,15 @@
       "statement": "A provider with a fixedModel (checked by providerHasFixedModel) always uses that single model ID verbatim and the model-selection step is skipped entirely; the IBM Bob provider pins fixedModel 'premium', authenticates with an API key (BOB_API_KEY via the api-key credential step), and exposes an optional BOB_BASE_URL, so its spine omits the model step.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L290-L297",
+          "resource": "repo://src/config/constants.ts#L303-L310",
           "version": "repo-lines-v1:sha256:443b72749f82e90eec0419c6fc5ed3d2109d026f439c73854feee6af8ff502b1:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVkZTVjMjVlODIyZGI5YjcyYmY0OWMwYTUyYzAzYTZmYWQ2ZDU4ZWEzMmRmNjdjN2U4MmQwZmIyNmQ1MmU0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ2ZjI3MTBlODdjNzI2ZjBmMGFmZTFmZmU4OTA5NjM4NDZmMzljNTNmMDk1YTU1NjZkYWU3MjFjNWY2N2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ExYzViZmFjZmZkMDE5NzU1MDUwM2IxZmI5YzBjMzAyNDk4NGYyNWRhZjFhYjg3ZTIwNzNhZTRhYzViOTc2YiJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L705-L713",
+          "resource": "repo://src/config/constants.ts#L790-L798",
           "version": "repo-lines-v1:sha256:7d891d9d3ac5658ebd1b2581fe72115b139f550154e4f47e4b96beaf85f9a74f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxOWMwZGU4ZmY0NTYzNTRmYzRkODEzZjU5MzM1MjM5NWVjOTdlY2MxNTE3MTNmZmQ0Y2I2YzAxZmUyNWY3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJkMDVjNDE5NjRmODU0OWJhMTU4ZmUzMjc1OWVkOTBlZjQ3ZWNmYTc4Y2JlYTE3OGU1NjE3YzE3YmNmMTc2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZiMDA0YTc1OGM0NzRmNzE0YjY0ZTU4MDkyNTJjZWUwMmE4OWU4OWJjY2ZkYzY3ZjY3YjcyYThhN2QzZDQzMSJ9"
         },
         {
-          "resource": "repo://src/setup/credentials/steps.ts#L239-L241",
+          "resource": "repo://src/setup/credentials/steps.ts#L277-L279",
           "version": "repo-lines-v1:sha256:b0cc9aa4ac6d1260bd9b0cfb60a35cc160265b6bbb04613fbb2d880fa37dadcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg0NWVmYzAyYmFkZTMzODQ3NWY0OWEyNjRjOGY5MzQ1ZGMxNDY4YzQzZGIzZWJmNDc1ZDBhYWQxNTU2ZTYxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZlOGJkZWViOTZjM2Y2NDAwOTE2YzZkYjRkMTZkNzU0OTA1YWJjNDM1ZGQxMDIzZThjNWJjNGNkNTk1NGU0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFhZTQxZGFkN2NmODU0MWEwMThhNzYyYTJiY2EyNDYwZjZkMzE0NzI3NzUzNWEyYjYzYzA1MjY4NDdhNDNhYyJ9"
         }
       ]
@@ -379,15 +379,15 @@
       "statement": "prepareCodeModeAgentSnippet strips legacy pre-marker (0.0.x) ## OpenWiki sections (via findLegacyOpenWikiSections) before placing the managed block, so a file first touched by an old release is not left with a stale section sitting beside the new block. A heading only qualifies as legacy when its next non-blank line is exactly the released template sentence, so a hand-written same-named section or a heading quoted inside a fenced code block is left untouched; the fence parser tracks CommonMark state so a ~~~ line inside a triple-backtick block does not close the outer fence. The removal consumes only the known template lines and stops at the first non-template line, preserving hand-edited content below the section; with markers absent and a legacy section present the managed block is placed where the section was, otherwise it is appended after existing content. Stripping a legacy section from an import-only CLAUDE.md that leaves only @AGENTS.md keeps that import verbatim. Marker validation runs on the post-removal content, so malformed or duplicated markers still abort with the file unchanged.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L247-L330",
+          "resource": "repo://src/ingestion/code-mode.ts#L251-L334",
           "version": "repo-lines-v1:sha256:c6036495427ca75e78b23cd07cfb88c92511a36333a197b1d429f7a5b246c3ca:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OTZiMDRkZjI0ZmFlZTQ5ZjUwNWRkNTZkMWUyOTEyNmU0ZDA4MGZmNzJjNGEzZmQ2NTllMWVhNzk2ZTA0ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YTRhNGU0ZDlhZWExZmMwODg0MWNlZDYxNzg2NjYwNTIwNWNjNmJiMjBjNWFmMTNiYjU4MWIyYzJlZGI4N2MifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L332-L453",
+          "resource": "repo://src/ingestion/code-mode.ts#L336-L457",
           "version": "repo-lines-v1:sha256:0c69dc8f0a0ba64d7d6145890891a5d86407169ff9c907f4dea9eb9a502903e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MjA0MGUwOTVhOTRlMmFkYTc0ZTQyMWYzNzE4NzUxYTkxYTgxMGJmZDY2ZjQ4ZjRlOTM5YzdiNzQ4MGViNjcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmMjhlZGIwNzU3NGQ3MWFiYmUzM2Q3MDBlM2RhODk0MGQzYmIxOTdkYWNmMTQxZDUzYWFiZmJkZmZlZDdiOWE4In0"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L313-L597",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L314-L598",
           "version": "repo-lines-v1:sha256:ccf10867932cebaea0b96dfeee55d0579eda7de554b163bac2fe39e3ef6188ed:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjg1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4OWM1MjA5MTA0NzliOWQ3OGNhY2M3MjAzOWQ1NDIzMjdjOWRiNjEwNmQ2ZTBmNGYwMzY1YTYyNGI4OTk1ZWJjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNGJjYzU2OWQ0YWViOGQ0NTYzMmM5M2RiMzYxZTA0NjIzZTBhODVkZDg0YjUyZDk1ODIxYWVlMzE4MThlNWI5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4MDM1OGFkYjY2NDRiNDJjNzQyMzE3YmQyOGI3MmExMTNiNDNmMzM1YzQ5NWE3OWRhYjYxZDkzMDk0YTIyNjkwIn0"
         }
       ]
@@ -397,18 +397,18 @@
       "statement": "The AGENTS.md managed block (createCodeModeAgentsSnippet) is retrieval-first rather than eager-load: it instructs the agent not to enumerate, preload, or search wikis at task start, but to use openwiki_search for just-in-time context and openwiki_read for the relevant complete sections when unfamiliar architecture or dependency behavior materially affects the task or source inspection leaves an important uncertainty, stopping once the question is grounded. When search returns workspace_required the agent asks which listed workspace to use and retries with its ID; openwiki_list_workspaces/openwiki_list_wikis are for discovering workspace membership. openwiki/quickstart.md and its links are the fallback only when retrieval tools are unavailable. Source code and tests are authoritative, and the brief's unknowns/review items are verification gaps rather than automatic requirements; the narrowest quiet validation that proves the changed behavior is preferred.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L612-L637",
+          "resource": "repo://src/ingestion/code-mode.ts#L625-L650",
           "version": "repo-lines-v1:sha256:fe9cd264ecd39902b3afa4367807181edd5ef0ae00c2da503942d4bf0ced0092:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NzRhMWE3MzI1MTkyZWI1ZWFmYTZlYjU5OTUwZjY4MGVjNzdkMWMwNjg5Y2RiNDA0NTY3OTM5NzhhMDZkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDE1Y2U3ZTg4NDk1NDQ3NWM2ZmY3NzI3NzI0MDZkNzE0Y2M5ODZiZTY3MjhhMTQyZDljOGFjYzRkYzIwNzUifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L193-L211",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L194-L212",
           "version": "repo-lines-v1:sha256:80d2468955319380a800bc8245907d20d34cdda3b951dc58599955963c8e9478:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYWZlNTA2Mzk5YmU3OGIyYzk3OWI3MmJiYzBmMzg3YWU3YmU0YWQ2NDY2ZDljZmIxMjI3YzhmOGY5OTI3OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjgzMTE2OGJmNzQ5MTU0YWU4YmJkZWJhZTEyMTNmMWJjODdjZDNmMDZmY2Q4YTNkMzc5MmE0MzcwZGNmZDMifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }
