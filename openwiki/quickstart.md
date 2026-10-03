@@ -36,10 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # OpenWiki Quickstart
@@ -55,7 +55,7 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.6.1), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.7.0), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
@@ -250,7 +250,8 @@ follow-up `openwiki --update` to reconcile the drift.
 ## Host-driven generation
 
 OpenWiki can also run inside a host coding agent — IBM Bob, Codex, Claude Code,
-OpenCode, Cursor, Kiro, Oh My Pi (`omp`), or Antigravity CLI (`antigravity`) —
+OpenCode, Cursor, Kiro, Oh My Pi (`omp`), Antigravity CLI (`antigravity`), or
+GitHub Copilot CLI (`copilot`) —
 instead of launching its own model. The integration shares one canonical skill
 and the same six MCP operations as native generation:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand

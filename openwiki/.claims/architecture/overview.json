@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3c37aee7e524c86cada101491caf48d84865f54051dfbec0aa2fcdbdd66186ce",
+  "pageVersion": "sha256:618bd49f6470daee44e339f985212eaed3118281befd61a1269f97e78a2ba1d7",
   "claims": [
     {
       "id": "claim_d6e01c84202f48bfbc7c9eac241db2e6",
       "statement": "OpenWiki organizes runtime behavior along two independent axes: mode (code documents the current Git repository and writes to openwiki/ in the repo; personal documents connected sources and writes to ~/.openwiki/wiki), and driver (native OpenWiki-model generation vs host-driven coding-agent generation).",
       "evidence": [
         {
-          "resource": "repo://README.md#L266-L273",
+          "resource": "repo://README.md#L268-L275",
           "version": "repo-lines-v1:sha256:eda92663d1eae7b6889942085d91994447ae257dbfd01e507710b830a54a8aa3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRjM2ZiNDc1ZGVmZGY3Y2NkMTkxMGVmMjAyYzIwMmY2NDU3YWRhM2QzNjRmNzIzODU2MmI5ZTE0NjA3Zjg2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRhY2VmZjFkOTI5YWNkM2I0ZmU5YmY1OTZlODlhMzE1MTkyOGYxMjNlZTJlOTllMzUwYmI2MWVkMjAxZTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M4ZWQ0OTRlYTNkMWU4MTgzMzRhNTUzYmE1Y2UxMWU0MGI1YjgyNWY5ZGMwNGM3ZjAzZWFhNTRkZThjZTJmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzBiYzhjMTdlZjAwNWQzZWZjNGI0MzQ3ZWE2MTJkYjE0MDI5ZWE5NGQzZDIwOWZhNmYwNDEzMmM1N2IwNWE1MSJ9"
         },
         {
-          "resource": "repo://src/agent/index.ts#L181-L235",
+          "resource": "repo://src/agent/index.ts#L186-L240",
           "version": "repo-lines-v1:sha256:8aef82a74e4f39ec7414a1358b09b0d4e779ab0f21ce142324bbccdaf25111c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDVlNzA4ZTc3ODQ1MjhjMTZlMmYyMmIwYjEzMTg1ODBiMDI2OTBmY2Y5YjZmY2FiODk0OGMyN2FhYzVkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4OGViNTI4YzExZWQ3NDUyNWUyNWQ4ZTMyMzE0MmM5N2ZjY2M1NmJjNjY2ZWI1ZjVlYjhhMDAzMDk3YWQwZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTExNDdiZTY3MDg0NjFkNjM5OWI1MDU1NzY0ZDFjODY0ZTY5NGQwNDFmZWMwODg3MzJiZDM1OWNkYjEwMmIifQ"
         }
       ]
@@ -21,7 +21,7 @@
       "statement": "The CLI defaults to code mode; the personal positional or --mode personal selects the personal brain, encoded in the parsed run command's mode field.",
       "evidence": [
         {
-          "resource": "repo://README.md#L268-L268",
+          "resource": "repo://README.md#L270-L270",
           "version": "repo-lines-v1:sha256:b6cc4bd51c069bbc5f29ac5c87a0212aef93f3ded408d67bda4ed9050b43989c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZjYzRiZDUxYzA2OWJiYzVmMjlhYzVjODdhMDIxMmFlZjkzZjNkZWQ0MDhkNjdiZGE0ZWQ5MDUwYjQzOTg5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZjYzRiZDUxYzA2OWJiYzVmMjlhYzVjODdhMDIxMmFlZjkzZjNkZWQ0MDhkNjdiZGE0ZWQ5MDUwYjQzOTg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDAzMDk1NjQ0MzkxYThlNzU2ZGM4NGZjOTVkMzI4MDYxNTc3YTI1YmE4OGExNTkxZGUwODY0MjQ4NzllYjE4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmUwOGZmNzJiYmNlYmMxZDFjMmU5NGE0NTVjYzNmMGQ2ZmQ3YWMyZTA5NzU2ZWI1OWU1ZTI4MDYyZTQxNThlZSJ9"
         },
         {
@@ -85,7 +85,7 @@
       "statement": "runOpenWikiAgent is the shared model-driven entrypoint: it loads the OpenWiki .env environment and syncs bundled skills before branching on the run type.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L157-L180",
+          "resource": "repo://src/agent/index.ts#L162-L185",
           "version": "repo-lines-v1:sha256:aaf7127658915eb91f8f6647ec35f47d90dfc5f8d28bdf56350357096617d50e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MWZhZjIwMTlmNjZlMjcwMzc0ZjU0ZjIyNDQzZmEzNzYyZjY2MDM3NzAxZDJkZDdjOTRiOThjMDAwOGM4N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViZTdmODNkY2FjOTQ5ZTEzNzhhYjgyMTUzNTFiN2Y4MDIzOGUxYjY0NGQ5ZWQyMTY3MWRlNjM5YTZhYzBiYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjZTJiMjg5MTRlZjk0YmIyZGM5MTA0OWIwZjAzMWM0MDY5ZWVhMDE5YjhlNWE1M2M2NmQ5ZTIxZmM0MGEzZjcifQ"
         }
       ]
@@ -95,7 +95,7 @@
       "statement": "runOpenWikiAgent treats a run as repository generation only when outputMode is repository and the command is init or update, and delegates that case to runNativeRepositoryGeneration instead of building a DeepAgent graph.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L181-L235",
+          "resource": "repo://src/agent/index.ts#L186-L240",
           "version": "repo-lines-v1:sha256:8aef82a74e4f39ec7414a1358b09b0d4e779ab0f21ce142324bbccdaf25111c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDVlNzA4ZTc3ODQ1MjhjMTZlMmYyMmIwYjEzMTg1ODBiMDI2OTBmY2Y5YjZmY2FiODk0OGMyN2FhYzVkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4OGViNTI4YzExZWQ3NDUyNWUyNWQ4ZTMyMzE0MmM5N2ZjY2M1NmJjNjY2ZWI1ZjVlYjhhMDAzMDk3YWQwZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTExNDdiZTY3MDg0NjFkNjM5OWI1MDU1NzY0ZDFjODY0ZTY5NGQwNDFmZWMwODg3MzJiZDM1OWNkYjEwMmIifQ"
         }
       ]
@@ -105,19 +105,19 @@
       "statement": "resolveRunConfig resolves run configuration once up front — provider, credentials, model id, model availability, page concurrency, provider retry attempts, max output tokens, and stream idle timeout — and builds the model before any agent runs, tagging resolution failures to the config stage so credential and availability errors surface before any agent starts. Page concurrency comes from resolvePageConcurrency (integer 1 to 8 via OPENWIKI_PAGE_CONCURRENCY, default 1), and when more than one worker shares one provider key the retry count defaults to PARALLEL_PROVIDER_RETRY_ATTEMPTS (5) instead of the sequential DEFAULT_PROVIDER_RETRY_ATTEMPTS (3).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L184-L218",
+          "resource": "repo://src/agent/index.ts#L189-L223",
           "version": "repo-lines-v1:sha256:ca629c37c77c80ba19df820f57e954f43addefc9b8b6ca266c0b3cc65d0174ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MTA0YWI0MzIwYTQyZGU4YmExNDQ3NjY0OTBhNTgyYzdkODZkODdkOTU4YzRhOWJmMDI4OTk3ZjFkNGU0NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZjY5MDA3YTdlNzVjY2RiMmMxOWVmYTlkOTVjNDNiZjc4N2YzM2EyYjljODI2NWM0YTVjZTY0MmZlNmRiZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjZTJiMjg5MTRlZjk0YmIyZGM5MTA0OWIwZjAzMWM0MDY5ZWVhMDE5YjhlNWE1M2M2NmQ5ZTIxZmM0MGEzZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZWRmYmY3NTQxNTE5NDk0MjkyY2RjYjc1MzNiZmE2MDg0MjI4YjU0NmUxZGRhNjA2YTgzNDI1OGQxNWM4ZDcifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L289-L383",
+          "resource": "repo://src/agent/index.ts#L294-L388",
           "version": "repo-lines-v1:sha256:e7082c4ac7af8de03f370bc31013a064e43c419fa0f3ecfc60e931c1745dc739:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMzVmYjI4MzZmNmIwMTU0YTZhOTE1MjM3Y2EzNWZkOGI2MzNmNjIyYzNjNGExNWZiNDQ0NDJjZDZhMDc2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkZjk3MDA2YzE4YjMwNzRlZGE2MTdlYWQ0MWRkMWNhNzI3MzA5NDc1NjQ5MzYxNWMyODFjNjY2MTM1OWQ3NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZTMxY2Y4MzkzYzc5MjJlNDIxYmJlNWI2NGFjM2MyMDllZGY0OTI3MzE4OTAzYWY3NmNhY2JlYTcxMmFjZTUifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L1056-L1106",
+          "resource": "repo://src/config/constants.ts#L1136-L1186",
           "version": "repo-lines-v1:sha256:12a77a99441960ca743508000f492516d49e58c8e59d6678bfcbf981e117c2f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYTVhNWVlY2IzYWM5YjRmOThiMDc4M2I2M2Y3ZjIxNGNjMGM0YjI1YWE4MTUwNjZkZDlkZTUzYTBjMTliNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNGI3OTQ2YzdiMGJmMmIzMGE0YjA5ZjFjZTY5NWQwODk3MmNhNzBhZjY3MzZhNjg0NzAwNGRkODU1MWRhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmOTM3NTVlZThkMzQ0YTlmMzk5NGU3YTZhNzhiOGMzOWY1ZmY1NTdiYjI4Zjc1MGQ1ODM3MTNkOTAwOTVlZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmZTAzZWViMWI3N2UxNzk4MzJhMWNiZmJmZTgyNTJmNTc1YWQ4MjNkMDUzNDA4Y2M1ZWUwNzZlODljZWI4NTUifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L76-L90",
+          "resource": "repo://src/config/constants.ts#L84-L98",
           "version": "repo-lines-v1:sha256:e634a6c75133b44daaa3cdf84cf715b0a0f30b6721ac5482298b74c1d85bfc9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4M2EyODg4YjIzODMwNzYzNjJhMjYxMWNiMjQzNWU0NDhiMzNhZGU5YzlhZTRmMjc5YTRkZjQ5YTlhNTRhNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTk1MWQ3NDY2Njg4YWVmMGJhZDEyY2ZhNjc2ZmRhM2UzNDY4Mzg3YTJlNWJkYmVjNTA3ZTY2MDgwODM2MTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0YTIyOWRmODU5MDQ3MDdlNzBjMGQ2NjdhMTQzNTgwYjY4N2YzYjk4ZTc4OWEzNjdiOGZkY2ExMzM1YWExNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkNDhhMGE3NDRiZjYwMWZmZDI0MmUzZjZlYjMxYzI0ODIxYWY0MTYxODExZjA1ZmFiYTZhNTJlNDlhMTgyMDUifQ"
         }
       ]
@@ -127,7 +127,7 @@
       "statement": "createOpenWikiAgent is the lower-level factory that assembles a DeepAgent graph from an already-initialized model and refuses repository init/update, requiring those to go through the durable page-job runner via runOpenWikiAgent.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L405-L439",
+          "resource": "repo://src/agent/index.ts#L410-L444",
           "version": "repo-lines-v1:sha256:be99f91976b6d6438aced2a94c42281071dd6e7fac333a05cd54ac9f345f8ec2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNTM5MTAzZGM4MzdiOWExYmE3NDE2NTJjNGE5MjgzOTBlNjczNTQ2MjkwYmE4Y2E1ZmJlNTZkMGYyNmFhODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNDQxN2IyMmY3NDk4NmRiMTg3MjY5MTVmNzVmNDBkY2U0YTZhM2IzMzI0NmQ0ZjUyOWQwNTg2MGY2ODU1MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NTc2NDI4NWU2YTFjMGIwY2IxOTkyYjkyYjgzZjQ4ODA0Y2IwOWI1ZDIyOGJiMzBmZDQ0NzdiZmJiZmI4YWIifQ"
         }
       ]
@@ -237,7 +237,7 @@
       "statement": "In host-driven runs the coding agent uses its own authenticated model and native repository tools while OpenWiki owns the durable queue, Claims validation and persistence, source-drift handling, and deterministic finalization; these runs support only repository code wikis and use repository source and tests, not connector context.",
       "evidence": [
         {
-          "resource": "repo://README.md#L104-L108",
+          "resource": "repo://README.md#L106-L110",
           "version": "repo-lines-v1:sha256:78b842312d47a0f906c7badd93c240911d69daa2180f7f9660711e9dda3264c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRjN2VmNTdlYWEwMjQ1NmUzYzMxODdjZDc5MmQxZTEwY2I0OTViZWIwYmMwZTU5ZWM5ZDgyYWE0Zjc3OTU3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA3MzlmYjdlMzlkN2IyNWNkYmQ2NGI0YzUzM2NjNzQ2NWQ5YzlkZmMwMzc5YTJmZDVhOTEyYjZmMzQyOGE4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2I2OTAzYWYwYWY1NWE3YmI3YzljYTliYzg3NTZiYzMxMTIzZDFmNmI3MjYxYjNhYjQ4MGFhNmQwNWUzNDIzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZmYzYzZTQyYWE1ZWE2N2Y5MDdhMzAxNjU0ZDI3ZTM5MGRiNjI3OTk3ODY5Mzg1ZWI3ODU4NzAyNDJhYmExOCJ9"
         }
       ]
@@ -247,11 +247,11 @@
       "statement": "Grounded Claims apply to repository code wikis: material propositions carry versioned repository evidence, structured Claim state is persisted alongside the Markdown under openwiki/.claims/, and connector-derived facts are not claimed.",
       "evidence": [
         {
-          "resource": "repo://README.md#L318-L318",
+          "resource": "repo://README.md#L320-L320",
           "version": "repo-lines-v1:sha256:f673677bd1af45ca4668f45c1cbc0869454abdf6453399af8d891b5b8ff35b44:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY3MzY3N2JkMWFmNDVjYTQ2NjhmNDVjMWNiYzA4Njk0NTRhYmRmNjQ1MzM5OWFmOGQ4OTFiNWI4ZmYzNWI0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjY3MzY3N2JkMWFmNDVjYTQ2NjhmNDVjMWNiYzA4Njk0NTRhYmRmNjQ1MzM5OWFmOGQ4OTFiNWI4ZmYzNWI0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmFkNmZlNDk4Nzk2MDNkNDNiOTU5Njc0MDNjY2RkZGUxM2M1MTA4YTBmODFjYzg5NjlkMjc3NWY1ZGJhMjY4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjhjZjQ3MTI3ZjUyZDYzNTJlY2MyYWI2ZTE4NTdmZjU3ZjQ0MTNhYjQxNWQ3OWQ3NDViMDBjMmNiNzIzMzhmYiJ9"
         },
         {
-          "resource": "repo://README.md#L366-L366",
+          "resource": "repo://README.md#L368-L368",
           "version": "repo-lines-v1:sha256:a732958aac2f635c538326578a42edbae19168877dfca148005f469a603a902b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTczMjk1OGFhYzJmNjM1YzUzODMyNjU3OGE0MmVkYmFlMTkxNjg4NzdkZmNhMTQ4MDA1ZjQ2OWE2MDNhOTAyYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTczMjk1OGFhYzJmNjM1YzUzODMyNjU3OGE0MmVkYmFlMTkxNjg4NzdkZmNhMTQ4MDA1ZjQ2OWE2MDNhOTAyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M4ZWQ0OTRlYTNkMWU4MTgzMzRhNTUzYmE1Y2UxMWU0MGI1YjgyNWY5ZGMwNGM3ZjAzZWFhNTRkZThjZTJmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWIzNmQwNDRmOWI5NWYxODkyZWRhNmZhZjAyZjhiNTk2ODU0M2NiNGU3ZWQxMzQyMmE0MjEzMjlmNmMyYmY0ZSJ9"
         },
         {
@@ -289,7 +289,7 @@
       "statement": "For deterministic connectors, ingestion first pulls raw data and manifests, then runs a source-specific agent that synthesizes the wiki, with connectors ingesting over a rolling window (INGESTION_WINDOW_HOURS = 24).",
       "evidence": [
         {
-          "resource": "repo://README.md#L419-L419",
+          "resource": "repo://README.md#L421-L421",
           "version": "repo-lines-v1:sha256:7fe83953d030b4521cee85547945f915163974f237ce0bb8d4a5ff14cf45bbf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZlODM5NTNkMDMwYjQ1MjFjZWU4NTU0Nzk0NWY5MTUxNjM5NzRmMjM3Y2UwYmI4ZDRhNWZmMTRjZjQ1YmJmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZlODM5NTNkMDMwYjQ1MjFjZWU4NTU0Nzk0NWY5MTUxNjM5NzRmMjM3Y2UwYmI4ZDRhNWZmMTRjZjQ1YmJmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGQ5MWEzNjE3NWQyMjdkMzNkZjU5OWJjYzVlYjRkZTY4OTc5MjNlMDBjODM4ZDVlNjdjZTJlZWQ0OWEzOTAzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY3MWMxYzAxNmNlMjYxMjJiYWVhYjJjMGYzNTY5N2I0ZTNmODVkZTY3YWI4MmNiYzM3NzFiNDIwNzViNjY2YiJ9"
         },
         {
@@ -307,7 +307,7 @@
       "statement": "openwiki visualize serves the wiki directory on a local loopback address with live reload by default, and with --export writes a self-contained static site (index.html, client.js, client-lib.js, styles.css, graph.json) suitable for any static host.",
       "evidence": [
         {
-          "resource": "repo://README.md#L187-L199",
+          "resource": "repo://README.md#L189-L201",
           "version": "repo-lines-v1:sha256:14ff3ff164b0affed441102536a6eee3698288103d312e5a41e7a4ddb7e9b581:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwYWJhYjM1MzM1OTQxNGQ0ZjUxNWNiMmU1ZDliOGM0ZGM5ZWNjY2VlNjAyYTgyYTA1MzdhOTBlOGNkYTRmNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZDlkYWM0NzQyNTY1MmRlMWQ3NWNmZjlhZDAyNzFiZWFhM2Y5MGQxZDVkZTVmMmM2MzE5YTI4MjZlZjUzMzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MWJjZjQzMTM4NWMxY2FjNDk0NjFjYjE2ODYyMTQzZjhiODdmYTQxOThmNmJjOTAxMzk0YjA5ZDM0YzAxYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzNGYzN2Y2MWI5ZjkxZmQ1Yzg5NGM4MzdhN2ZiN2RhNGM5ZTBhNWU0MTcxNjc0MmUxYWFkMzM3Y2I4YjBhOGEifQ"
         },
         {
@@ -459,14 +459,28 @@
           "version": "repo-lines-v1:sha256:dca7c7f290056227bbc7be512b67c7d29bef1bed66c945e3bd3127bdd3401e62:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2NWEyMzM1MGE1YTBjYzUzZDZkMTczYzRmMDM5NTQ4ZWY4YmViZDY4NDNkNDZiNjBmOGE1Y2VlODk1NjdlNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNmM4MjE0YzgyMTAxZTRhNDZiYTkzYTViNGE1OTYwY2FhOWViNjgyNDY3OWJmYzhjNzc4MWZjMDRiZmJjMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYjg3YjZmYjkzODQxZjAxODdiYmZlOWMwOTI4OTRhYWRmYjI5ZDRjNmYzOWJlYzA1NTQzYzFkOThlZjc4ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4NWIwMGM4YmE4ZmRkODkyZjg0Y2RiZWQ1MmZhNGIxYTBkMzVmZTAxMzBiOTQxM2YwMzc4OTcyYWQ4NmJmYzYifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L1042-L1048",
+          "resource": "repo://src/config/constants.ts#L1122-L1128",
           "version": "repo-lines-v1:sha256:2c2c9c78b16ad027afeb425dff69e42631b01d0bf34a26fed2eefefcbfa869f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRkMjY1ZDk2OWYxZWJlMGNhZmYwMWIyZDNkYWIwZDBkYzcyOWVmZDRiOGVhY2RmMjBlMzQxMGNkYWFkNmM0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQ0YzFjODA3ZTc3ODA1Yzk1NjlkNTg5OTY4NDYyMGEyNjJiY2E0NTQ5ZTMyMDNiMjQ1NjRiNWJmODdhMjRmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTM0ZDliODk2OWI0Nzc1MzgxMjNhZjQxNzZkY2JiNTdhOTg3YjIwZGYxMGY3ODk1YzA3MzA0OTcwOWFhZjAyYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_86de0c98e8954afcada6e2bc0b1c5808",
+      "statement": "Host-driven generation supports nine coding-agent targets installed via `openwiki integrations install <host>` from the HOST_TARGETS registry: Codex, Claude Code, OpenCode, Cursor, IBM Bob (Bob Shell), Kiro, Oh My Pi (omp), Antigravity, and GitHub Copilot CLI; each installs at user scope by default and writes a managed MCP command plus a skill directory.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L55-L66",
+          "version": "repo-lines-v1:sha256:6b623730d883943aa176ed14863e0a7a7941f08162e94d425fdde9e40e69c890:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMWYzMGI3YTI1NmQ1OGEzNjhhMzUwMWMwMjhhYTViODc4ODlhNzQ0YTM4ZGU4YjBhOTU2MjViYmRiYTZhYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3Y2I3YjI4OGI4NzQzOWZiZGUxMzhmMWJjOWY2OWUyNmY3MDY0MWUwNjdjMGYzNjIwYjFiYWQ3YmQ2NjA0NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYTM3M2ViMGVjNzA1ZDQzMDE4ZDU3MGI4YWQ4ZjFlZTUzYmViZmMyYWRkZTNlMDdiZTFlMGVmYWQ0N2EwNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNWIxYjBjYWM0NDY2NjEwNWViZjA0ZDJlZTZiYzhmMjFlMWNjYzIzODZlNmQwYzI5ZjYzZTlmNWExZGI4YTgifQ"
+        },
+        {
+          "resource": "repo://src/integrations/install/registry.ts#L10-L157",
+          "version": "repo-lines-v1:sha256:e14e85b492de74b7036f7b71c87b0c236cbe8b696642489791ed4b37e22f5f3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0N2VkZjNmYWU5ZGVkMDdjYTQzYTQwNGY0MDJlNDE1OWQ1NzY0ODU4MWE1YmExZmIwMDcwN2RiZTI2Y2U2NDU5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYjdjODc4MzA3YWIwN2YzYTMyYWY0ZTViMjQzMWVlYmRjNzNkZWQzNmE3NjU5MTdiOTJmNTRmYWJkYzY0YTQ5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNDBmNjMwMzQ1MjgwOTU2ZWRkYWRjNjIxMzUzYTMxNjU1YzIwZmExZTY3ODgwMzk0MzAyNDg4OTYyOTcwY2UzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNDkzMDc0ZDA4YzQ2NzdhMTZiMzlkZjUyZDc1ZGU0ZmE4Mjc5OGVhYzVlZTFhMGE4ZWViMzkxMmViYTI5ZDAxIn0"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-10-02T08:09:47.640Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }

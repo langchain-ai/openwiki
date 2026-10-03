@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0c02cf161a5741f75c20f04b3fb68a746c33a2d4df3cc4e69f887410673fdd59",
+  "pageVersion": "sha256:8020114b84228034b410d6632cf6e7cf239dfec51449b60fede3ebf4b4f80849",
   "claims": [
     {
       "id": "claim_b7c92dfb63db42c6ab9db3a60115cec9",
@@ -17,11 +17,11 @@
       "statement": "Each parsed run command carries both the resolved run mode and a modeSource discriminator recording how the mode was chosen: \"default\", \"option\", or \"positional\".",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L146-L167",
+          "resource": "repo://src/cli/commands.ts#L210-L231",
           "version": "repo-lines-v1:sha256:0c504c01f26f871aa7962462f472ad52cbb9d8e887e7e82c536465fb135e401f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZjA3ZjQ4OTI5NDMxMjkwNWM5Y2MxOTI0Y2RiNmJkZDE3NWNjMTIwMDM2MjhlZGRiYTk5YzNkZWIxYjY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MDU5MDI0ZDQ1NjRhZTBmZWJhNWQ3MzhlM2I0OTUxNTczMGY1Mjg5OTdhOTM1ZWQ3ZGNmMDBkODQxNWRkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxZjE0MzM3ZmUzMzk0ZTQxMmQ4ZDc1NDI1OTA4ZjMxNGEzMmU3MWQ4NWQ0MGExOGNlNjczOTljNzcxYmUwMmUifQ"
         },
         {
-          "resource": "repo://src/cli/commands.ts#L992-L1006",
+          "resource": "repo://src/cli/commands.ts#L1087-L1101",
           "version": "repo-lines-v1:sha256:50df06ed8514999562ffdb8ae9cfaf6cbb7dec760cbe4b80bea3bc21bc92060d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NWZhMGYxMTE3YjVlYTQwNDM0MTQwZGRlMWEzNDBjNzIwZGRiZjMyNjIxMmUxOTE4MzhkNGIxNTZkMzE2YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZWVmZGQ1MTEzZDk5MDU2ZjFlMTlkZTFiN2Q1YmVkZTZlMGEzMDFmOWU4ZjdiZTRlYWQzZjhmOGRhODY2YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZmIyYjJjNjY0YzNhY2Y2ZDBjNjI4NzhhMGM2Yjg3NGE4ZjVmOTUwNDQxYWViYzI2OGZkNTE5NjBjZGM4YWEifQ"
         }
       ]
@@ -45,7 +45,7 @@
       "statement": "Mode selection happens at argument-parse time: a mode word as the first argument selects the mode as a positional, otherwise parsing defaults to code mode with modeSource \"default\".",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L526-L531",
+          "resource": "repo://src/cli/commands.ts#L621-L626",
           "version": "repo-lines-v1:sha256:767f9bb2c5260daf8d0e0f5c0b70010134e3e2d8d98690375b35325577de06f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA4OTJhMzU0MWQ0Mzc4YzBiYjI1NjBhMTY2MzY5MDExZGQyM2IxOWUzMGI3YWY0ODM4YjE2YzhkMjMzZDRjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2NlYmQ3Yzg1OGFkNGI1Y2QxYjQ3NzVkYTBhNjUwMTI4MGNjZjI4ZDlhNDEyMGEzNzlkMDc5MTNhYzNkNDlkYSJ9"
         }
       ]
@@ -55,7 +55,7 @@
       "statement": "When an init or update command is requested while the mode is still at its default source, the parser explicitly pins the mode to code, so bare openwiki, openwiki --init, and openwiki --update run in code mode.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L980-L982",
+          "resource": "repo://src/cli/commands.ts#L1075-L1077",
           "version": "repo-lines-v1:sha256:8419512428149639cc9fd589d04f36b939166fbe0587d04804d2165a659eb992:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRiNjg5MzRkMDcxN2FjZTM5ZDA0ODJhNDkyYzhiZTRkYzg4YTFkNGNhOGU5Yzg0MDM4MmJiOWI5YTA1NWM3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVlZWZkZDUxMTNkOTkwNTZmMWUxOWRlMWI3ZDViZWRlNmUwYTMwMWY5ZThmN2JlNGVhZDNmOGY4ZGE4NjZjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjEzMGIyYTk0ZTRmMTc1ZTNmOTA2NWMzMWJiNDllZDY5NzM1Y2RkMzZjNmMwYTY2YjIzMjQyMGIyZmVmMGQzOSJ9"
         }
       ]
@@ -65,7 +65,7 @@
       "statement": "A mode word in the first positional slot selects the mode even when flags precede it (e.g. openwiki --print code --update); otherwise the word would be treated as the user message and target the default wiki.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L946-L958",
+          "resource": "repo://src/cli/commands.ts#L1041-L1053",
           "version": "repo-lines-v1:sha256:5e4ec6caea62daa6961e61c2578f9b0aae53406aabf31b32ae050db1ddc517e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YjE2YTg1YTJiOTA0YmUzZDhlOTNlNDc5Y2RjMzhhNTUyYTFkNDJjODcxNGViOTVkODZlYTAzNGQ3OGQzNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmM2E1MDYzMzBiMGU1NDBiZjM1ZDYwZGM2ZjZlNTNmZDBkNmE0ZjllNGM3NGIyOTI0NGQ0YzMyZmNjMTkxZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjZThkY2U5YTYwOGY4OWI2YWE2YzAwOTkxM2JjNzA3OGExMzQ1YjM4ZjY0YWFmZWNmNjllMzRjZTI2YTgwNjkifQ"
         }
       ]
@@ -75,7 +75,7 @@
       "statement": "resolveExplicitMode rejects a second explicit mode that conflicts with an already-explicit one with a \"Conflicting modes\" error, while accepting a repeat of the current mode or an override of a still-default mode.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L1009-L1025",
+          "resource": "repo://src/cli/commands.ts#L1104-L1120",
           "version": "repo-lines-v1:sha256:7ca5b465d44d95c0ab4ca887cfc4055538aec19d1fc317585bbc9134c080106f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NWM5NmMyMmU0Njc4MjdiMTMyNGU0NzIwMmU5YzQ5OTNjNTY3ZDNmMmFkZjM0N2QwYzZkYmRmZmZlNjhkZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZDVjNGY4OTM0ZmI5YjM2ODk3MzE2MGM0ODkzNWVhNzFkMTljYmQwYzdiZWZjNDczYzk5ZTg3NzMyZTQzZGEifQ"
         }
       ]
@@ -99,7 +99,7 @@
           "version": "repo-lines-v1:sha256:8e6fe0c04e0cf23ad8e358ab6285da5729f5a2813ec766c7c39a23c11382be1e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY2YzA1YzAwNTUzNTA2ZTUwMzRjOGU5NjU3ZWI0Y2FkMmQ0YzBhODUzMjdlOWQxMzgxMmMxMGYwM2VlZmE0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjZhMmM1NzhlODI3NTgzMDdhMzQwYTViNTNjMDhjMTA0ZTc2NGU0OTljZTA4YWFlN2QxZDVkMDI4YjJhZWUyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTg1YmU4NDJkYzc2MGQ5MmY4NjMyZTdkZjk3ZjEyMzcwZjI5MDMzNmM5OTg5NDllNmQwN2M3NDdmZTI1NjNlMyJ9"
         },
         {
-          "resource": "repo://src/agent/utils.ts#L736-L741",
+          "resource": "repo://src/agent/utils.ts#L797-L802",
           "version": "repo-lines-v1:sha256:68f17356422c8aa019abe0665e82b3d3fe36cd50467b01c7dc69dad30a94851a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmExNWZiNzA3M2I1YjQ0M2VlZTBjNzc4YTIyMDY1MDJiMzVkMWYxODMzZjUzM2M0NjA2Mjg4OWVmZGJmOGU5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjdjZjE4N2Y1ZTU0ODA1N2I1YjdmMWU5Yjc5YzhiNGEwMDVjMmRiNWI5Y2NjZmE0Y2EwNGRkMTIwZDk1YjgwOCJ9"
         }
       ]
@@ -109,7 +109,7 @@
       "statement": "The docs-only write boundary refuses writes outside openwiki/ during repository init/update runs but is relaxed in local-wiki mode, where writes are always allowed.",
       "evidence": [
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L511-L533",
+          "resource": "repo://src/agent/docs-only-backend.ts#L521-L543",
           "version": "repo-lines-v1:sha256:d4d5dee1a013dee66812128826564986be035574261dc47d35af6b17e15b89ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NzcyZTYwMzAxOGU5NzRiM2M1ZjlmYTcwYTBlNGE5Mjc3OWE2YmRiODA2MDk0ODNkZjQzZjkzY2NiMTQzMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZWRhM2Q3NjNjZmQzYTgxNWVhOTY2ZTEzYmI3NjcwZWE3MTY2YTZmZTJmNGYzODI2MDU4OWJhZGNhNDc5MDcifQ"
         }
       ]
@@ -119,11 +119,11 @@
       "statement": "Grounded Claims state is implementation-owned only in repository output mode: generic reads/writes/edits/deletes and discovery into Claims state paths are refused via getClaimsOwnershipError/isClaimsPath, and shell execute commands referencing Claims state are rejected; isClaimsPath returns false unless outputMode is repository, so the boundary does not apply in personal mode.",
       "evidence": [
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L502-L509",
+          "resource": "repo://src/agent/docs-only-backend.ts#L501-L508",
           "version": "repo-lines-v1:sha256:5aa130a76dbeeffee4b633fc08b295301cce80822a4a67dbd4e2606416995a5a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzY3NGZiYmFlYWU4Nzc1OTIxYWI3NmU0NDc5MDViNWVkYTI4YTI5YmY3ZmU5NDYyNTA1YzNmZjNhYjgxNTlhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYzYTUwNjMzMGIwZTU0MGJmMzVkNjBkYzZmNmU1M2ZkMGQ2YTRmOWU0Yzc0YjI5MjQ0ZDRjMzJmY2MxOTFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVkMjY3MDYxNzc0MGFmNDYzODZjNjc5MjA5OGI0YTBkNTkxMDdjODQ1YmMxYTdlMTFiMmYzZmZiZWFkODliMiJ9"
         },
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L570-L586",
+          "resource": "repo://src/agent/docs-only-backend.ts#L566-L582",
           "version": "repo-lines-v1:sha256:76185d27e103f6e1c60ef0f559c7285ec843246c049017f7edd2a797fdbfc6a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MTQ1NjNhOTk0MzEzNTE1ZWI2NjUyMmJhN2RlMjkxZjI0YmY2NTk2MTc2MzAzN2Y2M2U3OWI0OGU5YzI2M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDVkZDM5MTAyNzI5NDhiNTExMGVmM2I5Njc0ZTJmMTQ4YThmZjU1ZWIyZWM2YmZhYmUyZjliMGM1ZjFhMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYjE1ZTk0ZGU0MDlmMjRhOThmNDJhODVjODZmNGZiNGEwNGM0OGE3OGQ3OTkwYTc2OWE5YzIxYmI1YjAyM2MifQ"
         }
       ]
@@ -133,7 +133,7 @@
       "statement": "Host-driven coding-agent runs currently support repository code wikis only, not personal brains, and use only repository source and tests as context; connector-sourced context, including LangSmith, is not yet supported in that path.",
       "evidence": [
         {
-          "resource": "repo://README.md#L99-L99",
+          "resource": "repo://README.md#L106-L106",
           "version": "repo-lines-v1:sha256:94c7ef57eaa02456e3c3187cd792d1e10cb495beb0bc0e59ec9d82aa4f779570:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRjN2VmNTdlYWEwMjQ1NmUzYzMxODdjZDc5MmQxZTEwY2I0OTViZWIwYmMwZTU5ZWM5ZDgyYWE0Zjc3OTU3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRjN2VmNTdlYWEwMjQ1NmUzYzMxODdjZDc5MmQxZTEwY2I0OTViZWIwYmMwZTU5ZWM5ZDgyYWE0Zjc3OTU3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2I2OTAzYWYwYWY1NWE3YmI3YzljYTliYzg3NTZiYzMxMTIzZDFmNmI3MjYxYjNhYjQ4MGFhNmQwNWUzNDIzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjNmM2ZlZWU2OGQwYmI3ZjBlZGJmNWQ1MjI4NGZiZjlhMGU0OWEyNTg5NzFhMGJmYmQ0NjMwYTliMmFhOGI3YSJ9"
         }
       ]
@@ -143,7 +143,7 @@
       "statement": "Connector ingestion tools are a personal/local-wiki capability: createOpenWikiConnectorTools returns no tools when the output mode is repository, so code-mode runs are never handed connector ingestion.",
       "evidence": [
         {
-          "resource": "repo://src/connectors/tools.ts#L25-L35",
+          "resource": "repo://src/connectors/tools.ts#L30-L40",
           "version": "repo-lines-v1:sha256:3ecf9092e8d5bbb22b6b5118173bec56d80a39f68913ef6fc1ebc14f92fd2b6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzY2NWM4ZTkzNWFjODdmZjJiYjkzYTY4NjU0NWJhMzAyNzBkYmY0MDMxMjVjNGZmZjEyY2I3NjMzOTJmMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjk0OWRjMTljOTNhZDQyMTRmZDMyMzc4NDczNDJiMTI1NjgxZTYyMGFmNGU1Yzc4YzE3ZmJhOWRjNDExMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZWYwMjI5MDk2MGJiOTA1MGIzZWY1OTcxZDBjZGU0ZGU1MThhMjY0OTRlNzdkMDE5ZmMyYjY3YjgyMjNmNTkifQ"
         }
       ]
@@ -153,11 +153,11 @@
       "statement": "Personal ingestion runs execute against the local wiki directory as their working directory and use the local-wiki output mode.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/ingestion.ts#L175-L188",
+          "resource": "repo://src/ingestion/ingestion.ts#L177-L190",
           "version": "repo-lines-v1:sha256:0132b170c3b297344ed3b2f63857100c5c82f53bf10666072b5e68dc1cd5dabd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjMzNjcxN2Y5MDQxZmJmOWVhN2ViZTg3MmU4NjNiMTMzYmY2M2U1YzUzYmMxODNlMDM4ZWIxMWI2M2VlZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkZjZjZjNhNjc0NGM0N2U4Yjg5MDg2ZmZmMTNlMTg3ODczZTE5ZDRkOThlMzM0M2NhOTkyODFhMThiZmJhNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZjhmNmM0ZTY5ODA3Mjc5YjQ1YmY0NTE4NjQxMDliNDI1NGM2YjQyZDcxYTE1YTU3OWFjZGY3YzM4N2NlNzcifQ"
         },
         {
-          "resource": "repo://src/ingestion/ingestion.ts#L89-L102",
+          "resource": "repo://src/ingestion/ingestion.ts#L91-L104",
           "version": "repo-lines-v1:sha256:4931c380016e9bb8aa0fd4a9064bbbd3b295750554448865c85afe65654065d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1OGRjNjUyYzk4ODNhNTQ5MzkwMzkzNGRjZTE4M2EwODEyYWIwYmMwNGE0ZWJiOTUxODE3YjM1NTAxZjI0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2Y2Y5YTczN2FhMzYxZmRkZDBhMjIwODhkOGE4ZmQyZGIxNDQzODRiMWY2YmVjYzZmZjdlZGZiZjI1NzE4YzkifQ"
         }
       ]
@@ -197,7 +197,7 @@
       "statement": "The OPENWIKI_CONFIG_DIR override merely selects a separate state directory; OpenWiki does not move or delete an existing ~/.openwiki directory.",
       "evidence": [
         {
-          "resource": "repo://README.md#L147-L153",
+          "resource": "repo://README.md#L305-L311",
           "version": "repo-lines-v1:sha256:ecf3c524d5f2cadc27fe91dd80d487241533bd003dcf6b5aa6a6b6b7c16c8521:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYxMTZmYTEzMzQxMDY3NTVjNmFiYjU4OGEwZWJiNjZmN2NhNmNkOTRkMmVjMGM4NmRkZmE5NjVmMzY4Njk4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJjNjQ4MDkxMDk0MmFjZWUwMzgxYjQ5MzRhODZlOGIyZWU5MzhmMzAyODExMjk3MTRjNDlkZGE0OTE0MjVkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ3OGI3NmNjNzE3ZmM1MzhjYTMxMGU4YmIxNmIyOTQyOGU3MTExY2ZiMjMzMWZiMzhlYjRhMzc5MmM4ZDQ1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGViOGExZmUyMjc1MjRkZGMxNTM4NDQ4NDU2MmZkZWJhMTJjNTkxOTM4ZTkzN2YxYTE3MjQ5NzljODU4ZWVhNyJ9"
         }
       ]
@@ -207,7 +207,7 @@
       "statement": "The --mode <personal|code> flag (and its --mode= form) validates the value and sets the mode with source \"option\", rejecting an unrecognized value with an \"Invalid mode\" error.",
       "evidence": [
         {
-          "resource": "repo://src/cli/commands.ts#L814-L863",
+          "resource": "repo://src/cli/commands.ts#L909-L958",
           "version": "repo-lines-v1:sha256:c0d1be879c84ffd86237d746dc9f24ccd6db8237b879bf30466c9e655078bd67:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MjhlYjdjMTIzNzA4ZTBmNzhiNWVhN2MyMDdiYzJjOGU1NmRmOTEzZDRlNjZmYTk5MTYzMDYzM2NmYzliNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NWIwODkyYjVjMTk0NWU5NTliNDEzYmQ2NTkwZjU2ZmM1MzBjMzQ2NDhkMDA4Njg0ZTRlZmRhYTA0YTkwNWYifQ"
         }
       ]
@@ -235,11 +235,11 @@
       "statement": "Inside runOpenWikiAgent, outputMode defaults to local-wiki when not supplied; repository init/update is routed to the native page-job generation runner instead of the conversational agent, and .openwikiignore is loaded from the runtime cwd only in repository mode (personal mode uses an empty ruleset).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L163-L184",
+          "resource": "repo://src/agent/index.ts#L168-L189",
           "version": "repo-lines-v1:sha256:0505957d1077443915aa311edd0c65ff020591fef15c4ddd2457e0b4f4aa63a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZWQ3NWU0MTU0OWI5NGUwYmEwYjdlNjdkY2VhNDBhMzg2MDMzNWZiNTM3NDZhMmQyMzAwMWI3NDNlYzA4YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MTA0YWI0MzIwYTQyZGU4YmExNDQ3NjY0OTBhNTgyYzdkODZkODdkOTU4YzRhOWJmMDI4OTk3ZjFkNGU0NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MGRiMmEyNGIyNjJjMGVkYjAxMmZiNWIwYjYwMWZjNjA4YzUxYmQ5Njg0OTNhNjg1YjNkMjgwM2UzYTA5NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MzFiNzk0NDdjNTNkMGM5NWQzMzQ5MDViZWZkOWRmOTEzOTNlYmYzZGZiZTFmNGI5N2ZlNGM4MzkwNTM3OGQifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L237-L240",
+          "resource": "repo://src/agent/index.ts#L242-L245",
           "version": "repo-lines-v1:sha256:da4bdc7af236e3f5a32e6ae43589d0f0ff8ed0e882f773ef02c2b85f60bd8db0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg2YjRiYmYyMDM2YzMzZTQ3MGIzOGMwOWNkZjk4NTljOWM0ZGQzZWM3NTBhMGQwNTdjNDZlOWQwMzkxMDMwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q1NDFlMjM2ZGQxMDVkNDhlOWViNDEzMmU3ZDAwMWQ3YWMzNzdlODgxYWMwNTcyZTZmNGQ0OTNiYzJjZWYyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDJkODhjNmJkYjE1ODhkMGEwYzM4Y2I3MWVmMjlmNDlkNzVhYzQxNzFiZTQzZWE4NzY0ZDk4MDI5YTk4ZWFjOSJ9"
         }
       ]
@@ -249,7 +249,7 @@
       "statement": "createOpenWikiAgent refuses repository init/update commands, directing them to runOpenWikiAgent and the page-job runner instead of the low-level agent factory.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L412-L416",
+          "resource": "repo://src/agent/index.ts#L417-L421",
           "version": "repo-lines-v1:sha256:ba5513f0965236838b576bafbf8fca5016e56508a17d3c3f6c481e13189e5f8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTVkZjEzNWZkNjMwMGI2N2JmZDYyYzM5OGM4OWExNTA4NmFjNzhjNDY2MjI3ODVmZjA2MjQwNTlhYTAwZWNlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTVhZGM3NDFmZTFmM2I0YjU0NGFkMjliOWFmNDU3NGFlNDEyYWY2MWJjZjEzMjIxYTBkZjBkYjc0Njc5Y2I4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjgzZTM1MzBkOTc1YTUwYmZhYjNjOWNjMGUyODBlNmJhMjcxYjMwMDZkM2MzNWMwNmU0ZDc0ZTgxZDI2ZWI2MCJ9"
         }
       ]
@@ -259,18 +259,108 @@
       "statement": "In personal (local-wiki) mode, OpenWikiLocalShellBackend.execute denies every shell command at the backend level with a distinct 'Shell execution is disabled in personal mode' message, enforced because personal agents consume untrusted connector content and must not reach the host shell even via delegated or stale tool calls; the conversational agent graph additionally restricts personal runs to a filesystem-only tool middleware.",
       "evidence": [
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L489-L500",
+          "resource": "repo://src/agent/docs-only-backend.ts#L488-L499",
           "version": "repo-lines-v1:sha256:aaec0804e24ea471b67af97d3ce06eb81339eecbb167fb93350cc5ace8c23867:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MjU0NmIxNGFkNjhhZjY1OTQ4ZmZmODQ4YTRkZDhjZmQyZTgzY2U0OWZkZmI1ZTRjYTUwMmQ2NTMyZTJhNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODMyN2IyOTA0YzczNjc5YWY1ZDdiMTBhYjM5MWI4MWViNzM0ZjUyN2IzY2YyZjhhOTY5MjIyYTUwNDk4OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMzM5OWU5MzdjOGIzZmVlNzYwZmM4YTQ1ZjMxNDRiZDAxNTI3NTRhMmNmNGI0MGI1Y2JiZjA5Y2Q3NTE1YmEifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L501-L516",
+          "resource": "repo://src/agent/index.ts#L506-L521",
           "version": "repo-lines-v1:sha256:cc45291bfdfb12b90418f0cea2fc2406f737ec15a606b517a27ec45267bee5a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhYjk5YzA4MGU1ZTI2MGIyYjYxYjE3YzExM2QxY2FhMjRmZDYwZTg5YWNjOTU4OGE2ZWYwZGE1OTU5ZWUxZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZDQ1YTc5YjVhZjlkNDUzZWEwOGIyNDI1NjU4YTE4N2IwOTcwMTMyNzgyOWFkZmVmNzQzYmQwNjIwYzA1MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MTRjMmI4NzRkNWEzMzg1MThjYjY1ODgyM2Q3Mzk1ZWQ5OTIyZWJjMzM3ZmYyYmNjNjliMmJmMDc1YTkyN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxOWFjZmRiN2UwNTQ0YTU3ZjBhYTUxZjI5OGY3YzE4NWQ5MjhlMzk1OTQyN2Y3MDFhYmFjZjI1YWQ5YTEzMTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c729294cdbb42439bd4605f7ac84273",
+      "statement": "Every code-mode run calls ensureCodeModeRepoSetup against the repository root before the agent starts: both the non-interactive runPrintCommand and the interactive App TUI gate the call on mode === \"code\", and the native repository generation run calls it again at begin time. Personal runs never invoke it, so they never rewrite repository agent-instruction files or workflow files.",
+      "evidence": [
+        {
+          "resource": "repo://src/cli/app/app.tsx#L579-L583",
+          "version": "repo-lines-v1:sha256:8da28a8a9cbf529b2c62fec775d66d3869cc19f63f3bd39b6219da170870cf74:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIwNjJmYzVjMTQyZTY4YzY2MjQ5OWZmZDJlYzE4MjYyZjQ0YzM4ODU1YzYzYzEzYmI2N2YwOTQwMGZmMzU4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2NWNkMDg2MTE5YzhiYWI1NGJiNWUzOTU3YjlmYmI5ZjRkMTk3NGU4OTgzODA3OGIwZWZjMWI0ZWMzOWY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjRiY2I3NDM5ZDhhNTdlMjJlNWE1NmVlMDUyMmRhZTcyYjVjMTdmYTY0YWQ3MzliMDg2MjBjOGUyZmQxNGVmMSJ9"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L299-L303",
+          "version": "repo-lines-v1:sha256:9743270287998ae1c18d25c03788d6be89d1e15aed480ea98e8bea1f47391d41:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I5NTkyNWUwNjcyNzIzNmMyY2UyNjVlMjA0NDdkNTdhNzU3MzM3Y2RmYmNmZmY3MmY1ZGFiNTAxZDRiOWI2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2NWNkMDg2MTE5YzhiYWI1NGJiNWUzOTU3YjlmYmI5ZjRkMTk3NGU4OTgzODA3OGIwZWZjMWI0ZWMzOWY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y2YTJiZTljZGUzODIzOWJiOGUzYTJmOWNhY2NiNjY0NGIyZTJkNWYwY2Y0ZjRmNDMzNDg1NjIwNmRjYzVjMSJ9"
+        },
+        {
+          "resource": "repo://src/generation/repository-run.ts#L403-L405",
+          "version": "repo-lines-v1:sha256:7139580478dfa8d0eaf197c59cd29eb61d1019dd49604b8425b99a7af85d37a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU0YWNjMWM3YTI3YTM5ODQ5ZTAwNjdhM2ZmOTczNmY3MGQ3ZDY4N2Q4MjNhYjEwY2EwMWM0OTA5ZThkNmM4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY0NzA5Y2ZkMzQ1MTk1N2U5Nzc1NzM5M2RlNDljNWNlN2VlZDczYTIwYjc4NDg4NDMzNzI0MTcxZDQ0YjUwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODMzZGRhNGIwMjRhYTdhMTFjMDY0MjZjZWQxMTEyOTBjYWI1NTYwODkwMDIwOTAxMWRmZmNiYjUxMGFhYzU2MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd8e167478e14b5498ac4eb35dead395",
+      "statement": "Code mode keeps AGENTS.md and CLAUDE.md pointed at the generated wiki through OPENWIKI:START/END managed markers, refreshing both files in place when present, but only AGENTS.md is created when missing. CLAUDE.md is never created when absent, because Claude Code falls back to reading AGENTS.md when no CLAUDE.md sits beside it, so creating one would only shadow the canonical instructions.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L251-L267",
+          "version": "repo-lines-v1:sha256:af56cdec1f6cc7c31ade5993ba2353a518901ecb510441dc992ff9f6b371a05e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OTZiMDRkZjI0ZmFlZTQ5ZjUwNWRkNTZkMWUyOTEyNmU0ZDA4MGZmNzJjNGEzZmQ2NTllMWVhNzk2ZTA0ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NTJhNTFmMzY2MGIwNTE0OWIwMmY4MmM0MzQyNjU2MjhmMTNhNTNiY2YzMTRmYzIxYTZhZWMzMmVmYzA5NDkifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L44-L48",
+          "version": "repo-lines-v1:sha256:f4992ac597b3d118b7ef9a13f4fe0059a95ac27fce5b2911768704695f7b7cf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTRjODVkZDBlZTcxZTYyMWY2Zjc0ODllY2FkNzM1NWJkZDFjZDEyYjQ1NzFiZDQ0MDRhNDQ1M2IyZTU4N2M0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZjNTU5NzVmNTg5NGZlY2NlNzEzMjY5ZmNmYzg2ZmIyOWI2NzY1NjI4NWRiMmJjZDhjYmE5NGNiZTdlYTJhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGIwZTFkMThmNDYxZjk1MWFiZDE3OTQyNzY3ZDEzZGZiOGQ0OTA1Njk4ZDMyNjQ0OTk0YTcwNDNiNTU3ZTdjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzU5ZmZjZDQ3N2Q5N2FmYTcxMDI1ZWEzZmI5M2JmYmI0NzJmMzM2ZGYxNGU2MDMwYmI4YmZjNmZmMmZlNTRjYiJ9"
+        },
+        {
+          "resource": "repo://test/ingestion/code-mode.test.ts#L167-L180",
+          "version": "repo-lines-v1:sha256:3b3cb8249d917a661eb247bad606601fa63b78bbd4a6af929c094dd4f7f41a67:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiY2EzZDdmMjQwZjI0YWY1ZDk3ZDRiMTY0Zjg1NjBjMjA1YWMxMjA4Mzk1Y2U4NTBlOTU0MzZhOWM5YTk0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MjQ1NmZhYWE1ODY4YTA3ZGI0ZDlhOTg5NzU3NzAxN2FlNTMwYTYxNDVhMzhhMWQzNmJiZDFlNjYyOGRiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNzE2NWEzOTlkMGFkZTdlODhlNGQ2NzAwYzdiYmZmZTgxOWEyMDc5ZDVkYmZiMDFhNzBlNDc4ODY3ZmIzNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9c1c3871c98741308b24657dbaf9ad05",
+      "statement": "When an existing CLAUDE.md is refreshed, its managed block is a minimal @AGENTS.md import (Claude Code's @path syntax, not a Markdown link) so AGENTS.md stays canonical; if CLAUDE.md is a symlink to AGENTS.md the full instructions are inlined instead to avoid a self-referential import. Pre-marker legacy ## OpenWiki sections from older releases are stripped, and malformed or duplicated markers abort setup without partially rewriting either file.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L216-L249",
+          "version": "repo-lines-v1:sha256:c01ee7202d4cbd4185ec50b4d1fab659b390a829f5716fb67867d520247966bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTU0YzdkZjI5NmI4NDgyOTNmNzRiZmE2ODRjYjUyMDRjOWVmZGE0ZDZjNzRlNjA2MDUzZDA1NmU4MzMwMzQifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L318-L334",
+          "version": "repo-lines-v1:sha256:1e3ceeb4b8e15dfbaaab2518883cf8f67bcfc58a0c3591582e4b71511a5524a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZGE2NWE3Y2M4MjYxM2FjOGVlZWNhZmRiYzJiYmU4Zjc3ZjIxYjI4MGRiOThhN2RhMWUxNTZiNGY1NzM5ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZTIxZWNiZDBhOWZiMTE3N2E1NTEzZGU0OGFhMjU3NmZjN2VhMTYxZWVlY2Y0ZmI1MGZkM2ZkMTUzOTU1YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YTRhNGU0ZDlhZWExZmMwODg0MWNlZDYxNzg2NjYwNTIwNWNjNmJiMjBjNWFmMTNiYjU4MWIyYzJlZGI4N2MifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L663-L671",
+          "version": "repo-lines-v1:sha256:40692fc78024995b4f0c0fd019a33761ff335b975ad53bed0b291640e213f58f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM5MmZmNGI1NzA5MDIxNDQwYWRjZmNhMmE3ODE4N2E5ODUyOGVlNGJlM2QxMzg3YTA4MDBkYWI3MTU1NTE3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjAwMDg1NTQyYjQ1YzgxN2QyYjY5MDUwZmVlYzQzMTExYTRlNzg3Mjk1ZDI1MjA0ZmE1NDdiOTlkNDA4NDBlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzcxYTIyNzRiZjM2YTA5YzIyMjdlZGQ0YjYzYTViODNkMWRmZTI1MjNiMWY5MTc2YTg0YzJjYzQ3YjBhOWQ4NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_143db5a0a32d4ac68ea879c711f73e42",
+      "statement": "The .github/workflows/openwiki-update.yml scheduled-update GitHub Actions workflow is created only by openwiki code --init (createWorkflow: true); --update and chat runs leave an existing file untouched so operator customizations are never silently overwritten. The workflow runs openwiki code --update --print on a schedule (default 0 8 * * *), opens an update pull request, and intentionally preserves only the pages completed before a failure so that progress becomes the baseline for the next scheduled run.",
+      "evidence": [
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L52-L60",
+          "version": "repo-lines-v1:sha256:e3f8a91f317f30ba680b7bbdbe309a6ed2c2ccef4049ae523936c15542da283d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjI3MDhhOGIzMzAxZmUyOGMxMGY1NjI1NmE4ZTg3NjkzMGVmNzc4MWM4YTExYzk5ODhhYzliMTNlY2JmYTBjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYxYjMxYTlkYzc1MzA0MmY2ZmZkMmExYTYzOTEzOTE1NDhkNjMyZTAyNDJkYzEwNGMwYTE5MGI0MGNjYWY4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzU5ZmZjZDQ3N2Q5N2FmYTcxMDI1ZWEzZmI5M2JmYmI0NzJmMzM2ZGYxNGU2MDMwYmI4YmZjNmZmMmZlNTRjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZiYjEzZTJlOWI4OGY0ODI2MGZiM2I2MDFkNGViMWNiMzRjNzI4NDliY2QwY2ZhYjVhODc3ZDAxNjY0YmZkMiJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L532-L622",
+          "version": "repo-lines-v1:sha256:ed81a80b2b1b60f845c2a09102603c2106202641d803dc2e259d636d9e29a38f:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWUwMDZmMmE4YTJlZDc5MmRiMWFkNzkyM2ZiNzA4ZjgxMDRiMzVlNDczNzFiZDQ5MDUwN2Q0ZjQ0NDdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZDI5NTI1MzZmYzYwMDBhZDkxNTY2YmQ5NTNmMjViYzk1OTYxMGU4MTFhNTI5YTliZWY4YjRmMDdjMWM4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODQ1ZjZlNGEyYjkzODdmMDRmZmJkOWY5ZTI2MWZjOTMwMTU1Y2IyNjc3OGNkMDhiZTY5MGE3MTExNzc5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L89-L121",
+          "version": "repo-lines-v1:sha256:54d0c7ee941e0deca79f19c7078d2e9a0562cea8e77bdfa0d5d1e482f2498094:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4MGZiNGQ2MDA0NTJiNTc1MjY4ODMyMjQ0NTVhYWViOGJmOGQ0NWJkNjFjNWFlMmMwOGNjNWVhNWI5N2MwNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MGQwYTA0Mzg4YmJjZDgxZjYyODFjMDMwNTQ1ODc0MDEwZmFmYzZmMzM2ODkwNzU4NmEzYjM3MzhiYjlhZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_be442fb087f14fd3a115072448a00c18",
+      "statement": "Before the agent starts, code mode pulls connector evidence via runCodeModeConnectors, which iterates connectors registered with mode \"code\" (currently LangSmith), reads each connector's committed repository config, derives an ingestion window from openwiki/.last-update.json, and appends synthesis guidance to the agent message. A connector that throws is skipped rather than allowed to break the update, and a repo that has not configured a connector simply skips. This is distinct from personal-mode connector ingestion, which exposes credentialed external fetches to the agent as tools.",
+      "evidence": [
+        {
+          "resource": "repo://src/connectors/sources/langsmith/index.ts#L92-L92",
+          "version": "repo-lines-v1:sha256:595eeacda6bf90560bc0e49b91ccc1e21e4768a2d0e1ad340de7fa0c98fe03e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTk1ZWVhY2RhNmJmOTA1NjBiYzBlNDliOTFjY2MxZTIxZTQ3NjhhMmQwZTFhZDM0MGRlN2ZhMGM5OGZlMDNlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTk1ZWVhY2RhNmJmOTA1NjBiYzBlNDliOTFjY2MxZTIxZTQ3NjhhMmQwZTFhZDM0MGRlN2ZhMGM5OGZlMDNlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTYyY2Y4ZDRhOTRkZTRmMjdlYzM2ZTAxMGQxMzg4YjFkN2FmZmEwOGM5ZWUzN2Y5NWU4ZWNkODIxZTQ0MTkwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmNlMjFlMmM1YzgzZGZiZTA4ZDYwMDc5YjNjZGNmMzQ5MzJhMmM2M2YwZDczNWU1MzhiZjBhMjViMDhhODZiYiJ9"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L123-L172",
+          "version": "repo-lines-v1:sha256:557c381d71dec64949a76317e7936f8042fc5fa4ab97da05036bbcb93bdf9685:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNDU2Y2JhZDhlM2U4NDkzZjA2YWNmYmU2NjUzZTRjMzRlNGVmYjdmZjkwMzY0MDNiZjhjYjljMmQzZTcyOTEifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/code-mode.ts#L197-L214",
+          "version": "repo-lines-v1:sha256:d75b2391f3dd7d77a8c15c0d74f1d7c2ba16c16ce1b8ceaee06cb2ddd8a3fe87:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NTdmNzAxMzZkYjJiY2EyODUzOTk0ZTRlMTUzNTFmNzM0YjVmYWUzODdhZjY5YzZiNmI5OWM2MzJjM2MzNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjODQ1Njg1ODEzYTY5ZGU0YzM1Y2ViMzBhNGZjOTQxMWQ4NzA3MTJmY2MwYzljMWM1NmQ0ZWUyYTdlOWVjOWQifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }

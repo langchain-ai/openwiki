@@ -30,10 +30,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # CLI Commands and Flags
@@ -160,7 +160,10 @@ values of secret-bearing environment variables and bearer-token / known provider
 key patterns such as `sk-or-v1-…` — and truncated to 2,000 characters with a
 trailing `...` so a long trace cannot flood the terminal. Debug mode also widens
 the walk to nested `cause`/`error`/`response` objects and other allowlisted
-fields; the final list is deduped by `label:value`.
+fields, surfacing the innermost `cause` as a dedicated `rootCause` diagnostic
+whose sanitized message and allowlisted fields explain the underlying failure
+(DNS, a refused connection, TLS) beneath the SDK's repeated "Connection error."
+wrappers; the final list is deduped by `label:value`.
 
 Interactive chat with no message still requires a TTY: `resolveStartupCommand`
 converts such a run into an error telling the user to pass a message or use
@@ -182,7 +185,7 @@ credential setup, and auto-exit for a real init/update run
 (`runLinkCommand` in `src/cli/link.tsx`). It requires an interactive terminal
 (stdin and stdout both TTYs), resolves a repository finder root from the given
 directory (default `.`), reads the existing workspace registry, and renders the
-In `WikiWorkspaceManager` to let the user create and name workspaces of related
+Ink `WikiWorkspaceManager` to let the user create and name workspaces of related
 repository wikis. On submit it saves the updated workspace collection; on cancel
 it exits cleanly. More than one argument, or a leading-dash argument, is a parse
 error (`Usage: openwiki link [directory]`).

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ddb075e4b1a55cfac99eacdc0b0a523d148388db5846bce5aa43f4671f406c38",
+  "pageVersion": "sha256:38db3ed700907f1d01082a4cacaa994a0ccc4c383daf286b445ab826d4d47322",
   "claims": [
     {
       "id": "claim_35bcc7d94294470cbce1e5d06f9fb26f",
@@ -144,7 +144,7 @@
     },
     {
       "id": "claim_c4c28a48498c425daa4f8f1a5d7f9c3e",
-      "statement": "Line-range evidence versions embed resolver-owned relocation anchors so that when edits move or resize a range the resolver can locate the same selected text and keep the version stable when the content did not actually change.",
+      "statement": "Line-range evidence versions embed resolver-owned relocation anchors (selected line count, first/last selected-line hashes, and preceding/following context hashes). On resolution, resolveLineRangeEvidence first relocates unchanged selected text via the hinted span or anywhere in the file (prefiltered by the first/last selected-line hashes and confirmed by the content hash, with context hashes disambiguating multiple matches), keeping the version stable and only updating line numbers when the text is found unchanged. When the selected text itself changed, locateChangedLineRange relocates the range between its unchanged exterior context anchors and assigns a fresh version; an ambiguous anchor pair resolves to null so the owning Claim is reported for reconciliation rather than silently pinning stale line numbers.",
       "evidence": [
         {
           "resource": "repo://src/claims/evidence/repository/resolver.ts#L21-L69",
@@ -581,10 +581,24 @@
           "version": "repo-lines-v1:sha256:d16f91e13525efd131ff4a81c6e0191d1a60413f4914923ddd9a0871c032e0a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNTNhZTcwOWRiNTcyOTA5ZWQ4YjRjNjdhNzViYjE2ODkwMWFkNzk2ZDllYjQ2MzVmYTEyZjU5ZWIxNzI1MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NzIzMmEyYjc4ZGVjZmQ5ZGRhYWUwMWUxZjk4NjgyNzE3MzQ2Y2E2ZjhhNmU0YWFhMDc5YTFlYmFiY2I2MmYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9dc8fab1b48447dd8bc1e8ef74332181",
+      "statement": "On each resolution the resolver rewrites the evidence resource's #Lx-Ly fragment to the current location of the cited block (formatLineRangeResource), so persisted evidence line references stay in sync when a cited source block moves.",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L317-L324",
+          "version": "repo-lines-v1:sha256:eea9afade121ebac5a0e3234ac6926aced73a458eb8ffcaef626c84959b6de1a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI4MzQ2ZWQ0ZjFjZjE4ZWZhZTI1NDc1N2VlZTBhMjAyYzIyMTdjMDBiZmMzMmIzODUzODdmZWJhZWUwNDY2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRmZDdmNmU4ZjY4OWU3MmUzNWEwOGE5Yjc3ZDk2YzE0OTZjYzlkY2JhYzhiZTIyZWY5MDQxYTU4ZGJmNWRjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmYzMTBhZmVhMDk2NGUzNTBlZGEzZmIzMzcyMzRmYTI2NDJlZjYyODMxZTQ1ZWI0NDRkMTZiNjRhYjJmYTk3YyJ9"
+        },
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L381-L414",
+          "version": "repo-lines-v1:sha256:b506ede246e757ebbf95f8a461c8cf9df9f0c90d5c4f560c1433f7913a8479d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNjVjNzdiODM4YTgxMzVhZGJlZWZhYjQ3MzIwYTdkMDdkZWRmYjI5ZjUxZmEwNWNjNDMzMTk2MTI4NDY3YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MDY5Yzg4OTdmODQ2ZjM4YWRhMDY3OWYwNDk0OTcwYzI3NTEwZWY5NDc1NzNmZTZhODNlZDMzY2Y2YzZmNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZmM0ZjZjMjlhNjdlZGJhZDBjYTg4NTFkMmQ0NDE0NTkzMzQ0NjJjM2FkZjAzOWE1MGFlNGM3YzlmNjhhYWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.0",
+    "at": "2026-10-03T08:09:45.159Z"
   }
 }

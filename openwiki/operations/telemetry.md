@@ -15,14 +15,32 @@ tags:
 sources:
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
+  - id: openwiki-source-6cb3236b8c1412a26d832fcf
+    resource: repo://src/agent/repository-runner.ts
+  - id: openwiki-source-adcadc660c1888613ec50f9a
+    resource: repo://src/agent/wiki-finalizer.ts
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
     resource: repo://src/cli/commands.ts
+  - id: openwiki-source-9472f4eef69027c6849ac706
+    resource: repo://src/cli/diagnostics/error-diagnostics.ts
+  - id: openwiki-source-ada18c62d92003b613355e30
+    resource: repo://src/cli/integrations.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
+  - id: openwiki-source-c2770ac037a7f4b0116a0dc5
+    resource: repo://src/config/env.ts
+  - id: openwiki-source-080c4525024a9b689e361cbb
+    resource: repo://src/generation/run-state.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-04a008dbe4969919f7141a55
+    resource: repo://src/platform/diagnostics.ts
+  - id: openwiki-source-c35800ddf00768a1fa848d13
+    resource: repo://src/setup/credentials/persistence.ts
   - id: openwiki-source-60556380629632e617d8e7e0
     resource: repo://src/telemetry/client.ts
   - id: openwiki-source-73e38f51cb8534f4fd4cd132
@@ -43,6 +61,8 @@ sources:
     resource: repo://src/telemetry/types.ts
   - id: openwiki-source-32254c551f1dd6279c57f228
     resource: repo://src/telemetry/with-run-telemetry.ts
+  - id: openwiki-source-9114a8122dd976bfa887f356
+    resource: repo://src/version.ts
   - id: openwiki-source-d337a8a4afd2614e0a264fee
     resource: repo://test/telemetry/client-no-key.test.ts
   - id: openwiki-source-142fc9b8e9409b07e4e0761b
@@ -53,10 +73,10 @@ sources:
     resource: repo://test/telemetry/telemetry.test.ts
   - id: openwiki-source-9ba5e33980ba1f452c6884d4
     resource: repo://test/telemetry/with-run-telemetry.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Telemetry and Diagnostics
@@ -116,6 +136,88 @@ event — and before any event is sent, then renders the disclosure copy —
 single-sourced as `FIRST_RUN_NOTICE_BODY`, `FIRST_RUN_NOTICE_OPT_OUT`, and
 `FIRST_RUN_NOTICE_VERIFY` in `config.ts` — as an Ink box in the interactive TUI
 or plain framed text on stderr for print mode.
+
+## Run metadata: producer actor and model
+
+Alongside the anonymous PostHog event, every repository run carries two
+**run-metadata identities** stamped into the durable run state and the wiki's
+provenance — `producerActor` and `metadataModel` — held together in
+`RepositoryRunActor` and persisted in `.openwiki/repository-run-state.json` so
+they survive an interrupted and resumed run.
+
+**Producer actor.** `OPENWIKI_PRODUCER_ACTOR` is the single source of actor
+identity: the string `openwiki/<version>` (OKF v0.2 §7 `<producer>/<version>`
+convention), built from the bundled `package.json` so it stays in lockstep with
+releases. It is the `by` value stamped on every code-owned `generated` and
+`verified` provenance event. `beginNativeRepositoryRun` writes
+`{ producerActor: OPENWIKI_PRODUCER_ACTOR, metadataModel: options.modelId }`
+onto the run state at begin time, and the actor is refreshed on resume, so
+provenance never drifts from the build that produced it. During finalization
+`finalizeWikiArtifacts` stamps the actor onto generated provenance, with
+`producerActorsByPage` allowing page-specific producers when bodies were
+completed by different sessions; each page job also records its
+`completedBy` producer so a resumed run can attribute regenerated pages to the
+session that actually wrote them. The MCP server (`runMcpCommand`) defaults
+its producer actor to the host target, falling back to the host id.
+
+**Model.** `metadataModel` is the model/host identity written to the run's
+`.last-update.json` update metadata (the `UpdateMetadata.model` field), so a
+wiki records which model produced it. It is set from the resolved model id at
+begin time and, like the producer actor, is part of the durable state schema
+validated on load.
+
+These run-metadata fields are a different axis from the PostHog telemetry
+event: the event is anonymous and aggregate, while run metadata is written
+into the user's own repository and provenance. The two share the redaction
+spine below but otherwise do not cross-contaminate — run metadata records an
+actor version and model id, never credentials.
+
+## LangSmith tracing and thread grouping
+
+When a `LANGSMITH_API_KEY` is configured, OpenWiki opts the process into
+LangSmith tracing through the LangChain environment variables it manages
+(`LANGCHAIN_TRACING_V2` and `LANGCHAIN_PROJECT`). The setup wizard owns this
+as an explicit decision: entering a key saves `LANGCHAIN_TRACING_V2=true` and
+`LANGCHAIN_PROJECT=openwiki`, while a blank key acts as an off switch — it
+writes `LANGCHAIN_TRACING_V2=false` so a `true` saved by an earlier setup
+cannot silently leave tracing enabled. These keys are managed but are not
+credentials, so they are excluded from the credential diagnostics panel.
+
+Repository runs group their LangSmith traces by a shared **thread id** so one
+run reads as a single thread. `resolveTraceThreadId(runId)` returns the
+durable `runId` (stable across a resumed run) by default, or the value of
+`OPENWIKI_TRACE_THREAD_ID` when that override is set and non-empty. Every
+worker in the run — the planner and each concurrent page worker — streams its
+agent with `configurable.thread_id` set to that same id; LangGraph copies
+`thread_id` into every run's metadata, which is exactly what LangSmith groups
+a thread by. Sharing one thread id across concurrent workers is safe only
+because repository workers have no checkpointer, so there is no per-thread
+state to collide.
+
+Within that thread, each worker is named so its trace is self-describing
+rather than the graph default ("LangGraph"):
+
+- The planner's agent is named `PLANNER_AGENT_NAME` (`"planning agent"`).
+- A page worker's agent is named `workerAgentName(page)`, which produces
+  `worker agent: <page>` — the `/openwiki/` prefix and `.md` suffix stripped
+  from the canonical path (e.g. `worker agent: coverage/forms/ho-3`).
+
+So a repository run's LangSmith thread reads as one planning agent plus one
+worker agent per page, regardless of how many page workers ran concurrently.
+
+```mermaid
+flowchart TD
+  R["durable runId"] --> T["resolveTraceThreadId"]
+  O["OPENWIKI_TRACE_THREAD_ID override"] -.optional.-> T
+  T --> TH["thread_id shared by every worker"]
+  TH --> P["planning agent (PLANNER_AGENT_NAME)"]
+  TH --> W1["worker agent: page-a"]
+  TH --> W2["worker agent: page-b"]
+  TH --> Wn["worker agent: page-n"]
+```
+
+Caption: every repository-run worker shares one LangSmith thread id derived
+from the durable run id; planner and per-page workers are named within it.
 
 ## The single run-telemetry boundary
 
@@ -219,6 +321,33 @@ Anonymity is enforced structurally, not by convention:
   status are bare values. **Raw error strings, messages, provider strings, and
   free text never enter the payload** — the error path emits only enum members
   and bare integers.
+
+### The shared redaction spine
+
+The telemetry envelope and the operator-facing diagnostics surface share a
+single redaction boundary, so a secret that is redacted in one path is
+redacted in all of them. `src/platform/diagnostics.ts` owns that spine:
+
+- `sanitizeDiagnosticText` is the security boundary for anything shown to the
+  user or written to a log. It redacts (1) the exact values of secrets
+  currently set in the environment, replacing each with `[REDACTED:<KEY>]`,
+  and (2) anything matching known key/token shapes — OpenAI/OpenRouter `sk-…`
+  keys, `Bearer …` headers, LangSmith `ls…` tokens, and the "Incorrect API key
+  provided: …" phrasing. `getErrorMessage` routes user-facing errors through
+  this sanitizer.
+- `isSecretLikeKey`, backed by the shared `SECRET_KEY_PATTERN_SOURCE`
+  (`api[-_]?key|authorization|bearer|token|secret|password|user_id|cookie`), is
+  the single source of truth for deciding whether an object key name looks
+  secret-bearing. Every redaction path — the `--debug` error diagnostics
+  panel in `error-diagnostics.ts`, OpenRouter response bodies, and MCP tool
+  args/results — shares it, so a key redacted by one path is redacted by all.
+
+This is why the PostHog telemetry path does not need its own secret scrubber:
+it emits only closed-set enum members and bare integers, so no value that
+could carry a credential ever reaches the builder. The redaction spine
+protects the adjacent surfaces (diagnostics, messages, logs) that *do* handle
+raw error text, keeping them consistent with the secret-sanitization model
+documented in [Configuration](./configuration.md).
 
 ## Error taxonomy
 

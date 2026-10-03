@@ -44,10 +44,12 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+  - id: openwiki-source-c194ba7f94bf86a83012a7b4
+    resource: repo://src/integrations/install/registry.ts
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Architecture Overview
@@ -73,8 +75,8 @@ selects the personal brain. See [Two modes](../concepts/two-modes.md).
 **Driver** decides which model and tools do the authoring. In _native_
 generation, OpenWiki resolves a configured provider, builds its own chat model,
 and runs its own DeepAgents workers. In _host-driven_ generation, a coding agent
-(Codex, Claude Code, OpenCode, Cursor, IBM Bob / Bob Shell, Kiro, Oh My Pi, or
-Antigravity) uses its own authenticated model and native repository tools, while
+(Codex, Claude Code, OpenCode, Cursor, IBM Bob / Bob Shell, Kiro, Oh My Pi,
+Antigravity, or GitHub Copilot CLI) uses its own authenticated model and native repository tools, while
 OpenWiki exposes the durable page-job lifecycle over MCP and owns validation
 and finalization. Host-driven runs currently support only repository code wikis,
 not personal brains.
@@ -357,3 +359,5 @@ static site (`index.html`, `client.js`, `client-lib.js`, `styles.css`,
 - [Two modes](../concepts/two-modes.md) — code vs personal in detail.
 - [OKF output](../concepts/okf-output.md) — the output format and finalization.
 - [Repository generation workflow](../workflows/repository-generation.md) — the durable lifecycle end to end.
+- [Wiki finalization workflow](../workflows/wiki-finalization.md) — deterministic finalization and link integrity.
+- [Quickstart](../quickstart.md) — installing, connecting a coding agent, and creating a wiki.

@@ -13,6 +13,8 @@ tags:
     operations,
   ]
 sources:
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
@@ -31,10 +33,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Configuration and Environment
@@ -236,6 +238,30 @@ transport and capability, each true only when the value trims to `"true"`:
 A separate, distinct axis is `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`
 (`resolveOpenAiCompatibleStreamMessages`), which controls how LangGraph surfaces
 a run in the TUI ("messages" stream mode) rather than the HTTP transport.
+
+### OpenAI-compatible authentication and Entra ID
+
+The `openai-compatible` provider can authenticate with a static API key (the
+default) or delegate to Microsoft Entra ID. `OPENAI_COMPATIBLE_AUTH`
+(`resolveOpenAICompatibleAuthMode`) selects the mode: a missing or blank value,
+or `api-key`, keeps API-key behavior; `entra-id` switches to Entra ID. Any other
+explicit value fails closed with an error, so a typo never silently falls back to
+API-key auth. `providerUsesEntraId` is true only when the provider is
+`openai-compatible` **and** the resolved mode is `entra-id`.
+
+When Entra ID is in use, `OPENAI_COMPATIBLE_ENTRA_SCOPE`
+(`resolveOpenAICompatibleEntraScope`) selects the OAuth scope accepted by the
+target gateway, defaulting to `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE`
+(`https://cognitiveservices.azure.com/.default` — Azure OpenAI's standard
+Cognitive Services scope). Enterprise gateways normally use their own application
+ID URI, so the default only fits Azure OpenAI itself. The scope is passed to
+`createEntraTokenProvider`, which lazily loads `@azure/identity` on first
+request and uses `WorkloadIdentityCredential` when `AZURE_FEDERATED_TOKEN_FILE`
+is set (with `AZURE_CLIENT_ID` / `AZURE_TENANT_ID`), otherwise the
+`DefaultAzureCredential` chain; Azure Identity caches and refreshes tokens
+before expiry, so a long-running model keeps working without reconstruction. The
+endpoint must be HTTPS with no embedded credentials or metadata host, or the
+token provider refuses to build.
 
 `OPENWIKI_STREAM_IDLE_TIMEOUT` sets the milliseconds to wait for the first or
 next Bedrock stream chunk; `resolveStreamIdleTimeoutForProvider` applies it only

@@ -24,6 +24,8 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-f8b008ed89162a0e204fc02d
     resource: repo://src/agent/bob.ts
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -92,6 +94,8 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7388b63c6f928737a7109779
     resource: repo://src/setup/credentials/steps.ts
+  - id: openwiki-source-7c7ce1305f8f14f43fec29de
+    resource: repo://src/setup/credentials/use-init-setup.ts
   - id: openwiki-source-14d4f389b56575bb7afd1310
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-a1d0931b37e6e9efdee37e97
@@ -102,10 +106,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Source Map
@@ -234,10 +238,16 @@ persistence shared by the generation lifecycle), `src/agent/docs-only-backend.ts
 (`prompt.ts`, `repository-prompts.ts`), read-boundary enforcement
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
 `wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
-surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), and the IBM Bob fetch
+surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), the IBM Bob fetch
 adapter (`bob.ts`, whose `createBobFetch` rewrites `Authorization: Bearer …` to
 `Apikey <key>` and sets the `ibm-bob-openwiki-provider` `User-Agent` required by
-Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch).
+Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch), and the Entra ID
+token provider (`entra-auth.ts`, whose `createEntraTokenProvider` lazily loads
+`@azure/identity` and returns an async API-key callback for the
+`openai-compatible` provider's `entra-id` auth mode — wired into `createModel`
+via `providerUsesEntraId` so a long-running model refreshes tokens without
+reconstruction, and rejecting non-HTTPS endpoints or metadata hosts before any
+credential is loaded).
 
 `repository-runner.ts` owns the native runner's full responsibility set.
 `runNativeRepositoryGeneration` drives the loop — begin the durable run

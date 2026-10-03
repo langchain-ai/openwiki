@@ -34,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 ---
 
 # Onboarding and Setup
@@ -111,12 +111,17 @@ update map into the existing file and persists it with the following invariants:
 
 The wizard's persistence layer is split: `buildCredentialEnvUpdates` is a pure
 function that computes which env keys to write from the values the wizard
-collected (provider, primary credential, base URL, secret key, region, GCP
-project/location, model id, reasoning effort, and LangSmith key), performing no
-IO; the caller persists the result via `saveOpenWikiEnv`. The provider key is
-written only when it differs from the current environment, so re-running setup
-with the same provider does not churn the file. A LangSmith key toggles tracing:
-a non-empty key also sets `LANGCHAIN_PROJECT=openwiki` and
+collected (provider, the OpenAI-compatible auth mode and Entra token scope,
+primary credential, base URL, secret key, region, GCP project/location, model id,
+reasoning effort, and LangSmith key), performing no IO; the caller persists the
+result via `saveOpenWikiEnv`. The provider key is written only when it differs
+from the current environment, so re-running setup with the same provider does not
+churn the file. For the OpenAI-compatible provider the auth-mode choice
+(`OPENAI_COMPATIBLE_AUTH`) is persisted whenever set, and the Entra token scope
+(`OPENAI_COMPATIBLE_ENTRA_SCOPE`) is persisted alongside it only when the auth
+mode is `entra-id`; an `entra-id` choice also suppresses writing the API key so
+the wizard never persists a static key for a keyless gateway. A LangSmith key
+toggles tracing: a non-empty key also sets `LANGCHAIN_PROJECT=openwiki` and
 `LANGCHAIN_TRACING_V2=true`, while a blank input sets `LANGCHAIN_TRACING_V2=false`
 so tracing is explicitly disabled rather than silently left on.
 
@@ -125,16 +130,50 @@ so tracing is explicitly disabled rather than silently left on.
 The setup UI is a thin composition root (`InitSetup`) that renders a view driven
 by a controller state machine. The steps that apply to a given provider and run
 mode, in walk order, are produced by `orderedSetupSteps`: an optional run-mode
-chooser, the provider selection, the provider's primary credential step, any
-provider-specific steps (secret key, GCP project/location, base URL, region),
-then the model step (skipped for providers that pin a single `fixedModel`), the
-LangSmith step, and finally — only in code mode — a `code-repo-confirm` step.
+chooser, the provider selection, an `auth-mode` chooser only for the
+OpenAI-compatible provider, the provider's primary credential step, any
+provider-specific steps (secret key, GCP project/location, base URL, an
+`entra-scope` step for OpenAI-compatible/Entra ID, region), then the model step
+(skipped for providers that pin a single `fixedModel`), the LangSmith step, and
+finally — only in code mode — a `code-repo-confirm` step.
 
-The primary credential step is chosen per provider by `credentialStep`: OAuth
+The primary credential step is chosen per provider by `credentialStep`. The
+OpenAI-compatible provider is special-cased first: Entra ID auth returns no
+in-wizard step (the token is never collected — Azure Identity acquires it per
+request), while API-key auth uses `api-key`. For the other providers, OAuth
 providers use `oauth-login`, AWS-SDK providers have no in-wizard step (they are
 handled via AWS credentials), external-CLI providers use `external-cli-auth`,
 API-key providers use `api-key`, and keyless providers that require a GCP project
 use `gcp-project`.
+
+### Entra ID authentication
+
+The OpenAI-compatible provider can authenticate either with a static API key or
+with Microsoft Entra ID. The `auth-mode` step (only emitted for
+`openai-compatible`) presents the two options — `api-key` and `entra-id` — and,
+because it sets the auth mode before the credential step is selected, it changes
+what comes next: choosing `entra-id` clears any collected API key and makes
+`credentialStep` return `null`, so the wizard never asks for or saves an access
+token. A base URL is still required, and on submit the wizard eagerly constructs
+an Entra token provider (`createEntraTokenProvider`) against the entered base URL
+to validate that it is a safe HTTPS endpoint without embedded credentials or a
+metadata host — a failure here blocks the step rather than surfacing on the first
+model request.
+
+The `entra-scope` step, emitted only when the OpenAI-compatible provider is in
+`entra-id` mode, collects the OAuth scope the gateway expects
+(`OPENAI_COMPATIBLE_ENTRA_SCOPE`). It is optional: an empty submit falls back to
+the Azure OpenAI Cognitive Services default
+(`https://cognitiveservices.azure.com/.default`), and enterprise gateways that
+expose their own application ID URI use that instead. At runtime the agent
+constructs the model client with `createEntraTokenProvider(baseURL, scope)` as the
+OpenAI SDK's API-key callback in place of a static key; Azure Identity is loaded
+lazily on first invocation (default credential chain, or `WorkloadIdentityCredential`
+when `AZURE_FEDERATED_TOKEN_FILE` is set), caches and refreshes tokens before
+expiry, and never exposes the raw token or credential material in diagnostics.
+The token provider is checked on the first request, so the wizard cannot
+pre-verify it unattended — the scheduled workflow instead emits a comment
+directing the operator to configure Azure Identity (see below).
 
 A provider with a `fixedModel` (checked by `providerHasFixedModel`) always uses
 that single model ID and skips the model-selection step entirely — the value is
@@ -148,7 +187,10 @@ case: it pins `fixedModel: "premium"`, authenticates with an API key
 stateDiagram-v2
   [*] --> run_mode
   run_mode --> provider
-  provider --> credential
+  provider --> auth_mode: openai-compatible
+  provider --> credential: other provider
+  auth_mode --> credential: api-key
+  auth_mode --> extra_provider_steps: entra-id (no credential step)
   credential --> extra_provider_steps
   extra_provider_steps --> model: non-fixedModel provider
   extra_provider_steps --> langsmith: fixedModel provider
@@ -159,9 +201,12 @@ stateDiagram-v2
 ```
 
 Ordered setup steps for code vs. personal mode as returned by orderedSetupSteps.
-The model step is emitted only when the provider does not pin a fixedModel
-(providerHasFixedModel), so a fixedModel provider such as IBM Bob goes straight
-from the provider-specific steps to the LangSmith step.
+The `auth-mode` chooser is emitted only for the OpenAI-compatible provider and,
+when it selects `entra-id`, omits the credential step and adds an `entra-scope`
+step within the provider-specific steps. The model step is emitted only when the
+provider does not pin a fixedModel (providerHasFixedModel), so a fixedModel
+provider such as IBM Bob goes straight from the provider-specific steps to the
+LangSmith step.
 
 Two functions distinguish "which step to jump to" from "which steps exist".
 `getInitialStep` is a skip-based waterfall that lands on the first unsatisfied
@@ -332,11 +377,17 @@ during setup (`createWorkflowProviderEnv`): the `OPENWIKI_PROVIDER` line names
 it, secrets are wired through `${{ secrets.* }}`, non-sensitive settings (base
 URL, GCP project, region) through `${{ vars.* }}`, and OAuth providers emit a
 comment noting that browser login has no unattended equivalent instead of
-pinning a short-lived, rotated token. The model id is quoted (some IDs, e.g.
-Cloudflare Workers AI's leading `@`, are not plain YAML scalars), defaulting to
-the operator's choice or the provider's first suggested model; an opted-in
-`OPENAI_COMPATIBLE_STREAMING` transport override is propagated so a SSE-only
-gateway does not commit a blank wiki unattended.
+pinning a short-lived, rotated token. The OpenAI-compatible provider in Entra ID
+mode is handled as its own keyless branch: it emits
+`OPENAI_COMPATIBLE_AUTH: entra-id`, the quoted Entra token scope (the configured
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` or the Azure OpenAI default), and a comment
+directing the operator to configure unattended Azure Identity (for example
+`azure/login` with OIDC, managed identity, or workload identity) rather than a
+secret — there is no static key to pin and no API-key line is emitted. The model
+id is quoted (some IDs, e.g. Cloudflare Workers AI's leading `@`, are not plain
+YAML scalars), defaulting to the operator's choice or the provider's first
+suggested model; an opted-in `OPENAI_COMPATIBLE_STREAMING` transport override is
+propagated so a SSE-only gateway does not commit a blank wiki unattended.
 
 Repository content the doc agent must not read or edit is governed by a
 gitignore-style `.openwikiignore` file loaded via `OpenWikiIgnore.load`. Rules

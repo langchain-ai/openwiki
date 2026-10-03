@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-03T08:09:45.159Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -22,6 +22,8 @@ sources:
     resource: repo://src/agent/crash-guard.ts
   - id: openwiki-source-12c17ed8ca9c89ec61f28df7
     resource: repo://src/agent/docs-only-backend.ts
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
@@ -50,7 +52,7 @@ sources:
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.0", at: "2026-10-03T08:09:45.159Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -107,7 +109,11 @@ Each branch constructs a purpose-built client:
 - **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
 - **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
 - **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires.
-- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
+- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE. Two details distinguish the `openai-compatible` gateway path from plain `openai`: when the gateway is configured for chat completions (not the Responses API) the branch installs a `createOpenAiCompatibleFetch` adapter that rewrites the request body — flattening single-element nested text-content arrays into the inline `content` shape some gateways require — and the branch selects its credential from the configured auth mode: a static API key for `api-key` mode, or an Entra ID token provider for `entra-id` mode.
+
+### Entra ID token provider
+
+When `OPENAI_COMPATIBLE_AUTH` is set to `entra-id`, `providerUsesEntraId` returns true and the shared fallthrough builds its `apiKey` from `createEntraTokenProvider(baseURL, resolveOpenAICompatibleEntraScope())` instead of a static key. `createEntraTokenProvider` returns an asynchronous `() => Promise<string>` callback — the OpenAI SDK accepts a function as its `apiKey` option and calls it for each request — and lazily loads `@azure/identity` only on the first invocation, so a process that never authenticates against Entra never imports it. It validates the configured base URL is HTTPS without embedded credentials or a metadata host, then constructs a `WorkloadIdentityCredential` when `AZURE_FEDERATED_TOKEN_FILE` is set (workload identity, as in CI/GitHub Actions) or a `DefaultAzureCredential` otherwise (az login / managed identity / environment credentials), wraps it in `getBearerTokenProvider`, and lets Azure Identity cache and refresh tokens before expiry so a long-running model stays authenticated without reconstruction. `createModel` stays synchronous because the token is acquired lazily per request, not at construction time. The scope defaults to Azure Cognitive Services (`https://cognitiveservices.azure.com/.default`) and is overridable via `OPENAI_COMPATIBLE_ENTRA_SCOPE` for enterprise gateways that use their own application ID URI. Any identity-acquisition failure is re-thrown as a generic, sanitized message that never includes response details or credential material.
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 
