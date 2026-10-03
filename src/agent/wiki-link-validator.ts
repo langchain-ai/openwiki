@@ -14,6 +14,18 @@ const EXCLUDED_FILES = new Set(["index.md", "log.md", "INSTRUCTIONS.md"]);
 const MARKDOWN_LINK_PATTERN = /\[([^\]]*)\]\(([^)]+)\)/gu;
 
 /**
+ * Matches the opening or closing marker of a fenced code block (three or more
+ * backticks or tildes), capturing the marker itself.
+ */
+const FENCE_PATTERN = /^\s*(`{3,}|~{3,})/u;
+
+/**
+ * Matches an inline code span: a backtick run closed by a run of the same
+ * length on the same line.
+ */
+const INLINE_CODE_PATTERN = /(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/gu;
+
+/**
  * Matches an ATX heading, capturing its hashes and trimmed title text. The
  * title feeds anchor-slug generation.
  */
@@ -346,14 +358,44 @@ async function collectMarkdownFiles(
 }
 
 /**
+ * Splits a document into lines with code blanked out, so link and heading
+ * syntax that only appears inside code is never treated as Markdown. Lines of
+ * a fenced code block (fences included) become empty strings, and inline code
+ * spans are replaced by spaces of the same length, which keeps line numbers and
+ * column positions stable for the image-link check and for stamping.
+ */
+function maskMarkdownCode(content: string): string[] {
+  let fence: { character: string; length: number } | undefined;
+
+  return content.split(/\r?\n/u).map((line) => {
+    const marker = FENCE_PATTERN.exec(line)?.[1];
+    if (fence) {
+      if (
+        marker?.[0] === fence.character &&
+        marker.length >= fence.length &&
+        line.trim() === marker
+      ) {
+        fence = undefined;
+      }
+      return "";
+    }
+    if (marker) {
+      fence = { character: marker[0], length: marker.length };
+      return "";
+    }
+    return line.replace(INLINE_CODE_PATTERN, (span) => " ".repeat(span.length));
+  });
+}
+
+/**
  * Extracts every inline Markdown link with its 1-based line number, skipping
- * image links.
+ * image links and anything inside code.
  */
 function extractMarkdownLinks(
   content: string,
 ): Array<{ href: string; line: number }> {
   const links: Array<{ href: string; line: number }> = [];
-  const lines = content.split(/\r?\n/u);
+  const lines = maskMarkdownCode(content);
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -373,7 +415,7 @@ function extractMarkdownLinks(
  */
 function extractHeadings(content: string): string[] {
   const headings: string[] = [];
-  for (const line of content.split(/\r?\n/u)) {
+  for (const line of maskMarkdownCode(content)) {
     const match = HEADING_PATTERN.exec(line);
     if (match) {
       headings.push(match[2]);
