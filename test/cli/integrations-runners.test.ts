@@ -70,6 +70,7 @@ describe("runIntegrationsCommand", () => {
       .mockResolvedValueOnce("not-installed")
       .mockResolvedValueOnce("not-installed")
       .mockResolvedValueOnce("not-installed")
+      .mockResolvedValueOnce("not-installed")
       .mockResolvedValueOnce("not-installed");
 
     await runIntegrationsCommand({
@@ -90,9 +91,10 @@ describe("runIntegrationsCommand", () => {
         "cursor\tnot-installed\tCursor\n" +
         "kiro\tnot-installed\tKiro\n" +
         "omp\tnot-installed\tOh My Pi\n" +
-        "antigravity\tnot-installed\tAntigravity CLI\n",
+        "antigravity\tnot-installed\tAntigravity CLI\n" +
+        "copilot\tnot-installed\tGitHub Copilot CLI\n",
     );
-    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(8);
+    expect(getHostIntegrationStatus).toHaveBeenCalledTimes(9);
     expect(getHostIntegrationStatus).toHaveBeenCalledWith(
       expect.objectContaining({ id: "codex" }),
       { scope: "user", root: os.homedir() },

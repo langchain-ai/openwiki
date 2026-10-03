@@ -31,10 +31,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
 verified:
   - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Configuration and Environment
@@ -188,29 +188,34 @@ variables and optional base-URL override in `PROVIDER_CONFIGS`; see
 ### Token limits
 
 OpenWiki caps per-request output tokens through three settings, resolved by
-`resolveConfiguredMaxOutputTokens` in a fixed precedence:
+`resolveConfiguredMaxOutputTokens`. The precedence has one provider-specific
+exception before the neutral rule:
 
-1. `OPENWIKI_MAX_OUTPUT_TOKENS` — the provider-neutral cap, parsed by
+1. **OpenRouter legacy cap.** When the provider is `openrouter` **and**
+   `OPENWIKI_OPENROUTER_MAX_TOKENS` is set, that value is used immediately — it
+   wins even over the provider-neutral `OPENWIKI_MAX_OUTPUT_TOKENS`, so existing
+   low-balance installations keep their provider-specific credit limit. This is
+   a legacy cap retained because, without one, OpenRouter's credit pre-check
+   budgets the model's full advertised output ceiling and rejects requests with
+   HTTP 402.
+2. **Provider-neutral cap.** Otherwise `OPENWIKI_MAX_OUTPUT_TOKENS` is parsed by
    `resolveMaxOutputTokens`, which accepts only a positive safe integer (no
-   fractions, exponents, or hex). When set, it applies to every provider.
-2. Provider-specific caps, used only when the neutral setting is unset:
-   - On **OpenRouter**, `OPENWIKI_OPENROUTER_MAX_TOKENS` is a legacy cap retained
-     for existing low-balance installations. It takes precedence over the
-     Bedrock default whenever set, because without a cap OpenRouter's credit
-     pre-check budgets the model's full advertised output ceiling and rejects
-     requests with HTTP 402.
-   - On **Bedrock**, `OPENWIKI_BEDROCK_MAX_TOKENS` caps output for the Bedrock
-     Converse API. `resolveBedrockMaxTokens` **defaults to
-     `BEDROCK_DEFAULT_MAX_TOKENS` (16000)** when unset, matching
-     `@langchain/anthropic`'s built-in ceiling for Claude models — without an
-     explicit `maxTokens`, Bedrock caps output at 4096 tokens and truncates long
-     wiki pages mid-write. Override it for models with a lower ceiling.
-3. When all of the above are unset, the resolved cap is `undefined` and the
-   provider SDK's own default applies (Bedrock excepted, which always gets the
-   16000 default).
+   fractions, exponents, or hex). When set, it applies to every other provider.
+3. **Bedrock default.** When the neutral setting is also unset and the provider
+   is `bedrock`, `OPENWIKI_BEDROCK_MAX_TOKENS` caps output for the Bedrock
+   Converse API. `resolveBedrockMaxTokens` **defaults to
+   `BEDROCK_DEFAULT_MAX_TOKENS` (16000)** when unset, matching
+   `@langchain/anthropic`'s built-in ceiling for Claude models — without an
+   explicit `maxTokens`, Bedrock caps output at 4096 tokens and truncates long
+   wiki pages mid-write. Override it for models with a lower ceiling.
+4. When all of the above are unset and the provider is not `bedrock`, the resolved
+   cap is `undefined` and the provider SDK's own default applies (Bedrock always
+   gets the 16000 default).
 
-In short: `OPENWIKI_MAX_OUTPUT_TOKENS` > provider-specific (OpenRouter legacy /
-Bedrock default) > unset.
+In short: on OpenRouter, `OPENWIKI_OPENROUTER_MAX_TOKENS` (if set) overrides
+everything; otherwise `OPENWIKI_MAX_OUTPUT_TOKENS` (if set) applies to all
+providers; otherwise Bedrock gets its 16000 default and every other provider gets
+`undefined`.
 
 ### Streaming and Responses API toggles
 
@@ -303,9 +308,9 @@ for those models even though it is valid for OpenAI GPT-5.6.
 `CREDENTIAL_DIAGNOSTIC_ENV_KEYS`, comparing the file value against the
 `process.env` value. Each entry reports its source — `process.env`, the env file
 path, "process.env over <file>" when both are set, or `unset` — and a
-masked preview. Non-secret settings (provider, model, token limits, page concurrency, base
-URLs, region, Google project/location, and the boolean toggles, including
-`OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
+masked preview. Non-secret settings (provider, model, token limits, page concurrency, retry
+attempts, base URLs, region, Google project/location, OpenRouter provider-only filter, and
+the boolean toggles, including `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
 values).
@@ -315,8 +320,8 @@ invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
 effort, invalid retry attempts, invalid page concurrency, invalid stream idle
 timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks,
-NVIDIA, OpenAI, and the OpenAI-compatible `/chat/completions`-endpoint guard
-each validated through `getProviderBaseUrlWarnings`), credential
+NVIDIA, OpenAI, and the OpenAI-compatible base URL each validated through
+`getProviderBaseUrlWarnings`), credential
 whitespace/newline/quote issues, and a warning that the Bedrock stream watchdog
 is disabled when the idle timeout is `0`. The boolean validator
 `getBooleanWarnings` covers all four `openai-compatible` toggles —

@@ -34,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Onboarding and Setup
@@ -215,14 +215,29 @@ invoked before both interactive/`--print` runs (in the CLI runner) and durable
 repository runs (`beginRepositoryRun`). It:
 
 - Refreshes the managed agent-instruction snippets in `AGENTS.md` and
-  `CLAUDE.md`. Each file is created when missing and, when present, only the
-  region between the `<!-- OPENWIKI:START -->` / `<!-- OPENWIKI:END -->` markers
-  is replaced, so operator content outside the markers survives. Both files are
+  `CLAUDE.md`. Only `AGENTS.md` is created when missing — `CLAUDE.md` is not,
+  because Claude Code falls back to reading `AGENTS.md` when no `CLAUDE.md` sits
+  beside it, so creating one would only shadow it. When present, only the region
+  between the `<!-- OPENWIKI:START -->` / `<!-- OPENWIKI:END -->` markers is
+  replaced, so operator content outside the markers survives. Both files are
   prepared and validated before either is written, and malformed or duplicated
   markers abort the update with the file left unchanged. By default the
   `CLAUDE.md` managed block is deliberately minimal and just points to
   `AGENTS.md` via the `@AGENTS.md` import, so `AGENTS.md` stays the single
   canonical source of agent instructions.
+- **Retrieval-first AGENTS.md block.** The `AGENTS.md` managed block
+  (`createCodeModeAgentsSnippet`) is retrieval-first rather than eager-load: it
+  tells the agent **not** to enumerate, preload, or search wikis at task start,
+  but to reach for `openwiki_search` (just-in-time context) and `openwiki_read`
+  (the relevant complete sections) when unfamiliar architecture or dependency
+  behavior materially affects the task, or when source inspection leaves an
+  important uncertainty — stopping once the question is grounded. If a search
+  returns `workspace_required`, the agent asks which listed workspace to use and
+  retries with its ID; `openwiki_list_workspaces`/`openwiki_list_wikis` are for
+  discovering workspace membership itself. `openwiki/quickstart.md` and its
+  links are the fallback only when the retrieval tools are unavailable. Source
+  code and tests are treated as authoritative, and the brief's unknowns/review
+  items are verification gaps, not automatic requirements.
 - **Import-only CLAUDE.md preservation.** Two branches keep a forwarding
   `CLAUDE.md` intact. First, a `CLAUDE.md` whose trimmed content is exactly
   `@AGENTS.md` (the `CLAUDE_AGENTS_IMPORT` sentinel) is left entirely unchanged —

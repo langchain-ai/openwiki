@@ -1,6 +1,7 @@
 import type { CodexTokens } from "../../agent/openai-chatgpt-oauth.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { OpenWikiProvider } from "../../config/constants.js";
+import type { OpenAICompatibleAuthMode } from "../../config/constants.js";
 import type { ReasoningEffort } from "../../config/reasoning.js";
 import type { AuthProviderId } from "../../auth/types.js";
 import type { ConnectorId } from "../../connectors/types.js";
@@ -41,10 +42,12 @@ export type InitSetupProps = {
 
 export type PromptStep =
   | "api-key"
+  | "auth-mode"
   | "base-url"
   | "code-repo-confirm"
   | "code-repo-path"
   | "external-cli-auth"
+  | "entra-scope"
   | "final"
   | "gcp-location"
   | "gcp-project"
@@ -154,7 +157,9 @@ export type SetupStepState = "current" | "done" | "optional" | "pending";
  */
 export interface CompleteSetupOptions {
   nextApiKey: string | null;
+  nextAuthMode?: OpenAICompatibleAuthMode | null;
   nextBaseUrl: string | null;
+  nextEntraScope?: string | null;
   nextGcpLocation: string | null;
   nextGcpProject: string | null;
   nextLangSmithKey: string | null;

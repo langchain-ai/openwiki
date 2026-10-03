@@ -53,16 +53,22 @@ jobs:
         if: ${{ !cancelled() }}
         run: rm -f -- openwiki/.run.json
 
+      - name: List OpenWiki update paths
+        id: paths
+        if: ${{ !cancelled() }}
+        # CLAUDE.md is listed only when present: git add fails on a missing path
+        # and then stages nothing.
+        run: |
+          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
+          if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
+          echo "list=$paths" >> "$GITHUB_OUTPUT"
+
       - name: Create OpenWiki update pull request
         id: create-pr
         if: ${{ !cancelled() }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          add-paths: |
-            openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
+          add-paths: ${{ steps.paths.outputs.list }}
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"

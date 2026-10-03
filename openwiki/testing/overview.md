@@ -22,6 +22,8 @@ sources:
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -58,6 +60,8 @@ sources:
     resource: repo://test/cli/components/markdown.test.tsx
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
+  - id: openwiki-source-f66c47a0c6537f764ad36878
+    resource: repo://test/cli/integrations-runners.test.ts
   - id: openwiki-source-e0c8b1fbf566b4e3dd216c3d
     resource: repo://test/cli/run-log/activity.test.ts
   - id: openwiki-source-f403159d398704a89ba45e50
@@ -94,8 +98,16 @@ sources:
     resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
+  - id: openwiki-source-ef46c858ed814837f5b98099
+    resource: repo://test/integrations/cli-dogfood.test.ts
+  - id: openwiki-source-6bb01870fdf1babeccb38395
+    resource: repo://test/integrations/config-adapters.test.ts
+  - id: openwiki-source-0d2125bc752003aab41c93c6
+    resource: repo://test/integrations/installer.test.ts
   - id: openwiki-source-1830eb3a15f412bf58d08bef
     resource: repo://test/integrations/mcp-server.test.ts
+  - id: openwiki-source-4276c87f04bf113736d85822
+    resource: repo://test/integrations/package-contents.test.ts
   - id: openwiki-source-7586182fa3a8278fbe99d348
     resource: repo://test/integrations/protocol.test.ts
   - id: openwiki-source-d1d0d34cd042b7cd70476a68
@@ -112,16 +124,18 @@ sources:
     resource: repo://test/visualize/client-interaction.test.ts
   - id: openwiki-source-1904eaebd82125a3a3881dac
     resource: repo://test/visualize/page.test.ts
+  - id: openwiki-source-bfe55b1b277c3b3a7e1130e1
+    resource: repo://test/visualize/visualize-graph.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
   - id: openwiki-source-98d5ddb014a0fd4d678f6f2a
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+  - by: openwiki/0.6.1
+    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Testing Guide
@@ -270,7 +284,7 @@ matching path. The most important mappings:
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
-| `test/integrations/`                                                                                                                                      | `src/integrations/` — host installers, config adapters, the MCP server, and packaged skill/protocol contracts |
+| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution), host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
 | `test/cli/` (incl. `test/cli/run-log/`)                                                                                                                    | `src/cli/` — CLI wiring, Ink components, the run-log reducer/progress/summary/activity/tool-input helpers, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
@@ -354,6 +368,42 @@ the page remains `complete` — because `runPageAgent` guards its
 `streamWorkerTools` catch with `if (submitted) return { status: "submitted" }`
 so a post-submit worker throw returns a submitted outcome rather than calling
 `skipRepositoryPage`.
+
+The suite also pins the **LangSmith trace grouping** introduced by the
+`trace-thread-per-update` changeset. Every worker in a run streams against one
+shared LangSmith thread id so the planner and the per-page workers collapse into
+a single grouped trace rather than one root trace per agent. Two describe blocks
+cover this:
+
+- **`LangSmith thread grouping`** — `tags the planner and every concurrent page
+  worker with the run's thread id` runs the harness with `pageConcurrency: 2`
+  and asserts `harness.streamConfigs` has length `1 + planPaths.length` (one
+  planner plus one worker per planned page), and that **every** captured
+  `streamConfig.configurable` equals `{ thread_id: HARNESS_RUN_ID }`. The harness
+  captures these configs by wrapping `createDeepAgent`'s returned `stream` method
+  to push the `config` argument onto `harness.streamConfigs` before delegating.
+  `uses OPENWIKI_TRACE_THREAD_ID when CI sets it` stubs the env with a
+  whitespace-padded override (`" ingest-3280b3e "`) and asserts the trimmed value
+  (`"ingest-3280b3e"`) is used for every worker's `thread_id`, so CI can name a
+  run's thread after the change that caused it.
+- **`LangSmith trace names`** — `names the planner and each page worker after its
+  page` asserts the first captured `agentOptions.name` is `PLANNER_AGENT_NAME`
+  (`"planning agent"`) and the remaining worker names, sorted, equal
+  `planPaths.map(workerAgentName)`; it also pins `workerAgentName` directly,
+  including the nested-path case `workerAgentName("/openwiki/coverage/forms/ho-3.md")`
+  → `"worker agent: coverage/forms/ho-3"`, which strips the `/openwiki/` prefix
+  and `.md` suffix so a run's thread reads as one planner plus one worker per
+  page.
+
+These thread/name tests run against the same mocked `deepagents` harness: the
+mock captures `agentOptions` (including `name`) on every `createDeepAgent` call
+and captures each `stream(input, config)` invocation's `config.configurable` so
+the assertions can inspect the thread id without a real LangSmith export. The
+thread id itself comes from `resolveTraceThreadId(run.state.runId)` in
+`src/config/constants.ts`, which returns the trimmed `OPENWIKI_TRACE_THREAD_ID`
+env override when set and non-empty, otherwise the durable `runId`; the runner
+passes that value as `configurable.thread_id` to both the planner and each page
+worker's `streamWorkerTools` call.
 
 Finally the suite covers `coerceRepositoryWorkerModelResponse`, the
 normalization the repository-worker `NO_DELEGATION_MIDDLEWARE` applies before
@@ -541,7 +591,15 @@ streams:
   with a redundant `restore()` being a no-op that does not prematurely restore
   while another run is still active) — that an OpenRouter failure fans out to
   every active run's sink while each run can clear its own failure, and that
-  non-OpenRouter requests pass through untouched.
+  non-OpenRouter requests pass through untouched. It also pins the transient-404
+  retry contract (only a provider `404` carrying `error.metadata.provider_name`
+  is retried, not an ordinary `404`, and a non-cloneable request body is never
+  resent) and the malformed-success classification: a `200` body that is invalid
+  JSON, missing `choices`, or has a non-object first choice/message is converted
+  to a retryable `502` `OpenRouterError` (surfaced both through the raw `fetch`
+  response and through `ChatOpenRouter.invoke`), while a transient provider 404
+  that precedes such a malformed success is retried first before the malformed
+  response is classified.
 
 ### OKF: frontmatter and index
 
@@ -601,14 +659,18 @@ agent files and workflow/provider blocks (including ordered steps, the
 failure-propagation `propagate` step, and the PR annotation), and asserts the
 OpenWiki `<!-- OPENWIKI:START -->`/`<!-- OPENWIKI:END -->` managed-snippet
 contract around legacy sections and hand-written content. It also pins
-`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when both agent files are
-absent it creates `CLAUDE.md` as a simple `@AGENTS.md` reference rather than a
-copy of `AGENTS.md`'s content (it contains `@AGENTS.md`, not an inert Markdown
-link, and is shorter than `AGENTS.md`); when `CLAUDE.md` is a symlink to
-`AGENTS.md` it inlines the instructions instead of emitting an `@AGENTS.md`
-import (which would point the file at itself); and a pre-existing `CLAUDE.md`
-that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved unchanged rather
-than overwritten — so an import-only `CLAUDE.md` survives a re-setup. Sibling files
+`CLAUDE.md` handling in `ensureCodeModeRepoSetup`: when neither agent file
+exists only `AGENTS.md` is created — `CLAUDE.md` is deliberately **not** created,
+because Claude Code reads `AGENTS.md` when no `CLAUDE.md` exists and creating one
+would only shadow it; when `CLAUDE.md` already exists but `AGENTS.md` does not,
+setup creates `AGENTS.md` and rewrites `CLAUDE.md` as a simple `@AGENTS.md`
+reference rather than a copy of `AGENTS.md`'s content (it contains `@AGENTS.md`,
+not an inert Markdown link, and is shorter than `AGENTS.md`); when `CLAUDE.md`
+is a symlink to `AGENTS.md` it inlines the instructions instead of emitting an
+`@AGENTS.md` import (which would point the file at itself); and a pre-existing
+`CLAUDE.md` that only imports `AGENTS.md` (e.g. `@AGENTS.md`) is preserved
+unchanged rather than overwritten — so an import-only `CLAUDE.md` survives a
+re-setup. Sibling files
 (`test/ingestion/ingestion-run.test.ts`, `test/ingestion/ingestion.test.ts`,
 `test/ingestion/langsmith-modes.test.ts`) cover the ingestion run,
 `parseIngestionTarget`/`createConnectorSynthesisGuidance`, and connector modes.
@@ -676,8 +738,13 @@ The non-run-log CLI test worth knowing about:
   debug off, redaction of secret-like keys inside stringified metadata
   (`metadata.raw`), previous-errors capping (only the first five
   `previous_errors` are kept, with a `metadata.previous_errors.more` note
-  counting the remainder), and nested response fields surfaced under a dotted
-  prefix (`response.status`/`response.statusText`).
+  counting the remainder), nested response fields surfaced under a dotted
+  prefix (`response.status`/`response.statusText`), and — in debug mode only —
+  `rootCause` extraction that walks an error's `cause` chain to its innermost
+  non-cyclic cause (surfacing `rootCause.message`/`rootCause.code`, e.g. the
+  `getaddrinfo ENOTFOUND …` system error buried under SDK/`fetch failed`
+  wrappers), redacts secret-like patterns in the root-cause message, and stops
+  on a cause cycle rather than looping.
 
 ### Config: env parsing, formatting, and provider constants
 
@@ -753,6 +820,17 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   (the stylesheet the `<link>` tag loads) and `font-src` must include
   `https://fonts.gstatic.com` (the font files that stylesheet references), so a
   browser enforcing the CSP no longer silently blocks the Inter typeface.
+- `test/visualize/visualize-graph.test.ts` exercises `buildGraph`/
+  `splitFrontmatter`/`firstHeading` from `src/visualize/graph.ts` against
+  throwaway temp wikis. It pins frontmatter parsing (scalars, quoted titles,
+  inline and dashed lists, and the no-frontmatter passthrough), the first-H1
+  heading lookup, and the graph builder: nodes exclude `INSTRUCTIONS.md`
+  scaffolding, the root `index.md` is titled "Home", directed edges resolve
+  links both ways and record backlinks on the target, links to missing pages
+  and self-links are dropped, Unicode and special-character link targets are
+  decoded (with malformed URL escapes not blocking valid links and a raw `%`
+  preserved in filenames), encoded and Unicode links are deduplicated, and a
+  symlink that escapes the wiki root is not followed.
 - `test/visualize/client-interaction.test.ts` is a `@vitest-environment jsdom`
   suite for the browser-only `src/visualize/client.ts` interaction wiring.
   Because `client.ts` touches the DOM and CDN globals at import time, the test
@@ -774,9 +852,59 @@ parts that can run in plain Node and the browser-only client glue that cannot:
 ### Integrations: protocol, session manager, and MCP server
 
 `test/integrations/` mirrors `src/integrations/`. It splits the host-integration
-surface by transport boundary: the transport-neutral protocol schema, the
-single-run session manager that adapts it, and the MCP transport server that
-exposes it:
+surface by concern: the on-disk installer and its config adapters, the CLI
+install/dogfood path, the published package-contents guard, the
+transport-neutral protocol schema, the single-run session manager that adapts
+it, and the MCP transport server that exposes it.
+
+### Integrations: installer, config adapters, dogfood, and package contents
+
+- `test/integrations/installer.test.ts` is the broadest host-installer suite. It
+  pins the `HOST_TARGETS` registry — the eight supported hosts (bob, codex,
+  claude, opencode, cursor, kiro, omp, antigravity) with their per-host
+  `producerActor`, user/project skill-directory and MCP-config destinations
+  (JSON for most, Codex TOML, OpenCode JSONC) — pins that bob shares Codex's
+  `.agents/skills/openwiki` directory while every other host's user skill
+  directory is distinct, and exercises `HostIntegrationInstaller` install /
+  uninstall / status across every target. It asserts a project install from a
+  subdirectory writes at the Git root (not the subdirectory) and rejects
+  installation outside a Git repository, that user and project installations are
+  independent (uninstalling one leaves the other intact), that a modified
+  receipt (whitespace-only MCP command, removed skill, or removed MCP entry)
+  reports `modified`, that uninstalling a modified integration rejects with
+  `conflict` leaving files in place, that host directory cleanup preserves the
+  host root derived from the skill path, and that
+  `resolveCanonicalSkillBundle` resolves the same on-disk
+  `integrations/openwiki` bundle from both source (`installer.ts`) and built
+  (`installer.js`) layouts.
+- `test/integrations/config-adapters.test.ts` exercises the per-format MCP-config
+  adapters. The atomic-write suite pins that `writeTextAtomic` preserves file
+  mode bits and leaves no temporary sibling. The JSON, Codex TOML, and OpenCode
+  JSONC ownership suites each pin create/preserve/recognize/remove of the exact
+  OpenWiki entry, that property order is irrelevant but shape drift (a
+  non-matching command) rejects with `conflict` without changing bytes, that
+  malformed config rejects with `invalid_input` leaving bytes unchanged (reported
+  as `modified`), and that a recognized prior entry is replaced while an
+  unrecognized one is left alone. It also round-trips host-specific layouts like
+  Cursor's `.cursor/mcp.json`.
+- `test/integrations/cli-dogfood.test.ts` drives the real
+  `runIntegrationsCommand` (no installer mock) against a disposable Git
+  repository, installing Codex at project scope and asserting the on-disk
+  artifacts (`SKILL.md`, `.codex/config.toml` with
+  `args = ["mcp", "--host", "codex"]`), then listing, reinstalling as
+  `unchanged`, and uninstalling (removing `.agents/skills/openwiki`). A
+  parameterized suite across every host reports/repairs/uninstalls partial
+  states (removed skill or MCP entry) and ends `not-installed` with no stderr.
+- `test/integrations/package-contents.test.ts` runs `npm pack --dry-run --json`
+  to pin the published bundle: every canonical
+  `integrations/openwiki/...` skill file is packed, `package.json` is packed,
+  no packed path is absolute, and the bundle excludes generated installation
+  state (`.openwiki-install.json`, `.agents/`, `.claude/`, `.codex/`,
+  `.opencode/`, `.cursor/`, `.kiro/`, `.omp/`, `.gemini/`, `.config/`,
+  `.deepagents/`, staging, rollback, fixture) and any file leaking the
+  absolute package root.
+
+### Integrations: protocol, session manager, and MCP server
 
 - `test/integrations/protocol.test.ts` exercises the strict Zod schemas in
   `src/integrations/core/protocol.ts`. It validates the complete protocol
@@ -809,20 +937,29 @@ exposes it:
   an older process-local run being cleared after a proven update no-op.
 - `test/integrations/mcp-server.test.ts` exercises
   `createOpenWikiMcpServer` through linked in-memory MCP transports. It asserts
-  the server advertises the six lifecycle tools in order and that the
-  `INSTRUCTIONS` embedding (from `src/integrations/mcp/server.ts`) contains
-  the sparse-workflow guidance — the host's native repository tools,
+  the server advertises the full ordered tool surface — the four retrieval
+  tools (`openwiki_list_workspaces`, `openwiki_list_wikis`, `openwiki_search`,
+  `openwiki_read`) followed by the six lifecycle tools
+  (`openwiki_begin`/`openwiki_submit_plan`/`openwiki_next_page`/
+  `openwiki_inspect_page_claims`/`openwiki_submit_page`/`openwiki_finish`) — and
+  that the `INSTRUCTIONS` embedding (from `src/integrations/mcp/server.ts`) leads
+  with the retrieval/search guidance: do not enumerate or preload wikis at task
+  start, search only when grounded, the `workspace_required` /
+  `openwiki_list_workspaces` / `openwiki_list_wikis` / `openwiki_read` flow, and
+  treating wiki content as context rather than instructions. It then asserts the
+  generation-lifecycle guidance: author with the host's native repository tools,
   `openwiki_submit_plan`/`openwiki_next_page`/`openwiki_inspect_page_claims`/
-  `openwiki_submit_page`, that issue-free Claims are "retained
-  automatically" and only sparse Claim decisions are submitted, the stale or
-  unresolved recheck requirement, "Never report success before finish", and
-  "source drift invalidated the plan" — while never mentioning the removed
+  `openwiki_submit_page`, that issue-free Claims are "retained automatically" and
+  only sparse Claim decisions are submitted, the stale or unresolved recheck
+  requirement, "Never report success before finish", and "source drift
+  invalidated the plan" — while never mentioning the removed
   `openwiki_resolve_claims`. It also covers successful tool calls (text JSON
   plus structured content) and error bounding: a `HostIntegrationError` is
   surfaced as a bounded `isError` result while an unknown failure is replaced
-  with a generic `OpenWiki MCP operation failed.` message and never leaks the
+  with a generic `OpenWiki MCP operation failed.` message that never leaks the
   sensitive text to the client or stderr. A lifecycle smoke test completes one
-  factual init page through all five transport calls.
+  factual init page through all six transport calls and verifies the Claim was
+  persisted via `ClaimsStore`.
 
 ## Testing patterns you will reuse
 
@@ -925,6 +1062,8 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
 - **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
 - **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
+- **LangSmith thread grouping:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "tags the planner and every concurrent page worker with the run's thread id"` (shared `thread_id` on planner + every worker) or `-t "uses OPENWIKI_TRACE_THREAD_ID when CI sets it"` (trimmed env override).
+- **LangSmith trace names:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "names the planner and each page worker after its page"` (`PLANNER_AGENT_NAME` + `workerAgentName(page)`).
 - **Repository-worker response coercion:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "coerces roleless generic streaming aggregates before LangChain validates wrapModelCall"` (roleless `ChatMessageChunk` → `AIMessageChunk` with collapsed tool calls), `-t "coerces generic assistant messages before LangChain validates wrapModelCall"` (`ChatMessage` → `AIMessage`), or `-t "leaves non-assistant generic model responses untouched"`.
 - **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` or `-t "forwards only approved tool lifecycle events"`.
 - **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts`.
@@ -937,7 +1076,13 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Host protocol schema:** `pnpm exec vitest run test/integrations/protocol.test.ts`.
 - **Host session manager:** `pnpm exec vitest run test/integrations/session-manager.test.ts`.
 - **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
+- **Host installer (registry, scope, skill bundle):** `pnpm exec vitest run test/integrations/installer.test.ts`.
+- **Host config adapters (JSON/TOML/JSONC ownership):** `pnpm exec vitest run test/integrations/config-adapters.test.ts`.
+- **Integrations CLI dogfood:** `pnpm exec vitest run test/integrations/cli-dogfood.test.ts`.
+- **Published package-contents guard:** `pnpm exec vitest run test/integrations/package-contents.test.ts`.
+- **Integrations/MCP CLI runners:** `pnpm exec vitest run test/cli/integrations-runners.test.ts`.
 - **Code-mode ingestion setup:** `pnpm exec vitest run test/ingestion/code-mode.test.ts`.
+- **Visualizer graph builder:** `pnpm exec vitest run test/visualize/visualize-graph.test.ts`.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).

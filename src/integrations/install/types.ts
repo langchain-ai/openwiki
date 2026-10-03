@@ -9,7 +9,8 @@ export type HostTargetId =
   | "cursor"
   | "kiro"
   | "omp"
-  | "antigravity";
+  | "antigravity"
+  | "copilot";
 
 /**
  * Current managed installation states exposed to callers.
