@@ -34,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Onboarding and Setup
@@ -215,9 +215,11 @@ invoked before both interactive/`--print` runs (in the CLI runner) and durable
 repository runs (`beginRepositoryRun`). It:
 
 - Refreshes the managed agent-instruction snippets in `AGENTS.md` and
-  `CLAUDE.md`. Each file is created when missing and, when present, only the
-  region between the `<!-- OPENWIKI:START -->` / `<!-- OPENWIKI:END -->` markers
-  is replaced, so operator content outside the markers survives. Both files are
+  `CLAUDE.md`. Only `AGENTS.md` is created when missing — `CLAUDE.md` is not,
+  because Claude Code falls back to reading `AGENTS.md` when no `CLAUDE.md` sits
+  beside it, so creating one would only shadow it. When present, only the region
+  between the `<!-- OPENWIKI:START -->` / `<!-- OPENWIKI:END -->` markers is
+  replaced, so operator content outside the markers survives. Both files are
   prepared and validated before either is written, and malformed or duplicated
   markers abort the update with the file left unchanged. By default the
   `CLAUDE.md` managed block is deliberately minimal and just points to

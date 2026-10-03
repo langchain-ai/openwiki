@@ -99,6 +99,7 @@ const SPINE_BY_PROVIDER: Record<string, string[]> = {
   openrouter: ["provider", "api-key", "model", "langsmith"],
   "openai-compatible": [
     "provider",
+    "auth-mode",
     "api-key",
     "base-url",
     "model",
@@ -116,6 +117,8 @@ const MANAGED_KEYS = [
   "OPENWIKI_PROVIDER",
   "OPENWIKI_MODEL_ID",
   "OPENWIKI_REASONING_EFFORT",
+  "OPENAI_COMPATIBLE_AUTH",
+  "OPENAI_COMPATIBLE_ENTRA_SCOPE",
   "LANGSMITH_API_KEY",
   "LANGCHAIN_TRACING_V2",
   "OPENAI_CHATGPT_ACCESS_TOKEN",
@@ -166,6 +169,58 @@ afterEach(() => {
 });
 
 describe("orderedSetupSteps", () => {
+  test("selects the Entra path even when the shell still uses API-key mode", () => {
+    set("OPENAI_COMPATIBLE_AUTH", "api-key");
+    const steps = orderedSetupSteps(
+      "openai-compatible",
+      "code",
+      false,
+      "entra-id",
+    );
+
+    expect(steps).toEqual([
+      "provider",
+      "auth-mode",
+      "base-url",
+      "entra-scope",
+      "model",
+      "langsmith",
+      "code-repo-confirm",
+    ]);
+    expect(
+      nextSetupStep(
+        "auth-mode",
+        "openai-compatible",
+        "code",
+        false,
+        "entra-id",
+      ),
+    ).toBe("base-url");
+    expect(
+      nextSetupStep("base-url", "openai-compatible", "code", false, "entra-id"),
+    ).toBe("entra-scope");
+  });
+
+  test("selects the API-key path even when the shell still uses Entra", () => {
+    set("OPENAI_COMPATIBLE_AUTH", "entra-id");
+    const steps = orderedSetupSteps(
+      "openai-compatible",
+      "code",
+      false,
+      "api-key",
+    );
+
+    expect(steps).toContain("api-key");
+    expect(steps).not.toContain("entra-scope");
+    expect(
+      nextSetupStep("auth-mode", "openai-compatible", "code", false, "api-key"),
+    ).toBe("api-key");
+    expect(isCredentialConfigured("openai-compatible", "api-key")).toBe(false);
+    expect(needsCredentialStep("openai-compatible", "api-key")).toBe(true);
+    set("OPENAI_COMPATIBLE_API_KEY", "test-key");
+    expect(isCredentialConfigured("openai-compatible", "api-key")).toBe(true);
+  });
+
   for (const [provider, spine] of Object.entries(SPINE_BY_PROVIDER)) {
     test(`walks ${provider} in the expected order`, () => {
       expect(orderedSetupSteps(provider as never, "personal", false)).toEqual(
@@ -254,6 +309,14 @@ describe("nextSetupStep", () => {
 });
 
 describe("getWizardManagedEnvKeys", () => {
+  test("includes OpenAI-compatible auth mode and scope in shell override warnings", () => {
+    const keys = getWizardManagedEnvKeys("openai-compatible");
+
+    expect(keys).toContain("OPENAI_COMPATIBLE_AUTH");
+    expect(keys).toContain("OPENAI_COMPATIBLE_ENTRA_SCOPE");
+    expect(keys).toContain("OPENAI_COMPATIBLE_BASE_URL");
+  });
+
   test("lists an api-key provider's managed keys with no undefined entries", () => {
     const keys = getWizardManagedEnvKeys("openai");
 

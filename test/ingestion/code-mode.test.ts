@@ -51,6 +51,7 @@ interface WorkflowStep {
   run?: string;
   uses?: string;
   with?: Record<string, unknown>;
+  env?: Record<string, string>;
 }
 
 async function createTempRepo(): Promise<string> {
@@ -879,7 +880,44 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
     expect(workflow).toContain(
       "OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
     );
+    const run = requireWorkflowStep(
+      parseWorkflowSteps(workflow),
+      "Run OpenWiki",
+    );
+    expect(run.env?.OPENAI_COMPATIBLE_API_KEY).toBe(
+      "${{ secrets.OPENAI_COMPATIBLE_API_KEY }}",
+    );
   });
+
+  test.each([
+    ["custom", " api://gateway/.default ", "api://gateway/.default"],
+    ["default", undefined, "https://cognitiveservices.azure.com/.default"],
+  ])(
+    "generates keyless Entra workflow with %s scope",
+    async (_name, scope, expectedScope) => {
+      const workflow = await generateWorkflow({
+        OPENWIKI_PROVIDER: "openai-compatible",
+        OPENAI_COMPATIBLE_AUTH: "entra-id",
+        OPENAI_COMPATIBLE_ENTRA_SCOPE: scope,
+        OPENWIKI_MODEL_ID: "gateway-model",
+      });
+      const run = requireWorkflowStep(
+        parseWorkflowSteps(workflow),
+        "Run OpenWiki",
+      );
+
+      expect(run.env).toMatchObject({
+        OPENWIKI_PROVIDER: "openai-compatible",
+        OPENAI_COMPATIBLE_AUTH: "entra-id",
+        OPENAI_COMPATIBLE_ENTRA_SCOPE: expectedScope,
+        OPENAI_COMPATIBLE_BASE_URL: "${{ vars.OPENAI_COMPATIBLE_BASE_URL }}",
+        OPENWIKI_MODEL_ID: "gateway-model",
+      });
+      expect(run.env).not.toHaveProperty("OPENAI_COMPATIBLE_API_KEY");
+      expect(workflow).not.toContain("secrets.OPENAI_COMPATIBLE_API_KEY");
+      expect(workflow).toContain("Configure unattended Azure Identity");
+    },
+  );
 
   test("carries the streaming opt-in into the scheduled run", async () => {
     // A gateway that only serves SSE would otherwise return empty content in

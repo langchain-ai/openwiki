@@ -44,10 +44,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Architecture Overview
@@ -234,6 +234,14 @@ work, lets in-flight workers submit or skip, and is rethrown before finish so
 the run never finalizes with pending jobs. If a worker fails on a provider
 rate limit, the live pool size is lowered by one (never below 1) and a notice
 is emitted; other skip causes keep the pool size.
+
+**Tracing.** Every planner and page worker in one repository run shares a single
+LangSmith thread id from `resolveTraceThreadId(runId)` — the durable `runId` by
+default, overridable via `OPENWIKI_TRACE_THREAD_ID` — passed as
+`configurable.thread_id` to each agent stream. The agents are also named
+(`PLANNER_AGENT_NAME`, `"planning agent"`; `workerAgentName(page)`,
+`"worker agent: <page>"`) so the run groups as one planner plus one worker per
+page in LangSmith. Detail lives in [Agent runtime](agent-runtime.md).
 
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).

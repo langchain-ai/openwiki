@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-25T08:09:49.344Z
+  - by: openwiki/0.6.1
+    at: 2026-10-02T08:09:47.640Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -50,7 +50,7 @@ sources:
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -206,15 +206,41 @@ Repository `init`/`update` runs do not use the shared DeepAgent graph. `runOpenW
 
 `runNativeRepositoryGeneration` begins (or reconstructs) the durable run via `beginRepositoryRun`. A strict preflight that proves an update needs no work returns `{ skipped: true }` before any model is invoked. Otherwise the run proceeds in order: a planning phase (only when the run is in `planning`), then `runPendingPageAgents` drains the persisted page queue, then `finishRepositoryRun` finalizes. If the repository source changed while OpenWiki was running, the wiki is finalized without advancing its source checkpoint and the user is told to run `--update` to reconcile.
 
+### LangSmith trace thread grouping
+
+Both the planner and every page worker stream under one shared LangSmith thread per repository run, so their otherwise-independent traces group together in LangSmith as one planner plus one worker per page. The thread id is resolved once by `resolveTraceThreadId(run.state.runId)` and threaded into every `agent.stream` call as `configurable.thread_id`; LangGraph copies that field into each run's metadata, which is what LangSmith groups a thread by.
+
+`resolveTraceThreadId` returns the trimmed `OPENWIKI_TRACE_THREAD_ID` environment variable when it is set and non-empty, otherwise the durable `run.state.runId` — so a CI run can name the thread after the change that caused it while a normal run groups under its stable run id (which survives a resume). An empty or whitespace-only override falls back to the run id. The shared thread id is safe to pass to concurrent page workers only because repository workers have no checkpointer: with no persisted state keyed by `thread_id`, the workers cannot collide on or clobber one another's checkpoint, so the thread id serves purely as a grouping label.
+
+Each agent is also given a distinct trace name so the grouped thread is readable. The planner is built with `name: PLANNER_AGENT_NAME` (the constant `"planning agent"`), and each page worker with `name: workerAgentName(job.path)` — `"worker agent: <page>"` where `<page>` is the canonical path with the `/openwiki/` prefix and `.md` suffix stripped. Passed as the DeepAgent `name`, these replace the graph default name (`"LangGraph"`) so a run's thread reads as one planner followed by one worker per page.
+
+```mermaid
+sequenceDiagram
+  participant Run as runNativeRepositoryGeneration
+  participant Resolve as resolveTraceThreadId
+  participant Planner as runPlanningAgent
+  participant Stream as streamWorkerTools
+  participant Worker as runPageAgent
+  Run->>Resolve: resolveTraceThreadId run.state.runId
+  Resolve-->>Run: traceThreadId
+  Run->>Planner: name planning agent
+  Planner->>Stream: agent.stream configurable thread_id
+  loop each page job
+    Run->>Worker: name worker agent page
+    Worker->>Stream: agent.stream configurable thread_id
+  end
+```
+The shared trace thread id threads through the planner and every page worker's `agent.stream` call, grouping their traces into one LangSmith thread.
+
 ### The planner worker
 
-When the run is in the `planning` phase, `runPlanningAgent` builds one fresh, read-only DeepAgent whose sole completion action is `submit_plan`. The planner's filesystem surface is the small `PLANNER_FILESYSTEM_TOOLS` set — `read_file`, `ls`, `glob`, `grep` — exposed via `createFilesystemMiddleware`, and its `OpenWikiLocalShellBackend` is constructed with an empty `writableWikiPages` allowlist so it cannot write anything. Its middleware is `createFilesystemMiddleware` plus `NO_DELEGATION_MIDDLEWARE`.
+When the run is in the `planning` phase, `runPlanningAgent` builds one fresh, read-only DeepAgent whose sole completion action is `submit_plan`. The planner's filesystem surface is the small `PLANNER_FILESYSTEM_TOOLS` set — `read_file`, `ls`, `glob`, `grep` — exposed via `createFilesystemMiddleware`, and its `OpenWikiLocalShellBackend` is constructed with an empty `writableWikiPages` allowlist so it cannot write anything. Its middleware is `createFilesystemMiddleware` plus `NO_DELEGATION_MIDDLEWARE`. It is built with `name: PLANNER_AGENT_NAME` (`"planning agent"`).
 
-`submit_plan` validates the model's plan against `PlanSchema` (an array of page specs each with `path`/`title`/`purpose` plus optional `seedPaths`/`relatedPages`/`instructions`, and an optional `deletePages` list) and persists it durably through `submitRepositoryPlan`. A rejected `invalid_input` submission is turned into a correctable `ToolMessage` so the worker can correct and retry rather than failing the run; any other throw propagates. The planner is streamed with the single instruction `"Plan this repository wiki now."`, and if it exits without having called `submit_plan` the runner throws — planning cannot complete by narration.
+`submit_plan` validates the model's plan against `PlanSchema` (an array of page specs each with `path`/`title`/`purpose` plus optional `seedPaths`/`relatedPages`/`instructions`, and an optional `deletePages` list) and persists it durably through `submitRepositoryPlan`. A rejected `invalid_input` submission is turned into a correctable `ToolMessage` so the worker can correct and retry rather than failing the run; a later `invalid_state` rejection after a plan is already installed is likewise converted to a "do not call submit_plan again" `ToolMessage`; any other throw propagates. The planner is streamed with the single instruction `"Plan this repository wiki now."` under the shared `configurable.thread_id`, and if it exits without having called `submit_plan` the runner throws — planning cannot complete by narration.
 
 ### The page-worker pool
 
-Each page is documented by its own fresh agent via `runPendingPageAgents`, which runs up to `pageConcurrency` workers at a time over the persisted page-job queue. The pool is process-local bookkeeping (not durable): a `claimed` set of job ids, a serialized `acquiring` promise so two loops never select the same job, an `inFlight` list of pages being written, a live `size` that can shrink, a single `fatal` slot, and a `skipped` snapshot list.
+Each page is documented by its own fresh agent via `runPendingPageAgents`, which runs up to `pageConcurrency` workers at a time over the persisted page-job queue. The pool is process-local bookkeeping (not durable): a `claimed` set of job ids, a serialized `acquiring` promise so two loops never select the same job, an `inFlight` list of pages being written, a live `size` that can shrink, a single `fatal` slot, and a `skipped` snapshot list. Every worker in the pool streams under the same shared `configurable.thread_id` resolved at the start of the run, so their concurrent traces group into the one LangSmith thread described above.
 
 Every page except `/openwiki/quickstart.md` is documented first. With a single worker the queue order already places quickstart last; with several workers quickstart is explicitly held back until every other page has finished, so its task-routing map links to pages that already exist. A fatal submission error stops new work, lets in-flight workers submit or skip, and is rethrown before `finish` so the run never finalizes with pending jobs.
 
@@ -222,7 +248,7 @@ Each worker loop waits a per-slot `workerStartStaggerMs` (default 1,000 ms, igno
 
 ### Page workers
 
-`runPageAgent` builds one fresh worker bounded to its assigned page job. Its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page. Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus three completion tools:
+`runPageAgent` builds one fresh worker bounded to its assigned page job. Its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page. It is built with `name: workerAgentName(job.path)` (`"worker agent: <page>"`). Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus three completion tools:
 
 - `submit_page` completes the page after it is written. It accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`) against `ClaimReconciliationSchema` and forwards them to `submitRepositoryPage`; other current Claims are retained automatically. An `invalid_input` rejection becomes a correctable `ToolMessage`; any other throw marks the submission fatal. It can be called at most once per worker.
 - `inspect_claims` returns the page's complete current Claim set, for use only before intentionally revising or removing otherwise-current content; ordinary focused updates should not call it.
@@ -230,7 +256,7 @@ Each worker loop waits a per-slot `workerStartStaggerMs` (default 1,000 ms, igno
 
 The worker's middleware is again `createFilesystemMiddleware` (over `PAGE_FILESYSTEM_TOOLS`) plus `NO_DELEGATION_MIDDLEWARE`, which filters out the general-purpose `task` tool that DeepAgents contributes even when `subagents` is empty, so repository workers are deliberately non-delegating. `coerceRepositoryWorkerModelResponse` normalizes provider-streaming aggregates that arrived without `role: "assistant"` (for example reasoning-only first deltas) into proper `AIMessage`/`AIMessageChunk` so LangChain's `wrapModelCall` validator accepts them.
 
-If a page worker throws after submitting, it counts as submitted. If it throws before submitting on a non-fatal error, the runner restores the page's pre-run snapshot via `skipRepositoryPage`, records it as skipped (to be reconsidered on the next update), and emits a deferred-page warning; a fatal submission failure rethrows and is captured by the pool's `fatal` slot. Workers stream only bounded tool lifecycle events — narration is never surfaced — and `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools, tagging the page onto each event.
+If a page worker throws after submitting, it counts as submitted. If it throws before submitting on a non-fatal error, the runner restores the page's pre-run snapshot via `skipRepositoryPage`, records it as skipped (to be reconsidered on the next update), and emits a deferred-page warning; a fatal submission failure rethrows and is captured by the pool's `fatal` slot. The worker is streamed by `streamWorkerTools`, which streams only bounded tool lifecycle events — narration is never surfaced — and threads the shared trace thread id into its `agent.stream` call's `configurable.thread_id`; `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools (those in `WORKER_TOOL_NAMES`), tagging the page onto each event.
 
 ## The host-driven session manager
 
@@ -254,12 +280,13 @@ The six lifecycle tools exposed by the host session manager (preceded by read-on
 
 ## The docs-only filesystem backend
 
-`OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers four independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
+`OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers five independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
 
-1. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and while any ignore rule is active, shell `execute` is restricted to a tiny anchored allowlist (`pwd`, `git rev-parse HEAD`) because arbitrary shell cannot be proven not to read an ignored path.
-2. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
-3. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
-4. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
+1. **Shell confinement.** The upstream `LocalShellBackend` runs `execute` directly on the host, so its `rootDir`/`virtualMode` options do not confine shell. In repository mode `execute` is therefore restricted to a small fully-anchored allowlist (`pwd`, `git rev-parse HEAD`) — a deliberate allowlist, not a denylist, because variable expansion, command substitution, `find -exec`, and `cd` + relative paths all defeat naive command scanning. Each entry is anchored `^...$` so it cannot be prefixed or chained with a second command; anything else is refused and the agent is steered to the gated filesystem tools (and, when `.openwikiignore` is active, reminded that ignore rules are enforced there too).
+2. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and uploads/downloads reject ignored paths.
+3. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
+4. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
+5. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
 
 The backend also refuses unbounded root globs and globs that target `.git` metadata, steering the agent toward `ls` at the root followed by targeted searches. Every successful write/edit/delete records the mutated path in the tool-result metadata (`openwikiMutationPath`) so downstream validation knows which page changed.
 

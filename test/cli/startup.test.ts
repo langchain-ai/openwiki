@@ -20,6 +20,9 @@ import {
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
+  OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../../src/config/constants.ts";
@@ -42,6 +45,9 @@ const MANAGED_ENV_KEYS = [
   OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY,
   OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY,
   OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY,
+  OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
 ] as const;
 const originalEnv = new Map(
   MANAGED_ENV_KEYS.map((key) => [key, process.env[key]]),
@@ -127,6 +133,9 @@ beforeEach(() => {
   delete process.env[OPENAI_CHATGPT_REFRESH_TOKEN_ENV_KEY];
   delete process.env[OPENAI_CHATGPT_EXPIRES_AT_ENV_KEY];
   delete process.env[OPENAI_CHATGPT_ACCOUNT_ID_ENV_KEY];
+  delete process.env[OPENAI_COMPATIBLE_API_KEY_ENV_KEY];
+  delete process.env[OPENAI_COMPATIBLE_AUTH_ENV_KEY];
+  delete process.env[OPENAI_COMPATIBLE_BASE_URL_ENV_KEY];
   delete process.env[AWS_DEFAULT_REGION_ENV_KEY];
   delete process.env[AWS_ACCESS_KEY_ID_ENV_KEY];
   delete process.env[AWS_REGION_ENV_KEY];
@@ -145,6 +154,33 @@ afterEach(() => {
 });
 
 describe("resolveStartupCommand", () => {
+  test("allows a non-interactive Entra run without an API key", async () => {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "openai-compatible";
+    process.env[OPENAI_COMPATIBLE_AUTH_ENV_KEY] = "entra-id";
+    process.env[OPENAI_COMPATIBLE_BASE_URL_ENV_KEY] =
+      "https://gateway.example.com/openai/v1";
+    const command = updatePrintCommand({ userMessage: "refresh API docs" });
+
+    expect(await resolveStartupCommand(command, { isStdinTTY: false })).toBe(
+      command,
+    );
+  });
+
+  test("still requires an API key in the default OpenAI-compatible mode", async () => {
+    process.env[OPENWIKI_PROVIDER_ENV_KEY] = "openai-compatible";
+    const result = await resolveStartupCommand(
+      updatePrintCommand({ userMessage: "refresh API docs" }),
+      { isStdinTTY: false },
+    );
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain(
+        `${OPENAI_COMPATIBLE_API_KEY_ENV_KEY} is required`,
+      );
+    }
+  });
+
   test("fails fast for non-TTY interactive chat without a message", async () => {
     const result = await resolveStartupCommand(
       {

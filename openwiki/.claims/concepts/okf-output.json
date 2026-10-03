@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:68ef6feb90a382c062c2d1e78c3a647b29c04c4c786b13d049e05083eb1ae607",
+  "pageVersion": "sha256:30a084ada545f377b9929d15906cba0bbca1cb76a741bb473c6cb0be47a4c49a",
   "claims": [
     {
       "id": "claim_015f68c61f874418879c6446644e49d5",
@@ -161,16 +161,16 @@
       "statement": "synchronizeWikiIndexes renders a deterministic index.md for every directory, listing concept files (link label from the page `title` falling back to the basename, caption from its `description`) and subdirectories, excluding index.md/log.md/INSTRUCTIONS.md and hidden entries.",
       "evidence": [
         {
-          "resource": "repo://src/okf/index-sync.ts#L171-L226",
-          "version": "repo-lines-v1:sha256:0932728144eb0ff96babe3b9cc1e11fc1f4e79cc9edae675b8b693e2bc93c08e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYzRiNGQyMTJmMTQ5MzcxZjBjMzdkOTY2Y2EzM2M2Yzg2OGZjYTk3MmFlNzYzNDZkZDJjMzIzMWZkNTIyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmNzAyM2MwODNhOGY2YzAyMjlkZTRlODExNDg5MTU1MzljMmQ5NzlkYjRkYmU3MzI5YTMzNjQ1ZTE1YWM2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOWIzOTliMjg1ODUyOTIxODc4MjQ2Mjg4NTQ2ZTFiN2JkZDhkZDMwZDUxNzY4ZjRkMDJhMjI3Y2MyMjRkZDQifQ"
+          "resource": "repo://src/okf/index-sync.ts#L15-L17",
+          "version": "repo-lines-v1:sha256:c36c30568c27ed51ee6f9233b40a4d686fc007055446184c76cb5a427c25a299:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMyODE5YTVjOTI2YjQxNzZjNDcwNDcyOTIxMmRmZjM2MWNmNjAyMzRhZGZmYjAyMTI0ZjRlNDdhYzJlZmIyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVmYWE2M2IxMTI2NTAyOWQ5NDg5Y2ZiYTNkNjY1Y2NkNDBhYjZiMzJmZWE0MzUwMTNhNzI1OGM3MzRkMTM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGYzZjZmZDNkMDlkMDY0OGJjODM2OTAyMjA2ODBiMTU4MzkwNzZjODlhOGViNDZiMzAyZmMxZjg2NDEyYWJkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDU3ZmJlZTI3NmZkYTZjNWRiN2JmODA1YmRmYjIwYWY3ZjYyMTA0NjY5ZTczMTc5ZmY1NTQ1YWEzZDkyNjNkMCJ9"
         },
         {
-          "resource": "repo://src/okf/index-sync.ts#L266-L289",
-          "version": "repo-lines-v1:sha256:933ffd907488a059868bdda36ceaf2475d3e99537f773cd8fbf7d3b2c6adcb5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YTAxODQzODEzM2NiZGRjZGFhYWZlOGY3M2NmNDExZGVkNTMwZjcxYjgyMjQ2MDk1YTQ2MDUzMjQ0ZTFlYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NWQxMTU2Mzc3Yzk1MmIxZTM1NTg1MWUyZTIyNGIzMmFmNGVlMjNkODk3OWRkMDE3MjQ2NDQzNTM0YzljOTAifQ"
+          "resource": "repo://src/okf/index-sync.ts#L207-L249",
+          "version": "repo-lines-v1:sha256:7bb6bedaad67bc50df92109fe58bea1e43099afb627e3121030317f2965582f0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlYzRiNGQyMTJmMTQ5MzcxZjBjMzdkOTY2Y2EzM2M2Yzg2OGZjYTk3MmFlNzYzNDZkZDJjMzIzMWZkNTIyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmNzAyM2MwODNhOGY2YzAyMjlkZTRlODExNDg5MTU1MzljMmQ5NzlkYjRkYmU3MzI5YTMzNjQ1ZTE1YWM2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2NmMzNmI5ODgyMzk3NzBjODRjN2E5ZTFjZTAyZDNkM2E0MTVjMGU5ZmIxOTljNWY2OTNkNTVjYmI0ZWZhNDUifQ"
         },
         {
-          "resource": "repo://src/okf/index-sync.ts#L56-L66",
-          "version": "repo-lines-v1:sha256:27a12e372a868d81b50d5895d0d6477a18284e147bc4a4293d3b4d74c181f969:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MmUzOTdmOTk2ZTNlNTYzMTM4YTZmODEyY2YzYThiZWE3Njg3MGVlOWQxMDExODQxMzEzMDVmZDA2OGU0MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZDI0NjVjYTRiYmFkMjk0MDU4YTNlNTllNTA4NDQ4ZTI4Y2FhYTkzZWE0ODllNGUxZWY1MzNhY2VkNTNmMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZmJlZjM0YzA2N2I3ZmUzZGNhYWNmNDlmMWUyNmYwYjMxYzU2ZjFjODRiODI2YmVmNDNkYzY5NTQxYjI0OTkifQ"
+          "resource": "repo://src/okf/index-sync.ts#L300-L309",
+          "version": "repo-lines-v1:sha256:4cd5445ee02d69f0f72767e48cbd33be2b90faeb43fe383b39777517ee15924d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMGVkMzAxYzc5ZGY3OTM2Y2Q2MWM1YjI3NWJmMjU0ZmZmODJmZWYwYTE0ZWVhNjljY2NhYmJlMzE0YmU0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMWMzMDM3MzYzMzEwNTczZjMzODM5ZmIyZGE2NmIwMTNjNDhlZmUyYTBkYzFjNzc5YWIxN2I3ZjkyYmIzOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYWU5ODgyZDFhNTRlZGZmM2E4ODBmM2FkZTEyZTNiZTQ0MjhmZTE1YmQ0YjE1M2E4ZGQ4ZWVmY2IyNDZjN2IifQ"
         }
       ]
     },
@@ -179,12 +179,12 @@
       "statement": "An index is written only when its rendered content differs from the existing file, so unchanged indexes produce no diff noise; index synchronization also normalizes each concept file it visits so it can read clean metadata.",
       "evidence": [
         {
-          "resource": "repo://src/okf/index-sync.ts#L196-L226",
-          "version": "repo-lines-v1:sha256:4453b004da25c04134f641b6dc6856f0ffc582503109a888ce061d7913597f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1OTgyZTA5YTYzNDMzZDk0Zjc0NWUxODhlY2YwM2NjNzlkMTg1MjExOGRmMTc1OTc0ZDk4Y2MzMzgwNzIyMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZjdjNmYxYTFjMGNjOWUyZmI0ODYzYmNhMDEyZTMwZmYyNjMwOWY5NTZhM2Q1YzIwMzExMDljOWIxNDJkZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOWIzOTliMjg1ODUyOTIxODc4MjQ2Mjg4NTQ2ZTFiN2JkZDhkZDMwZDUxNzY4ZjRkMDJhMjI3Y2MyMjRkZDQifQ"
+          "resource": "repo://src/okf/index-sync.ts#L159-L173",
+          "version": "repo-lines-v1:sha256:8c9ef1afd5148aeb763cb28880e1805d944cc19877f5c399b608d74c586fd971:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiODk2YTYwYjUyZDcwOWFkNGFkZjI5ZmNiMTYxMTE2N2QyMzdiYWIyZmQzMzNjY2Y3OTY4ZWU4NGYyNTQ1ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjM2E3ZTViMThhOWZlZjkwZTc4ZThlYWVlZmVlMTM1YjlmNDZmMWZmZDQwMzQ3MWZjZDM0NzEyMzA5MjhjYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMjE0Nzk1MGQ5NTRlN2U3OTMzNmVkZGQxZDBhMjZmYjI1ZTkyYTg3NWJmZTY2NDU4NGM4NDMxOTYzNjg4YzIifQ"
         },
         {
-          "resource": "repo://src/okf/index-sync.ts#L269-L289",
-          "version": "repo-lines-v1:sha256:180306ce8708cf9b303ec3ffa9c6f904b72de791291a9b2ab7cfd32e65c08f4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMzA3ZDc1MzUyMTE0NTI3NjdmZTNkMzZkMjdlMDYxM2M3NjAzY2IzYjBlOTY5N2FkNTAyOTZiOWNlNjM1ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmNzI0ZDZiMzg0YTI5ZmZiODcwODU4YzI5NzA4Y2M1M2FiMWMwZDZhNDQ1MGRlMjUzYmY0MzgwZmM3YzI0NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NWQxMTU2Mzc3Yzk1MmIxZTM1NTg1MWUyZTIyNGIzMmFmNGVlMjNkODk3OWRkMDE3MjQ2NDQzNTM0YzljOTAifQ"
+          "resource": "repo://src/okf/index-sync.ts#L234-L263",
+          "version": "repo-lines-v1:sha256:25bd3efe5013b0ae29be02cf19342ca6984d969d8d225356b4ce40e99a9a1e06:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNWY5MzIyYjZhNDA0OGI1MGM3ODJjZjZmYThjYTk1NWRiNGE1ODJkMzgxMWM0ZWM0MmU2NTc2ZmI3ZDY5YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlY2MzODMxNDNlZGUwMTEwMzQwYTllYmM2ODBlYjdjNzFhMWNhNGJkNzk4OTRlZWViODZhZTljZTcyZDY3OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMTFmYzhlOTZjNzNiM2QyNGI5ZjNhYzQzYzJmZjg1OTMzYzBkMjFkMTg3MzgyMTA4MWJjMTVkYzMxYTE0MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzM2FiNmM1OTcyZmI0ZDUwNzAyNWE4ZDhmYTU2MGMxM2Y1YThhZjg5NjNmZmI0MGVhNTJmNjRhNzI2ZDFhODcifQ"
         }
       ]
     },
@@ -193,7 +193,7 @@
       "statement": "Only the root directory's index carries an `okf_version: \"0.2\"` frontmatter marker; nested directory indexes have no frontmatter.",
       "evidence": [
         {
-          "resource": "repo://src/okf/index-sync.ts#L228-L245",
+          "resource": "repo://src/okf/index-sync.ts#L273-L290",
           "version": "repo-lines-v1:sha256:75668f487143c7bb2ca653902ce11a80812838d7aa6f05d89889a51708305939:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4OTMxODY5MzNkOGYxZTM1MTg0OGU2Y2ZiYTU3M2Q2NWRiMzY1NDU3YTcxMzk4YjA3YjNjYjVjOTRkOWUzZGUifQ"
         }
       ]
@@ -299,18 +299,54 @@
       "statement": "The OKF output passes run in a fixed finalizer order: preparation migrates pages to OKF and snapshots provenance, then finalization validates Mermaid, synchronizes indexes, validates internal links, synchronizes claim sources, and finalizes generated provenance.",
       "evidence": [
         {
-          "resource": "repo://src/agent/wiki-finalizer.ts#L224-L233",
+          "resource": "repo://src/agent/wiki-finalizer.ts#L231-L240",
           "version": "repo-lines-v1:sha256:84a8da8a5180410fdbf107b3f9030f29219d7b339ab37bd3aa012f004b78e284:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1OGZiY2Y1YjE1ZmViYmFjMmVhOTdmYWYxMmU1OGRiZTY3ZGM4YTA3ZWM0Y2JkNzg2N2UzMDg4MjI3ODE3NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZGYzZGVmZjI0MDNmZGM0ZjVhNWIyMjU1ZThlM2M0ZDIzMzBkYjI2ZWU2NzA5YTc5NTM3N2Y1NGU0YjY5MjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzE1YzA2YjQ1ZDQ2MmUwOWEyYzkyYTEyMDM3NWQwMzQyNmY5ZmRkNWZiNDJlYTNkMWMzNjAyZmZlMWE3ZTkifQ"
         },
         {
-          "resource": "repo://src/agent/wiki-finalizer.ts#L241-L276",
+          "resource": "repo://src/agent/wiki-finalizer.ts#L248-L285",
           "version": "repo-lines-v1:sha256:cfb2290596a06239e83112a3ab83540ac3bb56acdf93a4da1133a7a7d0454a70:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMGNiYTZiODUxOTVjMGZhMWZiZmYyMWI3NWFlMWRiYWFmZTBmODg2ODQ1YzI5MmFiYmMzNGI4OWE4MDA5NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3OWI3OTNmYTYyNzA1MGQ2ODhmOTdlYzk0YjA5OGQ1NzI0YmU5MmMyYmUxZmY2MTliMmU1MjhmYjQ0MDk1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYWE0MTcwY2M2YTMyNjcyNmFmNmI1MWRmMTI0Njc2YTUyNDNhN2M4YjNmMGMzNmY2N2NhM2I5YTI0NmJmMmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_537f88cbc6434b4492eed80451ebd5fd",
+      "statement": "migrateWikiToOkf (pre-run) normalizes every concept page's frontmatter in place without touching indexes, while synchronizeWikiIndexes (post-authoring) re-normalizes each concept file it visits and renders directory indexes; both share the same normalizeConceptFile/normalizeConceptContent repair path so a page is normalized at least once per run regardless of which pass reaches it first.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/wiki-finalizer.ts#L232-L266",
+          "version": "repo-lines-v1:sha256:aae6aa4b4dd4f95bcbad9bfe39001c3bce34559a326aeae52e218a44cf5c486a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmQxMmY1Zjg1YWEwZTZlYjZiOWRmNjNkYmQ5MjVlMDZmOWIxZWUzOTYwY2Y3M2I5ZDQ3NDU1NGQ1NjhiM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlNzA1YTM4MDY5YjZiMzkzN2ZlZDRlNTMxMzQzMTFmOGY2M2NiZjAxMzcyMzU0MWRkNDZiODRjYmEzODk0ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3Yjc3YzEyNmZhNDA3YWRhY2U0OWIyMzE5ZmJjODc4N2NlOGVhZGVjMWE1OTM3YjQzNWYxNzg3NDQ0MzA5MTcifQ"
+        },
+        {
+          "resource": "repo://src/okf/index-sync.ts#L113-L121",
+          "version": "repo-lines-v1:sha256:328365c046f288a1c87f9c4a68155cdd0bb84e08fe39ee2b0eb7d43fb63accf9:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQwMWJiMGExZWMzYTQ4ODE3YjFjOGU0MmFjOGJiYjMyZmU1YWUxMWNlNzg1MTFkOWNmOWExN2Y4OGNlMWRlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJjNDgwMjJjZGM2YzIwNTM1M2Y5M2Q2MmU5NDg3MTY4YjgwNWZiYzQ2NjA2YzA1Y2QwMjI0ZjEyMjdkYThiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJmZDJjYzIyOWYwNDMyYjE5OWViMWFlNjhkOGUyYmZhNjFmOGNmOGY0NmU1ZDg2ZWY1MmE4MTI0MWFkNTc2YyJ9"
+        },
+        {
+          "resource": "repo://src/okf/index-sync.ts#L234-L235",
+          "version": "repo-lines-v1:sha256:e56e8cd3f63e2e438c47342215ea6d55f0e84bb170d77b46c949679a76baf869:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M1ZjkzMjJiNmE0MDQ4YjUwYzc4MmNmNmZhOGNhOTU1ZGI0YTU4MmQzODExYzRlYzQyZTY1NzZmYjdkNjljNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThmZjA3NDZiOGQ5NTQxZDMxMzQyYTMyNjA3ZjBmMDJmMjEwNjNiNTBiOTZjMDlmMzhjNTI5MzM3MjIxOTFmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTIxMWZjOGU5NmM3M2IzZDI0YjlmM2FjNDNjMmZmODU5MzNjMGQyMWQxODczODIxMDgxYmMxNWRjMzFhMTQwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2NmNmIxNDc4YWUxOTQwODZhMzk2MTI5MzE2YjQ4ZGE3MzIyMWU1ODA0NjRhMGVmNDg5ZmU2Zjc3ZjE0YmJhNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_18748e5fae77449ea228480b6cb88cbc",
+      "statement": "synchronizeWikiIndexes returns a report-only WikiFrontmatterReport with generatedPages (pages still carrying openwiki_generated: true, i.e. code-derived type/title) and missingDescriptionPages (pages indexed without a usable description); the signals describe metadata quality the pass leaves as-is, do not affect validateOkfFrontmatter or the OKF repair it feeds, and never fail the run.",
+      "evidence": [
+        {
+          "resource": "repo://src/okf/index-sync.ts#L242-L248",
+          "version": "repo-lines-v1:sha256:92b179d1cdff419cb3233ef02ea33f2fe8ea6a6837987cf6771e33ca41e6bbc4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVhMTc1MDlkNjg3MWYwMjNlYmViMzY1OTc3YTMyNjYxZDMyMjA2Yjg5MmE1OWQ1Y2E4YzkyYjFiMWM0NjIzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2ZiZTc0OGJhY2EyZTFhMDZjMDk5MDJiMTdmNTEyMWZlMDVjNzllZmZmOTllMGIyOWVkNDJkMzJiOTE2MmE1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjA2M2UzNDY4ZTY5MDEyMmZkMDY1NGI1Y2RlNzBkY2EyMjg0ZjkxYzgwNDA5YmQwNTA2MzViOGNiNjcwZjMwZCJ9"
+        },
+        {
+          "resource": "repo://src/okf/index-sync.ts#L54-L75",
+          "version": "repo-lines-v1:sha256:250841c9c54074d5c36c94f9cd04b3b7255b6801c7db0affb9d73d31caf5432a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MTZmNTYzYjJjYjZiMDhhMDdiMzQzN2QyYmFiMWE5ZWExN2RlODQzOTliNzE0MDBhYmM2MGNhYWY1MjBhNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0OWU1MjZkOTdlZmRkZGNhZWM4NGU4Mjg0ODhhNjEyZjFiZDM4MDRmM2FjMDg3MjhjM2NhYzMwYzRjZjAyN2MifQ"
+        },
+        {
+          "resource": "repo://src/okf/index-sync.ts#L80-L102",
+          "version": "repo-lines-v1:sha256:c081b6ac2c5cec311d4491bc6bddf63a700dc0885d2c26fdaf25df28cddf145d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MmUzOTdmOTk2ZTNlNTYzMTM4YTZmODEyY2YzYThiZWE3Njg3MGVlOWQxMDExODQxMzEzMDVmZDA2OGU0MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZDI0NjVjYTRiYmFkMjk0MDU4YTNlNTllNTA4NDQ4ZTI4Y2FhYTkzZWE0ODllNGUxZWY1MzNhY2VkNTNmMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZmJlZjM0YzA2N2I3ZmUzZGNhYWNmNDlmMWUyNmYwYjMxYzU2ZjFjODRiODI2YmVmNDNkYzY5NTQxYjI0OTkifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-28T03:39:43.412Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-09-30T08:10:27.967Z"
   }
 }

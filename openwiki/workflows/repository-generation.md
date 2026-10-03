@@ -24,6 +24,8 @@ sources:
     resource: repo://src/agent/utils.ts
   - id: openwiki-source-9697823032111d36e2d4caa9
     resource: repo://src/agent/wiki-replacement.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-ed90c6fa13119927ecd82845
     resource: repo://src/generation/errors.ts
   - id: openwiki-source-1197594de038075f3570340c
@@ -34,16 +36,18 @@ sources:
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-5835357b69a5869be210533b
+    resource: repo://src/okf/index-sync.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Repository Generation Lifecycle
@@ -425,16 +429,26 @@ touching `initialPages`), applies the plan's explicit deletions, reconciles
 Claims sidecars for deleted pages, finalizes wiki artifacts (indexes and
 provenance), restores any skipped pages, finalizes Claims (excluding skipped
 pages), and proves the whole repository has no orphaned or partially durable
-Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages). It
-then rebuilds the page manifest so that only pages this run actually regenerated
-are restamped with this run's source checkpoint, while skipped and untouched
-pages retain their prior checkpoint via `preserveSourcePages` (a
-deterministic-finalization rewrite still refreshes `pageVersion`). It
-then persists completion metadata — `interrupted` when any page was skipped or
-source changed during the finish window, otherwise `complete` — and, last of
-all, removes `openwiki/.run.json`. The checkpoint is deleted last on purpose:
-every earlier failure leaves the run resumable so `begin` can reconstruct and
-retry.
+Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages).
+During the deterministic index-sync pass finish also captures a
+`WikiFrontmatterReport` — which pages still carry code-derived
+`openwiki_generated: true` front matter and which indexed pages have no usable
+`description`. It then rebuilds the page manifest so that only pages this run
+actually regenerated are restamped with this run's source checkpoint, while
+skipped and untouched pages retain their prior checkpoint via
+`preserveSourcePages` (a deterministic-finalization rewrite still refreshes
+`pageVersion`). It then persists completion metadata — `interrupted` when any
+page was skipped or source changed during the finish window, otherwise
+`complete` — and, last of all, removes `openwiki/.run.json`. The checkpoint is
+deleted last on purpose: every earlier failure leaves the run resumable so
+`begin` can reconstruct and retry.
+
+After the checkpoint is removed, finish emits the captured frontmatter report
+as a non-fatal `text` event (when an `onEvent` consumer was supplied) listing
+the affected pages, using the same operator-visible channel as the
+source-changed notice. The report only describes metadata quality the
+deterministic pass leaves as-is by design; it never changes what the run
+persisted.
 
 ## One lifecycle, two drivers
 
@@ -445,11 +459,12 @@ stable OpenWiki producer actor, then loops: it runs a bounded planning agent whe
 the phase is `planning`, runs every remaining page job via
 `runPendingPageAgents` (up to `pageConcurrency` fresh non-delegating workers at
 once, each bounded to writing only its assigned page and calling `submit_page`,
-with `inspect_claims` available on demand), and then calls `finish`. When
-`finish` reports `sourceChanged: true`, the runner emits a user-facing message
-explaining that the wiki was finalized without advancing the source checkpoint
-and a later `--update` will reconcile the drift. Workers reuse the supplied model
-but keep no repository-generation state beyond the durable core.
+with `inspect_claims` available on demand), and then calls `finish`, forwarding
+its own `onEvent` consumer so finish can surface frontmatter-quality signals.
+When `finish` reports `sourceChanged: true`, the runner emits a user-facing
+message explaining that the wiki was finalized without advancing the source
+checkpoint and a later `--update` will reconcile the drift. Workers reuse the
+supplied model but keep no repository-generation state beyond the durable core.
 
 The **host integration** (`HostSessionManager`) exposes the same six operations
 as the OpenWiki MCP tools, including `openwiki_inspect_page_claims`. It holds one
@@ -563,7 +578,8 @@ sequenceDiagram
         Pool ->> Core: nextRepositoryPage exclude claimed
         Core -->> Pool: pending job or complete
         Worker ->> Worker: captureRepositoryPageSnapshot
-        Worker ->> Worker: runPageAgent
+        Worker ->> Worker: runPageAgent named workerAgentName(page)
+        Worker ->> Worker: streamWorkerTools threads resolveTraceThreadId
         alt submit_page succeeds
             Worker ->> Core: submitRepositoryPage
             Core -->> Worker: complete
@@ -580,7 +596,11 @@ sequenceDiagram
 
 One pass of `runPendingPageAgents` with a concurrent worker pool. Job
 acquisition is serialized; model work runs in parallel; skip and submit mutate
-shared state under the `withRunMutation` lock.
+shared state under the `withRunMutation` lock. `streamWorkerTools` threads
+`configurable.thread_id` (the run's `resolveTraceThreadId`) into every worker's
+`agent.stream` call so the planner and all page workers group into one LangSmith
+thread per run, and worker narration is never surfaced — only bounded tool
+lifecycle events pass through `parseWorkerToolEvent`.
 
 ## Progress events
 
@@ -641,6 +661,28 @@ can decide which pages actually need work. The page-worker prompt
 (`createRepositoryPagePrompt`) bounds each worker to exactly its assigned page,
 injects the sparse-Claim reconciliation guidance, and requires
 `submit_page` with canonical `repo://` evidence resources.
+
+### Shared LangSmith trace thread
+
+Every planner and page worker in one run groups into a single LangSmith thread.
+The planner agent is created with the name `PLANNER_AGENT_NAME`
+(`"planning agent"`), and each page worker is created with
+`workerAgentName(job.path)` — a human-readable name derived from the page it
+owns, such as `worker agent: architecture/agent-runtime`. Both the planner's
+`streamWorkerTools` call and every page worker's call thread the same
+`configurable.thread_id` into `agent.stream`: `resolveTraceThreadId(run.state.runId)`,
+which returns the `OPENWIKI_TRACE_THREAD_ID` env override when set (so CI can name
+the thread after the change that caused the run) or the run id otherwise. Because
+the workers have no checkpointer, sharing one thread id across concurrent workers
+is safe — it only affects LangSmith grouping, not execution state.
+
+`streamWorkerTools` streams with `streamMode: ["tools"]` and `subgraphs: true`,
+so worker narration (assistant text, reasoning) is never surfaced to the event
+consumer. Only bounded tool lifecycle events pass through: `parseWorkerToolEvent`
+keeps `on_tool_start`/`on_tool_end`/`on_tool_error` events for the approved
+worker tool names (`read_file`, `ls`, `glob`, `grep`, `write_file`, `edit_file`,
+`submit_plan`, `inspect_claims`, `submit_page`) and discards everything else,
+tagging each retained event with the owning page path.
 
 ## Failure semantics
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2e7bc5a7b79ef3caeec82d74a54719bba3abdcbbc6d5843b0f1895b0672ac02f",
+  "pageVersion": "sha256:e019452f85e4ce529eadff2c558ae91ab11d7291e426175047096d3e06850b23",
   "claims": [
     {
       "id": "claim_4f1bb9562e1846dc92e1f9ba3ad68ed8",
@@ -165,8 +165,8 @@
           "version": "repo-lines-v1:sha256:6c143f4c2bda61b7abbf1abf05cc3d52cfb9e69ce11ae7a66c64591d8915114d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZGFmM2QwMThlMWFlZjAzNTVlM2JhNzZjNmJlYmM2NTllNTRjY2I5YzZlY2UzNTkwZmVkNzA0OTVkZjk0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjA1OTI4NjlmN2U4ZmJhYTMxYjlkNmMzNTc1YmE3MjA1M2EzYTVjOGJhMjU1OTE2NjczOTk5MTA0Njk3OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNmMwYTZjMmMyZTI4OThkMGY3ODQwODI2ZjE4NDRlMjc2ZWUxZTJhYzc2N2E3ZTg3NTZmYjg1ZTQ0ODExN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYzc5NTMyMGVhY2Y5YjYzM2E3OTYxZWNhYzA1OWE0NjZmZTc4NWJlOTAzNmM0ODAzNjdiMzVmNzk3OGUwNjUifQ"
         },
         {
-          "resource": "repo://examples/openwiki-update.yml#L31-L79",
-          "version": "repo-lines-v1:sha256:2f08eac6646fbd2b941df57d4c9a72d2fc5486f9aa04ec10c1087a1e1dd65a39:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://examples/openwiki-update.yml#L31-L90",
+          "version": "repo-lines-v1:sha256:805ea7054351999bc9aef1381e0e023e6b2f3a11b6e6b5e9a374130da862ced2:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2Y2UwYjBkM2IzODEyMmJjMjc1MTVhOGQ5Njk2MTVkOWUxMGUyODA2NDRmNzYxMjIxZDA0NDc5YWQyNTM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZjNiODgwMmIzMTBmZjJhZGQwMDI2YjgyZWUyZTllNTcxNTkxMmVhZjA4MWFmODZjZTExMGRkNjQyZmMxYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -193,8 +193,8 @@
           "version": "repo-lines-v1:sha256:f85bdfd7954ff5617292b34d02c83de4510d7f1dc18cbdc099a6cba72aa18082:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2ZGM0ODE0OWY1YTgzZDFlZDZkYmIzOWJiYzdlMmI5MDJhYTNkMzRkNmJkNWFlNGIyOTFiNjhkZjBjYTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTNhZWQ1MDJhNWFkZWU3YmIwY2FkZDQ2Y2Q3NDYzYjUzMjBjNmNjZWU0NDgwZDY2ODU0ODg0MzEwNjM3NjExOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzViMWYyNGU2MTgwNWVlMWE5YmM3ODA0N2UxZTRiM2Q4NjE1N2Q2ZTM3ZDhhYzBiY2JlYmQ1ZTY1ZTVlZjFhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk0NjJkNWYyYzIwN2U2YjRmODI4NDNkOTE1NGZmMGJiYWQwMzQzOTI0YjJjM2M0YmFiZDk5Yjg3Y2NkNGI4MiJ9"
         },
         {
-          "resource": "repo://examples/openwiki-update.yml#L52-L79",
-          "version": "repo-lines-v1:sha256:51ba3f21f3d2013961874cc13e4ff22b28c0ef41f7c1f0d4e5745697475c1556:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OWM4ODBmNjJkNDIyNTM4YmNhODRjYjU1ZWNlOGZlMTBlOTY1OGIwNjExMTVjM2ZhYmNkYzdiM2JlY2Y0NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://examples/openwiki-update.yml#L52-L90",
+          "version": "repo-lines-v1:sha256:8a16c25992e382f80a5b31b3d85e8d23224696724c52368fb8e668084ee2430c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OWM4ODBmNjJkNDIyNTM4YmNhODRjYjU1ZWNlOGZlMTBlOTY1OGIwNjExMTVjM2ZhYmNkYzdiM2JlY2Y0NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxOTEzNzMyNTgyYzNlNjAzNTkwNzg2Yzg2ODM2OTUxZmYzNWU5YjJkMGY4ZDMxMDY3ZDRmNGM4NzQzZGIyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -213,8 +213,8 @@
       "statement": "The live GitHub workflow builds OpenWiki from the checked-out source (pnpm install --frozen-lockfile && pnpm build) and runs `node dist/cli/cli.js code --update` rather than the published package to dogfood unreleased changes; the published-package example workflow instead installs openwiki globally via npm. After the run it restores the protected workflow file with `git checkout -- .github/workflows/openwiki-update.yml` (guarded by if: !cancelled()) because `code --update` regenerates that file from an internal template and would otherwise drop the fork guard, deletes transient openwiki/.run.json, and opens a PR whose add-paths include openwiki, AGENTS.md, CLAUDE.md, and the workflow file.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/openwiki-update.yml#L43-L90",
-          "version": "repo-lines-v1:sha256:657035025b72b60ebef12d73c0ad996345abbeb4c8eb2b2e3abb7cf544a047f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYmQ0MWQ5MWI3YzdlZWUzMTI4MDM5OGE3MTI1OTk2MDEzODQ2MTk2MDI4OTUzMWU5YWQxNWQ4NDIyZGRmNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhY2ZmZTRiODViOGI1MmZmYzJmOTY5Y2MwOTE5Mjk2MjE0MDQzM2Y5ZTZjM2VhN2Q3Nzg0NmIwN2VmMjNmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNTlmZWJlZDUzYjg4ZWQxZmQ3MTIzN2VlMWQ5MjY1ZjBkYjg2YmM1OGMwMjUyYzExNTJlMjFmNzdhNTU3OGIifQ"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L43-L97",
+          "version": "repo-lines-v1:sha256:7f2522928e96b33a04d58667c92e48ad047824ba4b511ebfea8df35e01cfa95e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMzM5NzZlYWNmZDMxOWZjOWE0ZThlZTY2NzNmZDE5YzI2YjM1NDBlNDUwN2NhMzZiYmI4N2UzMDc0NGZlOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhY2ZmZTRiODViOGI1MmZmYzJmOTY5Y2MwOTE5Mjk2MjE0MDQzM2Y5ZTZjM2VhN2Q3Nzg0NmIwN2VmMjNmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNTlmZWJlZDUzYjg4ZWQxZmQ3MTIzN2VlMWQ5MjY1ZjBkYjg2YmM1OGMwMjUyYzExNTJlMjFmNzdhNTU3OGIifQ"
         },
         {
           "resource": "repo://examples/openwiki-update.yml#L31-L33",
@@ -231,7 +231,7 @@
           "version": "repo-lines-v1:sha256:9a839067f47beb1ca08c710b71e598b0402cc1fd184fbaffb0641be925ef8a7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc5Yzg4MGY2MmQ0MjI1MzhiY2E4NGNiNTVlY2U4ZmUxMGU5NjU4YjA2MTExNWMzZmFiY2RjN2IzYmVjZjQ0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg2ZTgzZTdmOTYxYjVhN2NhZDhlZWZmZDZhM2Y0MWY4NTczZjBiZWRhODQxZGQyM2YyOTZjNTc5NGVhNGJjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NkOTNkZDYxY2RiYWRhMDY1NDFjZGMzNzIwZWUxOTU5ZWJlZTgyNGFhNzYwYzliNjljNWFkZDY4Yjk1NDk5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRlZWVlZTNlMTIwZDlkMTA0Yjc2ZTVjNzFhNjIyNmU0NWMwOTM1Y2I1YzZmMjUxMjJlNTI1N2ZiMWMzODI0MiJ9"
         },
         {
-          "resource": "repo://README.md#L257-L257",
+          "resource": "repo://README.md#L262-L262",
           "version": "repo-lines-v1:sha256:8c14e665e35950919d64b14e39d29156ccabac889d7c08fa09d47ff748f58ec7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxNGU2NjVlMzU5NTA5MTlkNjRiMTRlMzlkMjkxNTZjY2FiYWM4ODlkN2MwOGZhMDlkNDdmZjc0OGY1OGVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk2ZDFmZDFlMTA3OTg2YjJlYmM0ZTljZDQ2NGViMmE5MTIzYWMyMTZiMzkzMTI0YWMxNmNhNTdlNjlmYjNlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2M4ZWQ0OTRlYTNkMWU4MTgzMzRhNTUzYmE1Y2UxMWU0MGI1YjgyNWY5ZGMwNGM3ZjAzZWFhNTRkZThjZTJmZCJ9"
         }
       ]
@@ -241,7 +241,7 @@
       "statement": "examples/openwiki-update-auto-merge.yml is a GitHub Actions variant of the canonical update example that adds two post-PR steps: 'Enable auto-merge after a successful update' runs `gh pr merge --auto --squash` when steps.openwiki.outcome == 'success' and a PR was created, and 'Disable auto-merge after a failed update' runs `gh pr merge --disable-auto` when the outcome is 'failure', both gated on a non-empty steps.create-pr.outputs.pull-request-number; a trailing Propagate OpenWiki failure step still fails the job on a failed run.",
       "evidence": [
         {
-          "resource": "repo://examples/openwiki-update-auto-merge.yml#L75-L95",
+          "resource": "repo://examples/openwiki-update-auto-merge.yml#L75-L99",
           "version": "repo-lines-v1:sha256:2f068f68e14609fa26c89276592c73c4077dc331e5d133900db790ed8f8eaf0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTg5OGIxYWYyMWYwOWU4MjE4ZGI1NTkzMzM3NzNkNDYyYTM2Y2ZiZjU0YTA4NGZlZGFhY2YwYjQ1MGU5MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YTgxOTc1MWIzNDhmYzY0MDBkZTc2N2Q4N2E2MjFkODUxMjZhZDZhNjRkNzJiYjZjYjY3ODE1OTYxMDdkZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -269,7 +269,7 @@
       "statement": "The examples/openwiki-update-auto-merge.yml variant requires repository-level setup beyond the canonical example: enable GitHub Allow auto-merge, add branch protection or a ruleset for the default branch gating the generated-docs checks, create a fine-grained personal access token or GitHub App token scoped to the target repo with Contents and Pull requests read and write permissions stored as the OPENWIKI_PR_TOKEN Actions secret, and pin OpenWiki and provider versions. The dedicated token is needed because PRs created with the default GITHUB_TOKEN do not start most pull_request workflows, so required PR checks may never run.",
       "evidence": [
         {
-          "resource": "repo://README.md#L220-L236",
+          "resource": "repo://README.md#L225-L241",
           "version": "repo-lines-v1:sha256:0ff4e4edb16971237e099c5ecf9cd8186dfa4dd4ee61a883ef14df195be858e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjM2VmMTIxMDAzMzRhYzVhNDRhYjYyMmY1OWEzY2EzYTMwOWQxMGQ0NzJmNTc5MjhlNWFlMDlmMTFhYzA4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZjg3M2RjMGM3NzU5ZTNiMTRmNTcxNzM0YWJjYWNjYWZmNWY4NGE1ZmZmOGM4ODdmOTdkMTdhMjdhY2U5MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzYmExODVlYzVjYTExYzc2YmNlYThmM2EwMWZkNzRkN2I4NDllN2Y4NmUwYmYwZjFhYTk5OGZkZDg5MTE3ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZTlhYTkyZDcxYWQ1YmI4ZGIzMjUzNTNjZTdhOGIwZWYxMTI5Yzg4YzEzOTA3MDRmMzA4MzA5NjgxMmY1MjUifQ"
         },
         {
@@ -277,10 +277,24 @@
           "version": "repo-lines-v1:sha256:bca9474e416093fc2ec4924bd1e04dd6a70fbd1530795595f2a274c01b112099:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVjNzRiMGQ3MjgyN2Y4YjM5ZWRkODY0MDZkODgwMDg1OTQzOTZlMjViY2FmM2VkMzU1YWU1NWRmZWQzYjg5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA5Y2U1ZWIyY2E2OTZiNjBhNWVmY2EwYWI4NTZkZmNlYzUyYzU1NmUyOWRjZTUyYmVjM2I3ZGJjZGU0ODU5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2I4MjZmOGU2OTFkMDBlYzhmYTI2NWJjODBmNTViOGY1MzhmMzY4ODVhMjBhNmQ0MzI3YmZiMGNjNTA3ODM2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg2YzAxZTBjZTAzYzliNWRmMzVhYjZiNTVjOWExMGIzZWM5MmM4M2VjY2FiNWExMDg0ZjE0MDU3YzkxMTczNSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_61aabb69520e4ca78220255f76c32d65",
+      "statement": "The live dogfood workflow runs OpenRouter with model z-ai/glm-5.2 (OPENWIKI_PROVIDER: openrouter, OPENWIKI_MODEL_ID: z-ai/glm-5.2, keyed by OPENROUTER_API_KEY), and its comments document a GitHub Copilot alternative: set the COPILOT_API_KEY repository secret (a GitHub OAuth token) and switch to OPENWIKI_PROVIDER: copilot with OPENWIKI_MODEL_ID: claude-sonnet-5. The published-package examples use the same OpenRouter/GLM defaults.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L55-L63",
+          "version": "repo-lines-v1:sha256:459c83d2dee55577362df67b08402f905ce97725b38bbe62e02fc6125ed85ebc:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IwNzg0OGE0MzY2NjU2YjJiYTYxOTdiZTAyYjkyMDgxNDU0NmY5ZDlhZDBiNTMzOWU0YzI2YTJjOTQ2NTExNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJhZjE2ZDYxZThmMzA0NTgwYTc5YWRmNWMyNWRhZjJlMjU5NzBmYTViOWQxNTJjNjAzOTNjZjkyMzEwYjk2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQ5NGQ3OWZhYjBiZmVkNzgwNDMwY2M0NzljZjU3ZDc3MjZmYWUzYmI0Y2ExMjZmMzM1Yjk0MDc1ZjFkZGNjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODUyZTA3OWY3MjEzNDY5MzliMzNiMTRkY2E5YWYwYzQzY2JiNTBhODRmNTJjMTJkN2ViNzA5MmIyY2E2NjBkNCJ9"
+        },
+        {
+          "resource": "repo://examples/openwiki-update.yml#L40-L50",
+          "version": "repo-lines-v1:sha256:4a6023e49c33d9f69d5ac51e86320e8b793a5ad0aaa2546712a919c2abcdd4b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMDc4NDhhNDM2NjY1NmIyYmE2MTk3YmUwMmI5MjA4MTQ1NDZmOWQ5YWQwYjUzMzllNGMyNmEyYzk0NjUxMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ZjhiODAyNzQxYWZjN2ZiMzg0MGZlY2RjNDNkN2Y4ZTQwMjNiYmZjYjViN2VjNjVlZTA4ODc5OGQ4NTE3MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2M2QwM2YzNTE3MTY3ZGRhYmExZGIxOWFiMTYwODQyZjNjNmY0YmRlZjVlYjFhMDJlNDhkYjk2OWE3OTYwMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ZTc5NGRkZjMyYTNlMmRhYWFkODgyNjMxM2MyNGY0ZTRjZGE2ZjYxYWJmNDE3ZTQ4OWJlMzlkNWI5OGE1NTkifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-09-30T08:10:27.967Z"
   }
 }

@@ -22,10 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T08:09:47.649Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.1
+    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -80,6 +80,7 @@ sequenceDiagram
     Caller->>Caller: hasRepositorySourceChanged before finish
     Caller->>Caller: build producerActorsByPage from manifest
     Caller->>Caller: apply deletions and reconcile deleted claims
+    Caller->>Caller: wrap index_sync to capture frontmatter report
     Caller->>Fin: prepared baseline, at, producerActor, producerActorsByPage, claimSources
     Fin->>Mermaid: validate fenced diagrams
     Fin->>Index: rebuild directory indexes
@@ -93,12 +94,16 @@ sequenceDiagram
     Caller->>Caller: hasRepositorySourceChanged again
     Caller->>Caller: write interrupted or complete metadata
     Caller->>Caller: remove .run.json last
+    Caller->>Caller: emit frontmatter report advisory
 ```
 
 Whole-run finish sequence. `finalizeWikiArtifacts` runs the five ordered
 deterministic operations shown in the middle; `finishRepositoryRun` brackets it
 with skipped-page validation, Markdown restore, Claims finalization, the
-whole-run durability proof, manifest rebuild, and metadata.
+whole-run durability proof, manifest rebuild, and metadata. The caller wraps
+the `index_sync` operation so it can capture the `WikiFrontmatterReport`
+`finalizeWikiArtifacts` does not itself return, then surfaces that report as a
+non-fatal advisory after the run is complete.
 
 The order matters. Mermaid and index synchronization can rewrite page and index
 bytes; link validation then runs over the final structure, including the
@@ -120,6 +125,18 @@ subdirectory links point at the child directory. Links are sorted by href and an
 index is only rewritten when its rendered content actually changed. Only the
 bundle-root index carries the `okf_version: "0.2"` marker. `index.md`, `log.md`,
 and `INSTRUCTIONS.md` are reserved and never treated as concepts.
+
+`synchronizeWikiIndexes` also returns a `WikiFrontmatterReport` — two
+report-only signal lists that *do not* affect the OKF repair it feeds. It
+records wiki-root-relative paths of pages still carrying `openwiki_generated:
+true` after the pass (their `type`/`title` were code-derived rather than
+authored) and pages indexed without a usable `description` (matching what the
+index actually renders). Because `finalizeWikiArtifacts` does not return these
+signals, `finishRepositoryRun` wraps the `index_sync` operation to capture the
+report, then emits both lists as a single non-fatal operator-facing text
+advisory after the run completes (via the same event channel used for the
+source-changed notice). Neither signal changes what the run persisted; it only
+reports metadata the deterministic pass leaves as-is by design.
 
 **OKF `sources`.** `synchronizeClaimSources` projects each page's Claims
 evidence files into that page's OKF `sources` front matter. Precise line ranges
@@ -171,6 +188,17 @@ The validator enforces these invariants on generated pages:
   a link is broken only when its target genuinely does not exist. Paths are
   resolved leading-slash-absolute from the virtual filesystem root or relative
   to the source file, then normalized and required to stay under the repo root.
+- **Root-absolute links are flagged in `repository` mode but tolerated in
+  `local-wiki` mode.** In `repository` mode a leading-slash path (e.g.
+  `/openwiki/foo.md`) is flagged outright, *before* existence is even checked,
+  because no real consumer resolves it against the repository root: a coding
+  agent reads the page relative to its own directory, GitHub's Markdown
+  renderer treats a leading `/` as relative to the `github.com` domain, and
+  local viewers agree. In `local-wiki` mode the backend root already *is* the
+  wiki root, so a root-absolute path there can be the consumer's intended
+  convention and is left unflagged. Either way the existence check resolves the
+  target against the whole repo, so this rule is purely about flagging the
+  *form* of the href, not its resolvability.
 - **Heading anchors are validated only against Markdown targets.** Same-page
   anchors are checked against the source's own headings; cross-file anchors are
   checked against the target's headings only when the target is a `.md` file.
@@ -227,7 +255,11 @@ At finish, the sequence is:
    longer exists on disk does not abort finalization.
 5. **Run `finalizeWikiArtifacts`** against the rehydrated pre-authoring
    baseline, the run timestamp, the producer actor, the per-page producer-actor
-   map, and the session's per-page evidence resources.
+   map, and the session's per-page evidence resources. The repository run wraps
+   the `index_sync` operation in `captureFrontmatterReport` so it can intercept
+   the `WikiFrontmatterReport` `finalizeWikiArtifacts` does not itself return —
+   the wrapper passes every other operation through unchanged — and stash the
+   index-sync report for the advisory emitted at the end.
 6. **Restore skipped page Markdown.** After finalization, each skipped job's
    snapshot is replayed through `restoreRepositoryPageMarkdown`, writing the
    original bytes back (or deleting the file when the snapshot Markdown is
@@ -290,17 +322,22 @@ At finish, the sequence is:
     snapshot, so the next update's no-op check will not skip a retry). Otherwise
     `persistRunMetadataIfChanged` records `"complete"` against the pre-run
     content snapshot, clearing any prior interrupted status.
-12. **Delete `.run.json` last** (`removeRepositoryRunState`).
+12. **Delete `.run.json` last** (`removeRepositoryRunState`). Removing the run
+    state after every gate passes is what makes finalization crash-safe: the run
+    is never marked complete until the finalized wiki has been re-proven durable.
+13. **Emit the frontmatter report advisory.** Only after `.run.json` is removed
+    does `finishRepositoryRun` call `emitFrontmatterReportEvent`, surfacing the
+    index-sync report captured in step 5 (code-derived frontmatter, missing
+    descriptions) as a non-fatal text event on the same channel as the
+    source-changed notice. It is deliberately last and outside the durability
+    gates because it changes nothing this run persisted.
 
 The **source fingerprint is checked twice** — before finalization and again
 after the durability proof — so a run cannot finalize against one source state
 while the model-visible source has since drifted without that drift being
 recorded. The run always completes; drift is reported through the return value
-and the `"interrupted"` checkpoint rather than by re-planning. Crucially,
-`.run.json` is removed only after every gate passes. Any earlier failure leaves
-the run state on disk, so `begin()` can reconstruct and retry. This ordering is
-what makes finalization crash-safe: the run is never marked complete until the
-finalized wiki has been re-proven durable.
+and the `"interrupted"` checkpoint rather than by re-planning. Any earlier
+failure leaves the run state on disk, so `begin()` can reconstruct and retry.
 
 ## Related
 

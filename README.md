@@ -25,7 +25,7 @@ For repository wikis, OpenWiki tracks facts back to source evidence so updates c
 ## 🎉 What's new
 
 - **Linked wiki workspaces:** group related repositories with `openwiki link`, search across their wikis, and read relevant sections through MCP. [See how it works →](#create-wiki-workspaces)
-- **More coding-agent integrations:** Oh My Pi, Antigravity, IBM Bob / Bob Shell, and Kiro join Codex, Claude Code, OpenCode, and Cursor. [Connect your agent →](#coding-agent-integrations)
+- **More coding-agent integrations:** Oh My Pi, Antigravity, IBM Bob / Bob Shell, and Kiro join Codex, Claude Code, OpenCode, GitHub Copilot and Cursor. [Connect your agent →](#coding-agent-integrations)
 - **Parallel page workers:** native CLI runs can now document multiple pages concurrently while saving progress page by page and adapting to provider rate limits. [Configure concurrency →](#parallel-page-workers)
 - **Resumable updates and grounded Claims:** completed pages survive interruptions, and versioned source evidence identifies facts that need attention. [Explore the architecture →](#how-it-works)
 
@@ -43,6 +43,9 @@ You'll need [Node.js 22.22.0 or newer](https://nodejs.org).
 npm install -g openwiki
 ```
 
+If you use Pi, install the package through Pi in step 2 instead; a separate
+global OpenWiki installation is not required.
+
 <a id="coding-agent-integrations"></a>
 
 ### 2. Connect your coding agent
@@ -59,6 +62,8 @@ Choose the integration for your agent:
 | Kiro                | `openwiki integrations install kiro`        |
 | Oh My Pi            | `openwiki integrations install omp`         |
 | Antigravity         | `openwiki integrations install antigravity` |
+| GitHub Copilot CLI  | `openwiki integrations install copilot`     |
+| Pi                  | `pi install npm:openwiki`                   |
 
 ### 3. Create your wiki
 
@@ -86,8 +91,10 @@ Host-specific locations and notes:
 - OpenCode uses `~/.config/opencode`.
 - IBM Bob / Bob Shell uses `~/.agents/skills` and `~/.bob/settings/mcp.json` at user scope; `.agents/skills` and `.bob/mcp.json` at the project.
 - Kiro uses `~/.kiro/skills` and `~/.kiro/settings/mcp.json`.
-- Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`. This is Oh My Pi (`omp`); see [the upstream Pi integration notes](docs/pi-integration-notes.md).
+- Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`.
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
+- GitHub Copilot CLI uses `~/.copilot/skills` and `~/.copilot/mcp-config.json` at user scope; `.github/skills` and `.github/mcp.json` at the project.
+- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
 
 On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
 
@@ -285,6 +292,8 @@ Concurrency defaults to `1` and accepts values from `1` to `8`. Start at `2` to 
 Each worker owns exactly one page, and completed pages remain durable resume units. The quickstart page is written last so it can link to the pages it routes to. A worker that fails on a provider rate limit lowers the run's concurrency by one for the rest of the run; the page it was writing is restored and picked up by the next update.
 
 LangChain handles transient provider errors. Retry attempts default to `3`, or `5` when `OPENWIKI_PAGE_CONCURRENCY` is above `1`. Override with `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=3` (a positive integer).
+
+With LangSmith tracing on, the planner and each page worker are separate traces, grouped into one LangSmith thread per run. The thread id is the run's id, which a resumed run keeps; set `OPENWIKI_TRACE_THREAD_ID` to choose it yourself, for example from CI so a run's thread can be found from the commit that triggered it.
 
 </details>
 
@@ -587,7 +596,37 @@ OPENAI_COMPATIBLE_BASE_URL=http://localhost:1234/v1
 OPENWIKI_MODEL_ID=your-loaded-model-id
 ```
 
-Some local servers ignore the API key value, but OpenWiki still requires `OPENAI_COMPATIBLE_API_KEY` because the client expects one.
+Some local servers ignore the API key value, but API-key mode still requires
+`OPENAI_COMPATIBLE_API_KEY` because the client expects one.
+
+**Microsoft Entra ID gateways.** During interactive `openwiki --init`, select
+OpenAI-compatible, then Microsoft Entra ID. Enter the HTTPS API root, the token
+scope accepted by your gateway, and the model ID. OpenWiki saves these settings
+for later `--update` runs; it does not ask for or store an access token. Azure
+Identity must be configured separately in each environment that runs OpenWiki.
+For non-interactive runs, set the same values explicitly:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_AUTH=entra-id
+OPENAI_COMPATIBLE_BASE_URL=https://gateway.example.com/openai/v1
+OPENAI_COMPATIBLE_ENTRA_SCOPE=api://gateway-application-id/.default
+OPENWIKI_MODEL_ID=your-gateway-model
+```
+
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` defaults to
+`https://cognitiveservices.azure.com/.default` for Azure OpenAI. Custom gateways
+may require a different scope. Azure Identity obtains and refreshes the bearer
+token on model requests, so no `OPENAI_COMPATIBLE_API_KEY` is needed in Entra
+mode. Generated CI workflows retain the mode and scope but still require you to
+configure an unattended Azure Identity credential in CI.
+
+For workload identity federation, provide `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
+and `AZURE_FEDERATED_TOKEN_FILE` in the environment running OpenWiki. The file
+variable must point to the runner-provided federated token file; do not paste
+the token into OpenWiki or commit the file. When the file variable is set,
+OpenWiki uses `WorkloadIdentityCredential` rather than another credential in
+the default chain. If it is not set, OpenWiki uses `DefaultAzureCredential`.
 
 **Streaming-only gateways.** Some gateways serve only the streaming transport: a non-streaming request is either rejected outright (`Stream must be set to true`) or answered with HTTP 200 and empty content, which leaves you with a blank wiki and no error. OpenWiki issues non-streaming requests internally, so force the streaming transport for those endpoints:
 
@@ -673,8 +712,8 @@ openwiki workspace current|clear  # inspect or clear the active workspace
 openwiki auth <provider>         # authenticate a connector (slack, gmail, x, notion)
 openwiki ingest <source>         # run connector ingestion (all, or a connector/instance)
 openwiki integrations list       # show installed coding-agent integrations
-openwiki integrations install <bob|codex|claude|opencode|cursor|kiro|omp|antigravity> [--project [path]]
-openwiki integrations uninstall <bob|codex|claude|opencode|cursor|kiro|omp|antigravity> [--project [path]]
+openwiki integrations install <bob|codex|claude|opencode|cursor|kiro|omp|antigravity|copilot> [--project [path]]
+openwiki integrations uninstall <bob|codex|claude|opencode|cursor|kiro|omp|antigravity|copilot> [--project [path]]
 openwiki --help                  # full help
 ```
 
