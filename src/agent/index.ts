@@ -1317,6 +1317,11 @@ export function createModel(
     configuration,
     model: modelId,
     useResponsesApi: chatOpenAiUsesResponsesApi,
+    // OpenAI-compatible gateways may treat omitted strict mode differently.
+    // These tools use optional fields, so preserve their non-strict semantics.
+    ...(provider === "openai-compatible"
+      ? { supportsStrictToolCalling: false }
+      : {}),
     ...maxTokensOptions,
     ...responsesReasoningOptions,
     ...chatCompletionsReasoningOptions,
