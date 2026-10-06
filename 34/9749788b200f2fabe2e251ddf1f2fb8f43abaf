@@ -1,0 +1,24 @@
+.changeset/preserve-optional-compatible-tools.md
+  s_03984eb6438d2a::t_69c357f008a5b0 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "349749788b200f2fabe2e251ddf1f2fb8f43abaf",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_03984eb6438d2a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1121d-a882-7702-a38e-db6e17d28181",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
