@@ -7,8 +7,10 @@ import {
   getProviderLabel,
   getProviderLocationEnvKey,
   getProviderProjectEnvKey,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
+  type OpenAICompatibleAuthMode,
   type OpenWikiProvider,
   providerRequiresBaseUrl,
   providerRequiresRegion,
@@ -82,6 +84,16 @@ export interface InitSetupViewProps {
   /** True once the user confirms a provider this session. */
   providerConfirmed: boolean;
 
+  /**
+   * OpenAI-compatible authentication selected for this setup run.
+   */
+  authMode: OpenAICompatibleAuthMode;
+
+  /**
+   * Cursor for the OpenAI-compatible authentication menu.
+   */
+  authModeSelectionIndex: number;
+
   /** API key entered this session, or null when none was typed. */
   apiKey: string | null;
 
@@ -99,6 +111,11 @@ export interface InitSetupViewProps {
 
   /** Base URL entered this session, or null when none was typed. */
   baseUrl: string | null;
+
+  /**
+   * Entra token scope entered this session, or null when none was typed.
+   */
+  entraScope: string | null;
 
   /** Region entered this session, or null when none was typed. */
   region: string | null;
@@ -245,12 +262,15 @@ export function InitSetupView({
   selectedMode,
   provider,
   providerConfirmed,
+  authMode,
+  authModeSelectionIndex,
   apiKey,
   oauthTokens,
   secretKey,
   gcpProject,
   gcpLocation,
   baseUrl,
+  entraScope,
   region,
   modelId,
   modelIdOverride,
@@ -298,7 +318,7 @@ export function InitSetupView({
   const needsCredentialPrompt =
     !hasValidConfiguredProvider() ||
     needsAwsCredentialRepair(provider) ||
-    needsCredentialStep(provider) ||
+    needsCredentialStep(provider, authMode) ||
     needsSecretKeyStep(provider) ||
     needsBaseUrlStep(provider) ||
     needsRegionStep(provider) ||
@@ -306,7 +326,7 @@ export function InitSetupView({
       process.env[OPENWIKI_MODEL_ID_ENV_KEY] === undefined) ||
     needsLangSmithStep();
   const apiKeyEnvKey = getProviderApiKeyEnvKey(provider);
-  const primaryCredentialStep = credentialStep(provider);
+  const primaryCredentialStep = credentialStep(provider, authMode);
   const projectEnvKey = getProviderProjectEnvKey(provider);
   const locationEnvKey = getProviderLocationEnvKey(provider);
   const selectedModelId =
@@ -381,6 +401,17 @@ export function InitSetupView({
             )}
             detail={getProviderLabel(provider)}
           />
+          {provider === "openai-compatible" ? (
+            <SetupStep
+              label="Authentication"
+              state={resolveStepStatus("auth-mode", step, step !== "provider")}
+              detail={
+                authMode === "entra-id"
+                  ? getCredentialSetupDetail(provider, null, authMode)
+                  : "API key"
+              }
+            />
+          ) : null}
           {providerUsesAwsSdkCredentials(provider) ? (
             <SetupStep
               label="AWS credentials"
@@ -398,7 +429,7 @@ export function InitSetupView({
                 primaryCredentialStep ?? "provider",
                 step,
                 apiKey !== null ||
-                  isCredentialConfigured(provider) ||
+                  isCredentialConfigured(provider, authMode) ||
                   oauthTokens !== null,
               )}
               detail={
@@ -406,7 +437,8 @@ export function InitSetupView({
                   ? getCredentialSetupDetail(provider, oauthTokens)
                   : apiKeyEnvKey && getShellEnvValue(apiKeyEnvKey) !== undefined
                     ? "from shell"
-                    : apiKey !== null || isCredentialConfigured(provider)
+                    : apiKey !== null ||
+                        isCredentialConfigured(provider, authMode)
                       ? "configured"
                       : "not set"
               }
@@ -470,6 +502,24 @@ export function InitSetupView({
               detail={
                 baseUrl ??
                 (isBaseUrlConfigured(provider) ? "configured" : "not set")
+              }
+            />
+          ) : null}
+          {provider === "openai-compatible" && authMode === "entra-id" ? (
+            <SetupStep
+              label="Token scope"
+              state={resolveStepStatus(
+                "entra-scope",
+                step,
+                entraScope !== null ||
+                  process.env[OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY] !==
+                    undefined,
+                "optional",
+              )}
+              detail={
+                entraScope ??
+                process.env[OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY] ??
+                "Azure OpenAI default"
               }
             />
           ) : null}
@@ -603,6 +653,8 @@ export function InitSetupView({
           {step ? (
             <Prompt
               codeRepoPathInput={codeRepoPathInput}
+              authMode={authMode}
+              authModeSelectionIndex={authModeSelectionIndex}
               codeRepoRoot={codeRepoRoot}
               externalCliAuth={externalCliAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}

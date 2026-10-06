@@ -139,6 +139,21 @@ export const HOST_TARGETS = {
     },
     documentationUrl: "https://antigravity.google/docs/mcp?tab=cli",
   },
+  copilot: {
+    id: "copilot",
+    displayName: "GitHub Copilot CLI",
+    producerActor: "copilot",
+    user: {
+      skillDirectory: ".copilot/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".copilot/mcp-config.json" },
+    },
+    project: {
+      skillDirectory: ".github/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".github/mcp.json" },
+    },
+    documentationUrl:
+      "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers",
+  },
 } as const satisfies Record<HostTargetId, HostTarget>;
 
 /**

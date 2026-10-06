@@ -22,6 +22,8 @@ sources:
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
     resource: repo://src/agent/utils.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -130,10 +132,7 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 ---
 
 # Testing Guide
@@ -366,6 +365,42 @@ the page remains `complete` — because `runPageAgent` guards its
 `streamWorkerTools` catch with `if (submitted) return { status: "submitted" }`
 so a post-submit worker throw returns a submitted outcome rather than calling
 `skipRepositoryPage`.
+
+The suite also pins the **LangSmith trace grouping** introduced by the
+`trace-thread-per-update` changeset. Every worker in a run streams against one
+shared LangSmith thread id so the planner and the per-page workers collapse into
+a single grouped trace rather than one root trace per agent. Two describe blocks
+cover this:
+
+- **`LangSmith thread grouping`** — `tags the planner and every concurrent page
+  worker with the run's thread id` runs the harness with `pageConcurrency: 2`
+  and asserts `harness.streamConfigs` has length `1 + planPaths.length` (one
+  planner plus one worker per planned page), and that **every** captured
+  `streamConfig.configurable` equals `{ thread_id: HARNESS_RUN_ID }`. The harness
+  captures these configs by wrapping `createDeepAgent`'s returned `stream` method
+  to push the `config` argument onto `harness.streamConfigs` before delegating.
+  `uses OPENWIKI_TRACE_THREAD_ID when CI sets it` stubs the env with a
+  whitespace-padded override (`" ingest-3280b3e "`) and asserts the trimmed value
+  (`"ingest-3280b3e"`) is used for every worker's `thread_id`, so CI can name a
+  run's thread after the change that caused it.
+- **`LangSmith trace names`** — `names the planner and each page worker after its
+  page` asserts the first captured `agentOptions.name` is `PLANNER_AGENT_NAME`
+  (`"planning agent"`) and the remaining worker names, sorted, equal
+  `planPaths.map(workerAgentName)`; it also pins `workerAgentName` directly,
+  including the nested-path case `workerAgentName("/openwiki/coverage/forms/ho-3.md")`
+  → `"worker agent: coverage/forms/ho-3"`, which strips the `/openwiki/` prefix
+  and `.md` suffix so a run's thread reads as one planner plus one worker per
+  page.
+
+These thread/name tests run against the same mocked `deepagents` harness: the
+mock captures `agentOptions` (including `name`) on every `createDeepAgent` call
+and captures each `stream(input, config)` invocation's `config.configurable` so
+the assertions can inspect the thread id without a real LangSmith export. The
+thread id itself comes from `resolveTraceThreadId(run.state.runId)` in
+`src/config/constants.ts`, which returns the trimmed `OPENWIKI_TRACE_THREAD_ID`
+env override when set and non-empty, otherwise the durable `runId`; the runner
+passes that value as `configurable.thread_id` to both the planner and each page
+worker's `streamWorkerTools` call.
 
 Finally the suite covers `coerceRepositoryWorkerModelResponse`, the
 normalization the repository-worker `NO_DELEGATION_MIDDLEWARE` applies before
@@ -1024,6 +1059,8 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
 - **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
 - **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
+- **LangSmith thread grouping:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "tags the planner and every concurrent page worker with the run's thread id"` (shared `thread_id` on planner + every worker) or `-t "uses OPENWIKI_TRACE_THREAD_ID when CI sets it"` (trimmed env override).
+- **LangSmith trace names:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "names the planner and each page worker after its page"` (`PLANNER_AGENT_NAME` + `workerAgentName(page)`).
 - **Repository-worker response coercion:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "coerces roleless generic streaming aggregates before LangChain validates wrapModelCall"` (roleless `ChatMessageChunk` → `AIMessageChunk` with collapsed tool calls), `-t "coerces generic assistant messages before LangChain validates wrapModelCall"` (`ChatMessage` → `AIMessage`), or `-t "leaves non-assistant generic model responses untouched"`.
 - **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` or `-t "forwards only approved tool lifecycle events"`.
 - **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts`.

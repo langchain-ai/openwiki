@@ -146,6 +146,53 @@ function referencesClaimsState(command: string): boolean {
 }
 
 /**
+ * Process-local serialization of file operations, keyed by host path.
+ *
+ * LangChain runs every tool call of one model turn concurrently, and the
+ * upstream filesystem backend neither locks nor writes atomically: `write`
+ * truncates before writing and `edit` is a read-modify-write. Overlapping
+ * operations on one page can leave a stale tail, drop an edit, or let a read
+ * see the page empty between truncate and write. The queue is module-level
+ * because page workers and the code-owned lifecycle each build their own
+ * backend over the same files.
+ */
+const pathOperations = new Map<string, Promise<void>>();
+
+/**
+ * Runs one file operation after every earlier operation on the same file.
+ *
+ * Callers must call this before their first `await` so operations issued
+ * together run in the order they were issued.
+ *
+ * @param rootDir - Absolute backend root the virtual path resolves under.
+ * @param filePath - Virtual path the operation reads or writes.
+ * @param operation - File operation to run once it holds the file.
+ * @returns The operation's result.
+ */
+async function withPathOperation<T>(
+  rootDir: string,
+  filePath: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const hostPath = path.join(rootDir, normalizeVirtualPath(filePath));
+  const previous = pathOperations.get(hostPath) ?? Promise.resolve();
+  let release: () => void = () => undefined;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  pathOperations.set(hostPath, current);
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    release();
+    if (pathOperations.get(hostPath) === current) {
+      pathOperations.delete(hostPath);
+    }
+  }
+}
+
+/**
  * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
  * doc-generation agent.
  *
@@ -165,6 +212,10 @@ function referencesClaimsState(command: string): boolean {
  *
  * These boundaries constrain an agent that may be prompt-injected via
  * untrusted repository content, so path checks canonicalize before matching.
+ *
+ * Reads and mutations of one file are also serialized across every instance,
+ * so concurrent tool calls on a page apply in order (see
+ * {@link withPathOperation}).
  */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
@@ -213,7 +264,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return super.read(filePath, offset, limit);
+    return withPathOperation(this.cwd, filePath, () =>
+      super.read(filePath, offset, limit),
+    );
   }
 
   /**
@@ -228,7 +281,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return super.readRaw(filePath);
+    return withPathOperation(this.cwd, filePath, () => super.readRaw(filePath));
   }
 
   /**
@@ -250,9 +303,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return markMutation(
-      await super.write(normalizedPath, content),
-      normalizedPath,
+    return withPathOperation(this.cwd, normalizedPath, async () =>
+      markMutation(await super.write(normalizedPath, content), normalizedPath),
     );
   }
 
@@ -276,9 +328,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return markMutation(
-      await super.edit(normalizedPath, oldString, newString, replaceAll),
-      normalizedPath,
+    return withPathOperation(this.cwd, normalizedPath, async () =>
+      markMutation(
+        await super.edit(normalizedPath, oldString, newString, replaceAll),
+        normalizedPath,
+      ),
     );
   }
 
@@ -297,7 +351,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     if (error) {
       return { error };
     }
-    return markMutation(await super.delete(normalizedPath), normalizedPath);
+    return withPathOperation(this.cwd, normalizedPath, async () =>
+      markMutation(await super.delete(normalizedPath), normalizedPath),
+    );
   }
 
   /**

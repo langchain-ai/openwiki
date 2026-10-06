@@ -3,9 +3,6 @@ type: evaluation-framework
 title: Evaluation Systems (LEDGER and DeepSWE)
 description: How LEDGER scores wiki claim health across an evolving Git trace and how the DeepSWE paired harness compares a Codex baseline against an OpenWiki-augmented condition.
 tags: [evals, ledger, deepswe, grounding, forgetting, benchmarks]
-verified:
-  - by: openwiki/0.5.1
-    at: 2026-09-14T08:10:27.832Z
 sources:
   - id: openwiki-source-c45a528335f5cf7306567dc9
     resource: repo://evals/deepswe/README.md

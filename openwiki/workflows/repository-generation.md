@@ -24,6 +24,8 @@ sources:
     resource: repo://src/agent/utils.ts
   - id: openwiki-source-9697823032111d36e2d4caa9
     resource: repo://src/agent/wiki-replacement.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-ed90c6fa13119927ecd82845
     resource: repo://src/generation/errors.ts
   - id: openwiki-source-1197594de038075f3570340c
@@ -42,10 +44,7 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
+generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
 ---
 
 # Repository Generation Lifecycle
@@ -576,7 +575,8 @@ sequenceDiagram
         Pool ->> Core: nextRepositoryPage exclude claimed
         Core -->> Pool: pending job or complete
         Worker ->> Worker: captureRepositoryPageSnapshot
-        Worker ->> Worker: runPageAgent
+        Worker ->> Worker: runPageAgent named workerAgentName(page)
+        Worker ->> Worker: streamWorkerTools threads resolveTraceThreadId
         alt submit_page succeeds
             Worker ->> Core: submitRepositoryPage
             Core -->> Worker: complete
@@ -593,7 +593,11 @@ sequenceDiagram
 
 One pass of `runPendingPageAgents` with a concurrent worker pool. Job
 acquisition is serialized; model work runs in parallel; skip and submit mutate
-shared state under the `withRunMutation` lock.
+shared state under the `withRunMutation` lock. `streamWorkerTools` threads
+`configurable.thread_id` (the run's `resolveTraceThreadId`) into every worker's
+`agent.stream` call so the planner and all page workers group into one LangSmith
+thread per run, and worker narration is never surfaced — only bounded tool
+lifecycle events pass through `parseWorkerToolEvent`.
 
 ## Progress events
 
@@ -654,6 +658,28 @@ can decide which pages actually need work. The page-worker prompt
 (`createRepositoryPagePrompt`) bounds each worker to exactly its assigned page,
 injects the sparse-Claim reconciliation guidance, and requires
 `submit_page` with canonical `repo://` evidence resources.
+
+### Shared LangSmith trace thread
+
+Every planner and page worker in one run groups into a single LangSmith thread.
+The planner agent is created with the name `PLANNER_AGENT_NAME`
+(`"planning agent"`), and each page worker is created with
+`workerAgentName(job.path)` — a human-readable name derived from the page it
+owns, such as `worker agent: architecture/agent-runtime`. Both the planner's
+`streamWorkerTools` call and every page worker's call thread the same
+`configurable.thread_id` into `agent.stream`: `resolveTraceThreadId(run.state.runId)`,
+which returns the `OPENWIKI_TRACE_THREAD_ID` env override when set (so CI can name
+the thread after the change that caused the run) or the run id otherwise. Because
+the workers have no checkpointer, sharing one thread id across concurrent workers
+is safe — it only affects LangSmith grouping, not execution state.
+
+`streamWorkerTools` streams with `streamMode: ["tools"]` and `subgraphs: true`,
+so worker narration (assistant text, reasoning) is never surfaced to the event
+consumer. Only bounded tool lifecycle events pass through: `parseWorkerToolEvent`
+keeps `on_tool_start`/`on_tool_end`/`on_tool_error` events for the approved
+worker tool names (`read_file`, `ls`, `glob`, `grep`, `write_file`, `edit_file`,
+`submit_plan`, `inspect_claims`, `submit_page`) and discards everything else,
+tagging each retained event with the owning page path.
 
 ## Failure semantics
 

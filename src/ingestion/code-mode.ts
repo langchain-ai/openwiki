@@ -3,10 +3,14 @@ import path from "node:path";
 import {
   getProviderAuthMethod,
   getProviderConfig,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_VERSION,
+  providerUsesEntraId,
   resolveConfiguredProvider,
+  resolveOpenAICompatibleEntraScope,
   resolveOpenAiCompatibleStreaming,
 } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
@@ -467,7 +471,16 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
   const config = getProviderConfig(provider);
   const lines = [`OPENWIKI_PROVIDER: ${provider}`];
 
-  if (getProviderAuthMethod(provider) === "oauth") {
+  if (providerUsesEntraId(provider, env)) {
+    lines.push(
+      `${OPENAI_COMPATIBLE_AUTH_ENV_KEY}: entra-id`,
+      `${OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY}: ${JSON.stringify(
+        resolveOpenAICompatibleEntraScope(env),
+      )}`,
+      "# Configure unattended Azure Identity before Run OpenWiki (for example,",
+      "# azure/login with OIDC, managed identity, or workload identity).",
+    );
+  } else if (getProviderAuthMethod(provider) === "oauth") {
     // The stored access token is short-lived and refreshed in place, so
     // pinning it as a repo secret would break on the first rotation.
     lines.push(

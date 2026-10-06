@@ -54,9 +54,6 @@ sources:
   - id: openwiki-source-9ba5e33980ba1f452c6884d4
     resource: repo://test/telemetry/with-run-telemetry.test.ts
 generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Telemetry and Diagnostics

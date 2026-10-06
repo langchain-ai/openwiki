@@ -130,6 +130,14 @@ describe("formatEnv", () => {
 });
 
 describe("MANAGED_ENV_KEYS", () => {
+  test("manages OpenAI-compatible auth mode and scope in provider order", () => {
+    const baseUrlIndex = MANAGED_ENV_KEYS.indexOf("OPENAI_COMPATIBLE_BASE_URL");
+    expect(MANAGED_ENV_KEYS.slice(baseUrlIndex + 1, baseUrlIndex + 3)).toEqual([
+      "OPENAI_COMPATIBLE_AUTH",
+      "OPENAI_COMPATIBLE_ENTRA_SCOPE",
+    ]);
+  });
+
   test("manages the model output token limit", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_MAX_OUTPUT_TOKENS");
   });
@@ -175,6 +183,14 @@ describe("MANAGED_ENV_KEYS", () => {
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
+  test("preserves OpenAI-compatible auth mode and scope", () => {
+    const original = {
+      OPENAI_COMPATIBLE_AUTH: "entra-id",
+      OPENAI_COMPATIBLE_ENTRA_SCOPE: "api://gateway/.default",
+    };
+    expect(parseEnv(formatEnv(original))).toEqual(original);
+  });
+
   test("values survive a format -> parse round-trip", () => {
     const original = {
       OPENAI_API_KEY: 'weird "value" with\nnewline and \\ backslash',
