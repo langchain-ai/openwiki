@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-Preserve optional tool parameters when using OpenAI-compatible model providers.
+fix: preserve optional tool parameters for openai-compatible models
