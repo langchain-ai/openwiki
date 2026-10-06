@@ -1,7 +1,10 @@
 import { cp, lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import {
+  repositoryWikiRoot,
+  resolveRepositoryWikiDirectory,
+} from "../config/wiki-directory.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 
 const REPOSITORY_INSTRUCTIONS = "INSTRUCTIONS.md";
@@ -15,10 +18,14 @@ const SIGNAL_EXIT_CODES: Readonly<Record<ReplacementSignal, number>> = {
  * Recoverable replacement of one existing repository wiki.
  */
 export interface RepositoryWikiReplacement {
-  /** Discards the private backup after a successful init. */
+  /**
+   * Discards the private backup after a successful init.
+   */
   commit(): Promise<void>;
 
-  /** Restores the exact pre-init wiki after a failed init. */
+  /**
+   * Restores the exact pre-init wiki after a failed init.
+   */
   rollback(): Promise<void>;
 }
 
@@ -26,15 +33,16 @@ export interface RepositoryWikiReplacement {
  * Replaces an existing repository wiki with a blank generation target.
  *
  * `INSTRUCTIONS.md` is user-owned control metadata, so it is copied into the
- * blank target. Everything else below `openwiki/` is generated state and is
- * removed before the init agent sees the repository. A private temporary copy
- * remains available until the run either commits or rolls back.
+ * blank target. Everything else below the configured wiki directory is
+ * generated state and is removed before the init agent sees the repository. A
+ * private temporary copy remains available until the run either commits or
+ * rolls back.
  *
  * SIGINT and SIGTERM restore the backup before exiting. This keeps an operator
  * cancellation from leaving the repository with a partial replacement wiki.
  *
- * A first init with no `openwiki/` directory keeps the existing partial-run
- * recovery behavior and therefore returns a no-op transaction.
+ * A first init with no wiki directory keeps the existing partial-run recovery
+ * behavior and therefore returns a no-op transaction.
  *
  * @param rootDir - Absolute repository root.
  * @returns Transaction controlling the pre-init backup.
@@ -47,7 +55,8 @@ export async function beginRepositoryWikiReplacement(
   }
 
   const repositoryRoot = path.resolve(rootDir);
-  const wikiDir = path.join(repositoryRoot, OPEN_WIKI_DIR);
+  const wikiDirectory = resolveRepositoryWikiDirectory(repositoryRoot);
+  const wikiDir = repositoryWikiRoot(repositoryRoot, wikiDirectory);
   const wikiStat = await lstat(wikiDir).catch((error: unknown) => {
     if (isFileNotFoundError(error)) return null;
     throw error;
@@ -58,12 +67,12 @@ export async function beginRepositoryWikiReplacement(
   }
   if (!wikiStat.isDirectory() || wikiStat.isSymbolicLink()) {
     throw new Error(
-      `Refusing to replace ${OPEN_WIKI_DIR}: expected a real directory below the repository root.`,
+      `Refusing to replace ${wikiDirectory}: expected a real directory below the repository root.`,
     );
   }
 
   const backupParent = await mkdtemp(path.join(tmpdir(), "openwiki-init-"));
-  const backupDir = path.join(backupParent, OPEN_WIKI_DIR);
+  const backupDir = path.join(backupParent, "wiki");
   let finished = false;
   let finishing: Promise<void> | undefined;
   let initialization: Promise<void> = Promise.resolve();
@@ -168,7 +177,7 @@ export async function beginRepositoryWikiReplacement(
     if (instructionsStat) {
       if (!instructionsStat.isFile() || instructionsStat.isSymbolicLink()) {
         throw new Error(
-          `Refusing to preserve ${OPEN_WIKI_DIR}/${REPOSITORY_INSTRUCTIONS}: expected a regular file.`,
+          `Refusing to preserve ${wikiDirectory}/${REPOSITORY_INSTRUCTIONS}: expected a regular file.`,
         );
       }
       await cp(instructions, path.join(wikiDir, REPOSITORY_INSTRUCTIONS), {
@@ -195,7 +204,9 @@ export async function beginRepositoryWikiReplacement(
   return replacement;
 }
 
-/** Returns an idempotent transaction for a first init with no prior wiki. */
+/**
+ * Returns an idempotent transaction for a first init with no prior wiki.
+ */
 function createNoopReplacement(): RepositoryWikiReplacement {
   return {
     commit: () => Promise.resolve(),

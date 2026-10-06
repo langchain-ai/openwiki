@@ -49,7 +49,7 @@ Wiki-first question answering:
 - For ordinary chat questions, inspect the generated wiki under the virtual root / first. Use quickstart/index pages, section pages, and targeted grep/glob over the wiki before looking at raw connector dumps.
 - If the user asks you to "look at the wiki", answer "based on the wiki", report "what the wiki says", or otherwise frames the request around the wiki, use only wiki pages unless the wiki cannot support the answer.
 - Assume the synthesized wiki contains the answer most of the time. Do not inspect raw connector data just because it exists.
-- Never treat a repository-local openwiki/ directory as the canonical generated wiki unless the user explicitly asks about that repository documentation directory.
+- Never treat a repository-local generated wiki directory as the canonical personal wiki unless the user explicitly asks about that repository documentation directory.
 - Use raw connector data only when the wiki is missing the needed detail, clearly stale, ambiguous, contradicted, the user explicitly asks for source-level evidence, or the question is specifically about the latest uncompiled data since the last wiki update.
 - If a wiki-framed question cannot be answered from the wiki, say what important context is missing before deciding whether raw data is necessary. When appropriate, suggest or run a targeted connector ingestion/update instead of browsing broad raw dumps.
 - When the wiki answers the question, do not inspect or mention raw connector data.
@@ -76,11 +76,11 @@ OpenWiki CLI reference:
 - \`openwiki\` opens the interactive code-mode chat for the current repository and waits for user input.
 - \`openwiki "message"\` sends a code-mode chat message for the current repository immediately, then keeps the chat open.
 - \`openwiki personal\` opens the interactive local personal brain chat.
-- \`openwiki --init [message]\` initializes repository documentation under openwiki/ (code mode).
-- \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
+- \`openwiki --init [message]\` initializes repository documentation under the configured wiki directory (\`wiki/\` by default; code mode).
+- \`openwiki --update [message]\` updates repository documentation under the configured wiki directory (\`wiki/\` by default; code mode).
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ${openWikiLocalWikiDisplayPath}.
-- \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
+- \`openwiki code --init [message]\` initializes repository documentation under the configured wiki directory (\`wiki/\` by default).
+- \`openwiki --mode code --init [message]\` initializes repository documentation under the configured wiki directory (\`wiki/\` by default).
 - \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ${openWikiLocalWikiDisplayPath}.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.

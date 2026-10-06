@@ -1214,7 +1214,7 @@ export const helpContent: HelpContent = {
     {
       label: "openwiki code",
       description:
-        "Run OpenWiki for the current repository, writing docs under repo openwiki/ and using GitHub Actions for recurrence.",
+        "Run OpenWiki for the current repository, writing docs under repo wiki/ by default and using GitHub Actions for recurrence.",
     },
     {
       label: "openwiki personal",
@@ -1303,7 +1303,7 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
+        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving its INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",

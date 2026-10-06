@@ -684,10 +684,10 @@ describe("runNativeRepositoryGeneration", () => {
       "User and connector context",
     );
     expect(String(harness.agentOptions[1]?.systemPrompt)).toContain(
-      "You own exactly /openwiki/quickstart.md",
+      "You own exactly /wiki/quickstart.md",
     );
     expect(String(harness.agentOptions[2]?.systemPrompt)).toContain(
-      "You own exactly /openwiki/architecture.md",
+      "You own exactly /wiki/architecture.md",
     );
     expect(harness.agentOptions[1]?.tools.map(({ name }) => name)).toEqual([
       "inspect_claims",
@@ -718,7 +718,7 @@ describe("runNativeRepositoryGeneration", () => {
       "src/new-feature.ts",
     );
     expect(String(harness.agentOptions[1]?.systemPrompt)).toContain(
-      "You own exactly /openwiki/new-feature.md",
+      "You own exactly /wiki/new-feature.md",
     );
   });
 
@@ -995,7 +995,7 @@ describe("runNativeRepositoryGeneration", () => {
 
     expect(harness.agentOptions).toHaveLength(1);
     expect(String(harness.agentOptions[0]?.systemPrompt)).toContain(
-      "You own exactly /openwiki/resumed.md",
+      "You own exactly /wiki/resumed.md",
     );
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -1069,12 +1069,12 @@ describe("runNativeRepositoryGeneration", () => {
     // The first page got two workers (attempt + retry); its sibling got one.
     expect(
       prompts.filter((prompt) =>
-        prompt.includes("You own exactly /openwiki/testing.md."),
+        prompt.includes("You own exactly /wiki/testing.md."),
       ),
     ).toHaveLength(2);
     expect(
       prompts.filter((prompt) =>
-        prompt.includes("You own exactly /openwiki/later.md."),
+        prompt.includes("You own exactly /wiki/later.md."),
       ),
     ).toHaveLength(1);
     // The page was recovered by the retry, so the skip warning must not fire.
@@ -1138,7 +1138,7 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
     const events = await running;
 
     expect(harness.agentOptions).toHaveLength(6);
-    expect(pagePrompt(5)).toContain("You own exactly /openwiki/quickstart.md");
+    expect(pagePrompt(5)).toContain("You own exactly /wiki/quickstart.md");
     expect(
       harness.currentRun?.state.plan?.pages.map(({ status }) => status),
     ).toEqual(["complete", "complete", "complete", "complete", "complete"]);
@@ -1270,7 +1270,7 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
       "/openwiki/later.md",
     ];
     harness.fatalPageSubmissions = ["/openwiki/fatal.md"];
-    const releaseFatal = holdPageWorkers("/openwiki/fatal.md");
+    const releaseFatal = holdPageWorkers("/wiki/fatal.md");
     // The third acquisition belongs to the worker that completed `other`.
     const releaseAcquisition = holdNextPageAcquisition(3);
 

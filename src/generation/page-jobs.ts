@@ -85,13 +85,19 @@ export interface ProposedPageClaim {
  * one of the explicit fields so required grounding work cannot be skipped.
  */
 export interface ProposedPageClaimReconciliation {
-  /** Existing Claims explicitly rechecked and retained without content edits. */
+  /**
+   * Existing Claims explicitly rechecked and retained without content edits.
+   */
   confirmedClaimIds?: string[];
 
-  /** Revised existing Claims (with id) and genuinely new Claims (without id). */
+  /**
+   * Revised existing Claims (with id) and genuinely new Claims (without id).
+   */
   claims?: ProposedPageClaim[];
 
-  /** Existing Claims explicitly removed from the completed page. */
+  /**
+   * Existing Claims explicitly removed from the completed page.
+   */
   retractedClaimIds?: string[];
 }
 

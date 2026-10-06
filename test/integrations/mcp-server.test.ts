@@ -347,7 +347,7 @@ describe("OpenWiki MCP lifecycle smoke test", () => {
         },
       });
       await writeFile(
-        path.join(root, "openwiki/quickstart.md"),
+        path.join(root, "wiki/quickstart.md"),
         [
           "---",
           "type: Guide",

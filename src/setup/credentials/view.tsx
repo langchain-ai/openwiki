@@ -384,7 +384,7 @@ export function InitSetupView({
             detail={getRunModeName(selectedMode)}
           />
           {selectedMode === "code" ? (
-            <SetupStep label="Wiki scope" state="done" detail="openwiki/" />
+            <SetupStep label="Wiki scope" state="done" detail="wiki/" />
           ) : null}
         </Box>
       </Box>

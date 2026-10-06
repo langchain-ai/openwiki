@@ -20,7 +20,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
       const destination = String(args[1]);
       if (
         failureHarness.manifestRenames > 0 &&
-        destination.endsWith("openwiki/.page-manifest.json")
+        destination.endsWith("wiki/.page-manifest.json")
       ) {
         failureHarness.manifestRenames -= 1;
         throw new Error("injected manifest rename failure");
@@ -183,7 +183,7 @@ describe("repository page-manifest persistence", () => {
       )}\n`,
     );
     expect(
-      (await readdir(path.join(root, "openwiki"))).filter((entry) =>
+      (await readdir(path.join(root, "wiki"))).filter((entry) =>
         entry.endsWith(".tmp"),
       ),
     ).toEqual([]);
@@ -214,7 +214,7 @@ describe("repository page-manifest persistence", () => {
 
     expect(await readRepositoryPageManifest(root)).toEqual(original);
     expect(
-      (await readdir(path.join(root, "openwiki"))).filter((entry) =>
+      (await readdir(path.join(root, "wiki"))).filter((entry) =>
         entry.endsWith(".tmp"),
       ),
     ).toEqual([]);

@@ -63,9 +63,9 @@ async function createWikiRepository(
 ): Promise<string> {
   const root = path.join(parent, relativePath);
   await mkdir(path.join(root, ".git"), { recursive: true });
-  await mkdir(path.join(root, "openwiki"), { recursive: true });
+  await mkdir(path.join(root, "wiki"), { recursive: true });
   await writeFile(
-    path.join(root, "openwiki", "quickstart.md"),
+    path.join(root, "wiki", "quickstart.md"),
     `# ${relativePath}\n`,
     "utf8",
   );

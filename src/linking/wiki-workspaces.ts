@@ -6,7 +6,8 @@ import {
 import { chmod, lstat, mkdir, open, readdir, realpath } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { UPDATE_METADATA_PATH } from "../config/constants.js";
+import { UPDATE_METADATA_FILE } from "../config/constants.js";
+import { repositoryWikiRoot } from "../config/wiki-directory.js";
 import { resolveOpenWikiHomeDir } from "../config/openwiki-home.js";
 import { writeTextAtomic } from "../integrations/install/atomic-file.js";
 import { restrictDirToCurrentUser } from "../platform/windows-acl.js";
@@ -1132,7 +1133,7 @@ async function canonicalWikiRoots(roots: readonly string[]): Promise<string[]> {
   for (const root of canonical) {
     if (!(await isWikiRepository(root))) {
       throw new WikiWorkspaceError(
-        `Every selected repository must contain ${UPDATE_METADATA_PATH}.`,
+        `Every selected repository must contain ${UPDATE_METADATA_FILE} in its generated wiki directory.`,
       );
     }
   }
@@ -1442,7 +1443,9 @@ async function isWikiRepository(directory: string): Promise<boolean> {
  * @returns Whether OpenWiki has recorded repository run metadata.
  */
 async function hasOpenWikiMetadata(directory: string): Promise<boolean> {
-  return isRegularFile(path.join(directory, UPDATE_METADATA_PATH));
+  return isRegularFile(
+    path.join(repositoryWikiRoot(directory), UPDATE_METADATA_FILE),
+  );
 }
 
 /**

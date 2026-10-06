@@ -14,7 +14,8 @@ import {
   type ReadResult,
   type WriteResult,
 } from "deepagents";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import { OPEN_WIKI_VIRTUAL_DIR } from "../config/constants.js";
+import { normalizeRepositoryWikiDirectory } from "../config/wiki-directory.js";
 import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -28,7 +29,7 @@ export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
  */
 type OpenWikiBackendOptions = LocalShellBackendOptions & {
   /**
-   * Confine writes to the `openwiki/` docs tree.
+   * Confine writes to the configured wiki docs tree.
    *
    * @default false
    */
@@ -56,6 +57,11 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
    * array creates a read-only generated-docs backend.
    */
   writableWikiPages?: readonly string[];
+
+  /**
+   * Physical repository-relative directory that stores generated wiki files.
+   */
+  wikiDirectory?: string;
 };
 
 /**
@@ -205,7 +211,7 @@ async function withPathOperation<T>(
  *    denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop
  *    ignored entries; and uploads/downloads reject ignored paths.
  * 3. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
- *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
+ *    to the configured wiki tree via {@link isOpenWikiDocsPath}.
  * 4. Claims ownership: repository `.claims` sidecars are hidden from generic
  *    tools and may only be accessed by OpenWiki's direct persistence layer.
  * 5. Personal mode: shell execution is always denied, including delegated calls.
@@ -219,7 +225,7 @@ async function withPathOperation<T>(
  */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
-   * Whether writes are confined to the `openwiki/` docs tree (repository mode).
+   * Whether writes are confined to the configured wiki docs tree.
    */
   private readonly docsOnly: boolean;
 
@@ -238,13 +244,25 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    */
   private readonly writableWikiPages?: ReadonlySet<string>;
 
+  /**
+   * Physical repository-relative directory allowed by docs-only confinement.
+   */
+  private readonly wikiDirectory: string;
+
   constructor(options: OpenWikiBackendOptions) {
     super(options);
     this.docsOnly = options.docsOnly === true;
     this.openWikiIgnore = options.openWikiIgnore ?? new OpenWikiIgnore([]);
     this.outputMode = options.outputMode ?? "repository";
+    this.wikiDirectory = normalizeRepositoryWikiDirectory(
+      options.wikiDirectory ?? OPEN_WIKI_VIRTUAL_DIR,
+    );
     this.writableWikiPages = options.writableWikiPages
-      ? new Set(options.writableWikiPages.map(normalizeVirtualPath))
+      ? new Set(
+          options.writableWikiPages.map((page) =>
+            normalizeVirtualPath(mapVirtualWikiPath(page, this.wikiDirectory)),
+          ),
+        )
       : undefined;
   }
 
@@ -256,16 +274,17 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     offset?: number,
     limit?: number,
   ): Promise<ReadResult> {
+    const resolvedPath = this.resolveWikiPath(filePath);
     const error =
-      this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath);
+      this.getIgnoredPathError(resolvedPath) ??
+      this.getClaimsOwnershipError(resolvedPath);
 
     if (error) {
       return { error };
     }
 
-    return withPathOperation(this.cwd, filePath, () =>
-      super.read(filePath, offset, limit),
+    return withPathOperation(this.cwd, resolvedPath, () =>
+      super.read(resolvedPath, offset, limit),
     );
   }
 
@@ -273,15 +292,18 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * Read raw bytes, hard-denying the read if the path is excluded by `.openwikiignore`.
    */
   override async readRaw(filePath: string): Promise<ReadRawResult> {
+    const resolvedPath = this.resolveWikiPath(filePath);
     const error =
-      this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath);
+      this.getIgnoredPathError(resolvedPath) ??
+      this.getClaimsOwnershipError(resolvedPath);
 
     if (error) {
       return { error };
     }
 
-    return withPathOperation(this.cwd, filePath, () => super.readRaw(filePath));
+    return withPathOperation(this.cwd, resolvedPath, () =>
+      super.readRaw(resolvedPath),
+    );
   }
 
   /**
@@ -293,11 +315,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     filePath: string,
     content: string,
   ): Promise<WriteResult> {
-    const normalizedPath = normalizeVirtualPath(filePath);
+    const normalizedPath = normalizeVirtualPath(this.resolveWikiPath(filePath));
     const error =
-      this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath) ??
-      this.getDocsOnlyWriteError(filePath);
+      this.getIgnoredPathError(normalizedPath) ??
+      this.getClaimsOwnershipError(normalizedPath) ??
+      this.getDocsOnlyWriteError(normalizedPath, filePath);
 
     if (error) {
       return { error };
@@ -318,11 +340,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     newString: string,
     replaceAll?: boolean,
   ): Promise<EditResult> {
-    const normalizedPath = normalizeVirtualPath(filePath);
+    const normalizedPath = normalizeVirtualPath(this.resolveWikiPath(filePath));
     const error =
-      this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath) ??
-      this.getDocsOnlyWriteError(filePath);
+      this.getIgnoredPathError(normalizedPath) ??
+      this.getClaimsOwnershipError(normalizedPath) ??
+      this.getDocsOnlyWriteError(normalizedPath, filePath);
 
     if (error) {
       return { error };
@@ -343,11 +365,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * @returns Backend deletion result with mutation metadata on success.
    */
   override async delete(filePath: string): Promise<DeleteResult> {
-    const normalizedPath = normalizeVirtualPath(filePath);
+    const normalizedPath = normalizeVirtualPath(this.resolveWikiPath(filePath));
     const error =
-      this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath) ??
-      this.getDocsOnlyWriteError(filePath);
+      this.getIgnoredPathError(normalizedPath) ??
+      this.getClaimsOwnershipError(normalizedPath) ??
+      this.getDocsOnlyWriteError(normalizedPath, filePath);
     if (error) {
       return { error };
     }
@@ -361,15 +383,16 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * filtering out any ignored entries so they never surface to the agent.
    */
   override async ls(dirPath: string): Promise<LsResult> {
+    const resolvedPath = this.resolveWikiPath(dirPath);
     const error =
-      this.getIgnoredPathError(dirPath, true) ??
-      this.getClaimsOwnershipError(dirPath);
+      this.getIgnoredPathError(resolvedPath, true) ??
+      this.getClaimsOwnershipError(resolvedPath);
 
     if (error) {
       return { error };
     }
 
-    const result = await super.ls(dirPath);
+    const result = await super.ls(resolvedPath);
 
     return {
       ...result,
@@ -390,14 +413,18 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     dirPath?: string | null,
     glob?: string | null,
   ): Promise<GrepResult> {
+    const resolvedDirectory = dirPath
+      ? this.resolveWikiPath(dirPath)
+      : undefined;
     if (
-      dirPath &&
-      (this.openWikiIgnore.ignores(dirPath, true) || this.isClaimsPath(dirPath))
+      resolvedDirectory &&
+      (this.openWikiIgnore.ignores(resolvedDirectory, true) ||
+        this.isClaimsPath(resolvedDirectory))
     ) {
       return { matches: [] };
     }
 
-    const result = await super.grep(pattern, dirPath ?? undefined, glob);
+    const result = await super.grep(pattern, resolvedDirectory, glob);
 
     return {
       ...result,
@@ -417,32 +444,38 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     pattern: string,
     searchPath?: string,
   ): Promise<GlobResult> {
-    if (isBroadRootGlob(pattern, searchPath)) {
+    const resolvedSearchPath = searchPath
+      ? this.resolveWikiPath(searchPath)
+      : undefined;
+    if (isBroadRootGlob(pattern, resolvedSearchPath)) {
       return {
         error:
           "Unbounded root globbing is disabled. Use ls at the repository root, then targeted glob or grep calls by directory and extension.",
       };
     }
 
-    if (targetsGitMetadata(pattern, searchPath)) {
+    if (targetsGitMetadata(pattern, resolvedSearchPath)) {
       return {
         error:
           "Git metadata is private repository state and is unavailable to glob. Use `git rev-parse HEAD` when the current commit is needed.",
       };
     }
 
-    if (searchPath && this.isClaimsPath(searchPath)) {
+    if (resolvedSearchPath && this.isClaimsPath(resolvedSearchPath)) {
       return { files: [] };
     }
 
-    if (searchPath && this.openWikiIgnore.ignores(searchPath, true)) {
+    if (
+      resolvedSearchPath &&
+      this.openWikiIgnore.ignores(resolvedSearchPath, true)
+    ) {
       return { files: [] };
     }
 
     let result: GlobResult;
 
     try {
-      result = await super.glob(pattern, searchPath);
+      result = await super.glob(pattern, resolvedSearchPath);
     } catch (error) {
       if (isWorktreeGitScandirError(error)) {
         return {
@@ -459,14 +492,14 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       files: result.files?.filter(
         (file) =>
           !this.openWikiIgnore.ignores(file.path, file.is_dir === true) &&
-          !this.isClaimsDiscoveryPath(file.path, searchPath),
+          !this.isClaimsDiscoveryPath(file.path, resolvedSearchPath),
       ),
     };
   }
 
   /**
    * Upload files, returning `permission_denied` for any path that is excluded by
-   * `.openwikiignore` or (in docs-only mode) falls outside the `openwiki/` tree,
+   * `.openwikiignore` or (in docs-only mode) falls outside the active wiki tree,
    * while still uploading the allowed ones. As a write path, this enforces the
    * same docs-only confinement as {@link write}/{@link edit}. Results are
    * returned in the original input order.
@@ -474,27 +507,29 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   override async uploadFiles(
     files: Array<[string, Uint8Array]>,
   ): Promise<FileUploadResponse[]> {
-    const allowedFiles = files.filter(
-      ([filePath]) => !this.isWriteBlocked(filePath),
+    const resolvedFiles = files.map(([requestedPath, content]) => ({
+      content,
+      requestedPath,
+      resolvedPath: this.resolveWikiPath(requestedPath),
+    }));
+    const allowedFiles = resolvedFiles.filter(
+      ({ requestedPath, resolvedPath }) =>
+        !this.isWriteBlocked(resolvedPath, requestedPath),
     );
-
-    if (allowedFiles.length === files.length) {
-      return super.uploadFiles(files);
-    }
-
-    const allowedResults = await super.uploadFiles(allowedFiles);
-    const resultsByPath = new Map(
-      allowedResults.map((result) => [result.path, result]),
+    const allowedResults = await super.uploadFiles(
+      allowedFiles.map(({ content, resolvedPath }) => [resolvedPath, content]),
     );
+    let allowedResultIndex = 0;
 
-    return files.map(([filePath]) => {
-      if (this.isWriteBlocked(filePath)) {
-        return { error: "permission_denied", path: filePath };
+    return resolvedFiles.map(({ requestedPath, resolvedPath }) => {
+      if (this.isWriteBlocked(resolvedPath, requestedPath)) {
+        return { error: "permission_denied", path: requestedPath };
       }
 
-      return (
-        resultsByPath.get(filePath) ?? { error: "invalid_path", path: filePath }
-      );
+      const result = allowedResults[allowedResultIndex++];
+      return result
+        ? { ...result, path: requestedPath }
+        : { error: "invalid_path", path: requestedPath };
     });
   }
 
@@ -505,35 +540,40 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   override async downloadFiles(
     paths: string[],
   ): Promise<FileDownloadResponse[]> {
-    const allowedPaths = paths.filter(
-      (filePath) =>
-        !this.openWikiIgnore.ignores(filePath) && !this.isClaimsPath(filePath),
+    const resolvedPaths = paths.map((requestedPath) => ({
+      requestedPath,
+      resolvedPath: this.resolveWikiPath(requestedPath),
+    }));
+    const allowedPaths = resolvedPaths.filter(
+      ({ resolvedPath }) =>
+        !this.openWikiIgnore.ignores(resolvedPath) &&
+        !this.isClaimsPath(resolvedPath),
     );
-
-    if (allowedPaths.length === paths.length) {
-      return super.downloadFiles(paths);
-    }
-
-    const allowedResults = await super.downloadFiles(allowedPaths);
-    const resultsByPath = new Map(
-      allowedResults.map((result) => [result.path, result]),
+    const allowedResults = await super.downloadFiles(
+      allowedPaths.map(({ resolvedPath }) => resolvedPath),
     );
+    let allowedResultIndex = 0;
 
-    return paths.map((filePath) => {
+    return resolvedPaths.map(({ requestedPath, resolvedPath }) => {
       if (
-        this.openWikiIgnore.ignores(filePath) ||
-        this.isClaimsPath(filePath)
+        this.openWikiIgnore.ignores(resolvedPath) ||
+        this.isClaimsPath(resolvedPath)
       ) {
-        return { content: null, error: "permission_denied", path: filePath };
+        return {
+          content: null,
+          error: "permission_denied",
+          path: requestedPath,
+        };
       }
 
-      return (
-        resultsByPath.get(filePath) ?? {
-          content: null,
-          error: "invalid_path",
-          path: filePath,
-        }
-      );
+      const result = allowedResults[allowedResultIndex++];
+      return result
+        ? { ...result, path: requestedPath }
+        : {
+            content: null,
+            error: "invalid_path",
+            path: requestedPath,
+          };
     });
   }
 
@@ -577,15 +617,18 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
    * Return a refusal message when a write escapes the docs tree in docs-only
    * mode, or `null` if the write is allowed. Always allows in `local-wiki` mode
-   * or when the path is under `openwiki/`.
+   * or when the path is under the configured wiki directory.
    */
-  private getDocsOnlyWriteError(filePath: string): string | null {
+  private getDocsOnlyWriteError(
+    filePath: string,
+    requestedPath = filePath,
+  ): string | null {
     if (!this.docsOnly || this.outputMode === "local-wiki") {
       return null;
     }
 
-    if (!isOpenWikiDocsPath(filePath)) {
-      return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
+    if (!isOpenWikiDocsPath(filePath, this.wikiDirectory)) {
+      return `OpenWiki repository init/update runs may only write under /${this.wikiDirectory}/. Refused path: ${requestedPath}`;
     }
 
     if (
@@ -596,6 +639,13 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     }
 
     return null;
+  }
+
+  /**
+   * Maps the stable code-owned virtual namespace to the active physical wiki.
+   */
+  private resolveWikiPath(filePath: string): string {
+    return mapVirtualWikiPath(filePath, this.wikiDirectory);
   }
 
   /**
@@ -634,7 +684,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * @returns Whether the repository Claims boundary applies.
    */
   private isClaimsPath(filePath: string): boolean {
-    return this.outputMode === "repository" && isClaimsStatePath(filePath);
+    return (
+      this.outputMode === "repository" &&
+      isClaimsStatePath(filePath, this.wikiDirectory)
+    );
   }
 
   /**
@@ -666,11 +719,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * {@link edit} apply. Used by batch write paths that cannot short-circuit on a
    * single error message.
    */
-  private isWriteBlocked(filePath: string): boolean {
+  private isWriteBlocked(filePath: string, requestedPath = filePath): boolean {
     return (
       this.openWikiIgnore.ignores(filePath) ||
       this.isClaimsPath(filePath) ||
-      this.getDocsOnlyWriteError(filePath) !== null
+      this.getDocsOnlyWriteError(filePath, requestedPath) !== null
     );
   }
 }
@@ -700,35 +753,51 @@ function markMutation<Result extends WriteResult | EditResult | DeleteResult>(
  * @param filePath - Candidate virtual repository path.
  * @returns Whether the normalized path is the Claims directory or its descendant.
  */
-export function isClaimsStatePath(filePath: string): boolean {
+export function isClaimsStatePath(
+  filePath: string,
+  wikiDirectory = OPEN_WIKI_VIRTUAL_DIR,
+): boolean {
   const normalized = path.posix
     .normalize(filePath.replaceAll("\\", "/"))
     .toLowerCase();
   const absolute = normalized.startsWith("/") ? normalized : `/${normalized}`;
 
-  return (
-    absolute === "/openwiki/.claims" ||
-    absolute.startsWith("/openwiki/.claims/")
-  );
+  const claimsRoot = `/${normalizeRepositoryWikiDirectory(wikiDirectory).toLowerCase()}/.claims`;
+  return absolute === claimsRoot || absolute.startsWith(`${claimsRoot}/`);
 }
 
 /**
- * Whether a path resolves to somewhere inside the `openwiki/` docs tree.
+ * Whether a path resolves to somewhere inside the configured wiki docs tree.
  *
  * The path is canonicalized (backslashes, leading slashes, and `.`/`..`
  * segments collapsed) before the prefix check so a path such as
  * `/openwiki/../AGENTS.md` cannot escape the confinement.
  */
-export function isOpenWikiDocsPath(filePath: string): boolean {
+export function isOpenWikiDocsPath(
+  filePath: string,
+  wikiDirectory = OPEN_WIKI_VIRTUAL_DIR,
+): boolean {
   const slashed = filePath.trim().replace(/\\/gu, "/");
   // Collapse `..`/`.` segments before the prefix check so a path like
-  // "/openwiki/../AGENTS.md" cannot escape the openwiki/ confinement.
+  // "/openwiki/../AGENTS.md" cannot escape the wiki confinement.
   const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/u, "")}`);
   const virtualPath = normalized.replace(/^\/+/u, "");
 
-  return (
-    virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)
-  );
+  const directory = normalizeRepositoryWikiDirectory(wikiDirectory);
+  return virtualPath === directory || virtualPath.startsWith(`${directory}/`);
+}
+
+/**
+ * Maps the stable persisted page namespace to the active physical directory.
+ */
+function mapVirtualWikiPath(filePath: string, wikiDirectory: string): string {
+  const normalized = normalizeVirtualPath(filePath);
+  const virtualRoot = `/${OPEN_WIKI_VIRTUAL_DIR}`;
+  if (normalized === virtualRoot) return `/${wikiDirectory}`;
+  if (normalized.startsWith(`${virtualRoot}/`)) {
+    return `/${wikiDirectory}/${normalized.slice(virtualRoot.length + 1)}`;
+  }
+  return filePath;
 }
 
 /**

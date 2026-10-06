@@ -101,7 +101,7 @@ describe("repository run-state persistence", () => {
       `${JSON.stringify(state, null, 2)}\n`,
     );
     expect(
-      (await readdir(path.join(root, "openwiki"))).filter((entry) =>
+      (await readdir(path.join(root, "wiki"))).filter((entry) =>
         entry.endsWith(".tmp"),
       ),
     ).toEqual([]);
@@ -133,7 +133,7 @@ describe("repository run-state persistence", () => {
       "preserved\n",
     );
     expect(
-      (await readdir(path.join(root, "openwiki"))).filter((entry) =>
+      (await readdir(path.join(root, "wiki"))).filter((entry) =>
         entry.endsWith(".tmp"),
       ),
     ).toEqual([]);

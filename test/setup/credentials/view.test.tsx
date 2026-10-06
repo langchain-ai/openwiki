@@ -156,7 +156,7 @@ describe("InitSetupView", () => {
       makeProps({ selectedMode: "code", step: "provider" }),
     );
     expect(frame).toContain("Wiki scope");
-    expect(frame).toContain("openwiki/");
+    expect(frame).toContain("wiki/");
   });
 
   test("mode selection marks the run-mode row current on its step", () => {

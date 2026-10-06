@@ -735,7 +735,7 @@ describe("Prompt", () => {
   test("final uses code-mode copy for a code wiki", () => {
     const frame = promptFrame({ step: "final", selectedMode: "code" });
     expect(frame).toContain("Setup is complete.");
-    expect(frame).toContain("Run now writes the initial openwiki/ directory");
+    expect(frame).toContain("Run now writes the initial wiki/ directory");
   });
 
   test("final uses personal-mode copy for a personal wiki", () => {

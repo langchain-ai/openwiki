@@ -3,6 +3,11 @@ import { ClaimsStore } from "../claims/brains/code/store.js";
 import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
 import { parseFrontmatterFields } from "../okf/frontmatter.js";
 import {
+  resolveRepositoryWikiDirectory,
+  toRepositoryWikiPath,
+  toVirtualWikiPath,
+} from "../config/wiki-directory.js";
+import {
   resolveReadableWiki,
   resolveWikiSearchScope,
   type WikiWorkspaceRequired,
@@ -90,7 +95,7 @@ const STOP_WORDS = new Set(
  * Stable correction guidance for pages outside the public retrieval surface.
  */
 const INVALID_WIKI_PAGE_MESSAGE =
-  "Page must be a non-structural Markdown path below openwiki/.";
+  "Page must be a non-structural Markdown path below the generated wiki directory.";
 
 /**
  * Search controls shared by direct callers and the MCP adapter.
@@ -478,11 +483,13 @@ export async function searchWiki(
 
   const units: SearchUnit[] = [];
   for (const wiki of scope.wikis) {
-    const store = new ClaimsStore(wiki.root);
+    const wikiDirectory = resolveRepositoryWikiDirectory(wiki.root);
+    const store = new ClaimsStore(wiki.root, wikiDirectory);
     for (const page of await store.discoverPages()) {
       if (!isRetrievableWikiPage(page)) continue;
       const markdown = await store.readMarkdown(page);
-      units.push(...searchUnits(markdown, page, terms, wiki.id));
+      const repositoryPage = toRepositoryWikiPath(page, wikiDirectory);
+      units.push(...searchUnits(markdown, repositoryPage, terms, wiki.id));
     }
   }
   if (!units.length) {
@@ -648,12 +655,16 @@ export async function readWikiSections(
   }
 
   const selectedWiki = await resolveReadableWiki(root, request.wiki?.trim());
-
-  const normalizedPage = normalizeRetrievableWikiPage(request.page);
-  const requested = request.sections.map(normalizeSectionAnchor);
-  const markdown = await new ClaimsStore(selectedWiki.root).readMarkdown(
-    normalizedPage,
+  const wikiDirectory = resolveRepositoryWikiDirectory(selectedWiki.root);
+  const normalizedPage = normalizeRetrievableWikiPage(
+    request.page,
+    wikiDirectory,
   );
+  const requested = request.sections.map(normalizeSectionAnchor);
+  const markdown = await new ClaimsStore(
+    selectedWiki.root,
+    wikiDirectory,
+  ).readMarkdown(normalizedPage);
   const body = markdownBody(markdown);
   const tokens = marked.lexer(body);
   const available = new Map(
@@ -667,7 +678,7 @@ export async function readWikiSections(
   }
 
   const response: WikiReadResponse = {
-    page: normalizedPage.slice(1),
+    page: toRepositoryWikiPath(normalizedPage, wikiDirectory),
     sections: requested.map((section) => ({
       section,
       content: available.get(section) as string,
@@ -707,7 +718,7 @@ function searchUnits(
   const body = markdownBody(markdown);
   if (!body) return [];
 
-  const relativePage = page.slice(1);
+  const relativePage = page.replace(/^\/+/, "");
   const title = stringField(fields.title) ?? relativePage;
   const description = stringField(fields.description) ?? "";
   const tags = stringArray(fields.tags);
@@ -987,10 +998,18 @@ function repositoryPathFromResource(value: string): string {
  * @returns Canonical virtual page path beginning with `/openwiki/`.
  * @throws {WikiRetrievalError} When the path is structural, hidden, or unsafe.
  */
-function normalizeRetrievableWikiPage(page: string): string {
+function normalizeRetrievableWikiPage(
+  page: string,
+  wikiDirectory: string,
+): string {
   let normalized: string;
   try {
-    normalized = normalizeWikiPagePath(page);
+    const slashed = page.trim().replaceAll("\\", "/");
+    normalized = normalizeWikiPagePath(
+      /^\/?openwiki\//u.test(slashed)
+        ? slashed
+        : toVirtualWikiPath(slashed, wikiDirectory),
+    );
   } catch {
     throw new WikiRetrievalError(INVALID_WIKI_PAGE_MESSAGE);
   }

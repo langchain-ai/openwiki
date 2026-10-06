@@ -4,7 +4,8 @@ import path from "node:path";
 import { z } from "zod";
 import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
-import { PAGE_MANIFEST_PATH } from "../config/constants.js";
+import { PAGE_MANIFEST_FILE } from "../config/constants.js";
+import { repositoryWikiRoot } from "../config/wiki-directory.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { RepositoryRunError } from "./errors.js";
 
@@ -102,7 +103,7 @@ export function createEmptyRepositoryPageManifest(): RepositoryPageManifest {
  * @returns Absolute manifest path.
  */
 export function repositoryPageManifestPath(root: string): string {
-  return path.join(root, PAGE_MANIFEST_PATH);
+  return path.join(repositoryWikiRoot(root), PAGE_MANIFEST_FILE);
 }
 
 /**

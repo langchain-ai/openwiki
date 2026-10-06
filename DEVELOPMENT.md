@@ -62,7 +62,7 @@ The existing global link will keep using the rebuilt `dist/cli/cli.js`.
 
 Real runs can write:
 
-- `openwiki/`
+- `wiki/` (or an existing legacy `openwiki/`)
 - `~/.openwiki/.env` for local OpenRouter model/key settings and optional LangSmith credentials
 
 Scheduled update workflow example:

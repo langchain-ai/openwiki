@@ -73,7 +73,7 @@ Restart your coding agent, open a repository, and ask:
 Initialize this repository's OpenWiki from the current source and tests.
 ```
 
-Your agent researches the repository and writes a linked wiki in `openwiki/`. OpenWiki tracks its source evidence and saves progress as each page completes.
+Your agent researches the repository and writes a linked wiki in `wiki/`. OpenWiki tracks its source evidence and saves progress as each page completes.
 
 <div align="center">
   <img alt="Codex initializes an OpenWiki for a repository." src="./static/openwiki-codex.gif" width="880">
@@ -250,7 +250,17 @@ You can also use OpenWiki's own [Deep Agents](https://github.com/langchain-ai/de
 openwiki --init
 ```
 
-The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [thirteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
+The first run walks you through choosing a provider, credentials, and model, then writes docs to `wiki/`. Existing repositories that already contain `openwiki/` continue using it automatically. OpenWiki supports [thirteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
+
+To choose another repository-relative directory, add `.openwiki.json` at the repository root:
+
+```json
+{
+  "wikiDirectory": "docs/wiki"
+}
+```
+
+For a process-level override, set `OPENWIKI_WIKI_DIR=docs/wiki`. The override takes precedence over `.openwiki.json`. Absolute paths, traversal segments, empty path segments, and unsafe characters are rejected. The same resolver is used by generation, coding-agent instructions, linked-workspace retrieval, and the `openwiki_search`/`openwiki_read` tools.
 
 Update an existing wiki from repository changes since its last successful run and any stale Claims:
 
@@ -261,7 +271,7 @@ openwiki --update
 <details>
 <summary><b>Reinitializing a wiki and resuming interrupted runs</b></summary>
 
-Running `openwiki --init` again replaces the existing generated repository wiki and Claims with a brand-new generation while preserving the user-authored `openwiki/INSTRUCTIONS.md` brief. On a persistent checkout, OpenWiki records in-progress repository generation in `openwiki/.run.json`, so rerunning the same command after an interruption resumes the durable page queue. Ephemeral CI runners start fresh after failure unless their workspace is preserved. A setup failure before the new run state is durable restores the previous wiki.
+Running `openwiki --init` again replaces the existing generated repository wiki and Claims with a brand-new generation while preserving the user-authored `INSTRUCTIONS.md` brief inside the resolved wiki directory. On a persistent checkout, OpenWiki records in-progress repository generation in `.run.json` there, so rerunning the same command after an interruption resumes the durable page queue. Ephemeral CI runners start fresh after failure unless their workspace is preserved. A setup failure before the new run state is durable restores the previous wiki.
 
 </details>
 
@@ -269,10 +279,10 @@ Running `openwiki --init` again replaces the existing generated repository wiki 
 
 OpenWiki runs in one of two modes. Bare `openwiki`, `openwiki --init`, and `openwiki --update` default to **code** mode; add the `personal` positional (or `--mode personal`) for the personal brain.
 
-| Mode                 | Documents              | Writes to               | Get started                |
-| -------------------- | ---------------------- | ----------------------- | -------------------------- |
-| **Code** _(default)_ | The current repository | `openwiki/` in the repo | `openwiki --init`          |
-| **Personal**         | Your connected sources | `~/.openwiki/wiki`      | `openwiki personal --init` |
+| Mode                 | Documents              | Writes to           | Get started                |
+| -------------------- | ---------------------- | ------------------- | -------------------------- |
+| **Code** _(default)_ | The current repository | `wiki/` in the repo | `openwiki --init`          |
+| **Personal**         | Your connected sources | `~/.openwiki/wiki`  | `openwiki personal --init` |
 
 By default the CLI stays open after a run so you can send follow-up messages. Add `-p` / `--print` for a one-shot, non-interactive run that prints the final output and exits. `--init` and `--update` auto-exit on success in an interactive terminal, so the same command works one-shot or interactively.
 
@@ -316,9 +326,9 @@ The override selects a separate state directory; OpenWiki does not move or delet
 
 Your wiki stays in the repository as plain Markdown you own, with OpenWiki-managed grounding and run metadata versioned alongside it.
 
-- **Agents read it as context.** On each `code` run, OpenWiki maintains an `AGENTS.md` at the repo root, and refreshes `CLAUDE.md` when the repository already has one. Claude Code reads `AGENTS.md` when no `CLAUDE.md` exists, so OpenWiki does not create one. Their managed instructions use selective, progressive `openwiki_search`/`openwiki_read` retrieval for concrete questions when available and use `openwiki/quickstart.md` as the fallback. OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
-- **Grounding stays with the wiki.** Versioned claim sidecars under `openwiki/.claims/` travel with the Markdown, so the evidence needed to maintain factual pages is inspectable and reviewable.
-- **You set the brief.** Repository-specific instructions live in `openwiki/INSTRUCTIONS.md`, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
+- **Agents read it as context.** On each `code` run, OpenWiki maintains an `AGENTS.md` at the repo root, and refreshes `CLAUDE.md` when the repository already has one. Claude Code reads `AGENTS.md` when no `CLAUDE.md` exists, so OpenWiki does not create one. Their managed instructions use selective, progressive `openwiki_search`/`openwiki_read` retrieval for concrete questions when available and use the resolved wiki's `quickstart.md` as the fallback. OpenWiki only rewrites its own `<!-- OPENWIKI:START -->…<!-- OPENWIKI:END -->` block and leaves the rest of each file untouched.
+- **Grounding stays with the wiki.** Versioned claim sidecars under the resolved wiki's `.claims/` directory travel with the Markdown, so the evidence needed to maintain factual pages is inspectable and reviewable.
+- **You set the brief.** Repository-specific instructions live in `INSTRUCTIONS.md` inside the resolved wiki directory, a user-authored file OpenWiki reads for scope and priorities but never rewrites during normal runs.
 - **No-op runs do not churn docs.** A clean update skips model work and leaves wiki content untouched while refreshing `.last-update.json` to record that the check ran.
 - **Local, private config.** Provider choice, keys, and optional LangSmith tracing are saved to `~/.openwiki/.env` on your machine.
 
@@ -340,7 +350,7 @@ OpenWiki separates repository research and writing from the bookkeeping that kee
 
 ### OpenWiki architecture
 
-Repository generation follows an ordered queue of independently durable page jobs. Native CLI runs can process eligible pages concurrently; coding-agent integrations consume the queue sequentially. `openwiki/.run.json` checkpoints the active run and its progress. A page advances only after its Markdown, Claims, verification, and `openwiki/.page-manifest.json` entry are durable, preserving completed work and page-specific source baselines across interruptions and future runs.
+Repository generation follows an ordered queue of independently durable page jobs. Native CLI runs can process eligible pages concurrently; coding-agent integrations consume the queue sequentially. `.run.json` in the resolved wiki directory checkpoints the active run and its progress. A page advances only after its Markdown, Claims, verification, and `.page-manifest.json` entry are durable, preserving completed work and page-specific source baselines across interruptions and future runs.
 
 <div align="center">
   <img alt="OpenWiki resumable generation architecture, from the active page queue through page-level durability and future runs." src="./static/openwiki-architecture.png" width="880">
@@ -359,9 +369,9 @@ OpenWiki tracks the facts behind each repository page as **Grounded Claims**. Ea
 
 Claims cover the truths future agents rely on: behavior, responsibilities, architecture, data flow, invariants, failure semantics, configuration, and security boundaries. Each records the evidence version observed when the claim was established, rather than relying only on when a Markdown file was last generated.
 
-Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
+Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `.claims/` in the resolved wiki directory.
 
-Page completion is a durability boundary. OpenWiki persists the reconciled Claims, projects verification, synchronizes the sidecar's page version, and proves the complete result before marking that page's job complete. Finalization repeats the whole-run proof before deleting `openwiki/.run.json`.
+Page completion is a durability boundary. OpenWiki persists the reconciled Claims, projects verification, synchronizes the sidecar's page version, and proves the complete result before marking that page's job complete. Finalization repeats the whole-run proof before deleting the resolved wiki's `.run.json`.
 
 </details>
 
@@ -444,7 +454,7 @@ The connectors above feed a `personal` wiki. The **LangSmith** connector instead
 <details>
 <summary><b>Configure LangSmith projects, regions, and credentials</b></summary>
 
-Configure it during `openwiki --init` in `code` mode. From the source menu, add LangSmith, pick your workspace region (US, EU, or APAC), and list the projects to document. OpenWiki writes a committed `openwiki/.langsmith.json` that names the workspaces and projects (never the key itself), so every teammate and CI run documents the same set. The API key is read from the environment:
+Configure it during `openwiki --init` in `code` mode. From the source menu, add LangSmith, pick your workspace region (US, EU, or APAC), and list the projects to document. OpenWiki writes a committed `.langsmith.json` in the resolved wiki directory that names the workspaces and projects (never the key itself), so every teammate and CI run documents the same set. The API key is read from the environment:
 
 ```sh
 OPENWIKI_LANGSMITH_API_KEY="<your-langsmith-key>"

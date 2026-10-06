@@ -4,7 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { PersistedPreparedWikiState } from "../agent/wiki-finalizer.js";
 import type { UpdateMetadata } from "../agent/types.js";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import { repositoryWikiRoot } from "../config/wiki-directory.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { RepositoryRunError } from "./errors.js";
 
@@ -301,7 +301,7 @@ const RepositoryRunStateSchema = z
  * Resolves the checkpoint path below an absolute repository root.
  */
 export function repositoryRunStatePath(root: string): string {
-  return path.join(root, OPEN_WIKI_DIR, REPOSITORY_RUN_STATE_BASENAME);
+  return path.join(repositoryWikiRoot(root), REPOSITORY_RUN_STATE_BASENAME);
 }
 
 /**

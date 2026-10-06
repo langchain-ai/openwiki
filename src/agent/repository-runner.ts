@@ -17,6 +17,7 @@ import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createMiddleware } from "langchain";
 import { z } from "zod";
 import { resolveTraceThreadId } from "../config/constants.js";
+import { resolveRepositoryWikiDirectory } from "../config/wiki-directory.js";
 import { RepositoryRunError } from "../generation/errors.js";
 import {
   beginRepositoryRun,
@@ -445,6 +446,7 @@ async function runPlanningAgent(
     maxOutputBytes: 100_000,
     outputMode: "repository",
     rootDir: run.root,
+    wikiDirectory: resolveRepositoryWikiDirectory(run.root),
     timeout: 120,
     virtualMode: true,
   });
@@ -918,6 +920,7 @@ async function runPageWorkerAttempt(
     maxOutputBytes: 100_000,
     outputMode: "repository",
     rootDir: run.root,
+    wikiDirectory: resolveRepositoryWikiDirectory(run.root),
     timeout: 120,
     virtualMode: true,
   });
@@ -988,6 +991,7 @@ async function runPageWorkerAttempt(
       job,
       run.state.plan?.pages ?? [],
       run.state.language,
+      resolveRepositoryWikiDirectory(run.root),
     ),
   });
 

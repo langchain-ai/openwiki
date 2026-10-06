@@ -1,6 +1,21 @@
-export const OPEN_WIKI_DIR = "openwiki";
-export const PAGE_MANIFEST_PATH = `${OPEN_WIKI_DIR}/.page-manifest.json`;
-export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
+/**
+ * Default repository-local directory for newly generated wikis.
+ */
+export const OPEN_WIKI_DIR = "wiki";
+/**
+ * Historical repository-local directory retained for automatic discovery.
+ */
+export const LEGACY_OPEN_WIKI_DIR = "openwiki";
+/**
+ * Stable virtual namespace used by persisted Claims and page-job state.
+ */
+export const OPEN_WIKI_VIRTUAL_DIR = "openwiki";
+export const OPENWIKI_WIKI_DIR_ENV_KEY = "OPENWIKI_WIKI_DIR";
+export const OPENWIKI_REPOSITORY_CONFIG_FILE = ".openwiki.json";
+export const PAGE_MANIFEST_FILE = ".page-manifest.json";
+export const UPDATE_METADATA_FILE = ".last-update.json";
+export const PAGE_MANIFEST_PATH = `${OPEN_WIKI_DIR}/${PAGE_MANIFEST_FILE}`;
+export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/${UPDATE_METADATA_FILE}`;
 
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
@@ -214,7 +229,9 @@ type ProviderConfig = {
    * pasted-key setup step with a browser login and store tokens instead.
    */
   authMethod?: ProviderAuthMethod;
-  /** Adapter used when {@link authMethod} is `"external-cli"`. */
+  /**
+   * Adapter used when {@link authMethod} is `"external-cli"`.
+   */
   externalCliAuthAdapter?: ExternalCliAuthAdapter;
   baseURL?: string;
   /**
@@ -257,7 +274,9 @@ type ProviderConfig = {
    * Only relevant when {@link ProviderConfig.requiresRegion} is true.
    */
   regionEnvKey?: string;
-  /** Additional region variables checked after {@link regionEnvKey}. */
+  /**
+   * Additional region variables checked after {@link regionEnvKey}.
+   */
   regionFallbackEnvKeys?: readonly string[];
   /**
    * When true, the provider has no default region and requires one of its
@@ -1072,7 +1091,9 @@ export function resolveMaxOutputTokens(
   return parsedMaxOutputTokens;
 }
 
-/** Milliseconds to wait for the first or next Bedrock stream chunk. 0 disables the watchdog. */
+/**
+ * Milliseconds to wait for the first or next Bedrock stream chunk. 0 disables the watchdog.
+ */
 export function resolveStreamIdleTimeout(
   env: NodeJS.ProcessEnv = process.env,
 ): number | undefined {

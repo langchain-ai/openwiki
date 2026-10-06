@@ -206,6 +206,52 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(mixedCaseInspection.output).toContain("Claims state");
   });
 
+  test("maps batch transfers through a custom physical wiki directory", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      wikiDirectory: "docs/wiki",
+    });
+    const content = new TextEncoder().encode("batch content");
+
+    await expect(
+      backend.uploadFiles([
+        ["/openwiki/page.md", content],
+        ["/openwiki/.claims/page.json", content],
+      ]),
+    ).resolves.toEqual([
+      expect.objectContaining({ path: "/openwiki/page.md" }),
+      expect.objectContaining({
+        error: "permission_denied",
+        path: "/openwiki/.claims/page.json",
+      }),
+    ]);
+    await expect(
+      readFile(path.join(rootDir, "docs/wiki/page.md"), "utf8"),
+    ).resolves.toBe("batch content");
+
+    const downloads = await backend.downloadFiles([
+      "/openwiki/page.md",
+      "/openwiki/.claims/page.json",
+    ]);
+    expect(downloads[0]).toEqual(
+      expect.objectContaining({ path: "/openwiki/page.md" }),
+    );
+    expect(new TextDecoder().decode(downloads[0]?.content ?? undefined)).toBe(
+      "batch content",
+    );
+    expect(downloads[1]).toEqual(
+      expect.objectContaining({
+        content: null,
+        error: "permission_denied",
+        path: "/openwiki/.claims/page.json",
+      }),
+    );
+  });
+
   test("rejects arbitrary host shell commands without ignore rules", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
     const backend = new OpenWikiLocalShellBackend({

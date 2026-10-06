@@ -140,7 +140,10 @@ describe("canonical OpenWiki host skill", () => {
     expect(skill).toContain("must retain or establish at least one material");
     expect(skill).toContain("Every resource\nMUST begin with repo://");
     expect(skill).toContain("never submit a bare\npath such as src/auth.ts");
-    expect(skill).toContain("Never directly edit openwiki/.claims");
+    expect(skill).toContain("Never directly edit `.claims`");
+    expect(skill).toContain(
+      "use `job.filePath` for filesystem reads and writes",
+    );
     expect(skill).toContain(
       "Never create or edit a wiki page other than the current",
     );

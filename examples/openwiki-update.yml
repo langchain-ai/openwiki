@@ -51,7 +51,7 @@ jobs:
 
       - name: Remove transient OpenWiki run state
         if: ${{ !cancelled() }}
-        run: rm -f -- openwiki/.run.json
+        run: rm -f -- wiki/.run.json
 
       - name: List OpenWiki update paths
         id: paths
@@ -59,7 +59,7 @@ jobs:
         # CLAUDE.md is listed only when present: git add fails on a missing path
         # and then stages nothing.
         run: |
-          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
+          paths=wiki,AGENTS.md,.github/workflows/openwiki-update.yml
           if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
           echo "list=$paths" >> "$GITHUB_OUTPUT"
 

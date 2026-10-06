@@ -118,7 +118,7 @@ async function completePlannedInit(
     throw new Error("Expected the init fixture to contain a pending page.");
   }
   await writeFile(
-    path.join(root, "openwiki/quickstart.md"),
+    path.join(root, "wiki/quickstart.md"),
     quickstartPage(),
     "utf8",
   );
@@ -178,7 +178,7 @@ describe("HostSessionManager", () => {
     })) as NextRepositoryPageResult;
     if (first.status !== "pending") throw new Error("Expected first page.");
     await writeFile(
-      path.join(root, "openwiki/architecture.md"),
+      path.join(root, "wiki/architecture.md"),
       quickstartPage().replaceAll("Quickstart", "Architecture"),
       "utf8",
     );

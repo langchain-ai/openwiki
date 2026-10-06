@@ -26,6 +26,10 @@ import {
 } from "../claims/brains/code/runtime.js";
 import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
+import {
+  resolveRepositoryWikiDirectory,
+  toRepositoryWikiPath,
+} from "../config/wiki-directory.js";
 import type {
   GroundingIssue,
   InspectedClaim,
@@ -197,6 +201,11 @@ export interface ActiveBeginView {
    * Absolute Git repository root owned by the run.
    */
   root: string;
+
+  /**
+   * Repository-relative directory that physically stores generated wiki files.
+   */
+  wikiDirectory: string;
 
   /**
    * Repository generation command being executed.
@@ -818,6 +827,7 @@ function createRepositoryBackend(
     openWikiIgnore: ignore,
     outputMode: "repository",
     rootDir: root,
+    wikiDirectory: resolveRepositoryWikiDirectory(root),
     timeout: 120,
     virtualMode: true,
   });
@@ -850,6 +860,7 @@ async function toActiveBeginView(
     status: "active",
     runId: run.state.runId,
     root: run.root,
+    wikiDirectory: resolveRepositoryWikiDirectory(run.root),
     mode: run.state.mode,
     language: run.state.language,
     languageChanged: run.state.languageChanged,
@@ -1028,6 +1039,7 @@ export type NextRepositoryPageResult =
   | {
       status: "pending";
       job: PageJob & {
+        filePath: string;
         mode: RepositoryRunMode;
         existing: boolean;
         existingClaimCount: number;
@@ -1090,6 +1102,10 @@ export async function nextRepositoryPage(
     status: "pending",
     job: {
       ...job,
+      filePath: `/${toRepositoryWikiPath(
+        job.path,
+        resolveRepositoryWikiDirectory(run.root),
+      )}`,
       mode: run.state.mode,
       existing,
       existingClaimCount: existingClaims.length,

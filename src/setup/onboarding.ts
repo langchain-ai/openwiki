@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import { repositoryWikiRoot } from "../config/wiki-directory.js";
 import {
   ensureOpenWikiHome,
   openWikiHomeDir,
@@ -124,7 +124,7 @@ export async function saveOpenWikiOnboardingConfig(
 }
 
 export function getRepositoryWikiInstructionsPath(repoRoot: string): string {
-  return path.join(repoRoot, OPEN_WIKI_DIR, REPOSITORY_INSTRUCTIONS_FILE);
+  return path.join(repositoryWikiRoot(repoRoot), REPOSITORY_INSTRUCTIONS_FILE);
 }
 
 export async function readRepositoryWikiInstructions(

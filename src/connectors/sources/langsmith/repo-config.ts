@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../../../config/constants.js";
+import { repositoryWikiRoot } from "../../../config/wiki-directory.js";
 import { isFileNotFoundError } from "../../../platform/fs-errors.js";
 import type { LangSmithProjectConfig } from "./types.js";
 
@@ -64,7 +64,7 @@ const API_KEY_ENV_PATTERN = /^OPENWIKI_LANGSMITH_API_KEY(_[A-Z0-9]+)?$/;
  * Absolute path of the committed LangSmith config for a repository.
  */
 export function getLangSmithRepoConfigPath(repoRoot: string): string {
-  return path.join(repoRoot, OPEN_WIKI_DIR, ".langsmith.json");
+  return path.join(repositoryWikiRoot(repoRoot), ".langsmith.json");
 }
 
 /**
@@ -210,9 +210,9 @@ function parseWorkspace(entry: unknown): LangSmithWorkspaceConfig | undefined {
 }
 
 /**
- * Writes the committed config, creating openwiki/ if needed. Mirrors
+ * Writes the committed config, creating the resolved wiki directory if needed. Mirrors
  * saveRepositoryWikiInstructions: a plain write to a fixed path under the repo's
- * openwiki/ directory, so containment holds by construction.
+ * generated wiki directory, so containment holds by construction.
  */
 export async function writeLangSmithRepoConfig(
   repoRoot: string,

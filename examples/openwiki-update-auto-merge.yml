@@ -49,7 +49,7 @@ jobs:
 
       - name: Remove transient OpenWiki run state
         if: ${{ !cancelled() }}
-        run: rm -f -- openwiki/.run.json
+        run: rm -f -- wiki/.run.json
 
       - name: Create OpenWiki update pull request
         id: create-pr
@@ -58,7 +58,7 @@ jobs:
         with:
           token: ${{ secrets.OPENWIKI_PR_TOKEN }}
           add-paths: |
-            openwiki
+            wiki
             AGENTS.md
             CLAUDE.md
           branch: openwiki/update

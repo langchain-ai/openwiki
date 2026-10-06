@@ -45,6 +45,7 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
  * @param conceptType - Fallback OKF concept type used during migration.
  * @param now - Shared ISO 8601 timestamp for generated provenance events.
  * @param claimSources - Optional deferred Claims evidence projection.
+ * @param wikiDirectory - Physical repository-relative wiki directory.
  * @returns LangChain middleware for the deterministic wiki lifecycle.
  */
 export function createOpenWikiIndexMiddleware(
@@ -54,6 +55,7 @@ export function createOpenWikiIndexMiddleware(
   conceptType: string = ENGLISH_CONCEPT_TYPE,
   now: string = new Date().toISOString(),
   claimSources?: () => ClaimEvidenceResources,
+  wikiDirectory = "openwiki",
 ) {
   let preparedWiki: PreparedWikiState | undefined;
 
@@ -97,6 +99,7 @@ export function createOpenWikiIndexMiddleware(
         outputMode,
         request.toolCall.name,
         conceptType,
+        wikiDirectory,
       );
     },
     afterAgent: async () => {
@@ -131,6 +134,7 @@ export async function addFrontmatterWarning<Result>(
   outputMode: OpenWikiOutputMode,
   toolName: string,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
+  wikiDirectory = "openwiki",
 ): Promise<Result> {
   if (!WRITE_TOOLS.has(toolName)) return result;
 
@@ -142,7 +146,7 @@ export async function addFrontmatterWarning<Result>(
     .find(
       (item): item is { message: ToolMessage; path: string } =>
         typeof item.path === "string" &&
-        isWikiMarkdownPath(item.path, outputMode),
+        isWikiMarkdownPath(item.path, outputMode, wikiDirectory),
     );
   if (!mutation) return result;
 
@@ -178,6 +182,7 @@ function getToolMessages(result: unknown): ToolMessage[] {
 function isWikiMarkdownPath(
   filePath: string,
   outputMode: OpenWikiOutputMode,
+  wikiDirectory: string,
 ): boolean {
   const normalized = path.posix.normalize(
     `/${filePath.trim().replaceAll("\\", "/").replace(/^\/+/, "")}`,
@@ -185,7 +190,7 @@ function isWikiMarkdownPath(
   return (
     path.posix.extname(normalized).toLowerCase() === ".md" &&
     !OKF_RESERVED_FILES.has(path.posix.basename(normalized).toLowerCase()) &&
-    (outputMode === "local-wiki" || normalized.startsWith("/openwiki/"))
+    (outputMode === "local-wiki" || normalized.startsWith(`/${wikiDirectory}/`))
   );
 }
 

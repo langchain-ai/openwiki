@@ -9,10 +9,15 @@ import { lstat, open, readdir, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
+  LEGACY_OPEN_WIKI_DIR,
   OPEN_WIKI_DIR,
-  PAGE_MANIFEST_PATH,
-  UPDATE_METADATA_PATH,
+  PAGE_MANIFEST_FILE,
+  UPDATE_METADATA_FILE,
 } from "../config/constants.js";
+import {
+  normalizeRepositoryWikiDirectory,
+  repositoryWikiRoot,
+} from "../config/wiki-directory.js";
 import { writeTextAtomic } from "../integrations/install/atomic-file.js";
 import {
   isExpectedSnapshotRaceError,
@@ -107,9 +112,9 @@ async function readRunWikiGoal(
  * language is meaningful even on a clean tree, because the translation pass
  * must run before the update agent.
  *
- * Working-tree and committed changes that only touch `openwiki/` or paths
- * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
- * changing on its own never forces a rebuild.
+ * Working-tree and committed changes that only touch the configured wiki
+ * directory or paths excluded by `openWikiIgnore` do not count as meaningful,
+ * so an ignored path changing on its own never forces a rebuild.
  *
  * @param cwd - Absolute repository root.
  * @param openWikiIgnore - Active repository read boundary.
@@ -798,7 +803,7 @@ function getWikiContentRoot(
   cwd: string,
   outputMode: OpenWikiOutputMode,
 ): string {
-  return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
+  return outputMode === "local-wiki" ? cwd : repositoryWikiRoot(cwd);
 }
 
 function getMetadataFilePath(
@@ -807,7 +812,7 @@ function getMetadataFilePath(
 ): string {
   return outputMode === "local-wiki"
     ? path.join(cwd, LOCAL_WIKI_METADATA_PATH)
-    : path.join(cwd, UPDATE_METADATA_PATH);
+    : path.join(repositoryWikiRoot(cwd), UPDATE_METADATA_FILE);
 }
 
 /**
@@ -815,7 +820,7 @@ function getMetadataFilePath(
  */
 function isIgnoredSnapshotPath(relativePath: string): boolean {
   return (
-    relativePath === path.basename(UPDATE_METADATA_PATH) ||
+    relativePath === UPDATE_METADATA_FILE ||
     relativePath === LOCAL_WIKI_METADATA_PATH ||
     relativePath === REPOSITORY_RUN_STATE_BASENAME
   );
@@ -873,7 +878,7 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
  * Matches the two-character status field `git status --short` puts in front of
  * each path. The field is only one character wide on the first line of a
  * trimmed run, because `runGit` strips the leading space of an unstaged-only
- * status such as " M openwiki/.last-update.json".
+ * status such as " M wiki/.last-update.json".
  */
 const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
 
@@ -881,7 +886,7 @@ function isUpdateMetadataStatusLine(line: string): boolean {
   const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
 
-  return [PAGE_MANIFEST_PATH, UPDATE_METADATA_PATH].some(
+  return repositoryMetadataPaths().some(
     (metadataPath) =>
       normalizedPath === metadataPath ||
       normalizedPath.endsWith(` -> ${metadataPath}`),
@@ -969,9 +974,31 @@ async function getChangedPathsSinceLastUpdate(
 }
 
 function isOpenWikiPath(changedPath: string): boolean {
-  return (
-    changedPath === OPEN_WIKI_DIR || changedPath.startsWith(`${OPEN_WIKI_DIR}/`)
+  return repositoryWikiDirectories().some(
+    (directory) =>
+      changedPath === directory || changedPath.startsWith(`${directory}/`),
   );
+}
+
+function repositoryWikiDirectories(): string[] {
+  const directories = new Set([OPEN_WIKI_DIR, LEGACY_OPEN_WIKI_DIR]);
+  const configured = process.env.OPENWIKI_WIKI_DIR;
+  if (configured !== undefined) {
+    try {
+      directories.add(normalizeRepositoryWikiDirectory(configured));
+    } catch {
+      // Startup validation reports the invalid value; path classification
+      // remains fail-closed for both conventional directories.
+    }
+  }
+  return [...directories];
+}
+
+function repositoryMetadataPaths(): string[] {
+  return repositoryWikiDirectories().flatMap((directory) => [
+    `${directory}/${PAGE_MANIFEST_FILE}`,
+    `${directory}/${UPDATE_METADATA_FILE}`,
+  ]);
 }
 
 function normalizeGitPath(value: string): string {

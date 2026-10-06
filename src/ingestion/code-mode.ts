@@ -7,15 +7,19 @@ import {
   OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_WIKI_DIR_ENV_KEY,
   OPENWIKI_VERSION,
   providerUsesEntraId,
   resolveConfiguredProvider,
   resolveOpenAICompatibleEntraScope,
   resolveOpenAiCompatibleStreaming,
 } from "../config/constants.js";
+import {
+  repositoryWikiRoot,
+  resolveRepositoryWikiDirectory,
+} from "../config/wiki-directory.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
-import { UPDATE_METADATA_PATH } from "../config/constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
 
@@ -48,7 +52,9 @@ const OPENWIKI_LEGACY_TEMPLATE_LINES = [
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 const CLAUDE_AGENTS_IMPORT = "@AGENTS.md";
 
-/** Controls which parts of the repo OpenWiki sets up for code mode. */
+/**
+ * Controls which parts of the repo OpenWiki sets up for code mode.
+ */
 export interface CodeModeRepoSetupOptions {
   /**
    * Write the scheduled-update workflow file. Only `openwiki code --init`
@@ -57,7 +63,9 @@ export interface CodeModeRepoSetupOptions {
    * never silently overwritten.
    */
   createWorkflow?: boolean;
-  /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
+  /**
+   * Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}.
+   */
   cronExpression?: string;
   /**
    * Environment the generated workflow's provider block is derived from.
@@ -76,14 +84,17 @@ export async function ensureCodeModeRepoSetup(
   cwd: string,
   options: CodeModeRepoSetupOptions = {},
 ): Promise<void> {
+  const env = options.env ?? process.env;
+  const wikiDirectory = resolveRepositoryWikiDirectory(cwd, env);
   if (options.createWorkflow) {
     await ensureCodeModeWorkflow(
       cwd,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
-      options.env ?? process.env,
+      env,
+      wikiDirectory,
     );
   }
-  await writeCodeModeAgentSnippets(cwd);
+  await writeCodeModeAgentSnippets(cwd, wikiDirectory);
 }
 
 /**
@@ -95,6 +106,7 @@ async function ensureCodeModeWorkflow(
   cwd: string,
   cronExpression: string,
   env: NodeJS.ProcessEnv,
+  wikiDirectory: string,
 ): Promise<void> {
   const workflowPath = path.join(
     cwd,
@@ -115,7 +127,7 @@ async function ensureCodeModeWorkflow(
   await mkdir(path.dirname(workflowPath), { recursive: true });
   await writeFile(
     workflowPath,
-    createCodeModeWorkflow(cronExpression, env),
+    createCodeModeWorkflow(cronExpression, env, wikiDirectory),
     "utf8",
   );
 }
@@ -195,7 +207,7 @@ function windowHoursSince(since: string | undefined): number | undefined {
 }
 
 /**
- * The last-update timestamp from openwiki/.last-update.json, or undefined when it
+ * The last-update timestamp from the resolved wiki metadata, or undefined when it
  * is absent (first run) or unreadable.
  */
 async function readLastUpdatedAt(
@@ -203,7 +215,7 @@ async function readLastUpdatedAt(
 ): Promise<string | undefined> {
   try {
     const text = await readFile(
-      path.join(repoRoot, UPDATE_METADATA_PATH),
+      path.join(repositoryWikiRoot(repoRoot), ".last-update.json"),
       "utf8",
     );
     const parsed = JSON.parse(text) as { updatedAt?: unknown };
@@ -213,8 +225,11 @@ async function readLastUpdatedAt(
   }
 }
 
-async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const agentsSnippet = createCodeModeAgentsSnippet();
+async function writeCodeModeAgentSnippets(
+  cwd: string,
+  wikiDirectory: string,
+): Promise<void> {
+  const agentsSnippet = createCodeModeAgentsSnippet(wikiDirectory);
   // Some repositories make CLAUDE.md a link to AGENTS.md. There the import
   // would point the file at itself, so the block carries the instructions
   // instead of referring to them.
@@ -532,6 +547,7 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
 function createCodeModeWorkflow(
   cronExpression: string,
   env: NodeJS.ProcessEnv,
+  wikiDirectory: string,
 ): string {
   return `name: OpenWiki Update
 
@@ -571,6 +587,7 @@ jobs:
         run: openwiki code --update --print
         env:
           ${createWorkflowProviderEnv(env)}
+          ${OPENWIKI_WIKI_DIR_ENV_KEY}: ${JSON.stringify(wikiDirectory)}
           # Required for the LangSmith connector's code-mode pull to authenticate.
           # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
           # secrets and env entries here.
@@ -582,7 +599,7 @@ jobs:
 
       - name: Remove transient OpenWiki run state
         if: \${{ !cancelled() }}
-        run: rm -f -- openwiki/.run.json
+        run: rm -f -- ${wikiDirectory}/.run.json
 
       - name: List OpenWiki update paths
         id: paths
@@ -590,7 +607,7 @@ jobs:
         # CLAUDE.md is listed only when present: git add fails on a missing path
         # and then stages nothing.
         run: |
-          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
+          paths=${wikiDirectory},AGENTS.md,.github/workflows/openwiki-update.yml
           if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
           echo "list=$paths" >> "$GITHUB_OUTPUT"
 
@@ -630,17 +647,17 @@ jobs:
  *
  * @returns Complete fenced AGENTS.md instruction block.
  */
-function createCodeModeAgentsSnippet(): string {
+function createCodeModeAgentsSnippet(wikiDirectory: string): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
 ## OpenWiki
 
-This repository has a generated \`openwiki/\` evidence index. It is optional just-in-time context, not required startup reading.
+This repository has a generated \`${wikiDirectory}/\` evidence index. It is optional just-in-time context, not required startup reading.
 
 - Do not enumerate, preload, or search wikis at task start. Use retrieval when the user asks for it, when unfamiliar architecture or dependency behavior materially affects the task, or when source inspection leaves an important uncertainty. Stop once the question is grounded.
 - When those conditions apply and OpenWiki retrieval tools are available, use \`openwiki_search\` for just-in-time context and \`openwiki_read\` for the relevant complete sections. If search returns \`workspace_required\`, ask which listed workspace to use and retry with its ID.
 - Use \`openwiki_list_workspaces\` or \`openwiki_list_wikis\` when workspace membership itself needs to be discovered.
-- If the retrieval tools are unavailable, read \`openwiki/quickstart.md\` and follow its links to the relevant pages.
+- If the retrieval tools are unavailable, read \`${wikiDirectory}/quickstart.md\` and follow its links to the relevant pages.
 - Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 

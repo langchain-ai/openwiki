@@ -71,6 +71,7 @@ import {
   OPENWIKI_PAGE_CONCURRENCY_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  OPENWIKI_WIKI_DIR_ENV_KEY,
   resolveConfiguredProvider,
   resolveBedrockMaxTokens,
   resolveMaxOutputTokens,
@@ -80,6 +81,7 @@ import {
   resolveStreamIdleTimeout,
   type OpenWikiProvider,
 } from "./constants.js";
+import { normalizeRepositoryWikiDirectory } from "./wiki-directory.js";
 import { isReasoningEffort } from "./reasoning.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { openWikiEnvDisplayPath, openWikiHomeDir } from "./openwiki-home.js";
@@ -149,6 +151,7 @@ export const MANAGED_ENV_KEYS = [
   OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  OPENWIKI_WIKI_DIR_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
@@ -183,6 +186,7 @@ export const MANAGED_ENV_KEYS = [
 // LangChain project/tracing settings are managed but are not credentials, so
 // they are excluded from the diagnostics panel.
 const NON_CREDENTIAL_ENV_KEYS = new Set<string>([
+  OPENWIKI_WIKI_DIR_ENV_KEY,
   "LANGCHAIN_PROJECT",
   "LANGCHAIN_TRACING_V2",
 ]);
@@ -417,30 +421,32 @@ function createCredentialDiagnostic(
     warnings:
       key === OPENWIKI_MODEL_ID_ENV_KEY
         ? getModelWarnings(value)
-        : key === OPENWIKI_PROVIDER_ENV_KEY
-          ? getProviderWarnings(value)
-          : key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY
-            ? getMaxOutputTokensWarnings(value)
-            : key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY
-              ? getBedrockMaxTokensWarnings(value)
-              : key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY
-                ? getOpenRouterMaxTokensWarnings(value)
-                : key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY
-                  ? getStreamIdleTimeoutWarnings(value, provider)
-                  : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
-                      key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
-                      key === OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY ||
-                      key ===
-                        OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
-                    ? getBooleanWarnings(value)
-                    : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
-                      ? getRetryAttemptsWarnings(value)
-                      : key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY
-                        ? getPageConcurrencyWarnings(value)
-                        : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
-                          ? getReasoningEffortWarnings(value)
-                          : (getBaseUrlDiagnosticWarnings(key, value) ??
-                            getCredentialWarnings(value)),
+        : key === OPENWIKI_WIKI_DIR_ENV_KEY
+          ? getWikiDirectoryWarnings(value)
+          : key === OPENWIKI_PROVIDER_ENV_KEY
+            ? getProviderWarnings(value)
+            : key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY
+              ? getMaxOutputTokensWarnings(value)
+              : key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY
+                ? getBedrockMaxTokensWarnings(value)
+                : key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY
+                  ? getOpenRouterMaxTokensWarnings(value)
+                  : key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY
+                    ? getStreamIdleTimeoutWarnings(value, provider)
+                    : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
+                        key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
+                        key === OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY ||
+                        key ===
+                          OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
+                      ? getBooleanWarnings(value)
+                      : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+                        ? getRetryAttemptsWarnings(value)
+                        : key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY
+                          ? getPageConcurrencyWarnings(value)
+                          : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
+                            ? getReasoningEffortWarnings(value)
+                            : (getBaseUrlDiagnosticWarnings(key, value) ??
+                              getCredentialWarnings(value)),
   };
 }
 
@@ -501,6 +507,7 @@ function getBaseUrlDiagnosticWarnings(
 function isNonSecretDiagnosticKey(key: string): boolean {
   return (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
+    key === OPENWIKI_WIKI_DIR_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
     key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY ||
@@ -529,6 +536,15 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === GOOGLE_CLOUD_LOCATION_ENV_KEY ||
     key === GOOGLE_APPLICATION_CREDENTIALS_ENV_KEY
   );
+}
+
+function getWikiDirectoryWarnings(value: string): string[] {
+  try {
+    normalizeRepositoryWikiDirectory(value);
+    return [];
+  } catch {
+    return ["invalid wiki directory"];
+  }
 }
 
 export function createCredentialPreview(value: string): string {

@@ -195,7 +195,7 @@ describe("persistRunMetadataIfChanged", () => {
     );
 
     expect(written).toBe(true);
-    const metadata = await readMetadata(cwd, "openwiki/.last-update.json");
+    const metadata = await readMetadata(cwd, "wiki/.last-update.json");
     expect(metadata).not.toBeNull();
     expect(metadata?.model).toBe("test-model");
     expect(metadata?.status).toBe("complete");

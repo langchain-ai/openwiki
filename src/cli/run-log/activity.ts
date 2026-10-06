@@ -1,4 +1,6 @@
 import path from "node:path";
+import { LEGACY_OPEN_WIKI_DIR, OPEN_WIKI_DIR } from "../../config/constants.js";
+import { normalizeRepositoryWikiDirectory } from "../../config/wiki-directory.js";
 import type { OpenWikiRunEvent } from "../../agent/types.js";
 import { isRecord } from "../guards.js";
 import { parseToolInput } from "./tool-input.js";
@@ -205,7 +207,11 @@ export function buildExplorationTreeLines(
  * Non-Markdown sidecars are deliberately excluded from completion page counts.
  */
 export function isOpenWikiPagePath(activityPath: string): boolean {
-  return activityPath.startsWith("openwiki/") && activityPath.endsWith(".md");
+  return (
+    repositoryWikiDirectories().some((directory) =>
+      activityPath.startsWith(`${directory}/`),
+    ) && activityPath.endsWith(".md")
+  );
 }
 
 function appendTreeLines(
@@ -300,10 +306,25 @@ function normalizeActivityPath(value: string): string | null {
 }
 
 function getActivityScope(activityPath: string): RunActivityScope {
-  return activityPath === "openwiki" ||
-    activityPath.startsWith("openwiki/") ||
+  return repositoryWikiDirectories().some(
+    (directory) =>
+      activityPath === directory || activityPath.startsWith(`${directory}/`),
+  ) ||
     activityPath === ".claims" ||
     activityPath.startsWith(".claims/")
     ? "openwiki"
     : "repository";
+}
+
+function repositoryWikiDirectories(): string[] {
+  const directories = new Set([OPEN_WIKI_DIR, LEGACY_OPEN_WIKI_DIR]);
+  const configured = process.env.OPENWIKI_WIKI_DIR;
+  if (configured !== undefined) {
+    try {
+      directories.add(normalizeRepositoryWikiDirectory(configured));
+    } catch {
+      // Startup validation owns the diagnostic for invalid configuration.
+    }
+  }
+  return [...directories];
 }

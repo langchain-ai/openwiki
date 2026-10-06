@@ -491,8 +491,8 @@ export function Prompt({
           <Text color="cyan">{codeRepoRoot}</Text>
         </Box>
         <Text color="gray">
-          OpenWiki will run in this directory and write the initial openwiki/
-          folder there.
+          OpenWiki will run in this directory and write the initial wiki/ folder
+          there.
         </Text>
         <Box flexDirection="column" marginTop={1}>
           {CODE_REPO_OPTIONS.map((option, index) => (
@@ -512,7 +512,7 @@ export function Prompt({
       <Box flexDirection="column">
         <Text>Choose the repository directory.</Text>
         <Text color="gray">
-          Enter an existing directory. OpenWiki will write openwiki/ there.
+          Enter an existing directory. OpenWiki will write wiki/ there.
         </Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}
@@ -775,7 +775,7 @@ export function Prompt({
         <Text>Which projects should this wiki document in this workspace?</Text>
         <Text color="gray">
           Comma-separated project names (as in LANGCHAIN_PROJECT). Written to
-          openwiki/.langsmith.json.
+          wiki/.langsmith.json.
         </Text>
         <BorderedMultilineInput
           maxDisplayWidth={inputDisplayWidth}
@@ -936,7 +936,7 @@ export function Prompt({
         })}
         <Text color="gray">
           {selectedMode === "code"
-            ? "Run now writes the initial openwiki/ directory. Open chat skips the initial run."
+            ? "Run now writes the initial wiki/ directory. Open chat skips the initial run."
             : "Run now executes one source-specific ingestion and wiki update per configured source. Run later opens chat so you can start ingestion when you are ready."}
         </Text>
       </Box>

@@ -90,7 +90,10 @@ function requireWorkflowStep(
   return step;
 }
 
-function expectFailurePreservingWorkflow(workflow: string): void {
+function expectFailurePreservingWorkflow(
+  workflow: string,
+  wikiDirectory: string,
+): void {
   const steps = parseWorkflowSteps(workflow);
   const run = requireWorkflowStep(steps, "Run OpenWiki");
   const cleanup = requireWorkflowStep(
@@ -110,7 +113,7 @@ function expectFailurePreservingWorkflow(workflow: string): void {
   expect(run.id).toBe("openwiki");
   expect(run["continue-on-error"]).toBe(true);
   expect(cleanup.if).toBe("${{ !cancelled() }}");
-  expect(cleanup.run).toBe("rm -f -- openwiki/.run.json");
+  expect(cleanup.run).toBe(`rm -f -- ${wikiDirectory}/.run.json`);
   expect(pullRequest.id).toBe("create-pr");
   expect(pullRequest.if).toBe("${{ !cancelled() }}");
   expect(pullRequest.uses).toMatch(
@@ -208,7 +211,7 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     expect(agentsContent).toContain("`openwiki_read`");
     expect(agentsContent).toContain("`workspace_required`");
     expect(agentsContent).toContain("retrieval tools are unavailable");
-    expect(agentsContent).toContain("`openwiki/quickstart.md`");
+    expect(agentsContent).toContain("`wiki/quickstart.md`");
   });
 
   test("CLAUDE.md is a simple reference to AGENTS.md, not a copy of its full content", async () => {
@@ -246,7 +249,7 @@ describe("ensureCodeModeRepoSetup agent files", () => {
     const content = await readIfPresent(path.join(repo, "CLAUDE.md"));
     // Importing AGENTS.md here would point the file at itself.
     expect(content).not.toContain("@AGENTS.md");
-    expect(content).toContain("generated `openwiki/` evidence index");
+    expect(content).toContain("generated `wiki/` evidence index");
   });
 
   test("preserves CLAUDE.md when it only imports AGENTS.md", async () => {
@@ -723,7 +726,7 @@ describe("ensureCodeModeRepoSetup workflow", () => {
 
       const claude = hasClaude ? ",CLAUDE.md" : "";
       expect(await readFile(outputPath, "utf8")).toBe(
-        `list=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml${claude}\n`,
+        `list=wiki,AGENTS.md,.github/workflows/openwiki-update.yml${claude}\n`,
       );
     },
   );
@@ -747,9 +750,9 @@ describe("ensureCodeModeRepoSetup workflow", () => {
       ),
     ]);
 
-    for (const workflow of [generated, example, dogfood]) {
-      expectFailurePreservingWorkflow(workflow);
-    }
+    expectFailurePreservingWorkflow(generated, "wiki");
+    expectFailurePreservingWorkflow(example, "wiki");
+    expectFailurePreservingWorkflow(dogfood, "openwiki");
 
     const dogfoodSteps = parseWorkflowSteps(dogfood);
     const run = requireWorkflowStep(dogfoodSteps, "Run OpenWiki");

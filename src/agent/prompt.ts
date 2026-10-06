@@ -23,6 +23,7 @@ export function createSystemPrompt(
   outputMode: OpenWikiOutputMode = "local-wiki",
   language?: string,
   openWikiIgnore?: OpenWikiIgnore,
+  wikiDirectory = "openwiki",
 ): string {
   if (outputMode === "repository" && command !== "chat") {
     throw new Error("Repository generation does not use shared agent prompts.");
@@ -33,7 +34,7 @@ export function createSystemPrompt(
       ? CODE_SYSTEM_PROMPTS.chat
       : PERSONAL_SYSTEM_PROMPTS[command];
 
-  const prompt = template
+  let prompt = template
     .replace("{OUTPUT_LANGUAGE_INSTRUCTIONS}", () =>
       formatLanguageInstructions(language),
     )
@@ -45,6 +46,10 @@ export function createSystemPrompt(
       formatOpenWikiIgnoreInstructions(openWikiIgnore),
     )
     .trim();
+
+  if (outputMode === "repository") {
+    prompt = replaceRepositoryWikiDirectory(prompt, wikiDirectory);
+  }
 
   return command === "chat"
     ? prompt
@@ -67,6 +72,7 @@ export function createUserPrompt(
   userMessage: string | null = null,
   outputMode: OpenWikiOutputMode = "local-wiki",
   runtimeRoot?: string,
+  wikiDirectory = "openwiki",
 ): string {
   if (outputMode === "repository" && command !== "chat") {
     throw new Error("Repository generation does not use shared agent prompts.");
@@ -77,7 +83,7 @@ export function createUserPrompt(
       ? CODE_USER_PROMPTS.chat
       : PERSONAL_USER_PROMPTS[command];
 
-  return template
+  let prompt = template
     .replace(
       "{USER_MESSAGE}",
       () => userMessage?.trim() || "Start an OpenWiki chat.",
@@ -90,19 +96,27 @@ export function createUserPrompt(
         : "",
     )
     .replace("{RUNTIME_CONTEXT}", () =>
-      runtimeRoot ? formatRuntimeContext(runtimeRoot, outputMode) : "",
+      runtimeRoot
+        ? formatRuntimeContext(runtimeRoot, outputMode, wikiDirectory)
+        : "",
     )
     .trim();
+
+  if (outputMode === "repository") {
+    prompt = replaceRepositoryWikiDirectory(prompt, wikiDirectory);
+  }
+  return prompt;
 }
 
 export function formatRuntimeRootInstruction(
   outputMode: OpenWikiOutputMode,
+  wikiDirectory = "openwiki",
 ): string {
   if (outputMode === "local-wiki") {
     return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md and /sources/gmail.md. Do not create a nested /openwiki directory.";
   }
 
-  return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
+  return `Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /${wikiDirectory}, for example /${wikiDirectory}/quickstart.md and /${wikiDirectory}/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.`;
 }
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
@@ -185,6 +199,7 @@ ${patterns}`;
 function formatRuntimeContext(
   runtimeRoot: string,
   outputMode: OpenWikiOutputMode,
+  wikiDirectory: string,
 ): string {
   const rootLabel =
     outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
@@ -193,8 +208,18 @@ function formatRuntimeContext(
 ${runtimeRoot}
 
 Runtime note:
-- ${formatRuntimeRootInstruction(outputMode)}
+- ${formatRuntimeRootInstruction(outputMode, wikiDirectory)}
 - Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
 - ${outputMode === "local-wiki" ? "Shell execution is disabled in personal mode. Read connector evidence with openwiki_list_raw_items and openwiki_read_raw_item." : "Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, read_file, glob, and grep for repository inspection."}
 - Do not search parent directories or unrelated directories.`;
+}
+
+function replaceRepositoryWikiDirectory(
+  prompt: string,
+  wikiDirectory: string,
+): string {
+  if (wikiDirectory === "openwiki") return prompt;
+  return prompt
+    .replaceAll("/openwiki", `/${wikiDirectory}`)
+    .replaceAll("openwiki/", `${wikiDirectory}/`);
 }

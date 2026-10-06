@@ -12,6 +12,11 @@ import {
 import path from "node:path";
 import { z } from "zod";
 import {
+  repositoryWikiRoot,
+  resolveRepositoryWikiDirectory,
+  toRepositoryWikiPath,
+} from "../../../config/wiki-directory.js";
+import {
   ClaimsPageMissingError,
   ClaimsPersistenceError,
   ClaimsPersistenceSecurityError,
@@ -21,7 +26,6 @@ import {
   isGroundedWikiPage,
   normalizeWikiPagePath,
   toClaimsSidecarRelativePath,
-  toRepositoryPagePath,
 } from "./paths.js";
 import { CODE_CLAIMS_SCHEMA_VERSION, type PageClaims } from "./types.js";
 
@@ -104,7 +108,7 @@ export class ClaimsStore {
    */
   private readonly claimsDir: string;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, wikiDirectory?: string) {
     if (!path.isAbsolute(rootDir)) {
       throw new ClaimsPersistenceError(
         "Claims store root must be an absolute path.",
@@ -112,7 +116,10 @@ export class ClaimsStore {
     }
 
     this.rootDir = path.resolve(rootDir);
-    this.wikiDir = path.join(this.rootDir, "openwiki");
+    this.wikiDir = repositoryWikiRoot(
+      this.rootDir,
+      wikiDirectory ?? resolveRepositoryWikiDirectory(this.rootDir),
+    );
     this.claimsDir = path.join(this.wikiDir, CLAIMS_DIRECTORY);
   }
 
@@ -217,7 +224,7 @@ export class ClaimsStore {
    * @returns Algorithm-prefixed page version.
    */
   async hashPage(page: string): Promise<string> {
-    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const pagePath = this.repositoryPagePath(page);
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
       throw new ClaimsPageMissingError(
@@ -242,7 +249,7 @@ export class ClaimsStore {
    */
   async readMarkdown(page: string): Promise<string> {
     const normalizedPage = normalizeWikiPagePath(page);
-    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const pagePath = this.repositoryPagePath(page);
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
       throw new ClaimsPageMissingError(
@@ -269,7 +276,7 @@ export class ClaimsStore {
    */
   async writeMarkdown(page: string, content: string): Promise<void> {
     const normalizedPage = normalizeWikiPagePath(page);
-    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const pagePath = this.repositoryPagePath(page);
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
       throw new ClaimsPageMissingError(
@@ -355,6 +362,19 @@ export class ClaimsStore {
    */
   private sidecarPath(page: string): string {
     return path.join(this.claimsDir, toClaimsSidecarRelativePath(page));
+  }
+
+  /**
+   * Maps one stable virtual page to this store's physical wiki directory.
+   */
+  private repositoryPagePath(page: string): string {
+    const wikiDirectory = path
+      .relative(this.rootDir, this.wikiDir)
+      .replace(/\\/gu, "/");
+    return path.join(
+      this.rootDir,
+      toRepositoryWikiPath(normalizeWikiPagePath(page), wikiDirectory),
+    );
   }
 
   /**

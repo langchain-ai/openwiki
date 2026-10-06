@@ -2,7 +2,6 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { UPDATE_METADATA_PATH } from "../../src/config/constants.ts";
 import {
   readWikiSections,
   searchWiki,
@@ -71,16 +70,23 @@ async function createRoot(): Promise<string> {
 async function createLinkedRoot(
   workspace: string,
   name: string,
+  wikiDirectory = "openwiki",
 ): Promise<string> {
   const root = path.join(workspace, name);
   await mkdir(path.join(root, ".git"), { recursive: true });
-  await mkdir(path.join(root, "openwiki/architecture"), { recursive: true });
+  await mkdir(path.join(root, wikiDirectory, "architecture"), {
+    recursive: true,
+  });
   await writeFile(
-    path.join(root, "openwiki/quickstart.md"),
+    path.join(root, wikiDirectory, "quickstart.md"),
     `# ${name} quickstart\n`,
     "utf8",
   );
-  await writeFile(path.join(root, UPDATE_METADATA_PATH), "{}\n", "utf8");
+  await writeFile(
+    path.join(root, wikiDirectory, ".last-update.json"),
+    "{}\n",
+    "utf8",
+  );
   return root;
 }
 
@@ -470,10 +476,19 @@ describe("repository wiki retrieval", () => {
       path.join(os.tmpdir(), "openwiki-retrieval-"),
     );
     temporaryRoots.push(workspace);
-    const controlPlane = await createLinkedRoot(workspace, "control-plane");
+    const controlPlane = await createLinkedRoot(
+      workspace,
+      "control-plane",
+      "docs/generated",
+    );
+    await writeFile(
+      path.join(controlPlane, ".openwiki.json"),
+      '{"wikiDirectory":"docs/generated"}\n',
+      "utf8",
+    );
     const dataPlane = await createLinkedRoot(workspace, "data-plane");
     await writeFile(
-      path.join(controlPlane, "openwiki/architecture/routing.md"),
+      path.join(controlPlane, "docs/generated/architecture/routing.md"),
       page({
         title: "Control Plane Routing",
         description: "Desired route distribution and reconciliation.",
@@ -511,17 +526,17 @@ describe("repository wiki retrieval", () => {
     });
     expect(search.results[0]).toMatchObject({
       wiki: "control-plane",
-      ref: ["openwiki/architecture/routing.md#route-publication"],
+      ref: ["docs/generated/architecture/routing.md#route-publication"],
     });
     await expect(
       readWikiSections(dataPlane, {
         wiki: "control-plane",
-        page: "openwiki/architecture/routing.md",
+        page: "docs/generated/architecture/routing.md",
         sections: ["route-publication"],
       }),
     ).resolves.toEqual({
       wiki: "control-plane",
-      page: "openwiki/architecture/routing.md",
+      page: "docs/generated/architecture/routing.md",
       sections: [
         {
           section: "route-publication",

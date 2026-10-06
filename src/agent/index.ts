@@ -28,6 +28,7 @@ import {
   openWikiHomeDisplayPath,
   openWikiLocalWikiDir,
 } from "../config/openwiki-home.js";
+import { resolveRepositoryWikiDirectory } from "../config/wiki-directory.js";
 import { requireResolvedLanguage } from "../platform/language.js";
 import {
   resolveConceptTypeLabel,
@@ -474,6 +475,10 @@ function createOpenWikiAgentGraph(
     maxOutputBytes: 100_000,
     outputMode: options.outputMode,
     rootDir: options.cwd,
+    wikiDirectory:
+      options.outputMode === "repository"
+        ? resolveRepositoryWikiDirectory(options.cwd)
+        : undefined,
     timeout: 120,
     virtualMode: true,
   });
@@ -557,6 +562,10 @@ function createOpenWikiAgentGraph(
               indexLabels,
               conceptType,
               options.runTimestamp,
+              undefined,
+              options.outputMode === "repository"
+                ? resolveRepositoryWikiDirectory(options.cwd)
+                : undefined,
             ),
           ]),
     ],
@@ -568,6 +577,9 @@ function createOpenWikiAgentGraph(
       options.outputMode,
       options.context.language,
       options.openWikiIgnore,
+      options.outputMode === "repository"
+        ? resolveRepositoryWikiDirectory(options.cwd)
+        : undefined,
     ),
   });
 }
@@ -841,6 +853,9 @@ function createRunUserMessage(
     options.userMessage ?? null,
     options.outputMode ?? "local-wiki",
     cwd,
+    (options.outputMode ?? "local-wiki") === "repository"
+      ? resolveRepositoryWikiDirectory(cwd)
+      : undefined,
   );
 }
 

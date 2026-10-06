@@ -8,6 +8,7 @@ import type {
   RepositoryPageUpdateWindow,
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
+import { toRepositoryWikiPath } from "../config/wiki-directory.js";
 
 /**
  * Builds the bounded planner prompt from the complete active run context.
@@ -124,14 +125,21 @@ export type RepositoryPageWorkerJob = PageJob & {
  * @param job - Assigned page and its compact required Claim context.
  * @param allPages - Complete ordered page queue for quickstart navigation.
  * @param language - Resolved output language for generated prose.
+ * @param wikiDirectory - Physical repository-relative wiki directory.
  * @returns Complete page-worker system prompt.
  */
 export function createRepositoryPagePrompt(
   job: RepositoryPageWorkerJob,
   allPages: readonly PageJob[],
   language: string,
+  wikiDirectory = "openwiki",
 ): string {
-  return `You own exactly ${job.path}.
+  const pagePath = `/${toRepositoryWikiPath(job.path, wikiDirectory)}`;
+  const relatedPages = job.relatedPages.map(
+    (page) => `/${toRepositoryWikiPath(page, wikiDirectory)}`,
+  );
+
+  return `You own exactly ${pagePath}.
 
 Title: ${job.title}
 Purpose: ${job.purpose}
@@ -139,16 +147,16 @@ Mode: ${job.mode}
 Existing page: ${job.existing ? "yes" : "no"}
 Output language: ${language}
 Seed source paths:\n${formatList(job.seedPaths)}
-Related pages:\n${formatList(job.relatedPages)}
+Related pages:\n${formatList(relatedPages)}
 Page-specific global instructions:\n${formatList(job.instructions)}
 
 ${job.mode === "update" ? "Read the current page first. Preserve accurate unaffected content; change only what current repository evidence requires.\n" : ""}
 Write wiki prose and human-readable frontmatter values in ${language}. Keep code identifiers, file paths, commands, URLs, API names, and code blocks unchanged when translation would reduce technical accuracy.
 For Markdown links to wiki pages or repository files, use hrefs relative to this
-page's directory. Paths such as /openwiki/quickstart.md are virtual filesystem
+page's directory. Paths such as /${wikiDirectory}/quickstart.md are virtual filesystem
 tool paths, not Markdown link destinations; never write root-absolute internal
-hrefs. For example, from /openwiki/architecture/agent-runtime.md, link to
-/openwiki/concepts/model-providers.md as
+hrefs. For example, from /${wikiDirectory}/architecture/agent-runtime.md, link to
+/${wikiDirectory}/concepts/model-providers.md as
 [Model Providers](../concepts/model-providers.md).
 
 The page MUST begin with valid OKF concept frontmatter:
@@ -167,7 +175,7 @@ matter for this topic. Follow evidence beyond seed paths through callers,
 callees, state owners, integration boundaries, and representative tests when
 required. Do not turn the page into a source-file inventory.
 
-Write only ${job.path}. Do not create, edit, or delete another wiki page. After
+Write only ${pagePath}. Do not create, edit, or delete another wiki page. After
 writing it, call submit_page with only the sparse Claim decisions required by
 your edits: confirmedClaimIds for rechecked issue Claims that remain unchanged,
 claims for revised or new propositions, and retractedClaimIds for removed
@@ -190,7 +198,11 @@ explicit decision in this job:\n${JSON.stringify(job.claimsRequiringAttention, n
 ${
   job.path === "/openwiki/quickstart.md"
     ? `The complete planned page map is:\n${JSON.stringify(
-        allPages.map(({ path, title, purpose }) => ({ path, title, purpose })),
+        allPages.map(({ path, title, purpose }) => ({
+          path: `/${toRepositoryWikiPath(path, wikiDirectory)}`,
+          title,
+          purpose,
+        })),
         null,
         2,
       )}\nUse it to produce a compact task-routing map and link to the major domains.`
