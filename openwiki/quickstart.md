@@ -37,9 +37,6 @@ sources:
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
 generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
 ---
 
 # OpenWiki Quickstart

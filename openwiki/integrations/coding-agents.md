@@ -59,9 +59,6 @@ sources:
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
 generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-09-30T08:10:27.967Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)

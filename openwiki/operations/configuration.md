@@ -32,9 +32,6 @@ sources:
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
 generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Configuration and Environment

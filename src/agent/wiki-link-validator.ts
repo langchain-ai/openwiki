@@ -14,10 +14,28 @@ const EXCLUDED_FILES = new Set(["index.md", "log.md", "INSTRUCTIONS.md"]);
 const MARKDOWN_LINK_PATTERN = /\[([^\]]*)\]\(([^)]+)\)/gu;
 
 /**
+ * Matches the opening or closing marker of a fenced code block (three or more
+ * backticks or tildes), capturing the marker itself.
+ */
+const FENCE_PATTERN = /^\s*(`{3,}|~{3,})/u;
+
+/**
+ * Matches an inline code span: a backtick run closed by a run of the same
+ * length on the same line.
+ */
+const INLINE_CODE_PATTERN = /(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/gu;
+
+/**
  * Matches an ATX heading, capturing its hashes and trimmed title text. The
  * title feeds anchor-slug generation.
  */
 const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
+
+/**
+ * Matches a GitHub line anchor (`L10`, `L10-L20`, `L10C2-L20C8`). GitHub
+ * resolves these against a file's source lines, not its headings.
+ */
+const LINE_ANCHOR_PATTERN = /^L\d+(?:C\d+)?(?:-L\d+(?:C\d+)?)?$/u;
 
 /**
  * Matches a previously inserted broken-link stamp line, so stamps can be
@@ -233,7 +251,7 @@ async function validateLink(
     if (!anchor) {
       return null;
     }
-    if (!sourceAnchors.has(decodeURIComponent(anchor))) {
+    if (!sourceAnchors.has(decodeAnchor(anchor))) {
       return {
         href,
         line,
@@ -284,19 +302,20 @@ async function validateLink(
   }
 
   // Heading anchors are only validated against Markdown targets. Anchors on
-  // directories, and GitHub line anchors on source files (e.g. `#L10`), are
-  // out of scope and must not be flagged as broken.
+  // directories, and GitHub line anchors (e.g. `#L10` or `#L10-L20`), are out
+  // of scope and must not be flagged as broken, even on Markdown targets.
   if (
     !anchor ||
     isDirectory ||
-    path.posix.extname(targetPath).toLowerCase() !== ".md"
+    path.posix.extname(targetPath).toLowerCase() !== ".md" ||
+    LINE_ANCHOR_PATTERN.test(anchor)
   ) {
     return null;
   }
 
   const targetContent = await readText(backend, targetPath);
   const targetAnchors = buildHeadingAnchors(extractHeadings(targetContent));
-  if (!targetAnchors.has(decodeURIComponent(anchor))) {
+  if (!targetAnchors.has(decodeAnchor(anchor))) {
     return {
       href,
       line,
@@ -346,14 +365,47 @@ async function collectMarkdownFiles(
 }
 
 /**
+ * Splits a document into lines with code blanked out, so link and heading
+ * syntax that only appears inside code is never treated as Markdown. Lines of
+ * a fenced code block (fences included) become empty strings. Inline code spans
+ * can be replaced by spaces of the same length, which keeps line numbers and
+ * column positions stable for the image-link check and for stamping. Heading
+ * extraction preserves inline code text because it contributes to anchor slugs.
+ */
+function maskMarkdownCode(content: string, maskInlineCode = true): string[] {
+  let fence: { character: string; length: number } | undefined;
+
+  return content.split(/\r?\n/u).map((line) => {
+    const marker = FENCE_PATTERN.exec(line)?.[1];
+    if (fence) {
+      if (
+        marker?.[0] === fence.character &&
+        marker.length >= fence.length &&
+        line.trim() === marker
+      ) {
+        fence = undefined;
+      }
+      return "";
+    }
+    if (marker) {
+      fence = { character: marker[0], length: marker.length };
+      return "";
+    }
+    return maskInlineCode
+      ? line.replace(INLINE_CODE_PATTERN, (span) => " ".repeat(span.length))
+      : line;
+  });
+}
+
+/**
  * Extracts every inline Markdown link with its 1-based line number, skipping
- * image links.
+ * image links and anything inside code.
  */
 function extractMarkdownLinks(
   content: string,
 ): Array<{ href: string; line: number }> {
   const links: Array<{ href: string; line: number }> = [];
-  const lines = content.split(/\r?\n/u);
+  const lines = maskMarkdownCode(content);
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -373,7 +425,7 @@ function extractMarkdownLinks(
  */
 function extractHeadings(content: string): string[] {
   const headings: string[] = [];
-  for (const line of content.split(/\r?\n/u)) {
+  for (const line of maskMarkdownCode(content, false)) {
     const match = HEADING_PATTERN.exec(line);
     if (match) {
       headings.push(match[2]);
@@ -445,6 +497,20 @@ function parseLinkDestination(rawHref: string): {
     anchor: withoutTitle.slice(hashIndex + 1),
     path: withoutTitle.slice(0, hashIndex),
   };
+}
+
+/**
+ * Percent-decodes a heading anchor for comparison against heading slugs. A
+ * malformed escape (e.g. `#100%-coverage`) is kept as-is so it fails the
+ * membership check and is stamped, rather than throwing a `URIError` that
+ * would fail the whole run.
+ */
+function decodeAnchor(anchor: string): string {
+  try {
+    return decodeURIComponent(anchor);
+  } catch {
+    return anchor;
+  }
 }
 
 /**

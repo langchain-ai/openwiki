@@ -45,9 +45,6 @@ sources:
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
 generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Architecture Overview

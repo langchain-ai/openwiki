@@ -29,9 +29,6 @@ sources:
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
 generated: { by: "openwiki/0.6.0", at: "2026-09-25T08:09:49.344Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Model Providers and Credentials

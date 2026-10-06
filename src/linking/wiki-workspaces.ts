@@ -924,11 +924,11 @@ function resolveContainingWorkspace(
   requireRegisteredRepository(context);
   const { registry, current } = context;
   const normalized = reference.trim().toLowerCase();
-  const workspace = registry.workspaces.find(
-    (candidate) =>
-      candidate.id === normalized ||
-      candidate.name.toLowerCase() === normalized,
-  );
+  const workspace =
+    registry.workspaces.find((candidate) => candidate.id === normalized) ??
+    registry.workspaces.find(
+      (candidate) => candidate.name.toLowerCase() === normalized,
+    );
   if (!workspace || !workspace.wikis.includes(current.id)) {
     throw new WikiWorkspaceError(
       "Unknown workspace for this repository. Use openwiki_list_workspaces to choose one.",
