@@ -1,5 +1,35 @@
 # openwiki
 
+## 0.7.1
+
+### Patch Changes
+
+- [#986](https://github.com/langchain-ai/openwiki/pull/986) [`dcf2cc5`](https://github.com/langchain-ai/openwiki/commit/dcf2cc528d57af5f440c12b81eb0c725c8bcde96) Thanks [@drakeo338](https://github.com/drakeo338)! - fix: accept github line anchors on markdown link targets
+
+- [#974](https://github.com/langchain-ai/openwiki/pull/974) [`d9d7d99`](https://github.com/langchain-ai/openwiki/commit/d9d7d99bba0a98d1aeb6799c5de3cbe38d13e287) Thanks [@xiehuanyi](https://github.com/xiehuanyi)! - fix: strip complete terminal escape sequences
+
+- [#929](https://github.com/langchain-ai/openwiki/pull/929) [`d316820`](https://github.com/langchain-ai/openwiki/commit/d3168204fdf1addb3468f9f737545e44dc94e3a1) Thanks [@c020627](https://github.com/c020627)! - fix: keep every duplicate wiki heading reachable when one already owns the suffix
+
+- [#969](https://github.com/langchain-ai/openwiki/pull/969) [`7b24808`](https://github.com/langchain-ai/openwiki/commit/7b248086701f587e57a7190801e890b38fcd8118) Thanks [@Yi-111-a](https://github.com/Yi-111-a)! - fix: treat compact sequence items as front-matter continuations
+
+- [#980](https://github.com/langchain-ai/openwiki/pull/980) [`0ff41ef`](https://github.com/langchain-ai/openwiki/commit/0ff41eff81d48804345a755abb3aefa2c4c0c0ce) Thanks [@Zhuoxi2000](https://github.com/Zhuoxi2000)! - fix: stamp anchors with malformed percent escapes instead of throwing
+
+- [#958](https://github.com/langchain-ai/openwiki/pull/958) [`fd7ff2a`](https://github.com/langchain-ai/openwiki/commit/fd7ff2aee45076d4386155f13ae7198ffd8fc3ee) Thanks [@breken-ai](https://github.com/breken-ai)! - fix: insert prompt values literally instead of as replacement patterns
+
+- [#913](https://github.com/langchain-ai/openwiki/pull/913) [`1853fbf`](https://github.com/langchain-ai/openwiki/commit/1853fbfbef85aba7786849e3f9db4a7450dabacf) Thanks [@sloemo01](https://github.com/sloemo01)! - fix: retry a page worker once before skipping its page
+
+- [#981](https://github.com/langchain-ai/openwiki/pull/981) [`0b1e992`](https://github.com/langchain-ai/openwiki/commit/0b1e992a37c68f1c54006b4da15ea09e1786152c) Thanks [@tollenceld](https://github.com/tollenceld)! - fix: preserve optional tool parameters for openai-compatible models
+
+- [#865](https://github.com/langchain-ai/openwiki/pull/865) [`8330d7c`](https://github.com/langchain-ai/openwiki/commit/8330d7c6caeac1e67b9f8e3bcda4a4ac4e049b88) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: scope update planning to explicit requests
+
+- [#979](https://github.com/langchain-ai/openwiki/pull/979) [`bedcdec`](https://github.com/langchain-ai/openwiki/commit/bedcdec54f17d60d1c9f2452002da08833231417) Thanks [@SammyTourani](https://github.com/SammyTourani)! - fix: serialize concurrent file operations on the same wiki page
+
+- [#957](https://github.com/langchain-ai/openwiki/pull/957) [`16b0aaf`](https://github.com/langchain-ai/openwiki/commit/16b0aafc517253a1a48b5e2363b7bccbb1c3bf11) Thanks [@breken-ai](https://github.com/breken-ai)! - fix: ignore link syntax inside code when validating wiki links
+
+- [#955](https://github.com/langchain-ai/openwiki/pull/955) [`277806a`](https://github.com/langchain-ai/openwiki/commit/277806a834c34ff098ff0dc1552a2bf2f7686b77) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: prioritize stable workspace ids over display names
+
+- [#989](https://github.com/langchain-ai/openwiki/pull/989) [`bc383a4`](https://github.com/langchain-ai/openwiki/commit/bc383a4845784714e1622867570fa24ac1ad4eff) Thanks [@colifran](https://github.com/colifran)! - fix: update vulnerable dependencies
+
 ## 0.7.0
 
 ### Minor Changes
