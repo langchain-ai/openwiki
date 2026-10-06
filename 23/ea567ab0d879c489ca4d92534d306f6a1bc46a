@@ -1,0 +1,39 @@
+test/agent/conversation-history-offload.test.ts
+  s_03984eb6438d2a::t_917be0fb9387fd 49
+  s_03984eb6438d2a::t_3e205f2a2cc04f 29-41,50-55
+  s_03984eb6438d2a::t_e81cb9dff04f6f 42-48
+src/agent/agent-backend.ts
+  s_03984eb6438d2a::t_3e205f2a2cc04f 18-49,116-122
+pnpm-workspace.yaml
+  s_03984eb6438d2a::t_04ea0587d0b89e 30,56
+  s_03984eb6438d2a::t_0f5ab5d32ce427 8-9,11-12,14,18-19,24-26,29,33-34,37,51-54,60-61
+package.json
+  s_03984eb6438d2a::t_0f5ab5d32ce427 83
+.changeset/update-vulnerable-dependencies.md
+  s_03984eb6438d2a::t_0f5ab5d32ce427 1-5
+.trivyignore
+  s_03984eb6438d2a::t_3e205f2a2cc04f 1-4
+pnpm-lock.yaml
+  s_03984eb6438d2a::t_e8a8e9c1d42ba5 8-10,13-14,17-18,62-63,698,844-845,1338-1339,1867-1868,2013-2014,2239-2240,2485-2486,2846-2847,2889-2890,3885,3887,4069,4071,4081,4560,4623,4733,5204,5372,5606,5642,5740,5777,5802,5812,5958,5960,6144,6198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23ea567ab0d879c489ca4d92534d306f6a1bc46a",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_03984eb6438d2a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1121d-a882-7702-a38e-db6e17d28181",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
