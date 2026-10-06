@@ -1,0 +1,28 @@
+.trivyignore
+  s_03984eb6438d2a::t_cb7bd5670f5257 1-3
+pnpm-workspace.yaml
+  s_03984eb6438d2a::t_cb7bd5670f5257 13,24
+pnpm-lock.yaml
+  s_03984eb6438d2a::t_b3267f7b0d8e31 13,2720-2721,5164,5981
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1885a13375d4784f766bfe1e1aa93a39098d3fe3",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_03984eb6438d2a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1121d-a882-7702-a38e-db6e17d28181",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
