@@ -185,6 +185,37 @@ describe("validateWikiInternalLinks", () => {
     expect(report.stampedFiles).toEqual([]);
   });
 
+  test("accepts GitHub line anchors on markdown targets but still validates heading anchors", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await mkdir(path.join(rootDir, "docs"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "docs/GUIDE.md"),
+      "# Guide\n\n## Setup\n\nRun it.\n",
+      "utf8",
+    );
+    await backend.write(
+      "/openwiki/quickstart.md",
+      [
+        "See [range](../docs/GUIDE.md#L3-L5).",
+        "See [single](../docs/GUIDE.md#L3).",
+        "See [setup](../docs/GUIDE.md#setup).",
+        "See [bad](../docs/GUIDE.md#nope).",
+        "",
+      ].join("\n"),
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(1);
+    const after = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(after).toContain('heading anchor "nope" does not exist');
+    expect(after).not.toContain("#L3-L5) <!--");
+    expect(after).not.toContain('heading anchor "L3');
+  });
+
   test("stamps missing target files without throwing", async () => {
     const { backend, rootDir } = await setupWiki();
     await backend.write(

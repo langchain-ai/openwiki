@@ -20,6 +20,12 @@ const MARKDOWN_LINK_PATTERN = /\[([^\]]*)\]\(([^)]+)\)/gu;
 const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
 
 /**
+ * Matches a GitHub line anchor (`L10`, `L10-L20`, `L10C2-L20C8`). GitHub
+ * resolves these against a file's source lines, not its headings.
+ */
+const LINE_ANCHOR_PATTERN = /^L\d+(?:C\d+)?(?:-L\d+(?:C\d+)?)?$/u;
+
+/**
  * Matches a previously inserted broken-link stamp line, so stamps can be
  * cleared before each pass and never accumulate across runs.
  */
@@ -284,12 +290,13 @@ async function validateLink(
   }
 
   // Heading anchors are only validated against Markdown targets. Anchors on
-  // directories, and GitHub line anchors on source files (e.g. `#L10`), are
-  // out of scope and must not be flagged as broken.
+  // directories, and GitHub line anchors (e.g. `#L10` or `#L10-L20`), are out
+  // of scope and must not be flagged as broken, even on Markdown targets.
   if (
     !anchor ||
     isDirectory ||
-    path.posix.extname(targetPath).toLowerCase() !== ".md"
+    path.posix.extname(targetPath).toLowerCase() !== ".md" ||
+    LINE_ANCHOR_PATTERN.test(anchor)
   ) {
     return null;
   }
