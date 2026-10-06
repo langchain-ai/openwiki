@@ -103,9 +103,6 @@ sources:
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
 generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Source Map

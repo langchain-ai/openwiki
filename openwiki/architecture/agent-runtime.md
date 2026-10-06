@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
+  - by: openwiki/0.7.0
+    at: 2026-10-06T08:10:08.863Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -106,8 +106,37 @@ Each branch constructs a purpose-built client:
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
 - **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
 - **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
-- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires.
-- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
+- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the dedicated `bob` branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires. Bob also forces the streaming HTTP transport, because long generations (such as planning a large repository) can outlast the Bob endpoint's non-streaming response timeout.
+- **OpenAI, Copilot, and all OpenAI-compatible gateways** (`openai`, `copilot`, `baseten`, `fireworks`, `nebius`, `nvidia`, `openai-compatible`) fall through to a final shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, threads the resolved reasoning config, and forces the streaming HTTP transport (`streaming: true`, spread rather than assigned so an absent flag does not turn into `disableStreaming`) for providers whose `providerUsesStreaming` returns true — Copilot unconditionally, Bob via its own branch, and `openai-compatible` when `OPENWIKI_OPENAI_COMPATIBLE_STREAMING` opts in. The branch selects its credential by branching on `providerUsesEntraId(provider)`: when the `openai-compatible` provider is configured for Entra ID auth (`OPENAI_COMPATIBLE_AUTH=entra-id`), the `apiKey` field is set to the async token callback returned by `createEntraTokenProvider`; otherwise it falls back to the provider's static API key from `getProviderApiKey`.
+
+```mermaid
+flowchart TD
+  Start["createModel provider modelId"] --> Reason["resolveReasoningConfig by transport"]
+  Reason --> PGem{"provider"}
+  PGem -->|gemini| Gemini["ChatGoogle platformType gai thinkingLevel"]
+  PGem -->|gemini-enterprise| Vertex["createGeminiEnterpriseModel by surface"]
+  PGem -->|anthropic| Anthropic["ChatAnthropic maxTokens"]
+  PGem -->|openai-chatgpt| Codex["ChatOpenAI useResponsesApi zdrEnabled streaming fetch"]
+  PGem -->|openrouter| OpenRouter["ChatOpenRouter provider allowlist"]
+  PGem -->|bedrock| Bedrock["ChatBedrockConverse region maxTokens idleTimeout"]
+  PGem -->|bob| Bob["ChatOpenAI placeholder key createBobFetch streaming"]
+  PGem -->|other| Fall["shared ChatOpenAI fallthrough"]
+  Fall --> Entra{"providerUsesEntraId"}
+  Entra -->|yes| Token["apiKey = createEntraTokenProvider scope"]
+  Entra -->|no| Key["apiKey = getProviderApiKey"]
+  Token --> Base["configuration baseURL Responses API reasoning streaming"]
+  Key --> Base
+```
+
+Model-factory branching in `createModel`: each provider constructs a purpose-built LangChain chat model, and the final `ChatOpenAI` fallthrough branches on Entra ID auth before assembling the shared configuration.
+
+### Entra ID token provider for OpenAI-compatible gateways
+
+The `openai-compatible` provider can delegate authentication to Microsoft Entra ID (Azure Identity) instead of using a static API key. `resolveOpenAICompatibleAuthMode` resolves `OPENAI_COMPATIBLE_AUTH` to one of `api-key` (the default, including when unset) or `entra-id`; any other value fails closed. `providerUsesEntraId` returns true only for `openai-compatible` in `entra-id` mode, and `providerRequiresApiKey` correspondingly excludes that combination so credential resolution does not demand a static key.
+
+When Entra auth is active, `createModel` passes `createEntraTokenProvider(baseURL, scope)` as the `ChatOpenAI` `apiKey` callback. The OpenAI SDK invokes that callback for each request, so a long-running model uses refreshed credentials without reconstruction. The scope comes from `resolveOpenAICompatibleEntraScope` — `OPENAI_COMPATIBLE_ENTRA_SCOPE` when set, otherwise `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` (`https://cognitiveservices.azure.com/.default`, Azure OpenAI's standard Cognitive Services scope). Enterprise gateways normally override the scope with their own application ID URI.
+
+`createEntraTokenProvider` (in `src/agent/entra-auth.ts`) validates the base URL is HTTPS without embedded credentials or a metadata-host hostname (`169.254.169.254` / `metadata.google.internal`) before any token is fetched, throwing if the endpoint is unsafe. The Azure Identity credential is loaded lazily on the first callback invocation and coalesced so concurrent first requests share one credential construction and one token fetch: a configured `AZURE_FEDERATED_TOKEN_FILE` selects `WorkloadIdentityCredential` (with `AZURE_CLIENT_ID` / `AZURE_TENANT_ID`) explicitly, otherwise the default `DefaultAzureCredential` chain is used. Azure Identity caches and refreshes tokens before expiry, and on any acquisition failure the provider resets its memoized promise (so a later retry re-loads identity) and throws a sanitized error that never leaks credential material or response details.
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 

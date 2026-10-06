@@ -133,9 +133,6 @@ sources:
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
 generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-02T08:09:47.640Z
 ---
 
 # Testing Guide
