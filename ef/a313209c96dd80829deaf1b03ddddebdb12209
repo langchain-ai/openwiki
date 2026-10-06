@@ -1,0 +1,176 @@
+test/retrieval/wiki.test.ts
+  s_7397b8146d0266::t_0495d91af3efc6 482,484-488,491,529,534,539
+  s_7397b8146d0266::t_550e0179e36bc5 85,87-89
+  s_7397b8146d0266::t_d366bff3d513a8 73,77-79,81,86,479-481,483
+test/agent/run-metadata.test.ts
+  s_7397b8146d0266::t_60d10e1a962b15 198
+src/setup/credentials/view.tsx
+  s_7397b8146d0266::t_800242b5f9b784 387
+src/cli/commands.ts
+  s_7397b8146d0266::t_800242b5f9b784 1217,1306
+src/setup/credentials/constants.ts
+  s_7397b8146d0266::t_800242b5f9b784 131
+DEVELOPMENT.md
+  s_7397b8146d0266::t_dcab16daac2367 65
+test/config/wiki-directory.test.ts
+  s_7397b8146d0266::t_57594e9731a9b6 1-64,115-152
+  s_7397b8146d0266::t_03daddc97e0a30 65-114
+test/integrations/skill.test.ts
+  s_7397b8146d0266::t_d2858609262b6e 143
+  s_7397b8146d0266::t_fc138194a7c096 144-146
+test/ingestion/code-mode.test.ts
+  s_7397b8146d0266::t_2b3be0c306edd0 214,252,729
+  s_7397b8146d0266::t_9028115a716b36 754
+  s_7397b8146d0266::t_0a3fc28f738aeb 93-96,116,753,755
+src/linking/wiki-workspaces.ts
+  s_7397b8146d0266::t_a27c628ca1c91b 9-10,1136,1446-1448
+test/integrations/session-manager.test.ts
+  s_7397b8146d0266::t_d7be90daeb3f7f 121,181
+src/agent/repository-runner.ts
+  s_7397b8146d0266::t_448d48e2f7af7b 20,449,923
+  s_7397b8146d0266::t_08335698e34e5a 994
+src/claims/brains/code/store.ts
+  s_7397b8146d0266::t_1fa73139400f14 367-369
+  s_7397b8146d0266::t_2df5406cc11310 15-18,111,119-122,227,252,279,370-377
+  s_e3d424b7a60181::t_d742940ca1fdf7 14,378-379
+test/generation/run-state.test.ts
+  s_7397b8146d0266::t_550e0179e36bc5 104,136
+src/connectors/sources/langsmith/repo-config.ts
+  s_7397b8146d0266::t_c4d56fb7af7130 3,67
+  s_7397b8146d0266::t_800242b5f9b784 213,215
+src/config/constants.ts
+  s_7397b8146d0266::t_03daddc97e0a30 14
+  s_7397b8146d0266::t_1fa73139400f14 1-3,5-7,9-11,232-234,277-279,1094-1096
+  s_7397b8146d0266::t_57594e9731a9b6 4,8,12-13,15-18
+test/setup/credentials/components.test.tsx
+  s_7397b8146d0266::t_b1ff1732ea94f7 738
+test/agent/repository-runner.test.ts
+  s_7397b8146d0266::t_a26633bce833c3 687,690,721,998,1072,1077,1141,1273
+src/agent/docs-only-backend.ts
+  s_7397b8146d0266::t_eb3864f5fdea5a 263
+  s_7397b8146d0266::t_a62ad4a08f3bf7 502,510-517,519-520,522,524-526,529-532,543-550,552-553,555,557,559-560,562-566,569-576,620,722,726,770,782
+  s_7397b8146d0266::t_93c8dae8321b9a 18,60,64,250-251,257,259,261-262,264-265,630,649,687-690,756-757,759,765-766,776-777,779,786-789,793-800
+  s_7397b8146d0266::t_1fa73139400f14 61-63,247-249,790-792
+  s_7397b8146d0266::t_34b55d98679a3a 17,258,758,778
+  s_7397b8146d0266::t_5fa95aef83156f 277,279-280,286-287,295,297-298,304-306,318,320-321,343,345-346,368,370-371,386,388-389,395,416-418,420-422,427,447-450,457,464,468-471,478,495,644-648
+  s_7397b8146d0266::t_a3bd3b0b5afa0c 32,214,228
+  s_7397b8146d0266::t_ad27f43b111c84 322,347,372,622-625,631
+  s_7397b8146d0266::t_e17e257fc1f7e4 650
+src/agent/wiki-replacement.ts
+  s_7397b8146d0266::t_1fa73139400f14 21-23,26-28,207-209
+  s_7397b8146d0266::t_685ed8c628ea6c 4-7,58-59,70,75,180
+  s_7397b8146d0266::t_cbdad726533d88 36-39,44-45
+examples/openwiki-update.yml
+  s_7397b8146d0266::t_9028115a716b36 54,62
+src/agent/index.ts
+  s_7397b8146d0266::t_c9ba97a5d4e6a9 565-568
+  s_7397b8146d0266::t_a4991424c7b694 580-582,856-858
+  s_7397b8146d0266::t_cfb00efdb80a6f 31,478-481
+src/generation/page-jobs.ts
+  s_7397b8146d0266::t_1fa73139400f14 88-90,93-95,98-100
+test/setup/credentials/view.test.tsx
+  s_7397b8146d0266::t_b1ff1732ea94f7 159
+src/generation/run-state.ts
+  s_7397b8146d0266::t_fa465555f9fc48 7,304
+.changeset/configurable-wiki-directory.md
+  s_7397b8146d0266::t_ee1a7ebb700ff7 1-5
+src/agent/prompts/personal.ts
+  s_7397b8146d0266::t_cbdad726533d88 52,79-80,82-83
+src/config/env.ts
+  s_7397b8146d0266::t_eb934cb6ab77c7 74,84,154,189,424-425,510,541-547
+  s_7397b8146d0266::t_eb3864f5fdea5a 426-449
+  s_7397b8146d0266::t_1c8e7a72aeda83 548-549
+src/agent/prompt.ts
+  s_7397b8146d0266::t_a4991424c7b694 26,37,50-53,75,86,99-101,104-108,113,119,202,211,216-224
+  s_7397b8146d0266::t_46dcb812f3e9a1 225
+src/integrations/core/retrieval-tools.ts
+  s_7397b8146d0266::t_1915acbdd2f595 32,67,83,99,102
+test/agent/docs-only-backend.test.ts
+  s_7397b8146d0266::t_75406d01d19243 209-254
+src/generation/page-manifest.ts
+  s_7397b8146d0266::t_fa465555f9fc48 7-8,106
+src/retrieval/wiki.ts
+  s_7397b8146d0266::t_1915acbdd2f595 721
+  s_7397b8146d0266::t_a5b895c40c60b4 6-9,98,486-487,491-492,658-661,663-667,681,1001-1004,1007-1012
+  s_e3d424b7a60181::t_7ee01cf1f4e209 5
+README.md
+  s_7397b8146d0266::t_22f3c0adba53e1 282-285
+  s_7397b8146d0266::t_dcab16daac2367 76,253-263,274,329-331,353,372,374,457
+src/config/wiki-directory.ts
+  s_7397b8146d0266::t_22f3c0adba53e1 57
+  s_7397b8146d0266::t_03daddc97e0a30 1,7,13-14,35-39,49-56,58-108,226-229
+  s_7397b8146d0266::t_1fa73139400f14 111-113,143-145,165-167,179-181
+  s_7397b8146d0266::t_57594e9731a9b6 2-6,8-12,15-34,40-48,109-110,114-142,146-164,168-178,182-186,191-192,196-207,212-225,230
+  s_7397b8146d0266::t_eb3864f5fdea5a 187-190,193-195,208-211
+src/setup/onboarding.ts
+  s_7397b8146d0266::t_c4d56fb7af7130 4,127
+src/agent/okf-middleware.ts
+  s_7397b8146d0266::t_22f3c0adba53e1 193
+  s_7397b8146d0266::t_c9ba97a5d4e6a9 48,58,149,185
+  s_7397b8146d0266::t_555a33fa1d9b34 102,137
+src/generation/repository-run.ts
+  s_7397b8146d0266::t_dacfbe79f94885 29-32
+  s_7397b8146d0266::t_8a17ae3b4eb525 830
+  s_7397b8146d0266::t_a38702f2c7b8ba 205-208
+  s_7397b8146d0266::t_a144f31e6fc1ea 1042,1105-1108
+  s_7397b8146d0266::t_970cb21af0289f 863
+  s_7397b8146d0266::t_9bf1c2832d7190 209
+test/generation/page-manifest.test.ts
+  s_7397b8146d0266::t_550e0179e36bc5 23,186,217
+integrations/openwiki/SKILL.md
+  s_7397b8146d0266::t_3b349950e75014 34,42-44,57,85-86,190-192
+src/agent/utils.ts
+  s_7397b8146d0266::t_42f242f47d739e 12,14-15,17-20,806,815,823,889,977-979,983-1002
+  s_7397b8146d0266::t_cbdad726533d88 115-117,881
+  s_7397b8146d0266::t_cb9712cc01b8c7 1003
+src/setup/credentials/components.tsx
+  s_7397b8146d0266::t_22f3c0adba53e1 494-495
+  s_7397b8146d0266::t_800242b5f9b784 515,778,939
+test/linking/wiki-workspaces.test.ts
+  s_7397b8146d0266::t_d7be90daeb3f7f 66,68
+src/ingestion/code-mode.ts
+  s_7397b8146d0266::t_800242b5f9b784 210
+  s_7397b8146d0266::t_d4aea0e3d9d6e2 10,17-20,55-57,66-68,87-88,93-94,97,109,130,218,228-232,550,590,602,610,650,655,660
+test/connectors/sources/langsmith/repo-config.test.ts
+  s_7397b8146d0266::t_550e0179e36bc5 243,257,260
+  s_7397b8146d0266::t_5f6140de818e80 258
+src/agent/repository-prompts.ts
+  s_7397b8146d0266::t_08335698e34e5a 11,128,135,137-142,150,156,158-159,178,201-205
+test/integrations/mcp-server.test.ts
+  s_7397b8146d0266::t_d7be90daeb3f7f 350
+src/cli/run-log/activity.ts
+  s_7397b8146d0266::t_22f3c0adba53e1 2
+  s_7397b8146d0266::t_97a5f0aa485f31 3,210-214,309-312,318-329
+  s_7397b8146d0266::t_16aa7cc764597e 330
+examples/openwiki-update-auto-merge.yml
+  s_7397b8146d0266::t_9028115a716b36 52,61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "efa313209c96dd80829deaf1b03ddddebdb12209",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7397b8146d0266": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-e0cd-78d0-bbdd-62713d2afd89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    },
+    "s_e3d424b7a60181": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10d61-d0d8-7413-826e-42086afa03ae",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
