@@ -51,9 +51,6 @@ sources:
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
 generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
 ---
 
 # Source Connectors

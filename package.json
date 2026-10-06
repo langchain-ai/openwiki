@@ -1,6 +1,6 @@
 {
   "name": "openwiki",
-  "version": "0.5.2",
+  "version": "0.7.0",
   "description": "A CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase.",
   "license": "MIT",
   "type": "module",
@@ -26,6 +26,7 @@
     "LICENSE"
   ],
   "keywords": [
+    "pi-package",
     "ai",
     "agents",
     "documentation",
@@ -34,6 +35,14 @@
     "langchain",
     "cli"
   ],
+  "pi": {
+    "extensions": [
+      "./dist/integrations/pi/openwiki.js"
+    ],
+    "skills": [
+      "./integrations/openwiki"
+    ]
+  },
   "scripts": {
     "openwiki": "node dist/cli/cli.js",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
@@ -61,6 +70,7 @@
   "dependencies": {
     "@anthropic-ai/vertex-sdk": "^0.19.6",
     "@aws-sdk/client-bedrock-runtime": "^3.1120.0",
+    "@azure/identity": "^4.13.3",
     "@langchain/anthropic": "^1.5.8",
     "@langchain/aws": "^1.4.4",
     "@langchain/core": "^1.2.9",
@@ -72,14 +82,14 @@
     "@langchain/tavily": "1.2.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "ci-info": "^4.4.0",
-    "cron-parser": "5.10.0",
-    "cronstrue": "3.24.0",
+    "cron-parser": "5.10.1",
+    "cronstrue": "3.27.0",
     "deepagents": "1.13.2",
     "google-auth-library": "^11.0.2",
     "ink": "^5.2.1",
     "jsonc-parser": "^3.3.1",
     "langchain": "^1.5.10",
-    "langsmith": "^0.9.0",
+    "langsmith": "^0.10.5",
     "marked": "^18.0.11",
     "posthog-node": "^5.51.4",
     "react": "^18.3.1",
@@ -99,8 +109,8 @@
     }
   },
   "devDependencies": {
-    "@changesets/changelog-github": "1.0.0",
-    "@changesets/cli": "3.0.1",
+    "@changesets/changelog-github": "1.0.1",
+    "@changesets/cli": "3.0.3",
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^9.6.0",
     "@types/jsdom": "^30.0.0",

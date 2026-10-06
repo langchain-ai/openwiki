@@ -392,7 +392,7 @@ describe("host integration registry", () => {
         producerActor: "bob",
         user: {
           skillDirectory: ".agents/skills/openwiki",
-          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+          mcpConfig: { kind: "json", relativePath: ".bob/settings/mcp.json" },
         },
         project: {
           skillDirectory: ".agents/skills/openwiki",
@@ -500,6 +500,20 @@ describe("host integration registry", () => {
           },
         },
       },
+      copilot: {
+        producerActor: "copilot",
+        user: {
+          skillDirectory: ".copilot/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".copilot/mcp-config.json",
+          },
+        },
+        project: {
+          skillDirectory: ".github/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".github/mcp.json" },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -512,6 +526,7 @@ describe("host integration registry", () => {
       "kiro",
       "omp",
       "antigravity",
+      "copilot",
     ]);
     expect(HOST_TARGETS.bob.user.skillDirectory).toBe(
       HOST_TARGETS.codex.user.skillDirectory,

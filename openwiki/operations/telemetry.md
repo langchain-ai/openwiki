@@ -53,10 +53,7 @@ sources:
     resource: repo://test/telemetry/telemetry.test.ts
   - id: openwiki-source-9ba5e33980ba1f452c6884d4
     resource: repo://test/telemetry/with-run-telemetry.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 ---
 
 # Telemetry and Diagnostics
@@ -265,12 +262,37 @@ the family, and it is the **anonymity spine**. `normalizeErrorDetail` validates
 each observed detail against `taxonomy.ts`'s hardcoded per-family allowlist
 (`FIXED_ERROR_DETAILS`) and drops anything off-list to `undefined` rather than
 emitting it raw. Two families (`connector_error`, `tool_error`) carry a registry
-id validated at the tag site instead of a fixed word. For the residual
-`agent_error` bucket the detail is instead the **innermost error's own name**
-(`innermostErrorName`), gated by `isSafeErrorIdentifier` — a bare identifier of
-at most 64 chars matching a strict pattern — so a `.name` or `constructor.name`
-carrying a path, URL, space, or user value is rejected and the envelope stays
-closed.
+id validated at the tag site instead of a fixed word — they are deliberately
+absent from `FIXED_ERROR_DETAILS` and are the `OPEN_DETAIL_CLASSES`, trusted
+as a non-empty string because their throw site already validated the id against
+the known connector/tool set. For the residual `agent_error` bucket the detail
+is instead the **innermost error's own name** (`innermostErrorName`), gated by
+`isSafeErrorIdentifier` — a bare identifier of at most 64 chars matching a strict
+pattern (`SAFE_ERROR_IDENTIFIER`) — so a `.name` or `constructor.name` carrying
+a path, URL, space, or user value is rejected and the envelope stays closed.
+
+The closed set of detail values, exactly as implemented, is:
+
+| Family | Allowed `errorDetail` values |
+| --- | --- |
+| `config_error` | `missing_credentials`, `missing_base_url`, `missing_secret_key`, `missing_region`, `invalid_model` |
+| `filesystem_error` | `not_found`, `permission`, `no_space` |
+| `provider_error` | `auth`, `rate_limit`, `overloaded`, `server_error`, `timeout`, `quota_exceeded`, `content_filter` |
+| `network_error` | `dns`, `refused`, `reset`, `unreachable` |
+| `build_error` | `run_context`, `snapshot`, `model`, `agent`, `stream_open` |
+| `okf_error` | `migrate`, `provenance_snapshot`, `mermaid`, `index_sync`, `link_validation`, `claims_sources`, `generated_provenance` |
+| `checkpointer_error` | `create`, `persist`, `chmod` |
+| `output_error` | `json_parse`, `schema` |
+| `context_limit_error` | _(none — the family is the whole signal)_ |
+| `agent_error` | _(none — residual bucket; the innermost error name gated by `isSafeErrorIdentifier`)_ |
+| `aborted` | _(none — the run was cancelled)_ |
+| `connector_error` | _(registry id — the connector id, validated at the tag site, not a fixed word)_ |
+| `tool_error` | _(registry id — the tool name, validated at the tag site, not a fixed word)_ |
+
+Families with an empty detail split and the two registry-id families never pass a
+fixed-word check; the former always yield `undefined`, the connector/tool ids are
+returned as-is, and the residual `agent_error` name passes only the identifier
+gate.
 
 **Owner (whose fix it is).** `deriveOwner` is the single source of owner truth,
 mapping (class, detail, stage) to `environment`, `provider`, `openwiki`,

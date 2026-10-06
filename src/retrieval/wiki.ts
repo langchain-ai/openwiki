@@ -286,9 +286,14 @@ interface SearchUnit {
   heading: string;
 
   /**
-   * Searchable introduction and section Markdown.
+   * Searchable Markdown contained in this section.
    */
   prose: string;
+
+  /**
+   * Introduction units match their own prose, not repeated page metadata.
+   */
+  introductionOnly: boolean;
 
   /**
    * Searchable page path, tags, and source resources.
@@ -339,11 +344,6 @@ interface SearchPageContext {
    * Normalized repository source paths used for ranking boosts.
    */
   sourcePaths: string[];
-
-  /**
-   * Introductory prose inherited by each section.
-   */
-  introduction: string;
 
   /**
    * Normalized query terms used to choose the compact excerpt.
@@ -543,11 +543,11 @@ async function rankSearchUnits(
     units.forEach((unit, index) =>
       insert.run(
         index + 1,
-        normalizeSearchText(unit.title),
-        normalizeSearchText(unit.description),
+        unit.introductionOnly ? "" : normalizeSearchText(unit.title),
+        unit.introductionOnly ? "" : normalizeSearchText(unit.description),
         normalizeSearchText(unit.heading),
         normalizeSearchText(unit.prose),
-        normalizeSearchText(unit.identifiers),
+        unit.introductionOnly ? "" : normalizeSearchText(unit.identifiers),
       ),
     );
 
@@ -694,7 +694,7 @@ function wikiIdentity(wiki: WikiSearchIdentity): WikiSearchIdentity {
  * @param page - Canonical virtual page path.
  * @param terms - Normalized query terms used for excerpt selection.
  * @param wiki - Identity of the repository wiki supplying the page.
- * @returns Searchable H2 sections, or a page-level H1 fallback.
+ * @returns Searchable introduction and H2 sections, or a page-level H1 fallback.
  */
 function searchUnits(
   markdown: string,
@@ -722,8 +722,12 @@ function searchUnits(
       ),
   );
   const firstH1 = headings.find(({ depth }) => depth === 1);
-  const introduction = tokens
-    .slice(0, firstLevelTwoIndex(tokens))
+  const pageTokens = firstH1 ? marked.lexer(firstH1.raw) : [];
+  const introductionTokens = pageTokens.slice(
+    0,
+    firstLevelTwoIndex(pageTokens),
+  );
+  const introduction = introductionTokens
     .filter((token) => token.type !== "heading")
     .map((token) => token.raw)
     .join("");
@@ -734,12 +738,20 @@ function searchUnits(
     description,
     identifiers: [relativePage, ...tags, ...sourcePaths].join(" "),
     sourcePaths,
-    introduction,
     terms,
   };
 
   if (sections.length) {
-    return sections.map((section) => createSearchUnit(section, context, wiki));
+    const units = sections.map((section) =>
+      createSearchUnit(section, context, wiki),
+    );
+    if (firstH1 && introduction.trim()) {
+      units.unshift({
+        ...createSearchUnit({ ...firstH1, raw: introduction }, context, wiki),
+        introductionOnly: true,
+      });
+    }
+    return units;
   }
   if (firstH1) {
     return [createSearchUnit({ ...firstH1, raw: body }, context, wiki)];
@@ -751,7 +763,7 @@ function searchUnits(
  * Creates one searchable unit from a parsed heading and page-level context.
  *
  * @param section - Parsed heading section.
- * @param context - Metadata and introductory prose shared by the page.
+ * @param context - Metadata shared by the page.
  * @param wiki - Identity of the repository wiki supplying the section.
  * @returns Searchable section representation.
  */
@@ -765,7 +777,8 @@ function createSearchUnit(
     title: context.title,
     description: context.description,
     heading: section.depth === 1 ? "" : section.heading,
-    prose: `${context.introduction}\n${section.raw}`,
+    prose: section.raw,
+    introductionOnly: false,
     identifiers: context.identifiers,
     sourcePaths: context.sourcePaths,
     excerpt: relevantExcerpt(section.raw, context.terms),

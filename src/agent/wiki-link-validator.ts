@@ -14,10 +14,28 @@ const EXCLUDED_FILES = new Set(["index.md", "log.md", "INSTRUCTIONS.md"]);
 const MARKDOWN_LINK_PATTERN = /\[([^\]]*)\]\(([^)]+)\)/gu;
 
 /**
+ * Matches the opening or closing marker of a fenced code block (three or more
+ * backticks or tildes), capturing the marker itself.
+ */
+const FENCE_PATTERN = /^\s*(`{3,}|~{3,})/u;
+
+/**
+ * Matches an inline code span: a backtick run closed by a run of the same
+ * length on the same line.
+ */
+const INLINE_CODE_PATTERN = /(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/gu;
+
+/**
  * Matches an ATX heading, capturing its hashes and trimmed title text. The
  * title feeds anchor-slug generation.
  */
 const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
+
+/**
+ * Matches a GitHub line anchor (`L10`, `L10-L20`, `L10C2-L20C8`). GitHub
+ * resolves these against a file's source lines, not its headings.
+ */
+const LINE_ANCHOR_PATTERN = /^L\d+(?:C\d+)?(?:-L\d+(?:C\d+)?)?$/u;
 
 /**
  * Matches a previously inserted broken-link stamp line, so stamps can be
@@ -111,6 +129,7 @@ export async function validateWikiInternalLinks(
         href,
         line,
         headingAnchors,
+        outputMode,
       );
       if (issue) {
         issues.push(issue);
@@ -203,6 +222,16 @@ export function stampBrokenLinks(
  * wiki subtree: a wiki page may legitimately link out to a repo file (a design
  * doc, source file, etc.), which renders correctly on GitHub. A link is broken
  * only when its target genuinely does not exist.
+ *
+ * In `repository` mode, a root-absolute path (e.g. `/openwiki/foo.md`) is
+ * flagged outright, before existence is even checked: it happens to resolve
+ * against this validator's repo-rooted backend, but no real consumer reads it
+ * that way. A coding agent reading the page relative to its own directory,
+ * GitHub's Markdown renderer (which treats a leading `/` as relative to the
+ * `github.com` domain, not the repository), and local Markdown viewers all
+ * fail to follow it. In `local-wiki` mode the backend root already *is* the
+ * wiki root, so a root-absolute path there can be the consumer's own
+ * intended convention and is left unflagged.
  */
 async function validateLink(
   backend: BackendProtocolV2,
@@ -210,6 +239,7 @@ async function validateLink(
   rawHref: string,
   line: number,
   sourceAnchors: Set<string>,
+  outputMode: OpenWikiOutputMode,
 ): Promise<WikiLinkIssue | null> {
   const href = rawHref.trim();
   if (!href || isExternalHref(href)) {
@@ -221,7 +251,7 @@ async function validateLink(
     if (!anchor) {
       return null;
     }
-    if (!sourceAnchors.has(decodeURIComponent(anchor))) {
+    if (!sourceAnchors.has(decodeAnchor(anchor))) {
       return {
         href,
         line,
@@ -230,6 +260,19 @@ async function validateLink(
       };
     }
     return null;
+  }
+
+  if (outputMode === "repository" && linkPath.startsWith("/")) {
+    return {
+      href,
+      line,
+      message:
+        `link "${linkPath}" is root-absolute, which no real consumer resolves ` +
+        "against the repository root (not a coding agent reading the page, " +
+        "not GitHub's Markdown renderer, not a local viewer); use a path " +
+        "relative to this file instead",
+      sourcePath,
+    };
   }
 
   const resolvedPath = resolveRepoLinkPath(sourcePath, linkPath);
@@ -259,19 +302,20 @@ async function validateLink(
   }
 
   // Heading anchors are only validated against Markdown targets. Anchors on
-  // directories, and GitHub line anchors on source files (e.g. `#L10`), are
-  // out of scope and must not be flagged as broken.
+  // directories, and GitHub line anchors (e.g. `#L10` or `#L10-L20`), are out
+  // of scope and must not be flagged as broken, even on Markdown targets.
   if (
     !anchor ||
     isDirectory ||
-    path.posix.extname(targetPath).toLowerCase() !== ".md"
+    path.posix.extname(targetPath).toLowerCase() !== ".md" ||
+    LINE_ANCHOR_PATTERN.test(anchor)
   ) {
     return null;
   }
 
   const targetContent = await readText(backend, targetPath);
   const targetAnchors = buildHeadingAnchors(extractHeadings(targetContent));
-  if (!targetAnchors.has(decodeURIComponent(anchor))) {
+  if (!targetAnchors.has(decodeAnchor(anchor))) {
     return {
       href,
       line,
@@ -321,14 +365,47 @@ async function collectMarkdownFiles(
 }
 
 /**
+ * Splits a document into lines with code blanked out, so link and heading
+ * syntax that only appears inside code is never treated as Markdown. Lines of
+ * a fenced code block (fences included) become empty strings. Inline code spans
+ * can be replaced by spaces of the same length, which keeps line numbers and
+ * column positions stable for the image-link check and for stamping. Heading
+ * extraction preserves inline code text because it contributes to anchor slugs.
+ */
+function maskMarkdownCode(content: string, maskInlineCode = true): string[] {
+  let fence: { character: string; length: number } | undefined;
+
+  return content.split(/\r?\n/u).map((line) => {
+    const marker = FENCE_PATTERN.exec(line)?.[1];
+    if (fence) {
+      if (
+        marker?.[0] === fence.character &&
+        marker.length >= fence.length &&
+        line.trim() === marker
+      ) {
+        fence = undefined;
+      }
+      return "";
+    }
+    if (marker) {
+      fence = { character: marker[0], length: marker.length };
+      return "";
+    }
+    return maskInlineCode
+      ? line.replace(INLINE_CODE_PATTERN, (span) => " ".repeat(span.length))
+      : line;
+  });
+}
+
+/**
  * Extracts every inline Markdown link with its 1-based line number, skipping
- * image links.
+ * image links and anything inside code.
  */
 function extractMarkdownLinks(
   content: string,
 ): Array<{ href: string; line: number }> {
   const links: Array<{ href: string; line: number }> = [];
-  const lines = content.split(/\r?\n/u);
+  const lines = maskMarkdownCode(content);
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -348,7 +425,7 @@ function extractMarkdownLinks(
  */
 function extractHeadings(content: string): string[] {
   const headings: string[] = [];
-  for (const line of content.split(/\r?\n/u)) {
+  for (const line of maskMarkdownCode(content, false)) {
     const match = HEADING_PATTERN.exec(line);
     if (match) {
       headings.push(match[2]);
@@ -423,13 +500,28 @@ function parseLinkDestination(rawHref: string): {
 }
 
 /**
+ * Percent-decodes a heading anchor for comparison against heading slugs. A
+ * malformed escape (e.g. `#100%-coverage`) is kept as-is so it fails the
+ * membership check and is stamped, rather than throwing a `URIError` that
+ * would fail the whole run.
+ */
+function decodeAnchor(anchor: string): string {
+  try {
+    return decodeURIComponent(anchor);
+  } catch {
+    return anchor;
+  }
+}
+
+/**
  * Resolves a link path to a normalized repo-absolute path, or undefined when it
  * cannot be contained within the repo root.
  *
- * A leading-slash link is absolute from the virtual filesystem root (the repo
- * root in `repository` mode, the wiki dir in `local-wiki` mode) — the same
- * convention the generation prompt teaches and GitHub renders. A relative link
- * resolves against its source file's directory.
+ * A leading-slash link is absolute from the virtual filesystem root. In
+ * `repository` mode, `validateLink` flags root-absolute links before this
+ * function is ever called, so any absolute `linkPath` reaching here is from
+ * `local-wiki` mode, where the backend root already is the wiki directory. A
+ * relative link resolves against its source file's directory in both modes.
  *
  * The result is not constrained to the wiki subtree: wiki pages may link out to
  * other repo files, so containment is enforced at the repo root instead.

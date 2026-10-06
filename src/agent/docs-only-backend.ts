@@ -59,21 +59,22 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
 };
 
 /**
- * Shell commands the agent may still run while `.openwikiignore` rules are active.
+ * Shell commands the agent may run.
  *
- * This is a deliberate allowlist, not a denylist. While rules are active we
- * cannot statically prove what an arbitrary shell command reads (variable
- * expansion, command substitution, `find -exec`, `cd` + relative paths,
- * `git show HEAD:<path>`, and so on all defeat naive command scanning), so the
- * safe default is to deny shell and permit only these few commands that the
- * agent workflow needs and that cannot exfiltrate an ignored path. Each entry
- * is fully anchored (`^...$`) so it cannot be prefixed or chained with a second
- * command. Discovery and reads must instead go through the gated filesystem
- * tools. See {@link isAllowedShellCommandWithIgnore}.
+ * This is a deliberate allowlist, not a denylist. `LocalShellBackend` runs
+ * commands directly on the host, so its `rootDir` and `virtualMode` options do
+ * not confine shell execution. We cannot statically prove an arbitrary shell
+ * command is workspace-safe (variable expansion, command substitution,
+ * `find -exec`, `cd` + relative paths, and so on all defeat naive command
+ * scanning). Permit only the few commands that the agent workflow needs and
+ * that cannot read outside the workspace. Each entry is fully anchored
+ * (`^...$`) so it cannot be prefixed or chained with a second command.
+ * Discovery and reads must instead go through the gated filesystem tools. See
+ * {@link isAllowedShellCommand}.
  */
-const allowedIgnoredShellCommands = [
+const allowedShellCommands = [
   /^pwd$/u,
-  /^git\s+(?:--no-pager\s+)?rev-parse\s+HEAD$/u,
+  /^git[ \t]+(?:--no-pager[ \t]+)?rev-parse[ \t]+HEAD$/u,
 ];
 
 /**
@@ -145,24 +146,76 @@ function referencesClaimsState(command: string): boolean {
 }
 
 /**
+ * Process-local serialization of file operations, keyed by host path.
+ *
+ * LangChain runs every tool call of one model turn concurrently, and the
+ * upstream filesystem backend neither locks nor writes atomically: `write`
+ * truncates before writing and `edit` is a read-modify-write. Overlapping
+ * operations on one page can leave a stale tail, drop an edit, or let a read
+ * see the page empty between truncate and write. The queue is module-level
+ * because page workers and the code-owned lifecycle each build their own
+ * backend over the same files.
+ */
+const pathOperations = new Map<string, Promise<void>>();
+
+/**
+ * Runs one file operation after every earlier operation on the same file.
+ *
+ * Callers must call this before their first `await` so operations issued
+ * together run in the order they were issued.
+ *
+ * @param rootDir - Absolute backend root the virtual path resolves under.
+ * @param filePath - Virtual path the operation reads or writes.
+ * @param operation - File operation to run once it holds the file.
+ * @returns The operation's result.
+ */
+async function withPathOperation<T>(
+  rootDir: string,
+  filePath: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const hostPath = path.join(rootDir, normalizeVirtualPath(filePath));
+  const previous = pathOperations.get(hostPath) ?? Promise.resolve();
+  let release: () => void = () => undefined;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  pathOperations.set(hostPath, current);
+  await previous;
+  try {
+    return await operation();
+  } finally {
+    release();
+    if (pathOperations.get(hostPath) === current) {
+      pathOperations.delete(hostPath);
+    }
+  }
+}
+
+/**
  * Filesystem/shell backend that enforces OpenWiki's access boundaries for the
  * doc-generation agent.
  *
- * It wraps the deepagents `LocalShellBackend` and layers on four independent
+ * It wraps the deepagents `LocalShellBackend` and layers on five independent
  * constraints:
  *
- * 1. `.openwikiignore` exclusion: reads/writes/edits of an ignored path are hard
+ * 1. Shell confinement: shell `execute` is restricted to a small allowlist because
+ *    the upstream local shell backend otherwise runs commands directly on the host.
+ * 2. `.openwikiignore` exclusion: reads/writes/edits of an ignored path are hard
  *    denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop
- *    ignored entries; uploads/downloads reject ignored paths; and shell
- *    `execute` is restricted to a small allowlist while any rule is active.
- * 2. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
+ *    ignored entries; and uploads/downloads reject ignored paths.
+ * 3. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
  *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
- * 3. Claims ownership: repository `.claims` sidecars are hidden from generic
+ * 4. Claims ownership: repository `.claims` sidecars are hidden from generic
  *    tools and may only be accessed by OpenWiki's direct persistence layer.
- * 4. Personal mode: shell execution is always denied, including delegated calls.
+ * 5. Personal mode: shell execution is always denied, including delegated calls.
  *
  * These boundaries constrain an agent that may be prompt-injected via
  * untrusted repository content, so path checks canonicalize before matching.
+ *
+ * Reads and mutations of one file are also serialized across every instance,
+ * so concurrent tool calls on a page apply in order (see
+ * {@link withPathOperation}).
  */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
@@ -211,7 +264,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return super.read(filePath, offset, limit);
+    return withPathOperation(this.cwd, filePath, () =>
+      super.read(filePath, offset, limit),
+    );
   }
 
   /**
@@ -226,7 +281,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return super.readRaw(filePath);
+    return withPathOperation(this.cwd, filePath, () => super.readRaw(filePath));
   }
 
   /**
@@ -248,9 +303,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return markMutation(
-      await super.write(normalizedPath, content),
-      normalizedPath,
+    return withPathOperation(this.cwd, normalizedPath, async () =>
+      markMutation(await super.write(normalizedPath, content), normalizedPath),
     );
   }
 
@@ -274,9 +328,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return { error };
     }
 
-    return markMutation(
-      await super.edit(normalizedPath, oldString, newString, replaceAll),
-      normalizedPath,
+    return withPathOperation(this.cwd, normalizedPath, async () =>
+      markMutation(
+        await super.edit(normalizedPath, oldString, newString, replaceAll),
+        normalizedPath,
+      ),
     );
   }
 
@@ -295,7 +351,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     if (error) {
       return { error };
     }
-    return markMutation(await super.delete(normalizedPath), normalizedPath);
+    return withPathOperation(this.cwd, normalizedPath, async () =>
+      markMutation(await super.delete(normalizedPath), normalizedPath),
+    );
   }
 
   /**
@@ -480,11 +538,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
-   * Refuse every shell command in personal mode. In repository mode, while any
-   * `.openwikiignore` rule is active, only the
-   * {@link allowedIgnoredShellCommands} allowlist may run; anything else is
-   * refused (exit code 1) with guidance to use the gated filesystem tools,
-   * since arbitrary shell cannot be proven not to read an ignored path.
+   * Refuse shell execution in personal mode. Repository runs allow only narrow
+   * maintenance commands because the underlying backend executes on the host.
    */
   override async execute(command: string): Promise<ExecuteResponse> {
     // Personal agents consume untrusted connector content, including during
@@ -508,13 +563,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       };
     }
 
-    if (
-      this.openWikiIgnore.isActive &&
-      !isAllowedShellCommandWithIgnore(command)
-    ) {
+    if (!isAllowedShellCommand(command)) {
       return {
         exitCode: 1,
-        output: `Shell execute is restricted while ${OPENWIKI_IGNORE_FILE} is active. Use the file tools instead (read_file, ls, glob, grep) so ignored paths stay excluded.`,
+        output: `Shell execute is restricted because it cannot be confined to the OpenWiki workspace. Use the file tools instead (read_file, ls, glob, grep).${this.openWikiIgnore.isActive ? ` ${OPENWIKI_IGNORE_FILE} rules also remain enforced there.` : ""}`,
         truncated: false,
       };
     }
@@ -691,13 +743,12 @@ function normalizeVirtualPath(filePath: string): string {
 }
 
 /**
- * Whether a shell command is on the {@link allowedIgnoredShellCommands} allowlist
- * and may therefore run while `.openwikiignore` rules are active.
+ * Whether a shell command is on the {@link allowedShellCommands} allowlist.
  */
-function isAllowedShellCommandWithIgnore(command: string): boolean {
+function isAllowedShellCommand(command: string): boolean {
   const trimmedCommand = command.trim();
 
-  return allowedIgnoredShellCommands.some((allowedCommand) =>
+  return allowedShellCommands.some((allowedCommand) =>
     allowedCommand.test(trimmedCommand),
   );
 }

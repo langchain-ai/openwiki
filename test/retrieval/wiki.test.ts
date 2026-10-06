@@ -143,6 +143,127 @@ afterEach(async () => {
 });
 
 describe("repository wiki retrieval", () => {
+  test("introduction matches return a reference that reads the matching prose", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: [
+          "The emergency shutdown token is QUARTZ_ABORT.",
+          "",
+          "## Installation",
+          "",
+          "Install the service with npm.",
+          "",
+          "## Logging",
+          "",
+          "Logs go to stdout.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const response = requireSearchResults(
+      await searchWiki(root, { query: "QUARTZ_ABORT" }),
+    );
+    expect(response.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#service",
+    ]);
+    expect(response.results[0]?.content).toContain("emergency shutdown token");
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/service.md",
+      sections: ["service"],
+    });
+    expect(read.sections[0]?.content).toContain("QUARTZ_ABORT");
+
+    const sectionResponse = requireSearchResults(
+      await searchWiki(root, { query: "stdout" }),
+    );
+    expect(sectionResponse.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#logging",
+    ]);
+  });
+
+  test("page metadata matches do not return the full-page introduction reference", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: [
+          "The emergency shutdown token is QUARTZ_ABORT.",
+          "",
+          "## Installation",
+          "",
+          "Install with npm.",
+          "",
+          "## Logging",
+          "",
+          "Logs go to stdout.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    for (const query of ["Service", "operation", "src/service.ts"]) {
+      const response = requireSearchResults(await searchWiki(root, { query }));
+      expect(response.results.length).toBeGreaterThan(0);
+      expect(response.results.flatMap((result) => result.ref)).not.toContain(
+        "openwiki/architecture/service.md#service",
+      );
+    }
+  });
+
+  test("does not add an introduction result when the title has no prose", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: "## Logging\n\nLogs go to stdout.",
+      }),
+      "utf8",
+    );
+    const response = requireSearchResults(
+      await searchWiki(root, { query: "Service" }),
+    );
+    expect(response.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#logging",
+    ]);
+  });
+
+  test("keeps the page-level fallback readable for pages without subsections", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: "The emergency shutdown token is QUARTZ_ABORT.",
+      }),
+      "utf8",
+    );
+    const response = requireSearchResults(
+      await searchWiki(root, { query: "QUARTZ_ABORT" }),
+    );
+    expect(response.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#service",
+    ]);
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/service.md",
+      sections: ["service"],
+    });
+    expect(read.sections[0]?.content).toContain("QUARTZ_ABORT");
+  });
+
   test("search returns compact section references for progressive reads", async () => {
     const root = await createRoot();
     await writeFile(

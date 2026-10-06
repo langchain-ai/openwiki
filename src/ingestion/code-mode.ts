@@ -3,10 +3,14 @@ import path from "node:path";
 import {
   getProviderAuthMethod,
   getProviderConfig,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_VERSION,
+  providerUsesEntraId,
   resolveConfiguredProvider,
+  resolveOpenAICompatibleEntraScope,
   resolveOpenAiCompatibleStreaming,
 } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
@@ -38,7 +42,9 @@ const OPENWIKI_LEGACY_TEMPLATE_LINES = [
 ];
 
 // Root agent-instruction files OpenWiki keeps pointed at the generated wiki.
-// Each is created when missing and refreshed in place when already present.
+// Each is refreshed in place when present. Only AGENTS.md is created when
+// missing: Claude Code reads AGENTS.md when no CLAUDE.md exists, but an
+// existing CLAUDE.md shadows it, so that file still needs the block.
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
 const CLAUDE_AGENTS_IMPORT = "@AGENTS.md";
 
@@ -246,6 +252,7 @@ async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
 ): Promise<{ agentsPath: string; nextContent: string | undefined }> {
+  const isClaude = path.basename(agentsPath) === "CLAUDE.md";
   let currentContent = "";
 
   try {
@@ -254,9 +261,10 @@ async function prepareCodeModeAgentSnippet(
     if (!isFileNotFoundError(error)) {
       throw error;
     }
+    if (isClaude) {
+      return { agentsPath, nextContent: undefined };
+    }
   }
-
-  const isClaude = path.basename(agentsPath) === "CLAUDE.md";
 
   // A CLAUDE.md that is nothing but the AGENTS.md import is already canonical:
   // leave it byte-for-byte so we never rewrite a file that has nothing to fix.
@@ -463,7 +471,16 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
   const config = getProviderConfig(provider);
   const lines = [`OPENWIKI_PROVIDER: ${provider}`];
 
-  if (getProviderAuthMethod(provider) === "oauth") {
+  if (providerUsesEntraId(provider, env)) {
+    lines.push(
+      `${OPENAI_COMPATIBLE_AUTH_ENV_KEY}: entra-id`,
+      `${OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY}: ${JSON.stringify(
+        resolveOpenAICompatibleEntraScope(env),
+      )}`,
+      "# Configure unattended Azure Identity before Run OpenWiki (for example,",
+      "# azure/login with OIDC, managed identity, or workload identity).",
+    );
+  } else if (getProviderAuthMethod(provider) === "oauth") {
     // The stored access token is short-lived and refreshed in place, so
     // pinning it as a repo secret would break on the first rotation.
     lines.push(
@@ -567,16 +584,22 @@ jobs:
         if: \${{ !cancelled() }}
         run: rm -f -- openwiki/.run.json
 
+      - name: List OpenWiki update paths
+        id: paths
+        if: \${{ !cancelled() }}
+        # CLAUDE.md is listed only when present: git add fails on a missing path
+        # and then stages nothing.
+        run: |
+          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
+          if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
+          echo "list=$paths" >> "$GITHUB_OUTPUT"
+
       - name: Create OpenWiki update pull request
         id: create-pr
         if: \${{ !cancelled() }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          add-paths: |
-            openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
+          add-paths: \${{ steps.paths.outputs.list }}
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"

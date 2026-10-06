@@ -35,10 +35,7 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.5.1", at: "2026-09-10T08:09:53.024Z" }
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-22T08:09:45.637Z
+generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
 ---
 
 # CI Scheduling and Self-Update
@@ -58,11 +55,11 @@ Both surfaces share the same cron parsing and validation code in
 lifecycle of a native schedule, and what the CI example files do.
 
 For the CLI surface that drives these flows see
-[CLI reference](/openwiki/operations/cli-reference.md); for what
+[CLI reference](./cli-reference.md); for what
 `code --update` actually regenerates see
-[repository generation](/openwiki/workflows/repository-generation.md); and for
+[repository generation](../workflows/repository-generation.md); and for
 the ingestion side used by native schedules see
-[personal ingestion](/openwiki/workflows/personal-ingestion.md).
+[personal ingestion](../workflows/personal-ingestion.md).
 
 ## Cron parsing and validation
 
@@ -264,6 +261,32 @@ in three ways beyond the auto-merge steps:
    `peter-evans/create-pull-request` to the v8.1.1 commit SHA
    (`5f6978faf089d4d20b00c7766989d076bb2fc7f1`).
 
+#### Auto-merge setup requirements
+
+Auto-merge is repository infrastructure rather than an OpenWiki runtime
+feature: the example creates a docs-only PR and only enables GitHub auto-merge
+after OpenWiki finishes successfully, so required branch checks and reviews
+still gate when the PR actually merges. Before using the variant, configure the
+repository once:
+
+1. Enable **Allow auto-merge** in the repository's pull request settings.
+2. Add branch protection or a ruleset for the default branch. Require the
+   checks that should gate generated docs, and decide whether OpenWiki PRs still
+   require human review.
+3. Create a fine-grained personal access token or GitHub App token scoped to the
+   target repository with permissions for **Contents: read and write** and
+   **Pull requests: read and write**, and save it as the `OPENWIKI_PR_TOKEN`
+   Actions secret.
+4. Copy the example to `.github/workflows/openwiki-update.yml`, pin the OpenWiki
+   version and provider, and add the provider secret.
+
+The dedicated token is deliberate: pull requests created with the default
+`GITHUB_TOKEN` do not start most `pull_request` workflows, so required PR checks
+may never run. Organization policies may require a GitHub App token instead of a
+personal access token. Keep the workflow's `add-paths` restricted to generated
+documentation, pin every action and package version, and do not auto-merge
+changes to executable workflow files.
+
 ### Scheduling and gating
 
 - **GitHub Actions** triggers on `schedule` (`cron: "0 8 * * *"`, interpreted in
@@ -293,6 +316,15 @@ regenerates that file from an internal template and would otherwise drop the
 fork guard; the discard runs `if: ${{ !cancelled() }}` so the guard survives
 whether the run succeeded or failed.
 
+The dogfood run is currently configured for OpenRouter with the model
+`z-ai/glm-5.2` (`OPENWIKI_PROVIDER: openrouter`, `OPENWIKI_MODEL_ID:
+z-ai/glm-5.2`, keyed by `OPENROUTER_API_KEY`). The workflow file documents a
+GitHub Copilot alternative in comments: set the `COPILOT_API_KEY` repository
+secret (a GitHub OAuth token) and switch to `OPENWIKI_PROVIDER: copilot` with
+`OPENWIKI_MODEL_ID: claude-sonnet-5`. The published-package examples use the
+same OpenRouter/GLM defaults, so external repositories can keep them or
+substitute their own provider and model.
+
 ### Ephemeral-runner resume caveat
 
 Repository generation and update are resumable: OpenWiki records in-progress work
@@ -306,9 +338,9 @@ plus full git history, as the only durable state carried between runs.
 
 ## Related pages
 
-- [CLI reference](/openwiki/operations/cli-reference.md) — the `cron`, `ingest`,
+- [CLI reference](./cli-reference.md) — the `cron`, `ingest`,
   and `code --update` commands invoked by these schedules.
-- [Repository generation](/openwiki/workflows/repository-generation.md) — what
+- [Repository generation](../workflows/repository-generation.md) — what
   `code --update` regenerates and its resumable page-job architecture.
-- [Personal ingestion](/openwiki/workflows/personal-ingestion.md) — the
+- [Personal ingestion](../workflows/personal-ingestion.md) — the
   ingestion run that native macOS schedules trigger.

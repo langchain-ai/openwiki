@@ -206,6 +206,54 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(mixedCaseInspection.output).toContain("Claims state");
   });
 
+  test("rejects arbitrary host shell commands without ignore rules", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const arbitraryCommand = await backend.execute("echo host-shell-access");
+    expect(arbitraryCommand.exitCode).toBe(1);
+    expect(arbitraryCommand.output).toContain("restricted");
+
+    const chainedCommand = await backend.execute(
+      "pwd && echo host-shell-access",
+    );
+    expect(chainedCommand.exitCode).toBe(1);
+
+    const allowed = await backend.execute("pwd");
+    expect(allowed.exitCode).toBe(0);
+    expect(allowed.output).toContain(rootDir);
+  });
+
+  test("confines repository chat shell execution without ignore rules", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: false,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    for (const command of [
+      "ls -la /",
+      "cat /etc/passwd",
+      "pwd && cat /etc/passwd",
+      "git\nrev-parse HEAD",
+      "git rev-parse HEAD; cat /etc/passwd",
+    ]) {
+      const result = await backend.execute(command);
+      expect(result.exitCode, command).toBe(1);
+      expect(result.output, command).toContain("restricted");
+    }
+
+    const allowed = await backend.execute("pwd");
+    expect(allowed.exitCode).toBe(0);
+    expect(allowed.output).toContain(rootDir);
+  });
+
   test("does not reserve personal-brain .claims paths", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
     const backend = new OpenWikiLocalShellBackend({
@@ -305,5 +353,72 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
     ).resolves.toBe("must not become a second file");
+  });
+
+  test("applies concurrent operations on one page in call order across backends", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "openwiki"));
+    const original = Array.from(
+      { length: 200 },
+      (_, index) =>
+        `- item ${index}: the long explanation of thing ${index}.\n`,
+    ).join("");
+    await writeFile(path.join(rootDir, "openwiki/page.md"), original, "utf8");
+    // A page worker and the code-owned lifecycle each build their own backend.
+    const worker = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      writableWikiPages: ["/openwiki/page.md"],
+    });
+    const lifecycle = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    // LangChain runs every tool call of one model turn concurrently.
+    const [first, second, read] = await Promise.all([
+      worker.edit(
+        "/openwiki/page.md",
+        "- item 3: the long explanation of thing 3.",
+        "- item 3: short.",
+      ),
+      worker.edit(
+        "/openwiki/page.md",
+        "- item 150: the long explanation of thing 150.",
+        "- item 150: short.",
+      ),
+      lifecycle.readRaw("/openwiki/page.md"),
+    ]);
+
+    const expected = original
+      .replace("- item 3: the long explanation of thing 3.", "- item 3: short.")
+      .replace(
+        "- item 150: the long explanation of thing 150.",
+        "- item 150: short.",
+      );
+    expect(first.error).toBeUndefined();
+    expect(second.error).toBeUndefined();
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe(expected);
+    expect(read.data?.content).toBe(expected);
+  });
+
+  test("releases a page after an operation on it throws", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    await expect(backend.readRaw("/openwiki/new.md")).rejects.toThrow();
+    await expect(backend.write("/openwiki/new.md", "ok")).resolves.toEqual(
+      expect.objectContaining({ path: "/openwiki/new.md" }),
+    );
   });
 });

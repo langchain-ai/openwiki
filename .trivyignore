@@ -1,0 +1,3 @@
+# No patched braces release exists yet for this stack-exhaustion DoS.
+# Remove this exception once GHSA-vfj7-8cjw-p6xm has a fixed version.
+CVE-2026-93687

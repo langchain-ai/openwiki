@@ -273,6 +273,8 @@ function makePromptProps(
   overrides: Partial<React.ComponentProps<typeof Prompt>> = {},
 ): React.ComponentProps<typeof Prompt> {
   return {
+    authMode: "api-key",
+    authModeSelectionIndex: 0,
     codeRepoPathInput: "",
     codeRepoRoot: "/tmp/repo",
     codeRepoSelectionIndex: 0,
@@ -326,6 +328,17 @@ describe("Prompt", () => {
   test("provider lists the selectable model providers", () => {
     const frame = promptFrame({ step: "provider" });
     expect(frame).toContain("Choose a model provider.");
+  });
+
+  test("auth-mode offers API key and Entra ID without requesting a token", () => {
+    const frame = promptFrame({
+      step: "auth-mode",
+      provider: "openai-compatible",
+      authModeSelectionIndex: 1,
+    });
+    expect(frame).toContain("API key");
+    expect(frame).toContain("Microsoft Entra ID");
+    expect(frame).toContain("never asks for or saves an access token");
   });
 
   test("api-key prompts to paste the provider key and masks it", () => {
@@ -384,6 +397,25 @@ describe("Prompt", () => {
     });
     expect(frame).toContain("base URL");
     expect(frame).toContain("https://api.local/v1");
+  });
+
+  test("Entra setup explains HTTPS and the gateway token scope", () => {
+    expect(
+      promptFrame({
+        step: "base-url",
+        provider: "openai-compatible",
+        authMode: "entra-id",
+      }),
+    ).toContain("HTTPS API root");
+    const frame = promptFrame({
+      step: "entra-scope",
+      provider: "openai-compatible",
+      authMode: "entra-id",
+      input: "api://gateway/.default",
+    });
+    expect(frame).toContain("OPENAI_COMPATIBLE_ENTRA_SCOPE");
+    expect(frame).toContain("api://gateway/.default");
+    expect(frame).toContain("checked on the first request");
   });
 
   test("region prompts for the provider region", () => {
