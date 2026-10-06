@@ -1,0 +1,26 @@
+src/agent/repository-prompts.ts
+  s_03984eb6438d2a::t_91b325a57604d8 51-54
+test/agent/repository-prompts.test.ts
+  s_03984eb6438d2a::t_91b325a57604d8 123-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3c210c02f159b8f017ab45a8b503699cd79c0343",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_03984eb6438d2a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1121d-a882-7702-a38e-db6e17d28181",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
