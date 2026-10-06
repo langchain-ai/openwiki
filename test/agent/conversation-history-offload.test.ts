@@ -26,6 +26,33 @@ async function createBackendFixture(options: { docsOnly: boolean }) {
 }
 
 describe("createAgentBackend conversation history offload", () => {
+  test("rejects excessive brace nesting before glob expansion", async () => {
+    const { backend } = await createBackendFixture({ docsOnly: true });
+    const glob = vi
+      .spyOn(OpenWikiLocalShellBackend.prototype, "glob")
+      .mockResolvedValue({ files: [] });
+
+    await expect(
+      backend.glob(`${"{".repeat(101)}value${"}".repeat(101)}`, "/"),
+    ).resolves.toEqual({
+      error: "Glob pattern nesting is too deep. Retry with a simpler pattern.",
+    });
+    expect(glob).not.toHaveBeenCalled();
+
+    await expect(
+      backend.glob(`[${"{".repeat(101)}value${"}".repeat(101)}`, "/"),
+    ).resolves.toEqual({
+      error: "Glob pattern nesting is too deep. Retry with a simpler pattern.",
+    });
+    expect(glob).not.toHaveBeenCalled();
+
+    await expect(backend.glob("src/*.{ts,tsx}", "/")).resolves.toMatchObject({
+      files: [],
+    });
+    expect(glob).toHaveBeenCalledOnce();
+    glob.mockRestore();
+  });
+
   test("returns a tool error when a glob exceeds the call stack", async () => {
     const { backend } = await createBackendFixture({ docsOnly: true });
     vi.spyOn(OpenWikiLocalShellBackend.prototype, "glob").mockRejectedValueOnce(
