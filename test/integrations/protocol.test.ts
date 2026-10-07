@@ -32,13 +32,6 @@ describe("OpenWiki host protocol", () => {
     });
     expect(() => BeginInput.parse({ root: "/tmp", mode: "chat" })).toThrow();
     expect(() =>
-      BeginInput.parse({
-        root: "/tmp",
-        mode: "init",
-        wikiDirectory: "../docs",
-      }),
-    ).toThrow();
-    expect(() =>
       BeginInput.parse({ root: "/tmp", mode: "init", extra: true }),
     ).toThrow();
     expect(RunInput).toBe(NextPageInput);

@@ -443,6 +443,24 @@ describe("HostSessionManager", () => {
     ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
+  test("rejects an unsafe requested directory before persistence", async () => {
+    const root = await createRepository();
+
+    await expect(
+      createManager().begin({
+        root,
+        mode: "init",
+        wikiDirectory: "../docs",
+      }),
+    ).rejects.toMatchObject({
+      name: "HostIntegrationError",
+      code: "invalid_input",
+    });
+    await expect(
+      readFile(path.join(root, ".openwiki.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   test("requires the exact active run ID", async () => {
     const root = await createRepository();
     const manager = createManager();

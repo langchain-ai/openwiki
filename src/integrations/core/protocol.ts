@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { normalizeRepositoryWikiDirectory } from "../../repository-wiki/paths.js";
 
 const HOST_ID_PATTERN = /^[a-z0-9-]{1,64}$/u;
 const CanonicalString = z.string().trim().min(1);
@@ -76,19 +75,9 @@ export const BeginInput: z.ZodType<BeginRequest> = z
   .object({
     root: CanonicalString,
     mode: z.enum(["init", "update"]),
-    wikiDirectory: CanonicalString.transform((value, context) => {
-      try {
-        return normalizeRepositoryWikiDirectory(value);
-      } catch (error) {
-        context.addIssue({
-          code: "custom",
-          message: error instanceof Error ? error.message : String(error),
-        });
-        return z.NEVER;
-      }
-    })
-      .describe('Repository-relative wiki directory, e.g. "docs".')
-      .optional(),
+    wikiDirectory: CanonicalString.describe(
+      'Repository-relative wiki directory, e.g. "docs".',
+    ).optional(),
     language: CanonicalString.describe(
       'BCP-47 code, e.g. "ko" (not "Korean").',
     ).optional(),
