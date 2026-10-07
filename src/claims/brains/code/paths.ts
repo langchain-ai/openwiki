@@ -1,5 +1,17 @@
 import path from "node:path";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPathError,
+  RepositoryWikiPaths,
+} from "../../../repository-wiki/paths.js";
 import { ClaimSessionError } from "../../core/errors.js";
+
+/**
+ * Backward-compatible path policy for unconfigured repository wikis.
+ */
+const DEFAULT_CLAIMS_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 /**
  * OpenWiki-owned claims directory relative to the wiki root.
@@ -16,40 +28,40 @@ export const RESERVED_WIKI_FILES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Canonicalizes a virtual generated-page path.
+ * Canonicalizes an actual generated-page path.
  *
  * @param page - Agent-supplied page path.
- * @returns Canonical `/openwiki/...md` path.
+ * @param wikiPaths - Physical repository wiki path policy.
+ * @returns Canonical actual Markdown path.
  */
-export function normalizeWikiPagePath(page: string): string {
-  const slashed = page.trim().replace(/\\/gu, "/");
-  if (hasTraversalSegment(slashed)) {
-    throw new ClaimSessionError(
-      `Claim page cannot contain traversal segments: ${page}`,
-    );
-  }
-  const absolute = path.posix.normalize(`/${slashed.replace(/^\/+/, "")}`);
-  if (!absolute.startsWith("/openwiki/") || !absolute.endsWith(".md")) {
-    throw new ClaimSessionError(
-      `Claim page must be a Markdown file below /openwiki: ${page}`,
-    );
-  }
-  if (!isGroundedWikiPage(absolute)) {
+export function normalizeWikiPagePath(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_CLAIMS_WIKI_PATHS,
+): string {
+  const canonical = normalizeActualWikiPagePath(page, wikiPaths, "Claim");
+  if (!isGroundedCanonicalWikiPage(canonical, wikiPaths)) {
     throw new ClaimSessionError(
       `Claim page is reserved or structural: ${page}`,
     );
   }
-  return absolute;
+  return canonical;
 }
 
 /**
  * Canonicalizes a model-supplied page with an optional wiki-root prefix.
  *
  * @param page - Agent-supplied canonical, repository-relative, or wiki-relative path.
- * @returns Canonical `/openwiki/...md` path for internal Claims APIs.
+ * @param wikiPaths - Physical repository wiki path policy.
+ * @returns Canonical actual Markdown path for internal Claims APIs.
  */
-export function normalizeClaimsToolPagePath(page: string): string {
-  return normalizeWikiPagePath(normalizeWikiToolPagePath(page));
+export function normalizeClaimsToolPagePath(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_CLAIMS_WIKI_PATHS,
+): string {
+  return normalizeWikiPagePath(
+    normalizeWikiToolPagePath(page, wikiPaths),
+    wikiPaths,
+  );
 }
 
 /**
@@ -59,55 +71,70 @@ export function normalizeClaimsToolPagePath(page: string): string {
  * pages that do not own Claims. Claims implementation files remain unavailable.
  *
  * @param page - Agent-supplied canonical, repository-relative, or wiki-relative path.
- * @returns Canonical `/openwiki/...md` path for a generated Markdown file.
+ * @param wikiPaths - Physical repository wiki path policy.
+ * @returns Canonical actual path for a generated Markdown file.
  */
-export function normalizeWikiToolPagePath(page: string): string {
-  const slashed = page.trim().replace(/\\/gu, "/");
+export function normalizeWikiToolPagePath(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_CLAIMS_WIKI_PATHS,
+): string {
+  const slashed = page.trim().replace(/\\/gu, "/").replace(/\/+/gu, "/");
   if (hasTraversalSegment(slashed)) {
     throw new ClaimSessionError(
       `Wiki page cannot contain traversal segments: ${page}`,
     );
   }
-  const unrooted = slashed.replace(/^\/+/, "");
-  const rooted =
-    unrooted === "openwiki" || unrooted.startsWith("openwiki/")
-      ? unrooted
-      : `openwiki/${unrooted}`;
-  const normalized = path.posix.normalize(`/${rooted}`);
-  const segments = normalized.toLowerCase().split("/");
-  if (
-    !normalized.startsWith("/openwiki/") ||
-    !normalized.endsWith(".md") ||
-    segments.includes(CLAIMS_DIRECTORY)
-  ) {
+  let canonical: string;
+  try {
+    const unrooted = slashed.replace(/^\/+/, "");
+    const namesConfiguredRoot =
+      unrooted === wikiPaths.directory ||
+      unrooted.startsWith(`${wikiPaths.directory}/`);
+    const namesDefaultRoot =
+      unrooted === DEFAULT_REPOSITORY_WIKI_DIRECTORY ||
+      unrooted.startsWith(`${DEFAULT_REPOSITORY_WIKI_DIRECTORY}/`);
+    canonical = wikiPaths.normalizePage(
+      slashed.startsWith("/") && !namesConfiguredRoot && !namesDefaultRoot
+        ? unrooted
+        : slashed,
+    );
+  } catch (error) {
+    if (!(error instanceof RepositoryWikiPathError)) throw error;
     throw new ClaimSessionError(
-      `Wiki page must be a Markdown file below /openwiki: ${page}`,
+      `Wiki page must be a Markdown file below ${wikiPaths.canonicalRoot}: ${page}`,
     );
   }
-  return normalized;
+  const segments = wikiPaths
+    .toWikiRelativePage(canonical)
+    .toLowerCase()
+    .split("/");
+  if (segments.includes(CLAIMS_DIRECTORY)) {
+    throw new ClaimSessionError(
+      `Wiki page must be a Markdown file below ${wikiPaths.canonicalRoot}: ${page}`,
+    );
+  }
+  return canonical;
 }
 
 /**
- * Determines whether a virtual Markdown path owns code-brain claim state.
+ * Determines whether an actual Markdown path owns code-brain claim state.
  *
- * @param page - Canonical or candidate virtual page path.
+ * @param page - Canonical or candidate actual page path.
+ * @param wikiPaths - Physical repository wiki path policy.
  * @returns Whether the page receives a `.claims` sidecar.
  */
-export function isGroundedWikiPage(page: string): boolean {
-  const slashed = page.replace(/\\/gu, "/");
-  if (hasTraversalSegment(slashed)) {
+export function isGroundedWikiPage(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_CLAIMS_WIKI_PATHS,
+): boolean {
+  try {
+    return isGroundedCanonicalWikiPage(
+      normalizeActualWikiPagePath(page, wikiPaths, "Claim"),
+      wikiPaths,
+    );
+  } catch {
     return false;
   }
-  const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/, "")}`);
-  const normalizedLower = normalized.toLowerCase();
-  const basename = path.posix.basename(normalizedLower);
-  const segments = normalizedLower.split("/");
-  return (
-    normalized.startsWith("/openwiki/") &&
-    normalized.endsWith(".md") &&
-    !segments.includes(CLAIMS_DIRECTORY) &&
-    !RESERVED_WIKI_FILES.has(basename)
-  );
 }
 
 /**
@@ -123,22 +150,80 @@ function hasTraversalSegment(filePath: string): boolean {
 }
 
 /**
- * Converts a virtual generated-page path into its repository-relative path.
+ * Converts an actual generated-page path into its repository-relative path.
  *
- * @param page - Canonical virtual page path.
- * @returns Repository-relative POSIX path beginning with `openwiki/`.
+ * @param page - Canonical actual page path.
+ * @param wikiPaths - Physical repository wiki path policy.
+ * @returns Repository-relative POSIX path beginning with the configured root.
  */
-export function toRepositoryPagePath(page: string): string {
-  return normalizeWikiPagePath(page).replace(/^\//u, "");
+export function toRepositoryPagePath(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_CLAIMS_WIKI_PATHS,
+): string {
+  return wikiPaths.toRepositoryPage(normalizeWikiPagePath(page, wikiPaths));
 }
 
 /**
- * Converts a virtual generated-page path into its sidecar-relative path.
+ * Converts an actual generated-page path into its sidecar-relative path.
  *
- * @param page - Canonical virtual page path.
- * @returns Path relative to `openwiki/.claims` with a `.json` extension.
+ * @param page - Canonical actual page path.
+ * @param wikiPaths - Physical repository wiki path policy.
+ * @returns Path relative to the configured `.claims` directory.
  */
-export function toClaimsSidecarRelativePath(page: string): string {
-  const relativePage = normalizeWikiPagePath(page).slice("/openwiki/".length);
+export function toClaimsSidecarRelativePath(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_CLAIMS_WIKI_PATHS,
+): string {
+  const relativePage = wikiPaths.toWikiRelativePage(
+    normalizeWikiPagePath(page, wikiPaths),
+  );
   return relativePage.replace(/\.md$/u, ".json");
+}
+
+/**
+ * Canonicalizes a page that must already name the configured wiki root.
+ */
+function normalizeActualWikiPagePath(
+  page: string,
+  wikiPaths: RepositoryWikiPaths,
+  label: string,
+): string {
+  const slashed = page.trim().replace(/\\/gu, "/").replace(/\/+/gu, "/");
+  if (hasTraversalSegment(slashed)) {
+    throw new ClaimSessionError(
+      `${label} page cannot contain traversal segments: ${page}`,
+    );
+  }
+  const unrooted = slashed.replace(/^\/+/, "");
+  if (
+    unrooted !== wikiPaths.directory &&
+    !unrooted.startsWith(`${wikiPaths.directory}/`)
+  ) {
+    throw new ClaimSessionError(
+      `${label} page must be a Markdown file below ${wikiPaths.canonicalRoot}: ${page}`,
+    );
+  }
+  try {
+    return wikiPaths.normalizePage(slashed);
+  } catch (error) {
+    if (!(error instanceof RepositoryWikiPathError)) throw error;
+    throw new ClaimSessionError(
+      `${label} page must be a Markdown file below ${wikiPaths.canonicalRoot}: ${page}`,
+    );
+  }
+}
+
+/**
+ * Tests whether a canonical wiki page owns factual Claims state.
+ */
+function isGroundedCanonicalWikiPage(
+  canonical: string,
+  wikiPaths: RepositoryWikiPaths,
+): boolean {
+  const relative = wikiPaths.toWikiRelativePage(canonical).toLowerCase();
+  const basename = path.posix.basename(relative);
+  const segments = relative.split("/");
+  return (
+    !segments.includes(CLAIMS_DIRECTORY) && !RESERVED_WIKI_FILES.has(basename)
+  );
 }

@@ -4,9 +4,21 @@ import path from "node:path";
 import { z } from "zod";
 import type { PersistedPreparedWikiState } from "../agent/wiki-finalizer.js";
 import type { UpdateMetadata } from "../agent/types.js";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+  resolveRepositoryWikiRoot,
+} from "../repository-wiki/paths.js";
 import { RepositoryRunError } from "./errors.js";
+
+/**
+ * Backward-compatible path policy for unconfigured repository wikis.
+ */
+const DEFAULT_RUN_STATE_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 /**
  * Basename of the one durable repository-generation checkpoint.
@@ -58,7 +70,7 @@ export interface PageJob {
   id: string;
 
   /**
-   * Canonical virtual Markdown path below `/openwiki/`.
+   * Canonical actual Markdown path below the configured wiki root.
    */
   path: string;
 
@@ -217,6 +229,9 @@ export interface RepositoryRunState {
   plan?: RepositoryRunPlan;
 }
 
+/**
+ * Runtime validator for persisted repository update metadata.
+ */
 const UpdateMetadataSchema = z
   .object({
     updatedAt: z.string(),
@@ -228,6 +243,9 @@ const UpdateMetadataSchema = z
   })
   .strict();
 
+/**
+ * Runtime validator for serialized deterministic wiki preparation state.
+ */
 const PersistedPreparedWikiStateSchema = z
   .object({
     generatedProvenance: z.array(
@@ -248,6 +266,9 @@ const PersistedPreparedWikiStateSchema = z
   })
   .strict();
 
+/**
+ * Runtime validator for one durable page job.
+ */
 const PageJobSchema = z
   .object({
     id: z.string().uuid(),
@@ -262,6 +283,9 @@ const PageJobSchema = z
   })
   .strict();
 
+/**
+ * Runtime validator for one complete durable repository run checkpoint.
+ */
 const RepositoryRunStateSchema = z
   .object({
     schemaVersion: z.literal(REPOSITORY_RUN_STATE_SCHEMA_VERSION),
@@ -298,25 +322,40 @@ const RepositoryRunStateSchema = z
   .strict();
 
 /**
- * Resolves the checkpoint path below an absolute repository root.
+ * Resolves the checkpoint path below the configured repository wiki root.
+ *
+ * @param root - Absolute repository root.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
+ * @returns Absolute durable checkpoint path.
  */
-export function repositoryRunStatePath(root: string): string {
-  return path.join(root, OPEN_WIKI_DIR, REPOSITORY_RUN_STATE_BASENAME);
+export function repositoryRunStatePath(
+  root: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_RUN_STATE_WIKI_PATHS,
+): string {
+  return path.join(
+    resolveRepositoryWikiRoot(root, wikiPaths.directory),
+    REPOSITORY_RUN_STATE_BASENAME,
+  );
 }
 
 /**
  * Loads and validates resumable state.
  *
+ * @param root - Absolute repository root.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Valid state, or `null` when no checkpoint exists.
  * @throws RepositoryRunError when the checkpoint is malformed.
  */
 export async function readRepositoryRunState(
   root: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_RUN_STATE_WIKI_PATHS,
 ): Promise<RepositoryRunState | null> {
-  const file = repositoryRunStatePath(root);
+  const file = repositoryRunStatePath(root, wikiPaths);
   try {
     const parsed: unknown = JSON.parse(await readFile(file, "utf8"));
-    return RepositoryRunStateSchema.parse(parsed);
+    const state = RepositoryRunStateSchema.parse(parsed);
+    assertRepositoryRunStatePaths(state, wikiPaths);
+    return state;
   } catch (error) {
     if (isFileNotFoundError(error)) return null;
 
@@ -333,14 +372,19 @@ export async function readRepositoryRunState(
 /**
  * Atomically replaces the complete repository-generation checkpoint.
  *
+ * @param root - Absolute repository root.
+ * @param state - Complete validated durable run state.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @throws Error when validation or filesystem persistence fails.
  */
 export async function writeRepositoryRunState(
   root: string,
   state: RepositoryRunState,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_RUN_STATE_WIKI_PATHS,
 ): Promise<void> {
   RepositoryRunStateSchema.parse(state);
-  const file = repositoryRunStatePath(root);
+  assertRepositoryRunStatePaths(state, wikiPaths);
+  const file = repositoryRunStatePath(root, wikiPaths);
   await mkdir(path.dirname(file), { recursive: true });
 
   const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
@@ -357,7 +401,60 @@ export async function writeRepositoryRunState(
 
 /**
  * Idempotently removes the checkpoint after completion or init rollback.
+ *
+ * @param root - Absolute repository root.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  */
-export async function removeRepositoryRunState(root: string): Promise<void> {
-  await rm(repositoryRunStatePath(root), { force: true });
+export async function removeRepositoryRunState(
+  root: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_RUN_STATE_WIKI_PATHS,
+): Promise<void> {
+  await rm(repositoryRunStatePath(root, wikiPaths), { force: true });
+}
+
+/**
+ * Rejects durable page identities outside the configured repository wiki root.
+ */
+function assertRepositoryRunStatePaths(
+  state: RepositoryRunState,
+  wikiPaths: RepositoryWikiPaths,
+): void {
+  const factualPages = [
+    ...state.requiredRewritePages,
+    ...state.initialPages,
+    ...(state.plan?.deletePages ?? []),
+    ...(state.plan?.pages.flatMap((page) => [
+      page.path,
+      ...page.relatedPages,
+    ]) ?? []),
+  ];
+  for (const page of factualPages) {
+    assertCanonicalRunPage(page, wikiPaths, true);
+  }
+  for (const page of state.preparedWiki.generatedProvenance.map(
+    ({ page }) => page,
+  )) {
+    assertCanonicalRunPage(page, wikiPaths, false);
+  }
+}
+
+/**
+ * Rejects one non-canonical or out-of-root durable page identity.
+ */
+function assertCanonicalRunPage(
+  page: string,
+  wikiPaths: RepositoryWikiPaths,
+  factual: boolean,
+): void {
+  try {
+    const canonical = factual
+      ? normalizeWikiPagePath(page, wikiPaths)
+      : wikiPaths.normalizePage(page);
+    if (canonical !== page) throw new Error("non-canonical page");
+  } catch {
+    throw new RepositoryRunError(
+      "invalid_state",
+      `OpenWiki run state contains a page outside ${wikiPaths.canonicalRoot}: ${page}`,
+    );
+  }
 }
