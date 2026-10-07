@@ -14,6 +14,9 @@ import {
  */
 export const REPOSITORY_WIKI_CONFIG_FILE = ".openwiki.json";
 
+/**
+ * Maximum number of configuration bytes read before rejecting the file.
+ */
 const MAX_REPOSITORY_WIKI_CONFIG_BYTES = 16 * 1024;
 
 /**
@@ -50,6 +53,9 @@ export interface RepositoryWikiLocation {
  * Error raised for malformed or conflicting repository wiki configuration.
  */
 export class RepositoryWikiConfigError extends Error {
+  /**
+   * Creates a repository wiki configuration error.
+   */
   constructor(message: string) {
     super(message);
     this.name = "RepositoryWikiConfigError";
@@ -170,6 +176,9 @@ export async function persistRepositoryWikiConfig(
   );
 }
 
+/**
+ * Parses and validates the complete repository wiki configuration document.
+ */
 function parseRepositoryWikiConfig(content: string): RepositoryWikiConfig {
   let parsed: unknown;
   try {
@@ -209,6 +218,9 @@ function parseRepositoryWikiConfig(content: string): RepositoryWikiConfig {
   }
 }
 
+/**
+ * Resolves the repository-root configuration file path.
+ */
 function repositoryConfigPath(repositoryRoot: string): string {
   if (!path.isAbsolute(repositoryRoot)) {
     throw new RepositoryWikiConfigError(
@@ -218,20 +230,32 @@ function repositoryConfigPath(repositoryRoot: string): string {
   return path.join(path.resolve(repositoryRoot), REPOSITORY_WIKI_CONFIG_FILE);
 }
 
+/**
+ * Creates a consistently prefixed repository wiki configuration error.
+ */
 function configError(reason: string): RepositoryWikiConfigError {
   return new RepositoryWikiConfigError(
     `Invalid ${REPOSITORY_WIKI_CONFIG_FILE}: ${reason}.`,
   );
 }
 
+/**
+ * Tests whether a filesystem operation failed because its path was absent.
+ */
 function isMissingFileError(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === "ENOENT";
 }
 
+/**
+ * Tests whether a filesystem operation rejected a symbolic link.
+ */
 function isSymbolicLinkError(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === "ELOOP";
 }
 
+/**
+ * Tests whether two filesystem observations identify the same file.
+ */
 function sameFileIdentity(left: Stats, right: Stats): boolean {
   if (left.ino === 0 || right.ino === 0) return true;
   return left.dev === right.dev && left.ino === right.ino;

@@ -9,6 +9,9 @@ export const DEFAULT_REPOSITORY_WIKI_DIRECTORY = "openwiki";
  * Error raised when a repository wiki directory or page path is unsafe.
  */
 export class RepositoryWikiPathError extends Error {
+  /**
+   * Creates a repository wiki path error.
+   */
   constructor(message: string) {
     super(message);
     this.name = "RepositoryWikiPathError";
@@ -117,6 +120,9 @@ export class RepositoryWikiPaths {
    */
   readonly instructionsPage: string;
 
+  /**
+   * Creates path operations scoped to one repository wiki directory.
+   */
   constructor(wikiDirectory: string) {
     this.directory = normalizeRepositoryWikiDirectory(wikiDirectory);
     this.canonicalRoot = `/${this.directory}`;
@@ -190,6 +196,9 @@ export class RepositoryWikiPaths {
     );
   }
 
+  /**
+   * Tests whether a repository-relative path is the wiki root or a descendant.
+   */
   private isRepositoryRelativeWikiPath(pathValue: string): boolean {
     return (
       pathValue === this.directory || pathValue.startsWith(`${this.directory}/`)
@@ -197,6 +206,9 @@ export class RepositoryWikiPaths {
   }
 }
 
+/**
+ * Validates and slash-normalizes one candidate wiki path.
+ */
 function normalizeCandidate(value: string): string {
   if (value !== value.trim() || value.length === 0 || /\p{Cc}/u.test(value)) {
     throw new RepositoryWikiPathError(`Invalid repository wiki path: ${value}`);
@@ -218,6 +230,9 @@ function normalizeCandidate(value: string): string {
   return slashed;
 }
 
+/**
+ * Normalizes a repository path candidate for containment checks.
+ */
 function normalizeRepositoryCandidate(value: string): string {
   const slashed = value.trim().replaceAll("\\", "/");
   if (
@@ -231,6 +246,9 @@ function normalizeRepositoryCandidate(value: string): string {
   return normalized === "/" ? "" : normalized;
 }
 
+/**
+ * Creates a consistently formatted invalid-directory error.
+ */
 function invalidDirectoryError(
   value: string,
   reason: string,

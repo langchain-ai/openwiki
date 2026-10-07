@@ -5,12 +5,23 @@ import {
   resolveRepositoryWikiRoot,
 } from "./paths.js";
 
+/**
+ * User-authored instructions file allowed in an otherwise empty wiki root.
+ */
 const REPOSITORY_WIKI_INSTRUCTIONS_FILE = "INSTRUCTIONS.md";
+
+/**
+ * Regular files that establish OpenWiki ownership of a directory.
+ */
 const MANAGED_FILE_MARKERS = new Set([
   ".last-update.json",
   ".page-manifest.json",
   ".run.json",
 ]);
+
+/**
+ * Directories that establish OpenWiki ownership of a directory.
+ */
 const MANAGED_DIRECTORY_MARKERS = new Set([".claims"]);
 
 /**
@@ -93,6 +104,9 @@ export async function inspectRepositoryWikiOwnership(
     : { status: "unmanaged", entryCount: entries.length };
 }
 
+/**
+ * Rejects symbolic links and non-directory entries along a proposed wiki path.
+ */
 async function inspectPathComponents(
   repositoryRoot: string,
   wikiDirectory: string,
@@ -129,6 +143,9 @@ async function inspectPathComponents(
   return null;
 }
 
+/**
+ * Tests whether a filesystem operation failed because its path was absent.
+ */
 function isMissingFileError(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === "ENOENT";
 }
