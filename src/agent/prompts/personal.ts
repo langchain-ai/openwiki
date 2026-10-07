@@ -76,11 +76,13 @@ OpenWiki CLI reference:
 - \`openwiki\` opens the interactive code-mode chat for the current repository and waits for user input.
 - \`openwiki "message"\` sends a code-mode chat message for the current repository immediately, then keeps the chat open.
 - \`openwiki personal\` opens the interactive local personal brain chat.
-- \`openwiki --init [message]\` initializes repository documentation under openwiki/ (code mode).
-- \`openwiki --update [message]\` updates repository documentation under openwiki/ (code mode).
+- \`openwiki --init [message]\` initializes repository documentation in its configured wiki directory (openwiki/ by default).
+- \`openwiki --init --wiki-dir docs [message]\` initializes repository documentation in docs/ and records that choice in .openwiki.json.
+- \`openwiki --update [message]\` updates repository documentation in its configured wiki directory, including a custom directory saved in .openwiki.json.
+- \`openwiki --update --wiki-dir docs [message]\` recovers an existing OpenWiki-managed custom directory when .openwiki.json is missing.
 - \`openwiki personal --init [message]\` initializes the local personal brain wiki under ${openWikiLocalWikiDisplayPath}.
-- \`openwiki code --init [message]\` initializes repository documentation under openwiki/.
-- \`openwiki --mode code --init [message]\` initializes repository documentation under openwiki/.
+- \`openwiki code --init [message]\` initializes repository documentation in its configured wiki directory.
+- \`openwiki --mode code --init [message]\` initializes repository documentation in its configured wiki directory.
 - \`openwiki --mode personal --init [message]\` initializes the local personal brain wiki under ${openWikiLocalWikiDisplayPath}.
 - \`openwiki -p "message"\` or \`openwiki --print "message"\` runs once, prints the final assistant output, and exits.
 - \`openwiki --modelId <id>\` selects a model ID for that run.

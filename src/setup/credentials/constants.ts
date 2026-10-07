@@ -143,7 +143,7 @@ export const SOURCE_OPTIONS = [
     id: "langsmith",
     instructions: [
       "Document how your agent runs, grounded in its LangSmith traces.",
-      "List the projects to document; written to openwiki/.langsmith.json (committed).",
+      "List the projects to document; written to .langsmith.json in the configured wiki directory (committed).",
     ],
     // No secret input: the LangSmith key is captured by the earlier `langsmith`
     // spine step (and provided as a CI secret), and used at pull time, not here.

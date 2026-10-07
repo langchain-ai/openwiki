@@ -1240,6 +1240,7 @@ export const helpContent: HelpContent = {
     "Run an agent that generates and maintains a project or local knowledge wiki.",
   usage: [
     "openwiki [--init|--update] [message]",
+    "openwiki [--init|--update] [--wiki-dir <directory>] [message]",
     "openwiki code [--init|--update] [message]",
     "openwiki personal [--init|--update] [message]",
     "openwiki --mode <personal|code> [--init|--update] [message]",
@@ -1268,7 +1269,7 @@ export const helpContent: HelpContent = {
     {
       label: "openwiki code",
       description:
-        "Run OpenWiki for the current repository, writing docs under repo openwiki/ and using GitHub Actions for recurrence.",
+        "Run OpenWiki for the current repository, writing docs under the configured wiki directory (openwiki/ by default) and using GitHub Actions for recurrence.",
     },
     {
       label: "openwiki personal",
@@ -1357,7 +1358,7 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
+        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving its INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",

@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import {
   afterEach,
   beforeEach,
@@ -34,19 +37,6 @@ vi.mock("../../src/ingestion/code-mode.ts", () => ({
 }));
 vi.mock("../../src/ingestion/ingestion.ts", () => ({
   runOpenWikiIngestion: vi.fn(),
-}));
-vi.mock("../../src/repository-wiki/preparation.ts", () => ({
-  prepareRepositoryWikiLocation: vi.fn(
-    (_root: string, options: { requestedDirectory?: string | null }) =>
-      Promise.resolve({
-        location: {
-          directory: options.requestedDirectory ?? "openwiki",
-          root: "/repository/openwiki",
-          source: options.requestedDirectory ? "option" : "default",
-        },
-        configAction: options.requestedDirectory ? "persisted" : "none",
-      }),
-  ),
 }));
 vi.mock("../../src/scheduling/schedules.ts", () => ({
   deleteConnectorSchedules: vi.fn(),
@@ -86,7 +76,6 @@ import {
   runCodeModeConnectors,
 } from "../../src/ingestion/code-mode.ts";
 import { runOpenWikiIngestion } from "../../src/ingestion/ingestion.ts";
-import { prepareRepositoryWikiLocation } from "../../src/repository-wiki/preparation.ts";
 import {
   deleteConnectorSchedules,
   listConnectorSchedules,
@@ -95,7 +84,7 @@ import {
 } from "../../src/scheduling/schedules.ts";
 import { saveOpenWikiOnboardingConfig } from "../../src/setup/onboarding.ts";
 import { runVisualizeServer } from "../../src/visualize/server.ts";
-import type { CliCommand } from "../../src/cli/commands.ts";
+import { parseCommand, type CliCommand } from "../../src/cli/commands.ts";
 import {
   runAuthCommand,
   runCronCommand,
@@ -617,35 +606,37 @@ describe("runPrintCommand", () => {
     expect(process.exitCode).toBe(0);
   });
 
-  test("prepares and forwards an explicitly selected repository wiki", async () => {
+  test("parses, persists, and forwards a selected repository wiki", async () => {
     vi.mocked(runCodeModeConnectors).mockResolvedValue(undefined);
     vi.mocked(runOpenWikiAgent).mockResolvedValue(undefined as never);
-
-    await runPrintCommand(
-      makeCommand("run", {
-        command: "init",
-        dryRun: false,
-        language: null,
-        mode: "code",
-        modeSource: "option",
-        modelId: null,
-        print: true,
-        shouldStart: true,
-        userMessage: null,
-        telemetryFile: null,
-        wikiDirectory: "docs",
-      }),
+    const repositoryRoot = await mkdtemp(
+      path.join(tmpdir(), "openwiki-cli-runner-"),
     );
+    const previousCwd = process.cwd();
 
-    expect(prepareRepositoryWikiLocation).toHaveBeenCalledWith(
-      expect.any(String),
-      { mode: "init", requestedDirectory: "docs" },
-    );
-    const setupOptions = vi.mocked(ensureCodeModeRepoSetup).mock.calls[0]?.[1];
-    expect(setupOptions?.wikiLocation?.directory).toBe("docs");
-    const agentCall = vi.mocked(runOpenWikiAgent).mock.calls[0];
-    expect(agentCall?.[0]).toBe("init");
-    expect(agentCall?.[2].wikiLocation?.directory).toBe("docs");
+    try {
+      process.chdir(repositoryRoot);
+      const command = parseCommand(["--init", "--wiki-dir", "docs", "--print"]);
+      expect(command.kind).toBe("run");
+      if (command.kind !== "run") {
+        throw new Error(`Expected run command, received ${command.kind}.`);
+      }
+
+      await runPrintCommand(command);
+
+      await expect(
+        readFile(path.join(repositoryRoot, ".openwiki.json"), "utf8"),
+      ).resolves.toBe('{\n  "wikiDirectory": "docs"\n}\n');
+      const setupOptions = vi.mocked(ensureCodeModeRepoSetup).mock
+        .calls[0]?.[1];
+      expect(setupOptions?.wikiLocation?.directory).toBe("docs");
+      const agentCall = vi.mocked(runOpenWikiAgent).mock.calls[0];
+      expect(agentCall?.[0]).toBe("init");
+      expect(agentCall?.[2].wikiLocation?.directory).toBe("docs");
+    } finally {
+      process.chdir(previousCwd);
+      await rm(repositoryRoot, { recursive: true, force: true });
+    }
   });
 
   test("prints the how-to-fix panel on an auth failure and exits 1", async () => {

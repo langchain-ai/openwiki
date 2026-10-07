@@ -217,7 +217,7 @@ export function useInitSetup({
   const [langsmithRegionSelectionIndex, setLangsmithRegionSelectionIndex] =
     useState(0);
   // True once the LangSmith workspaces were opened this run; guards the WYSIWYG
-  // write so an untouched setup never rewrites openwiki/.langsmith.json.
+  // write so an untouched setup never rewrites the wiki's .langsmith.json.
   const [langsmithSourcesTouched, setLangsmithSourcesTouched] = useState(false);
   // True once the user confirms a provider this session. Provider always holds a
   // default value, so a null-check cannot detect the in-session choice.
@@ -2166,7 +2166,7 @@ export function useInitSetup({
     if (step === "final") {
       // Commit the LangSmith workspaces as the exact set (WYSIWYG add/edit/remove),
       // only when the sub-menu was opened — so an aborted or untouched setup never
-      // rewrites openwiki/.langsmith.json.
+      // rewrites the wiki's .langsmith.json.
       if (selectedMode === "code" && langsmithSourcesTouched) {
         try {
           // Freshly-entered keys go to ~/.openwiki/.env (never committed); an empty
