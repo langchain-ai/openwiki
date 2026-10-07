@@ -1,4 +1,8 @@
 import type { OpenWikiIgnore } from "./openwiki-ignore.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { CODE_SYSTEM_PROMPTS, CODE_USER_PROMPTS } from "./prompts/code.js";
 import {
   PERSONAL_SYSTEM_PROMPTS,
@@ -11,6 +15,13 @@ import type {
   UpdateMetadata,
 } from "./types.js";
 
+/**
+ * Unchanged repository wiki policy used by compatibility callers.
+ */
+const DEFAULT_PROMPT_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
+
 export {
   CODE_SYSTEM_PROMPTS,
   CODE_USER_PROMPTS,
@@ -18,11 +29,22 @@ export {
   PERSONAL_USER_PROMPTS,
 };
 
+/**
+ * Builds the command-specific system prompt with actual repository wiki paths.
+ *
+ * @param command - Current OpenWiki command.
+ * @param outputMode - Current output target.
+ * @param language - Optional resolved documentation language.
+ * @param openWikiIgnore - Optional active repository ignore boundary.
+ * @param wikiPaths - Actual repository wiki path policy for code mode.
+ * @returns Fully substituted system prompt.
+ */
 export function createSystemPrompt(
   command: OpenWikiCommand,
   outputMode: OpenWikiOutputMode = "local-wiki",
   language?: string,
   openWikiIgnore?: OpenWikiIgnore,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PROMPT_WIKI_PATHS,
 ): string {
   if (outputMode === "repository" && command !== "chat") {
     throw new Error("Repository generation does not use shared agent prompts.");
@@ -44,6 +66,13 @@ export function createSystemPrompt(
     .replace("{OPENWIKIIGNORE_INSTRUCTIONS}", () =>
       formatOpenWikiIgnoreInstructions(openWikiIgnore),
     )
+    .replaceAll("{REPOSITORY_WIKI_DIRECTORY}", () => wikiPaths.directory)
+    .replaceAll("{REPOSITORY_WIKI_ROOT}", () => wikiPaths.canonicalRoot)
+    .replaceAll("{REPOSITORY_QUICKSTART_PATH}", () => wikiPaths.quickstartPage)
+    .replaceAll(
+      "{REPOSITORY_INSTRUCTIONS_PATH}",
+      () => wikiPaths.instructionsPage,
+    )
     .trim();
 
   return command === "chat"
@@ -59,6 +88,7 @@ export function createSystemPrompt(
  * @param userMessage - Optional user instruction.
  * @param outputMode - Current output target.
  * @param runtimeRoot - Optional host runtime root.
+ * @param wikiPaths - Actual repository wiki path policy for code mode.
  * @returns Fully substituted user prompt.
  */
 export function createUserPrompt(
@@ -67,6 +97,7 @@ export function createUserPrompt(
   userMessage: string | null = null,
   outputMode: OpenWikiOutputMode = "local-wiki",
   runtimeRoot?: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PROMPT_WIKI_PATHS,
 ): string {
   if (outputMode === "repository" && command !== "chat") {
     throw new Error("Repository generation does not use shared agent prompts.");
@@ -90,19 +121,22 @@ export function createUserPrompt(
         : "",
     )
     .replace("{RUNTIME_CONTEXT}", () =>
-      runtimeRoot ? formatRuntimeContext(runtimeRoot, outputMode) : "",
+      runtimeRoot
+        ? formatRuntimeContext(runtimeRoot, outputMode, wikiPaths)
+        : "",
     )
     .trim();
 }
 
 export function formatRuntimeRootInstruction(
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PROMPT_WIKI_PATHS,
 ): string {
   if (outputMode === "local-wiki") {
     return "Filesystem tools use a virtual root: / means the local wiki directory above. Write wiki pages directly under /, for example /quickstart.md and /sources/gmail.md. Do not create a nested /openwiki directory.";
   }
 
-  return "Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under /openwiki, for example /openwiki/quickstart.md and /openwiki/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.";
+  return `Filesystem tools use a virtual root: / means the repository root. The generated repository wiki lives under ${wikiPaths.canonicalRoot}, for example ${wikiPaths.quickstartPage} and ${wikiPaths.canonicalRoot}/architecture/overview.md. Inspect source files from repository-root paths such as /README.md, /src/agent/index.ts, and /package.json.`;
 }
 
 function formatLastUpdate(lastUpdate: UpdateMetadata | null): string {
@@ -182,9 +216,18 @@ function formatOpenWikiIgnoreInstructions(
 ${patterns}`;
 }
 
+/**
+ * Formats host and virtual runtime roots without exposing a false wiki path.
+ *
+ * @param runtimeRoot - Absolute host runtime root.
+ * @param outputMode - Current output target.
+ * @param wikiPaths - Actual repository wiki path policy for code mode.
+ * @returns Model-facing runtime context.
+ */
 function formatRuntimeContext(
   runtimeRoot: string,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths,
 ): string {
   const rootLabel =
     outputMode === "local-wiki" ? "Local wiki root" : "Repository root";
@@ -193,7 +236,7 @@ function formatRuntimeContext(
 ${runtimeRoot}
 
 Runtime note:
-- ${formatRuntimeRootInstruction(outputMode)}
+- ${formatRuntimeRootInstruction(outputMode, wikiPaths)}
 - Do not pass host absolute paths to filesystem tools. A host absolute path will be treated as a virtual path and will write to the wrong location.
 - ${outputMode === "local-wiki" ? "Shell execution is disabled in personal mode. Read connector evidence with openwiki_list_raw_items and openwiki_read_raw_item." : "Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, read_file, glob, and grep for repository inspection."}
 - Do not search parent directories or unrelated directories.`;

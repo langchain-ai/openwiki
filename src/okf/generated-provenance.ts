@@ -131,14 +131,20 @@ export function deserializeGeneratedProvenance(
  *
  * @param backend - Active wiki filesystem abstraction.
  * @param outputMode - Current wiki target.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
  * @returns Pre-run concept state keyed by virtual page path.
  */
 export async function snapshotGeneratedProvenance(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<GeneratedProvenanceSnapshot> {
   const snapshots = new Map<string, ConceptSnapshot>();
-  for (const page of await listWikiConceptPaths(backend, outputMode)) {
+  for (const page of await listWikiConceptPaths(
+    backend,
+    outputMode,
+    repositoryWikiRoot,
+  )) {
     const content = await readRequiredContent(backend, page);
     snapshots.set(page, {
       bodyHash: hashConceptBody(content),
@@ -160,6 +166,7 @@ export async function snapshotGeneratedProvenance(
  * @param now - Shared run timestamp used for new generated events.
  * @param producerActor - Producer responsible for body changes in this run.
  * @param producerActorsByPage - Page-specific producer overrides.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
  */
 export async function finalizeGeneratedProvenance(
   backend: BackendProtocolV2,
@@ -168,6 +175,7 @@ export async function finalizeGeneratedProvenance(
   now: string,
   producerActor: string,
   producerActorsByPage?: ReadonlyMap<string, string>,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<void> {
   if (producerActor.trim().length === 0) {
     throw new Error(
@@ -182,7 +190,11 @@ export async function finalizeGeneratedProvenance(
     }
   }
 
-  for (const page of await listWikiConceptPaths(backend, outputMode)) {
+  for (const page of await listWikiConceptPaths(
+    backend,
+    outputMode,
+    repositoryWikiRoot,
+  )) {
     let content: string;
     try {
       content = await readRequiredContent(backend, page);

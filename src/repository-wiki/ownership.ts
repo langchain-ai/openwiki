@@ -57,19 +57,20 @@ export async function inspectRepositoryWikiOwnership(
 
   if (entries.length === 0) return { status: "empty" };
 
-  if (
-    entries.length === 1 &&
-    entries[0]?.name === REPOSITORY_WIKI_INSTRUCTIONS_FILE
-  ) {
+  const instructionsEntry = entries.find(
+    ({ name }) => name === REPOSITORY_WIKI_INSTRUCTIONS_FILE,
+  );
+  if (instructionsEntry) {
     const instructions = await lstat(
       path.join(wikiRoot, REPOSITORY_WIKI_INSTRUCTIONS_FILE),
     );
-    return instructions.isFile() && !instructions.isSymbolicLink()
-      ? { status: "instructions-only" }
-      : {
-          status: "unsafe",
-          reason: `${REPOSITORY_WIKI_INSTRUCTIONS_FILE} must be a regular file and cannot be a symbolic link`,
-        };
+    if (!instructions.isFile() || instructions.isSymbolicLink()) {
+      return {
+        status: "unsafe",
+        reason: `${REPOSITORY_WIKI_INSTRUCTIONS_FILE} must be a regular file and cannot be a symbolic link`,
+      };
+    }
+    if (entries.length === 1) return { status: "instructions-only" };
   }
 
   const markers: string[] = [];

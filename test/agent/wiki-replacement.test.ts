@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { beginRepositoryWikiReplacement } from "../../src/agent/wiki-replacement.ts";
+import type { RepositoryWikiLocation } from "../../src/repository-wiki/config.ts";
 
 describe("repository wiki replacement", () => {
   const temporaryDirectories: string[] = [];
@@ -27,6 +28,24 @@ describe("repository wiki replacement", () => {
     const root = await mkdtemp(path.join(tmpdir(), "openwiki-replace-"));
     temporaryDirectories.push(root);
     return root;
+  }
+
+  /**
+   * Resolves a configured wiki location below one temporary repository.
+   *
+   * @param root - Absolute temporary repository root.
+   * @param directory - Repository-relative wiki directory.
+   * @returns Resolved option-sourced wiki location.
+   */
+  function customLocation(
+    root: string,
+    directory: string,
+  ): RepositoryWikiLocation {
+    return {
+      directory,
+      root: path.join(root, directory),
+      source: "option",
+    };
   }
 
   test("starts an existing repository init from only the user-owned brief", async () => {
@@ -78,6 +97,42 @@ describe("repository wiki replacement", () => {
     ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
+  test("replaces and restores the configured repository wiki", async () => {
+    const root = await createRepository();
+    await mkdir(path.join(root, "docs/.claims"), { recursive: true });
+    await writeFile(path.join(root, "docs/INSTRUCTIONS.md"), "# Brief\n");
+    await writeFile(path.join(root, "docs/old.md"), "# Old\n");
+    await writeFile(path.join(root, "docs/.claims/old.json"), "old claims\n");
+
+    const replacement = await beginRepositoryWikiReplacement(
+      root,
+      customLocation(root, "docs"),
+    );
+    await expect(
+      readFile(path.join(root, "docs/INSTRUCTIONS.md"), "utf8"),
+    ).resolves.toBe("# Brief\n");
+    await expect(
+      readFile(path.join(root, "docs/old.md"), "utf8"),
+    ).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+
+    await writeFile(path.join(root, "docs/partial.md"), "# Partial\n");
+    await replacement.rollback();
+
+    await expect(
+      readFile(path.join(root, "docs/old.md"), "utf8"),
+    ).resolves.toBe("# Old\n");
+    await expect(
+      readFile(path.join(root, "docs/.claims/old.json"), "utf8"),
+    ).resolves.toBe("old claims\n");
+    await expect(
+      readFile(path.join(root, "docs/partial.md"), "utf8"),
+    ).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+  });
+
   test("restores the previous wiki before exiting on SIGINT", async () => {
     const root = await createRepository();
     await mkdir(path.join(root, "openwiki/.claims"), { recursive: true });
@@ -127,7 +182,7 @@ describe("repository wiki replacement", () => {
     await symlink("../brief.md", path.join(root, "openwiki/INSTRUCTIONS.md"));
 
     await expect(beginRepositoryWikiReplacement(root)).rejects.toThrow(
-      "expected a regular file",
+      "INSTRUCTIONS.md must be a regular file",
     );
 
     await expect(
@@ -145,7 +200,7 @@ describe("repository wiki replacement", () => {
     await symlink(target, path.join(root, "openwiki"));
 
     await expect(beginRepositoryWikiReplacement(root)).rejects.toThrow(
-      "expected a real directory",
+      "Repository wiki path components cannot be symbolic links",
     );
   });
 });

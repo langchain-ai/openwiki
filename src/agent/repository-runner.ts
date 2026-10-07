@@ -35,6 +35,11 @@ import {
   type RepositoryPageSnapshot,
 } from "../generation/repository-run.js";
 import type { RepositoryRunMode } from "../generation/run-state.js";
+import type { RepositoryWikiLocation } from "../repository-wiki/config.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
 import {
   AGENT_FILESYSTEM_PERMISSIONS,
@@ -96,6 +101,13 @@ const WORKER_TOOL_NAMES = new Set<string>([
   "inspect_claims",
   "submit_page",
 ]);
+
+/**
+ * Unchanged repository wiki policy used by compatibility callers.
+ */
+const DEFAULT_RUNNER_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 // DeepAgents 1.12 adds a general-purpose task tool even when subagents is
 // empty. Repository workers are deliberately non-delegating, so remove that
@@ -267,6 +279,11 @@ export interface NativeRepositoryGenerationOptions {
   mode: RepositoryRunMode;
 
   /**
+   * Resolved physical wiki location shared by the complete native run.
+   */
+  wikiLocation: RepositoryWikiLocation;
+
+  /**
    * Requested output language, resolved by the durable lifecycle.
    */
   language?: string | null;
@@ -414,6 +431,7 @@ async function beginNativeRepositoryRun(
     language: options.language ?? undefined,
     force: options.force,
     planningContext: options.planningContext ?? undefined,
+    wikiLocation: options.wikiLocation,
     actor: {
       producerActor: OPENWIKI_PRODUCER_ACTOR,
       metadataModel: options.modelId,
@@ -447,6 +465,7 @@ async function runPlanningAgent(
     rootDir: run.root,
     timeout: 120,
     virtualMode: true,
+    wikiPaths: run.wikiPaths,
   });
 
   let submitted = false;
@@ -509,7 +528,11 @@ async function runPlanningAgent(
     skills: ["/skills/"],
     subagents: [],
     permissions: AGENT_FILESYSTEM_PERMISSIONS,
-    systemPrompt: createRepositoryPlannerPrompt(view, planningContext),
+    systemPrompt: createRepositoryPlannerPrompt(
+      view,
+      planningContext,
+      run.wikiPaths,
+    ),
   });
 
   await streamWorkerTools(
@@ -524,20 +547,27 @@ async function runPlanningAgent(
   }
 }
 
-/** The planner's trace name in LangSmith (otherwise the graph default, "LangGraph"). */
+/**
+ * The planner's trace name in LangSmith (otherwise the graph default, "LangGraph").
+ */
 export const PLANNER_AGENT_NAME = "planning agent";
 
 /**
  * A page worker's trace name in LangSmith: the page it owns, so a run's thread
  * reads as one planner and one worker per page.
  *
- * @param page - Canonical page path, such as `/openwiki/coverage/forms/ho-3.md`.
+ * @param page - Canonical page path below the configured repository wiki root.
+ * @param wikiPaths - Actual repository wiki path policy for the run.
+ * @returns Stable page-specific worker trace name.
  */
-export function workerAgentName(page: string): string {
-  return `worker agent: ${page.replace(/^\/openwiki\//u, "").replace(/\.md$/u, "")}`;
+export function workerAgentName(
+  page: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_RUNNER_WIKI_PATHS,
+): string {
+  const relative = wikiPaths.toWikiRelativePage(page).replace(/\.md$/u, "");
+  return `worker agent: ${relative}`;
 }
 
-const QUICKSTART_PAGE_PATH = "/openwiki/quickstart.md";
 const DEFAULT_WORKER_START_STAGGER_MS = 1_000;
 
 /**
@@ -634,7 +664,7 @@ async function runPendingPageAgents(
   const heldBack = new Set(
     pool.concurrent
       ? pages
-          .filter(({ path }) => path === QUICKSTART_PAGE_PATH)
+          .filter(({ path }) => path === run.wikiPaths.quickstartPage)
           .map(({ id }) => id)
       : [],
   );
@@ -840,7 +870,9 @@ export function isRateLimitError(error: unknown): boolean {
   return false;
 }
 
-/** Worker attempts per pending page before it is given up on. */
+/**
+ * Worker attempts per pending page before it is given up on.
+ */
 const PAGE_WORKER_ATTEMPT_LIMIT = 2;
 
 /**
@@ -920,6 +952,7 @@ async function runPageWorkerAttempt(
     rootDir: run.root,
     timeout: 120,
     virtualMode: true,
+    wikiPaths: run.wikiPaths,
   });
 
   let submitted = false;
@@ -969,7 +1002,7 @@ async function runPageWorkerAttempt(
 
   const backend = createAgentBackend(wikiBackend);
   const agent = createDeepAgent({
-    name: workerAgentName(job.path),
+    name: workerAgentName(job.path, run.wikiPaths),
     model,
     tools: [inspectClaimsTool, submitPageTool],
     backend,
@@ -988,6 +1021,7 @@ async function runPageWorkerAttempt(
       job,
       run.state.plan?.pages ?? [],
       run.state.language,
+      run.wikiPaths,
     ),
   });
 

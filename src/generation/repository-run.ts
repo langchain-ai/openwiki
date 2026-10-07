@@ -438,6 +438,7 @@ export async function beginRepositoryRun(
     input.root,
     "repository",
     input.language,
+    wikiPaths,
   );
   const language = context.language ?? "en";
   const languageChanged =
@@ -448,13 +449,13 @@ export async function beginRepositoryRun(
 
   const replacement =
     input.mode === "init"
-      ? await beginRepositoryWikiReplacement(input.root)
+      ? await beginRepositoryWikiReplacement(input.root, location)
       : undefined;
   let runStateWritten = false;
   let replacementCommitted = false;
 
   try {
-    const backend = createRepositoryBackend(input.root, ignore);
+    const backend = createRepositoryBackend(input.root, ignore, wikiPaths);
     const claimsRuntime = await prepareClaimsRuntime(
       input.mode,
       "repository",
@@ -469,7 +470,11 @@ export async function beginRepositoryRun(
 
     const claimsStore = new ClaimsStore(input.root, wikiPaths);
     const initialPages = await claimsStore.discoverPages();
-    const source = await createRepositorySourceSnapshot(input.root, ignore);
+    const source = await createRepositorySourceSnapshot(
+      input.root,
+      ignore,
+      wikiPaths,
+    );
     if (
       input.mode === "update" &&
       context.lastUpdate?.gitHead &&
@@ -509,17 +514,23 @@ export async function beginRepositoryRun(
         input.root,
         ignore,
         input.language,
+        wikiPaths,
       );
       if (
         preflight.shouldSkip &&
         claimsRuntime.issueCount === 0 &&
         hasCompleteBaselineCoverage
       ) {
-        const source = await createRepositorySourceSnapshot(input.root, ignore);
+        const source = await createRepositorySourceSnapshot(
+          input.root,
+          ignore,
+          wikiPaths,
+        );
         await claimsRuntime.finalize(now().toISOString());
         const stableSource = await createRepositorySourceSnapshot(
           input.root,
           ignore,
+          wikiPaths,
         );
         if (stableSource.fingerprint === source.fingerprint) {
           await replaceRepositoryPageManifest(
@@ -536,6 +547,7 @@ export async function beginRepositoryRun(
           const publishedSource = await createRepositorySourceSnapshot(
             input.root,
             ignore,
+            wikiPaths,
           );
           if (publishedSource.fingerprint === source.fingerprint) {
             await writeLastUpdateMetadata(
@@ -545,6 +557,8 @@ export async function beginRepositoryRun(
               "repository",
               "complete",
               preflight.language,
+              undefined,
+              wikiPaths,
             );
             return {
               view: {
@@ -563,11 +577,13 @@ export async function beginRepositoryRun(
     const beforeContentSnapshot = await createOpenWikiContentSnapshot(
       input.root,
       "repository",
+      wikiPaths,
     );
     const preparedWiki = await prepareWikiForAuthoring({
       backend,
       outputMode: "repository",
       conceptType: resolveConceptTypeLabel(language),
+      wikiPaths,
     });
     const requiredRewritePages =
       input.mode === "update" && languageChanged ? initialPages : [];
@@ -609,6 +625,7 @@ export async function beginRepositoryRun(
       "interrupted",
       language,
       context.lastUpdate?.gitHead ?? null,
+      wikiPaths,
     );
 
     // Critical: do NOT hold the old init backup until finish. Once the run state
@@ -720,6 +737,7 @@ async function resumeRepositoryRun(
   const currentSource = await createRepositorySourceSnapshot(
     input.root,
     ignore,
+    wikiPaths,
   );
   const sourceChanged = currentSource.fingerprint !== state.sourceFingerprint;
   const resetSkippedPages =
@@ -771,7 +789,7 @@ async function resumeRepositoryRun(
     activeState = nextState;
   }
 
-  const backend = createRepositoryBackend(input.root, ignore);
+  const backend = createRepositoryBackend(input.root, ignore, wikiPaths);
   const claimsRuntime = await prepareClaimsRuntime(
     activeState.mode,
     "repository",
@@ -880,11 +898,13 @@ async function reconcileManifestPageJobs(
  *
  * @param root - Absolute repository root.
  * @param ignore - Loaded repository read boundary.
+ * @param wikiPaths - Canonical actual-path policy for the active run.
  * @returns Confined backend for deterministic wiki mutations.
  */
 function createRepositoryBackend(
   root: string,
   ignore: OpenWikiIgnore,
+  wikiPaths: RepositoryWikiPaths,
 ): OpenWikiLocalShellBackend {
   return new OpenWikiLocalShellBackend({
     docsOnly: true,
@@ -894,6 +914,7 @@ function createRepositoryBackend(
     rootDir: root,
     timeout: 120,
     virtualMode: true,
+    wikiPaths,
   });
 }
 
@@ -974,6 +995,7 @@ async function getRepositoryPageUpdateWindows(
         root,
         ignore,
         baseline || undefined,
+        wikiPaths,
       ),
       fullReview: baseline.length === 0,
     });
@@ -1008,6 +1030,7 @@ async function fastForwardUnchangedRepositoryPageCoverage(
       root,
       ignore,
       entry.gitHead,
+      wikiPaths,
     );
     if (changedPaths.length > 0) continue;
 
@@ -1314,6 +1337,7 @@ export async function skipRepositoryPage(
       "interrupted",
       run.state.language,
       run.state.baseGitHead ?? null,
+      run.wikiPaths,
     );
 
     const nextState: RepositoryRunState = {
@@ -1786,6 +1810,7 @@ export async function finishRepositoryRun(
     producerActorsByPage,
     claimSources: run.claimsRuntime.session.getEvidenceResourcesByPage(),
     runOperation: captureFrontmatterReport,
+    wikiPaths: run.wikiPaths,
   });
 
   for (const snapshot of snapshots) {
@@ -1828,6 +1853,7 @@ export async function finishRepositoryRun(
       "interrupted",
       run.state.language,
       run.state.baseGitHead ?? null,
+      run.wikiPaths,
     );
   } else {
     await persistRunMetadataIfChanged(
@@ -1838,6 +1864,7 @@ export async function finishRepositoryRun(
       run.state.beforeContentSnapshot,
       "complete",
       run.state.language,
+      run.wikiPaths,
     );
   }
 
@@ -1889,7 +1916,11 @@ function emitFrontmatterReportEvent(
 async function hasRepositorySourceChanged(
   run: ActiveRepositoryRun,
 ): Promise<boolean> {
-  const current = await createRepositorySourceSnapshot(run.root, run.ignore);
+  const current = await createRepositorySourceSnapshot(
+    run.root,
+    run.ignore,
+    run.wikiPaths,
+  );
   return current.fingerprint !== run.state.sourceFingerprint;
 }
 

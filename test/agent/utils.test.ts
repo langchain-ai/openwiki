@@ -6,8 +6,11 @@ import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
+  createRepositorySourceFingerprint,
   getUpdateNoopStatus,
 } from "../../src/agent/utils.ts";
+import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 // These cover the branches of utils.ts that the sibling run-context,
 // run-metadata, and update-noop suites do not reach: the degenerate no-op
@@ -86,6 +89,35 @@ describe("getUpdateNoopStatus degenerate cases", () => {
       await rm(repo, { recursive: true, force: true });
     }
   });
+
+  test("reads metadata and filters generated changes below the configured root", async () => {
+    const repo = await createGitRepo();
+    const wikiPaths = new RepositoryWikiPaths("docs");
+
+    try {
+      await mkdir(path.join(repo, "docs"), { recursive: true });
+      await writeFile(path.join(repo, "docs/page.md"), "# Generated\n");
+      await git(repo, ["add", "docs/page.md"]);
+      await git(repo, ["commit", "-m", "add generated wiki"]);
+      const gitHead = await git(repo, ["rev-parse", "HEAD"]);
+      await writeFile(
+        path.join(repo, "docs/.last-update.json"),
+        `${JSON.stringify({
+          updatedAt: new Date().toISOString(),
+          command: "update",
+          model: "test-model",
+          gitHead,
+          status: "complete",
+        })}\n`,
+      );
+
+      await expect(
+        getUpdateNoopStatus(repo, new OpenWikiIgnore([]), undefined, wikiPaths),
+      ).resolves.toMatchObject({ shouldSkip: true });
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("createOpenWikiContentSnapshot recursion", () => {
@@ -147,6 +179,73 @@ describe("createOpenWikiContentSnapshot recursion", () => {
       );
     } finally {
       await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("snapshots only the configured repository wiki tree", async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), "openwiki-utils-custom-"));
+    const wikiPaths = new RepositoryWikiPaths("docs");
+
+    try {
+      await mkdir(path.join(cwd, "docs"), { recursive: true });
+      await mkdir(path.join(cwd, "openwiki"), { recursive: true });
+      await writeFile(path.join(cwd, "docs/page.md"), "# Docs\n");
+      await writeFile(path.join(cwd, "openwiki/source.md"), "# Source\n");
+      const before = await createOpenWikiContentSnapshot(
+        cwd,
+        "repository",
+        wikiPaths,
+      );
+
+      await writeFile(path.join(cwd, "openwiki/source.md"), "# Changed\n");
+      await expect(
+        createOpenWikiContentSnapshot(cwd, "repository", wikiPaths),
+      ).resolves.toBe(before);
+
+      await writeFile(path.join(cwd, "docs/page.md"), "# Changed\n");
+      await expect(
+        createOpenWikiContentSnapshot(cwd, "repository", wikiPaths),
+      ).resolves.not.toBe(before);
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("createRepositorySourceFingerprint configured root", () => {
+  test("excludes the selected wiki while retaining an openwiki source directory", async () => {
+    const repo = await createGitRepo();
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const ignore = new OpenWikiIgnore([]);
+
+    try {
+      await mkdir(path.join(repo, "docs"), { recursive: true });
+      await mkdir(path.join(repo, "openwiki"), { recursive: true });
+      await writeFile(path.join(repo, "docs/generated.md"), "# Generated\n");
+      await writeFile(
+        path.join(repo, "openwiki/source.ts"),
+        "export const value = 1;\n",
+      );
+      const before = await createRepositorySourceFingerprint(
+        repo,
+        ignore,
+        wikiPaths,
+      );
+
+      await writeFile(path.join(repo, "docs/generated.md"), "# Updated\n");
+      await expect(
+        createRepositorySourceFingerprint(repo, ignore, wikiPaths),
+      ).resolves.toBe(before);
+
+      await writeFile(
+        path.join(repo, "openwiki/source.ts"),
+        "export const value = 2;\n",
+      );
+      await expect(
+        createRepositorySourceFingerprint(repo, ignore, wikiPaths),
+      ).resolves.not.toBe(before);
+    } finally {
+      await rm(repo, { recursive: true, force: true });
     }
   });
 });

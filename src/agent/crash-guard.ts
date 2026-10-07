@@ -1,5 +1,6 @@
 import { describeErrorForTelemetry } from "../telemetry/errors.js";
 import { recordRunSafe } from "../telemetry/record-run-safe.js";
+import type { RepositoryWikiPaths } from "../repository-wiki/paths.js";
 
 import type { OpenWikiCommand, OpenWikiOutputMode } from "./types.js";
 import {
@@ -49,6 +50,13 @@ export interface ActiveRunRecord {
    * @default undefined - the run has no explicit wiki language; the stamp omits it.
    */
   language?: string;
+
+  /**
+   * Actual repository wiki path policy used for an interrupted metadata stamp.
+   *
+   * @default undefined for local-wiki and compatibility callers
+   */
+  wikiPaths?: RepositoryWikiPaths;
 }
 
 /**
@@ -130,7 +138,7 @@ export async function handleFatal(
     // Stamp interrupted so the next scheduled update does not no-op against a
     // half-written wiki.
     try {
-      await persistRunMetadataIfChanged(
+      const args = [
         active.command,
         active.cwd,
         active.modelId,
@@ -138,7 +146,12 @@ export async function handleFatal(
         active.snapshotBefore ?? null,
         "interrupted",
         active.language,
-      );
+      ] as const;
+      if (active.wikiPaths) {
+        await persistRunMetadataIfChanged(...args, active.wikiPaths);
+      } else {
+        await persistRunMetadataIfChanged(...args);
+      }
     } catch {
       // Intentionally ignored: the stamp is best-effort during a crash.
     }

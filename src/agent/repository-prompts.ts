@@ -8,17 +8,30 @@ import type {
   RepositoryPageUpdateWindow,
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
+
+/**
+ * Unchanged repository wiki policy used by compatibility callers.
+ */
+const DEFAULT_REPOSITORY_PROMPT_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 /**
  * Builds the bounded planner prompt from the complete active run context.
  *
  * @param view - Durable begin/resume context projected for planning.
  * @param planningContext - Actual user and connector context for this run.
+ * @param wikiPaths - Actual repository wiki path policy for the run.
  * @returns Complete planner system prompt.
  */
 export function createRepositoryPlannerPrompt(
   view: ActiveBeginView,
   planningContext?: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_REPOSITORY_PROMPT_WIKI_PATHS,
 ): string {
   const updateContext =
     view.mode === "update"
@@ -49,7 +62,7 @@ treat that as a hard scoped update mandate. Preserve unrelated page
 framing/theme and the existing information architecture; do not use a narrow
 request as permission for a broad wiki refresh. Schedule only directly requested
 pages/files and genuinely affected cross-references or navigation. Do not refresh
-/openwiki/quickstart.md merely because a scoped update touches other pages;
+${wikiPaths.quickstartPage} merely because a scoped update touches other pages;
 include it when the user explicitly requests it or when the page map, navigation,
 or task-routing links actually change.`
       : "";
@@ -63,11 +76,11 @@ submit_plan directly.
 Design the smallest complete repository-specific information architecture that
 helps a coding agent understand and safely change the system. Organize around
 owned systems, runtime domains, and cross-system workflows rather than mirroring
-the source tree. Use hierarchical paths for meaningful groups such as
-/openwiki/architecture/, /openwiki/concepts/, /openwiki/workflows/,
-/openwiki/operations/, /openwiki/integrations/, and /openwiki/testing/ when the
+the source tree. Use hierarchical paths below ${wikiPaths.canonicalRoot}/ for
+meaningful groups such as architecture/, concepts/, workflows/, operations/,
+integrations/, and testing/ when the
 repository has enough coverage to warrant them. Do not emit a flat dump of
-unrelated top-level pages. Include /openwiki/quickstart.md for init.
+unrelated top-level pages. Include ${wikiPaths.quickstartPage} for init.
 
 Explore before submitting the plan. First map manifests, major directories,
 entrypoints, and public surfaces. Then trace representative end-to-end control
@@ -84,9 +97,9 @@ the resulting wiki is navigable across system boundaries. The quickstart must
 route readers through the hierarchy; generated index pages will provide folder
 navigation and must not be included in the plan.
 
-Init MUST include /openwiki/quickstart.md. Update MUST NOT delete quickstart. If
+Init MUST include ${wikiPaths.quickstartPage}. Update MUST NOT delete quickstart. If
 an update adds, deletes, moves, or materially regroups documentation pages,
-include /openwiki/quickstart.md in the plan so its task-routing map is refreshed.
+include ${wikiPaths.quickstartPage} in the plan so its task-routing map is refreshed.
 An update with no required page edits and no deletions may submit pages: [].
 
 For every page provide a concise purpose and useful seedPaths. seedPaths are
@@ -111,10 +124,14 @@ export type RepositoryPageWorkerJob = PageJob & {
    */
   existing: boolean;
 
-  /** Number of persisted Claims currently owned by the assigned page. */
+  /**
+   * Number of persisted Claims currently owned by the assigned page.
+   */
   existingClaimCount: number;
 
-  /** Stale or unresolved Claims that require an explicit worker decision. */
+  /**
+   * Stale or unresolved Claims that require an explicit worker decision.
+   */
   claimsRequiringAttention: InspectedClaim[];
 };
 
@@ -124,12 +141,14 @@ export type RepositoryPageWorkerJob = PageJob & {
  * @param job - Assigned page and its compact required Claim context.
  * @param allPages - Complete ordered page queue for quickstart navigation.
  * @param language - Resolved output language for generated prose.
+ * @param wikiPaths - Actual repository wiki path policy for the run.
  * @returns Complete page-worker system prompt.
  */
 export function createRepositoryPagePrompt(
   job: RepositoryPageWorkerJob,
   allPages: readonly PageJob[],
   language: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_REPOSITORY_PROMPT_WIKI_PATHS,
 ): string {
   return `You own exactly ${job.path}.
 
@@ -145,10 +164,10 @@ Page-specific global instructions:\n${formatList(job.instructions)}
 ${job.mode === "update" ? "Read the current page first. Preserve accurate unaffected content; change only what current repository evidence requires.\n" : ""}
 Write wiki prose and human-readable frontmatter values in ${language}. Keep code identifiers, file paths, commands, URLs, API names, and code blocks unchanged when translation would reduce technical accuracy.
 For Markdown links to wiki pages or repository files, use hrefs relative to this
-page's directory. Paths such as /openwiki/quickstart.md are virtual filesystem
+page's directory. Paths such as ${wikiPaths.quickstartPage} are virtual filesystem
 tool paths, not Markdown link destinations; never write root-absolute internal
-hrefs. For example, from /openwiki/architecture/agent-runtime.md, link to
-/openwiki/concepts/model-providers.md as
+hrefs. For example, from ${wikiPaths.canonicalRoot}/architecture/agent-runtime.md, link to
+${wikiPaths.canonicalRoot}/concepts/model-providers.md as
 [Model Providers](../concepts/model-providers.md).
 
 The page MUST begin with valid OKF concept frontmatter:
@@ -188,7 +207,7 @@ This page currently owns ${job.existingClaimCount} Claim(s). Claims requiring an
 explicit decision in this job:\n${JSON.stringify(job.claimsRequiringAttention, null, 2)}
 
 ${
-  job.path === "/openwiki/quickstart.md"
+  job.path === wikiPaths.quickstartPage
     ? `The complete planned page map is:\n${JSON.stringify(
         allPages.map(({ path, title, purpose }) => ({ path, title, purpose })),
         null,

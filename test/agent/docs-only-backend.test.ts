@@ -8,6 +8,7 @@ import {
   MUTATION_PATH_METADATA_KEY,
   OpenWikiLocalShellBackend,
 } from "../../src/agent/docs-only-backend.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 describe("OpenWikiLocalShellBackend", () => {
   test("recognizes canonical Claims state paths without reserving lookalikes", () => {
@@ -37,8 +38,44 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(isOpenWikiDocsPath("openwiki/../AGENTS.md")).toBe(false);
     expect(isOpenWikiDocsPath("/openwiki/../../etc/passwd")).toBe(false);
     expect(isOpenWikiDocsPath("\\openwiki\\..\\AGENTS.md")).toBe(false);
-    // A `..` that resolves back inside openwiki/ is still allowed.
-    expect(isOpenWikiDocsPath("/openwiki/sub/../architecture.md")).toBe(true);
+    // Reject traversal syntax before normalization can erase its evidence.
+    expect(isOpenWikiDocsPath("/openwiki/sub/../architecture.md")).toBe(false);
+  });
+
+  test("confines mutations to a configured repository wiki directory", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+      wikiPaths,
+    });
+
+    await expect(backend.write("/docs/page.md", "first")).resolves.toEqual(
+      expect.objectContaining({ path: "/docs/page.md" }),
+    );
+    await expect(
+      backend.edit("/docs/page.md", "first", "second"),
+    ).resolves.toEqual(expect.objectContaining({ path: "/docs/page.md" }));
+    await expect(
+      backend.uploadFiles([
+        ["/docs/upload.md", new TextEncoder().encode("ok")],
+      ]),
+    ).resolves.toEqual([expect.objectContaining({ path: "/docs/upload.md" })]);
+    await expect(backend.delete("/docs/upload.md")).resolves.toEqual(
+      expect.objectContaining({ path: "/docs/upload.md" }),
+    );
+
+    expect((await backend.write("/openwiki/page.md", "bad")).error).toContain(
+      "Refused path: /openwiki/page.md",
+    );
+    expect(
+      (await backend.write("/docs/sub/../escape.md", "bad")).error,
+    ).toContain("Refused path: /docs/sub/../escape.md");
+    await expect(
+      readFile(path.join(rootDir, "docs/page.md"), "utf8"),
+    ).resolves.toBe("second");
   });
 
   test("refuses init/update writes outside openwiki", async () => {
@@ -204,6 +241,34 @@ describe("OpenWikiLocalShellBackend", () => {
     );
     expect(mixedCaseInspection.exitCode).toBe(1);
     expect(mixedCaseInspection.output).toContain("Claims state");
+  });
+
+  test("hides Claims state below a configured repository wiki directory", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const claimsDir = path.join(rootDir, "docs/.claims");
+    await mkdir(claimsDir, { recursive: true });
+    await writeFile(path.join(claimsDir, "page.json"), "private\n", "utf8");
+    await writeFile(path.join(rootDir, "docs/page.md"), "# Page\n", "utf8");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      wikiPaths: new RepositoryWikiPaths("docs"),
+    });
+
+    expect((await backend.read("/docs/.claims/page.json")).error).toContain(
+      "Claims state",
+    );
+    expect(
+      (await backend.write("/docs/.claims/new.json", "bad")).error,
+    ).toContain("Claims state");
+    expect((await backend.ls("/docs")).files?.map(({ path }) => path)).toEqual([
+      "/docs/page.md",
+    ]);
+    const inspection = await backend.execute("cat docs/.claims/page.json");
+    expect(inspection.exitCode).toBe(1);
+    expect(inspection.output).toContain("Claims state");
   });
 
   test("rejects arbitrary host shell commands without ignore rules", async () => {

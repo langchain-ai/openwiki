@@ -10,6 +10,7 @@ import {
   stripBrokenLinkStamps,
   validateWikiInternalLinks,
 } from "../../src/agent/wiki-link-validator.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 async function setupWiki(
   outputMode: "local-wiki" | "repository" = "repository",
@@ -68,6 +69,41 @@ describe("validateWikiInternalLinks", () => {
       "utf8",
     );
     expect(after).toContain('link "/openwiki/cli/usage.md" is root-absolute');
+  });
+
+  test("scans and diagnoses links below the configured repository wiki root", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-links-"));
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      wikiPaths,
+    });
+    await backend.write(
+      "/docs/quickstart.md",
+      "See [missing](./missing.md) and [absolute](/docs/guide.md).\n",
+    );
+    await backend.write("/docs/guide.md", "# Guide\n");
+
+    const report = await validateWikiInternalLinks(
+      backend,
+      "repository",
+      wikiPaths,
+    );
+
+    expect(report).toMatchObject({
+      filesScanned: 2,
+      issuesFound: 2,
+      stampedFiles: ["quickstart.md"],
+    });
+    await expect(
+      readFile(path.join(rootDir, "docs/quickstart.md"), "utf8"),
+    ).resolves.toContain('link "/docs/guide.md" is root-absolute');
+    await expect(
+      readFile(path.join(rootDir, "openwiki/quickstart.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   test("flags repo-root-absolute links with heading anchors", async () => {
