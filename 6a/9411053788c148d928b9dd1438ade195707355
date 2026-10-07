@@ -1,0 +1,37 @@
+src/repository-wiki/preparation.ts
+  s_7397b8146d0266::t_1fc886dcc482a9 4,11,65-68,70,72,77,79,86,88,91,95
+  s_7397b8146d0266::t_2f0f554c7192b2 1-3,5-10,12-64,69,71,73-76,78,80-85,87,89-90,92-94,96-124
+src/repository-wiki/config.ts
+  s_7397b8146d0266::t_1dc312900fc017 167-174,184,186-192
+  s_7397b8146d0266::t_2f0f554c7192b2 185
+  s_7397b8146d0266::t_366f10b7ed67e7 143
+  s_7397b8146d0266::t_b82f648c2850b8 193-195
+test/repository-wiki/preparation.test.ts
+  s_7397b8146d0266::t_ee31ddefa97a71 1
+  s_7397b8146d0266::t_547787251a270e 2-87,102-169
+  s_7397b8146d0266::t_72871fa82ef16a 88-101
+test/repository-wiki/config.test.ts
+  s_7397b8146d0266::t_547787251a270e 21-23
+  s_7397b8146d0266::t_d09d45d882502d 161,166,169-184
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6a9411053788c148d928b9dd1438ade195707355",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7397b8146d0266": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-e0cd-78d0-bbdd-62713d2afd89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
