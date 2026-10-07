@@ -2,8 +2,8 @@ import {
   chmod,
   mkdir,
   mkdtemp,
+  open,
   readFile,
-  stat,
   symlink,
   writeFile,
 } from "node:fs/promises";
@@ -164,11 +164,16 @@ describe("repository wiki configuration", () => {
     await writeFile(file, '{"wikiDirectory":"docs"}\n');
     await chmod(file, 0o600);
     await persistRepositoryWikiConfig(root, "docs");
-    const metadata = await stat(file);
-    expect(metadata.mode & 0o777).toBe(0o600);
-    await expect(readFile(file, "utf8")).resolves.toBe(
-      '{"wikiDirectory":"docs"}\n',
-    );
+    const handle = await open(file, "r");
+    try {
+      const metadata = await handle.stat();
+      expect(metadata.mode & 0o777).toBe(0o600);
+      await expect(handle.readFile("utf8")).resolves.toBe(
+        '{"wikiDirectory":"docs"}\n',
+      );
+    } finally {
+      await handle.close();
+    }
   });
 
   test("refuses to overwrite a conflicting existing configuration", async () => {
