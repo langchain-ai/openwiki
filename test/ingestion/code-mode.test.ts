@@ -718,12 +718,17 @@ describe("ensureCodeModeRepoSetup workflow", () => {
 
       await promisify(execFile)("bash", ["-e", "-c", step.run ?? ""], {
         cwd: repo,
-        env: { ...process.env, GITHUB_OUTPUT: outputPath },
+        env: {
+          PATH: process.env.PATH,
+          GITHUB_OUTPUT: outputPath,
+          GITHUB_RUN_ATTEMPT: "2",
+          GITHUB_RUN_ID: "12345",
+        },
       });
 
       const claude = hasClaude ? "CLAUDE.md\n" : "";
       expect(await readFile(outputPath, "utf8")).toBe(
-        `list<<openwiki_paths__\nopenwiki\nAGENTS.md\n.github/workflows/openwiki-update.yml\n${claude}openwiki_paths__\n`,
+        `list<<openwiki_paths_12345_2\nopenwiki\nAGENTS.md\n.github/workflows/openwiki-update.yml\n${claude}openwiki_paths_12345_2\n`,
       );
     },
   );
