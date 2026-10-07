@@ -1,7 +1,7 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem (including the repository-runner parallel-worker and skip/restore tests), and where the separate evals/ledger and evals/deepswe evaluation suites live.
+description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem (including the repository-runner parallel-worker and retry-before-skip tests), and where the separate evals/ledger and evals/deepswe evaluation suites live.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evals]
 sources:
   - id: openwiki-source-c45a528335f5cf7306567dc9
@@ -30,6 +30,10 @@ sources:
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-eab9328975981f427c4218d0
     resource: repo://src/integrations/mcp/server.ts
+  - id: openwiki-source-76702f01df0808033c14cf17
+    resource: repo://test/agent/create-model-entra.test.ts
+  - id: openwiki-source-6e76d6023798412a72871e94
+    resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-6cc520117b0eb03bfd36a7c8
     resource: repo://test/agent/frontmatter-validator.test.ts
   - id: openwiki-source-e25b880bed632d812ac9f1a8
@@ -50,6 +54,10 @@ sources:
     resource: repo://test/agent/vertex-surface.test.ts
   - id: openwiki-source-10e644b1d94ea2cd8435efb2
     resource: repo://test/agent/wiki-finalizer.test.ts
+  - id: openwiki-source-6c102b5d95bb9061f84077ab
+    resource: repo://test/agent/wiki-link-validator-dogfood.test.ts
+  - id: openwiki-source-ec2cf91ad5479869cf22a245
+    resource: repo://test/agent/wiki-link-validator.test.ts
   - id: openwiki-source-60f74aa845439889d9b5e391
     resource: repo://test/claims/brains/code/store.test.ts
   - id: openwiki-source-07638dd09c03aa66a99013cf
@@ -132,7 +140,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Testing Guide
@@ -276,12 +287,12 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, skip/restore, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, and the wiki finalizer |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, retry-before-skip, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, and the wiki internal-link validator plus its dogfood test |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
-| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution), host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
+| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution) across nine hosts, host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
 | `test/cli/` (incl. `test/cli/run-log/`)                                                                                                                    | `src/cli/` — CLI wiring, Ink components, the run-log reducer/progress/summary/activity/tool-input helpers, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
@@ -304,7 +315,9 @@ planner and page-worker failure modes via named counters — `pageWorkerFailures
 `pageWorkerPostSubmitFailures`, `workerExitsWithoutSubmit`,
 `duplicatePlanSubmission`, `invalidPlanSubmissions`, `invalidPageSubmissions`,
 `driftOnce`, `noop`, plus `pageGate`/`nextPageGate` gates and `fatalPageSubmissions`
-to control concurrent scheduling.
+to control concurrent scheduling — alongside `pageRestoreCalls` (mocked
+`restoreRepositoryPage`) and `restoreCalls` (mocked `skipRepositoryPage`) to
+tell a retry from a skip.
 
 The harness proves the **sequential, single-worker shape** first: the planner
 and each page worker get an exact shell-free filesystem tool surface (planner
@@ -313,14 +326,44 @@ never `execute` or `task`), one fresh `createDeepAgent` worker is built per
 page, page-worker system prompts carry the `You own exactly <path>` ownership
 line, and worker narration is streamed away (no `text` event reaches the
 caller) while the approved `read_file`/`write_file`/`grep` tool lifecycle
-events do. It also covers the **skip path** `restores and leaves a page pending
-when its worker does not submit`: when `workerExitsWithoutSubmit` makes a page
-worker exit without calling `submit_page`, the runner calls the mocked
-`captureRepositoryPageSnapshot`/`skipRepositoryPage` (counted by
-`restoreCalls`) to restore the snapshot, marks that page `skipped`, finishes
-the run, and emits a `text` event telling the user the page will be
-"reconsidered on the next update" — so the skipped page is re-queued as
-`pending` on resume.
+events do.
+
+`runPageAgent` runs each page job with a fresh bounded worker per attempt,
+**retrying a worker that exits without submitting once before the page is
+skipped** (`PAGE_WORKER_ATTEMPT_LIMIT === 2`). A worker that exits without
+calling `submit_page` is not skipped immediately: between attempts the runner
+calls `restoreRepositoryPage` (counted by `pageRestoreCalls`) to reset the page
+and its Claims to the pre-run snapshot, then starts a fresh worker. Only when
+every attempt fails does the runner call `skipRepositoryPage` (counted by
+`restoreCalls`) and emit the `text` event telling the user the page was
+"restored … and will be reconsidered on the next update" — so the skipped page
+is re-queued as `pending` on resume. The `retries once when a worker exits
+without submitting and completes the page` test pins the recovery path
+(`pageRestoreCalls === 1`, `restoreCalls === 0`, both pages `complete`, one
+extra worker for the retry, no skip warning), while `skips a page worker that
+fails every attempt and continues the queue` pins the give-up path
+(`pageRestoreCalls === 1`, `restoreCalls === 1`, the failing page `skipped`,
+its sibling `complete`).
+
+```mermaid
+stateDiagram-v2
+  [*] --> Pending
+  Pending --> Snapshot: captureRepositoryPageSnapshot
+  Snapshot --> Attempt1: fresh worker
+  Attempt1 --> Submitted: submit_page succeeds
+  Attempt1 --> ResetRestore: exits without submitting (non-429)
+  Attempt1 --> Skip: fails with 429
+  ResetRestore --> Attempt2: restoreRepositoryPage then fresh worker
+  Attempt2 --> Submitted: submit_page succeeds
+  Attempt2 --> Skip: exits without submitting
+  Submitted --> Complete
+  Skip --> Skipped: skipRepositoryPage
+  Complete --> [*]
+  Skipped --> Pending: re-queued on resume
+```
+
+The `runPageAgent` per-page lifecycle: snapshot once, retry a non-submitting
+worker once, then skip (a 429 skips immediately).
 
 The runner can also document pages **concurrently**. `runPendingPageAgents`
 builds a `PageWorkerPool` of up to `pageConcurrency` slots, and the test passes
@@ -340,10 +383,13 @@ the concurrency contract:
   active. A single worker keeps the historical event shape (no
   `inFlightPages`/`completedCount`).
 - **Rate-limit back-off.** A worker that fails with a 429 (`pageWorkerFailures`
-  plus a `pageWorkerFailureError` carrying `status: 429`) is skipped and the
-  pool size is lowered by one with a `Reduced page concurrency to <n>` text
-  event; an ordinary (non-rate-limit) worker failure is skipped but does **not**
-  lower concurrency.
+  plus a `pageWorkerFailureError` carrying `status: 429`) is surfaced to the
+  pool immediately instead of being retried (it costs exactly one attempt, so
+  `pageRestoreCalls === 0` and `restoreCalls === 1`), the page is skipped, and
+  the pool size is lowered by one with a `Reduced page concurrency to <n>` text
+  event; an ordinary (non-rate-limit) worker failure is reset and retried once
+  (`pageRestoreCalls === 1`, `restoreCalls === 0`) and does **not** lower
+  concurrency.
 - **Fatal submission isolation.** A fatal `submitRepositoryPage` error (armed
   via `fatalPageSubmissions`) lets in-flight workers submit or skip, records
   the fatal error on the pool, stops new jobs from starting, and is rethrown
@@ -502,6 +548,35 @@ The remaining agent tests guard the prompts and adjacent surfaces:
   `tool_calls` has no renderable text), and rejection of malformed stream
   chunks.
 
+Two new agent tests guard the **OpenAI-compatible Entra (Microsoft Entra ID)
+authentication** path. `test/agent/entra-auth.test.ts` exercises
+`createEntraTokenProvider` from `src/agent/entra-auth.ts` with `@azure/identity`
+mocked via `vi.hoisted`: it pins lazy construction (the `DefaultAzureCredential`
+is not built until the first `getToken`), coalescing of concurrent first
+requests (three concurrent calls share one construction and one token fetch),
+workload-identity preference when a federated token file is configured
+(`AZURE_FEDERATED_TOKEN_FILE`/`AZURE_CLIENT_ID`/`AZURE_TENANT_ID` route to
+`WorkloadIdentityCredential`, with refresh after expiry and no fallback to
+another identity when workload identity fails), cached-token reuse while
+valid, refresh of an expired token without reconstructing the provider,
+retry of token acquisition (and of lazy initialization) after a failure
+without ever exposing the SDK's private error text (the failure is wrapped in
+"Unable to obtain a Microsoft Entra ID access token." with the cause cleared),
+and an HTTPS/scheme blocklist that rejects unsafe `OPENAI_COMPATIBLE_BASE_URL`
+endpoints (http, file, credentials-in-URL, cloud-metadata IPs) before any
+credential is acquired. A second `OpenAI-compatible Entra requests` describe
+block drives the full model round-trip with a stubbed `fetch`: across both
+Chat Completions and Responses surfaces and both JSON and SSE transports, it
+asserts two invocations across a token-expiry boundary each carry a refreshed
+`Bearer` token, that token-acquisition failure never contacts the gateway,
+and that the request bodies' `stream` flag matches the transport. A companion
+`test/agent/create-model-entra.test.ts` pins `createModel`'s Entra wiring for
+the `openai-compatible` provider: the static API key is preserved in default
+and explicit `api-key` modes, `entra-id` mode replaces it with a renewable
+callback (honored for both Chat Completions and Responses transports, with the
+stale static key discarded), an unsafe (non-HTTPS) base URL is rejected before
+model construction, and an invalid `OPENAI_COMPATIBLE_AUTH` mode is rejected.
+
 The agent subsystem directory also holds the OKF-authoring-pipeline tests:
 `test/agent/frontmatter-validator.test.ts` exercises `validateOkfFrontmatter`
 in isolation against accepted/rejected frontmatter families;
@@ -510,6 +585,19 @@ against a real `OpenWikiLocalShellBackend` in an `mkdtemp` dir (including
 broken-Mermaid failure paths); and `test/agent/wiki-finalizer.test.ts`
 exercises `prepareWikiForAuthoring` and `finalizeWikiArtifacts` against an
 isolated repository-mode backend.
+
+The directory also holds the wiki internal-link validator tests.
+`test/agent/wiki-link-validator.test.ts` exercises `validateWikiInternalLinks`
+and its `stampBrokenLinks`/`stripBrokenLinkStamps`/`formatWikiLinkIssues`/
+`formatBrokenLinkStamp` helpers against throwaway temp wikis: it accepts valid
+relative file links without rewriting, flags repo-root-absolute links
+carrying the `/openwiki` prefix, stamps and strips broken-link notices, and
+scopes validation by output mode. `test/agent/wiki-link-validator-dogfood.test.ts`
+is the dogfood companion: it copies the repository's checked-in `openwiki/`
+tree into a temp root (not the live checkout, so a broken link in someone's
+working tree cannot be rewritten by `pnpm test`) and asserts the real
+checked-in content passes validation — `filesScanned` and `linksChecked` are
+both greater than zero and `issuesFound` is `0`.
 
 ### Claims: nested layout
 
@@ -761,8 +849,13 @@ quoting, escaping quotes/backslashes/newlines, escaping carriage returns, and
 ordering managed keys first (in `MANAGED_ENV_KEYS` order) then unknown keys
 sorted alphabetically. A `parseEnv <-> formatEnv` round-trip suite confirms
 values — including carriage returns and the Windows path regression — survive
-a `format → parse` round-trip. The `MANAGED_ENV_KEYS` suite pins which keys the
-managed-environment surface owns: the output-token limits
+a `format → parse` round-trip, and a dedicated round-trip test pins the
+OpenAI-compatible Entra auth pair (`OPENAI_COMPATIBLE_AUTH` /
+`OPENAI_COMPATIBLE_ENTRA_SCOPE`) so the gateway-auth values survive
+serialization. The `MANAGED_ENV_KEYS` suite pins which keys the
+managed-environment surface owns: the OpenAI-compatible auth mode and Entra
+scope (`OPENAI_COMPATIBLE_AUTH` followed immediately by
+`OPENAI_COMPATIBLE_ENTRA_SCOPE` in provider order), the output-token limits
 (`OPENWIKI_MAX_OUTPUT_TOKENS`, `OPENWIKI_BEDROCK_MAX_TOKENS`), the stream idle
 timeout (`OPENWIKI_STREAM_IDLE_TIMEOUT`), the **repository page-worker
 concurrency** (`OPENWIKI_PAGE_CONCURRENCY`), the gemini-enterprise (Vertex)
@@ -779,7 +872,8 @@ and resolution, the `resolveProviderBaseUrl` defaults and overrides — includin
 the hosted OpenAI-compatible providers where `BOB_BASE_URL` (via
 `BOB_BASE_URL_ENV_KEY`) and the baseten/fireworks/nvidia keys override the
 built-in defaults while a whitespace-only override falls back to the default
-(`bob` is among the providers with a built-in default) — provider retry
+(`bob` is among the providers with a built-in default) and the Copilot base URL
+resolves from `COPILOT_BASE_URL` — provider retry
 attempts, per-provider max-output-token ceilings, stream-idle-timeout
 resolution, reasoning capability flags, the Bedrock AWS-SDK credential/region
 surface, and provider API-key env-key resolution. It also pins the page-worker
@@ -857,20 +951,21 @@ it, and the MCP transport server that exposes it.
 ### Integrations: installer, config adapters, dogfood, and package contents
 
 - `test/integrations/installer.test.ts` is the broadest host-installer suite. It
-  pins the `HOST_TARGETS` registry — the eight supported hosts (bob, codex,
-  claude, opencode, cursor, kiro, omp, antigravity) with their per-host
-  `producerActor`, user/project skill-directory and MCP-config destinations
-  (JSON for most, Codex TOML, OpenCode JSONC) — pins that bob shares Codex's
-  `.agents/skills/openwiki` directory while every other host's user skill
-  directory is distinct, and exercises `HostIntegrationInstaller` install /
-  uninstall / status across every target. It asserts a project install from a
-  subdirectory writes at the Git root (not the subdirectory) and rejects
-  installation outside a Git repository, that user and project installations are
-  independent (uninstalling one leaves the other intact), that a modified
-  receipt (whitespace-only MCP command, removed skill, or removed MCP entry)
-  reports `modified`, that uninstalling a modified integration rejects with
-  `conflict` leaving files in place, that host directory cleanup preserves the
-  host root derived from the skill path, and that
+  pins the `HOST_TARGETS` registry — the nine supported hosts (bob, codex,
+  claude, opencode, cursor, kiro, omp, antigravity, copilot) with their
+  per-host `producerActor`, user/project skill-directory and MCP-config
+  destinations (JSON for most, Codex TOML, OpenCode JSONC) — pins that bob
+  shares Codex's `.agents/skills/openwiki` directory while every other host's
+  user skill directory is distinct, and exercises `HostIntegrationInstaller`
+  install / uninstall / status across every target. It asserts a project
+  install from a subdirectory writes at the Git root (not the subdirectory)
+  and rejects installation outside a Git repository, that user and project
+  installations are independent (uninstalling one leaves the other intact), that
+  a modified receipt (whitespace-only MCP command, removed skill, or removed
+  MCP entry) reports `modified`, that uninstalling a modified integration
+  rejects with `conflict` leaving files in place, that host directory cleanup
+  preserves the host root derived from the skill path, that symlinked
+  destination components are rejected, and that
   `resolveCanonicalSkillBundle` resolves the same on-disk
   `integrations/openwiki` bundle from both source (`installer.ts`) and built
   (`installer.js`) layouts.
@@ -888,18 +983,21 @@ it, and the MCP transport server that exposes it.
   `runIntegrationsCommand` (no installer mock) against a disposable Git
   repository, installing Codex at project scope and asserting the on-disk
   artifacts (`SKILL.md`, `.codex/config.toml` with
-  `args = ["mcp", "--host", "codex"]`), then listing, reinstalling as
-  `unchanged`, and uninstalling (removing `.agents/skills/openwiki`). A
-  parameterized suite across every host reports/repairs/uninstalls partial
-  states (removed skill or MCP entry) and ends `not-installed` with no stderr.
+  `args = ["mcp", "--host", "codex"]`), then listing (the tabular list now
+  includes the `copilot` row alongside bob, codex, claude, opencode, cursor,
+  kiro, omp, and antigravity), reinstalling as `unchanged`, and uninstalling
+  (removing `.agents/skills/openwiki`). A parameterized suite across every
+  host reports/repairs/uninstalls partial states (removed skill or MCP entry)
+  and ends `not-installed` with no stderr.
 - `test/integrations/package-contents.test.ts` runs `npm pack --dry-run --json`
   to pin the published bundle: every canonical
   `integrations/openwiki/...` skill file is packed, `package.json` is packed,
-  no packed path is absolute, and the bundle excludes generated installation
-  state (`.openwiki-install.json`, `.agents/`, `.claude/`, `.codex/`,
-  `.opencode/`, `.cursor/`, `.kiro/`, `.omp/`, `.gemini/`, `.config/`,
-  `.deepagents/`, staging, rollback, fixture) and any file leaking the
-  absolute package root.
+  the PI extension and `pi`/`skills` manifest metadata are packed, no packed
+  path is absolute, and the bundle excludes generated installation state
+  (`.openwiki-install.json`, `.agents/`, `.claude/`, `.codex/`,
+  `.opencode/`, `.cursor/`, `.kiro/`, `.copilot/`, `.github/`, `.omp/`,
+  `.gemini/`, `.config/`, `.deepagents/`, staging, rollback, fixture) and any
+  file leaking the absolute package root.
 
 ### Integrations: protocol, session manager, and MCP server
 
@@ -995,10 +1093,11 @@ it, and the MCP transport server that exposes it.
 the repository generation workflow. It imports `parseFrontmatterFields` and
 `validateOkfFrontmatter` from `src/okf/frontmatter.ts`, plus the run lifecycle
 (`beginRepositoryRun`, `submitRepositoryPlan`, `nextRepositoryPage`,
-`submitRepositoryPage`, `finishRepositoryRun`) and the skip/inspect primitives
-(`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
-`inspectRepositoryPageClaims`) from `src/generation/repository-run.ts`, and
-drives the full begin → submit_plan → next_page → submit_page → finish
+`submitRepositoryPage`, `finishRepositoryRun`), the snapshot/skip/restore
+primitives (`captureRepositoryPageSnapshot`, `skipRepositoryPage`,
+`restoreRepositoryPage`, `inspectRepositoryPageClaims`) from
+`src/generation/repository-run.ts`, and drives the full begin → submit_plan →
+next_page → submit_page → finish
 lifecycle against a temporary committed Git repository. A `failureHarness`
 created with `vi.hoisted` wraps the real `page-manifest.js`, `agent/utils.js`,
 and `run-state.js` modules to inject failures on selected calls while otherwise
@@ -1017,24 +1116,29 @@ returns the current pending page's complete Claims only for that page's job id
 and throws for any other id, and `finishRepositoryRun` finalizes completed
 work, stamps provenance, and persists run metadata.
 
-The suite also covers the **skip path** for a page whose worker does not
-submit: `captureRepositoryPageSnapshot` snapshots the on-disk Markdown and
-Claims before the page is mutated, `skipRepositoryPage` restores that snapshot
-and marks the page `skipped` (the `restores the exact pending Markdown and
-Claims snapshot` test), and `finishRepositoryRun` accepts a
-`skippedPageSnapshots` list so a finish-after-skip leaves the original content
-and Claims in place, drops run state, and stamps an `interrupted` last-update
-status. A separate `resets an interrupted skipped job to pending on resume`
-test proves that resuming a run whose page was skipped re-queues that page as
-`pending` rather than carrying the skipped status forward. A
-`treats an absent page as a restorable snapshot` parameterized test (init and
-update) proves a never-written page snapshots `markdown: null`/`claims: null`
-and rolling it back removes the file, and a
+The suite also covers the **skip and restore path** for a page whose worker
+does not submit: `captureRepositoryPageSnapshot` snapshots the on-disk
+Markdown and Claims before the page is mutated, `restoreRepositoryPage`
+restores that snapshot while leaving the job `pending` (the `restores a page
+snapshot without skipping the pending job` test — the rewritten Markdown and
+Claims are rolled back, the page stays `pending`, and `nextRepositoryPage`
+still returns it), and `skipRepositoryPage` restores the snapshot and marks
+the page `skipped` (the `restores the exact pending Markdown and Claims
+snapshot` test). `finishRepositoryRun` accepts a `skippedPageSnapshots` list
+so a finish-after-skip leaves the original content and Claims in place, drops
+run state, and stamps an `interrupted` last-update status. A `preserves prior
+page coverage when a worker is skipped` test proves a skipped page keeps its
+prior manifest coverage across runs. A separate `resets an interrupted
+skipped job to pending on resume` test proves that resuming a run whose page
+was skipped re-queues that page as `pending` rather than carrying the skipped
+status forward. A `treats an absent page as a restorable snapshot`
+parameterized test (init and update) proves a never-written page snapshots
+`markdown: null`/`claims: null` and rolling it back removes the file, and a
 `tolerates a human-readable not-found error from the backend when skipping a
-never-written page` test (regression for #765) asserts the skip path tolerates
-a DeepAgents backend that returns `Error: File '...' not found` rather than a
-`file_not_found` code, so rolling back a new page worker does not abort the
-whole run.
+never-written page` test (regression for #765) asserts the skip path
+tolerates a DeepAgents backend that returns `Error: File '...' not found`
+rather than a `file_not_found` code, so rolling back a new page worker does
+not abort the whole run.
 
 ## Choosing the narrowest validation per subsystem
 
@@ -1054,9 +1158,9 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`.
 - **Run-log helpers:** `pnpm exec vitest run test/cli/run-log/` (reducer/progress/summary/activity/tool-input), or `-t "retains concurrent worker progress fields"` for the concurrent-worker progress field pin.
-- **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`) or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
-- **Agent sequential worker shape + skip path:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "restores and leaves a page pending when its worker does not submit"`.
-- **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
+- **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`), `-t "restores a page snapshot without skipping the pending job"` (restore leaves the page pending), or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
+- **Agent retry-before-skip:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "retries once when a worker exits without submitting and completes the page"` (recovered by retry) or `-t "skips a page worker that fails every attempt and continues the queue"` (give-up path).
+- **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off, not retried), `-t "does not lower concurrency for an ordinary worker failure"` (ordinary failure retried once), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
 - **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
 - **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
 - **LangSmith thread grouping:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "tags the planner and every concurrent page worker with the run's thread id"` (shared `thread_id` on planner + every worker) or `-t "uses OPENWIKI_TRACE_THREAD_ID when CI sets it"` (trimmed env override).
@@ -1082,9 +1186,12 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Visualizer graph builder:** `pnpm exec vitest run test/visualize/visualize-graph.test.ts`.
 - **Visualizer client interaction regression:** `pnpm exec vitest run test/visualize/client-interaction.test.ts` (jsdom; run `test/visualize/` for the full page/graph/client-lib slice).
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
+- **OpenAI-compatible Entra token provider:** `pnpm exec vitest run test/agent/entra-auth.test.ts` (lazy Azure Identity, workload-identity preference, token caching/refresh, error wrapping, HTTPS/scheme blocklist, and full Chat Completions/Responses × JSON/SSE model round-trips).
+- **OpenAI-compatible Entra model wiring:** `pnpm exec vitest run test/agent/create-model-entra.test.ts` (static-key preservation, renewable callback in `entra-id` mode, unsafe-base-URL and invalid-mode rejection).
+- **Wiki internal-link validator (dogfood):** `pnpm exec vitest run test/agent/wiki-link-validator-dogfood.test.ts` (checks the checked-in `openwiki/` tree passes validation) or `pnpm exec vitest run test/agent/wiki-link-validator.test.ts` (scoped unit cases).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
-- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, `MANAGED_ENV_KEYS` membership including `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, and the hosted OpenAI-compatible base URLs).
-- **Provider constants (incl. page-concurrency and Bob base-URL override):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia, retry/max-token/stream-timeout/reasoning surfaces).
+- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, the OpenAI-compatible Entra auth round-trip, `MANAGED_ENV_KEYS` membership including `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`, `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, and the hosted OpenAI-compatible base URLs).
+- **Provider constants (incl. page-concurrency and Bob/Copilot base-URL overrides):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia/copilot, retry/max-token/stream-timeout/reasoning surfaces).
 - **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
 - **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 

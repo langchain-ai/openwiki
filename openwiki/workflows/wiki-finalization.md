@@ -22,7 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -180,6 +183,11 @@ The validator enforces these invariants on generated pages:
 
 - **External and empty links are ignored.** Any href with a URI scheme or a
   protocol-relative `//` prefix, and any empty href, is skipped.
+- **Link syntax inside code is ignored.** Fenced code blocks (backtick or tilde
+  fences) and inline code spans are masked before link extraction, so
+  `[text](url)` appearing inside code is never treated as a link. Heading
+  extraction preserves inline code text because it contributes to anchor slugs,
+  so a heading like `## Use \`foo\`` exposes the `#use-foo` anchor.
 - **Targets are checked against the whole repository, not just the wiki.** A
   wiki page may legitimately link to a repo file (a design doc, a source file);
   a link is broken only when its target genuinely does not exist. Paths are
@@ -199,8 +207,11 @@ The validator enforces these invariants on generated pages:
 - **Heading anchors are validated only against Markdown targets.** Same-page
   anchors are checked against the source's own headings; cross-file anchors are
   checked against the target's headings only when the target is a `.md` file.
-  Anchors on directories and GitHub line anchors on source files (e.g. `#L10`)
-  are out of scope and never flagged.
+  Anchors on directories are out of scope and never flagged. GitHub line anchors
+  (`#L10`, `#L10-L20`, `#L10C2-L20C8`) are recognized by the `LINE_ANCHOR_PATTERN`
+  and left unflagged on *every* target, including `.md` files: GitHub resolves
+  them against the file's source lines, not its headings, so they are never
+  treated as broken heading anchors.
 - **Anchor slugs mirror GitHub exactly.** Slugs are lowercased with punctuation
   removed, each whitespace character replaced by a single hyphen (not collapsed),
   duplicates suffixed `-1`, `-2`, …, and Unicode letters, numbers, and combining

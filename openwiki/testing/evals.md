@@ -43,6 +43,9 @@ sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
 generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
+verified:
+  - by: openwiki/0.5.1
+    at: 2026-09-14T08:10:27.832Z
 ---
 
 # Evaluation Systems (LEDGER and DeepSWE)

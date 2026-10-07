@@ -30,7 +30,14 @@ sources:
     resource: repo://src/connectors/tools.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+  - id: openwiki-source-3c86ca0bb7fbb79f2be66a2b
+    resource: repo://src/integrations/core/retrieval-tools.ts
+  - id: openwiki-source-eab9328975981f427c4218d0
+    resource: repo://src/integrations/mcp/server.ts
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Code vs Personal Modes
@@ -88,8 +95,9 @@ There are two ways to request a non-default mode:
 - **Positional mode word.** A mode word in the first positional slot selects the
   mode even when flags precede it (for example `openwiki --print code --update`).
   This positional handling is deliberate: without it the mode word would be
-  treated as the user message and the run would silently target the default
-  personal-style wiki.
+  swallowed into the user message and the run would silently keep the default
+  `code` mode — so `openwiki --print personal --update` would update the
+  repository wiki instead of the personal brain.
 - **`--mode <personal|code>` flag.** The flag (and its `--mode=` form) validates
   the value and sets the mode with source `option`. An unrecognized value fails
   with `Invalid mode: ...`.
@@ -163,9 +171,14 @@ apply to code repository wikis only:
   `outputMode === "repository"`.
 - **Host-driven (coding-agent) runs.** Running OpenWiki inside Codex, Claude
   Code, OpenCode, and the other registered coding agents currently supports
-  repository code wikis only, not personal brains, and uses only repository
-  source and tests as context; connector-sourced context (including LangSmith)
-  is not yet supported in that path.
+  repository code wikis only, not personal brains. The MCP lifecycle the host
+  drives (`openwiki_begin` → `openwiki_submit_plan` → `openwiki_next_page` →
+  `openwiki_submit_page` → `openwiki_finish`) operates on a resolved Git
+  repository root and `openwiki/`, exposes read-only repository-wiki retrieval
+  plus the page-job generation queue, and never hands the host the connector
+  ingestion tools. The host researches the repository with its own native
+  tools, so connector-sourced context (including LangSmith) is not yet
+  supported in that path.
 
 ## Capabilities that apply to personal mode only
 

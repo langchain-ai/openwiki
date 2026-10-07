@@ -37,6 +37,9 @@ sources:
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
 generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+verified:
+  - by: openwiki/0.5.2
+    at: 2026-09-23T08:09:37.122Z
 ---
 
 # Interactive Visualizer

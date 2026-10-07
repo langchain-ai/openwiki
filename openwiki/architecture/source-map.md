@@ -24,6 +24,8 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-f8b008ed89162a0e204fc02d
     resource: repo://src/agent/bob.ts
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
@@ -92,17 +94,24 @@ sources:
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7388b63c6f928737a7109779
     resource: repo://src/setup/credentials/steps.ts
+  - id: openwiki-source-7c7ce1305f8f14f43fec29de
+    resource: repo://src/setup/credentials/use-init-setup.ts
   - id: openwiki-source-14d4f389b56575bb7afd1310
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-a1d0931b37e6e9efdee37e97
     resource: repo://src/telemetry/index.ts
+  - id: openwiki-source-04684180af5ec3c4b1911941
+    resource: repo://src/telemetry/taxonomy.ts
   - id: openwiki-source-d92f623adbf6b31c3542d58d
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Source Map
@@ -137,23 +146,31 @@ before anything else.
   `parseAgentStreamChunk` suppresses content blocks whose `type` includes
   `file` or `image` (notably `file`, `input_file`, and `image_url` base64
   blobs) so they never reach the terminal — behavior pinned by
-  `test/agent/stream-redaction.test.ts`.
+  `test/agent/stream-redaction.test.ts`. `createModel`'s `openai-compatible`
+  branch delegates authentication to Microsoft Entra ID when
+  `resolveOpenAICompatibleAuthMode` is `entra-id`, wiring
+  `createEntraTokenProvider` (from `agent/entra-auth.ts`) as the OpenAI SDK
+  API-key callback so a long-running model uses refreshed Entra tokens without
+  reconstruction.
 - **`src/config/constants.ts`** is the single large registry of stable strings:
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
   Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the IBM Bob
   keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the `openai-compatible`
-  keys — including the `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
+  keys — including the `OPENAI_COMPATIBLE_AUTH_ENV_KEY` (`api-key`/`entra-id`)
+  mode selector, the `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY` scope and its
+  `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` Azure Cognitive Services default, the
+  `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
   `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` gates — and the
   connector OAuth keys) and the `OpenWikiProvider` union (which includes the
-  `bob` provider). It also owns the output-token ceilings:
-  `resolveConfiguredMaxOutputTokens` picks the right provider-specific setting
-  (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
+  `bob` and `gemini-enterprise` providers). It also owns the output-token
+  ceilings: `resolveConfiguredMaxOutputTokens` picks the right provider-specific
+  setting (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
   `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls back to
   `BEDROCK_DEFAULT_MAX_TOKENS` (16000) so Bedrock's 4096-token default does not
-  truncate long pages. It additionally gates reasoning effort and stream mode
-  for `openai-compatible` providers: it exports
+  truncate long pages. It additionally gates reasoning effort, stream mode, and
+  Entra ID authentication for `openai-compatible` providers: it exports
   `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` and
   `resolveOpenAiCompatibleReasoningEffortSupported`, which `reasoning.ts` consults
   to decide whether an `openai-compatible` model advertises a reasoning
@@ -162,9 +179,14 @@ before anything else.
   `resolveOpenAiCompatibleStreamMessages` (the
   `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` resolver), which opts an
   `openai-compatible` endpoint back into LangGraph's `"messages"` stream mode.
-  It also resolves repository page-worker concurrency (`resolvePageConcurrency`,
-  clamping `OPENWIKI_PAGE_CONCURRENCY` between `DEFAULT_PAGE_CONCURRENCY` of 1
-  and the `MAX_PAGE_CONCURRENCY` cap of 8) and the provider retry count
+  `resolveOpenAICompatibleAuthMode` reads `OPENAI_COMPATIBLE_AUTH_ENV_KEY`
+  (defaulting to `api-key`, failing closed on an invalid value) and
+  `providerUsesEntraId` reports whether a provider delegates authentication to
+  Azure Identity; `resolveOpenAICompatibleEntraScope` returns the configured
+  scope or the Cognitive Services default. It also resolves repository
+  page-worker concurrency (`resolvePageConcurrency`, clamping
+  `OPENWIKI_PAGE_CONCURRENCY` between `DEFAULT_PAGE_CONCURRENCY` of 1 and the
+  `MAX_PAGE_CONCURRENCY` cap of 8) and the provider retry count
   (`resolveProviderRetryAttempts`, which raises the default from
   `DEFAULT_PROVIDER_RETRY_ATTEMPTS` to `PARALLEL_PROVIDER_RETRY_ATTEMPTS` when
   more than one worker runs, since concurrent workers make transient rate
@@ -203,8 +225,9 @@ before anything else.
   lose a completion while the model-owned work stays outside the lock. It also
   owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot` records
   the pending page and its claims sidecar before a worker runs,
-  `skipRepositoryPage` rolls a failed worker back (restoring the page markdown
-  and sidecar, marking the job `skipped`), and
+  `restoreRepositoryPage` (also used between worker retries) restores the page
+  markdown and sidecar, `skipRepositoryPage` rolls a failed worker back
+  (restoring the page markdown and sidecar, marking the job `skipped`), and
   `restoreRepositoryPageMarkdown` re-applies the snapshot during
   `finishRepositoryRun` for every skipped job, tolerating a not-found page when
   the snapshot recorded no markdown.
@@ -230,40 +253,49 @@ persistence shared by the generation lifecycle), `src/agent/docs-only-backend.ts
 (`okf-middleware.ts`, `translation-middleware.ts`), the prompt builders
 (`prompt.ts`, `repository-prompts.ts`), read-boundary enforcement
 (`openwiki-ignore.ts`), wiki post-processing (`wiki-finalizer.ts`,
-`wiki-link-validator.ts`, `wiki-replacement.ts`), and the ChatGPT/Vertex auth
-surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), and the IBM Bob fetch
-adapter (`bob.ts`, whose `createBobFetch` rewrites `Authorization: Bearer …` to
-`Apikey <key>` and sets the `ibm-bob-openwiki-provider` `User-Agent` required by
-Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch).
+`wiki-link-validator.ts`, `wiki-replacement.ts`), the ChatGPT/Vertex auth
+surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), the Microsoft Entra
+ID token provider (`entra-auth.ts`, whose `createEntraTokenProvider` builds an
+OpenAI SDK credential callback backed by Azure Identity — lazily loading
+`@azure/identity`, selecting `WorkloadIdentityCredential` when
+`AZURE_FEDERATED_TOKEN_FILE` is set else `DefaultAzureCredential`, rejecting
+non-HTTPS or metadata-host endpoints, and never surfacing the original Identity
+error — wired into `createModel`'s `openai-compatible` `entra-id` branch), and
+the IBM Bob fetch adapter (`bob.ts`, whose `createBobFetch` rewrites
+`Authorization: Bearer …` to `Apikey <key>` and sets the
+`ibm-bob-openwiki-provider` `User-Agent` required by Bob's Cloudflare WAF —
+wired into `createModel`'s `bob` branch).
 
 `repository-runner.ts` owns the native runner's full responsibility set.
 `runNativeRepositoryGeneration` drives the loop — begin the durable run
 (`beginRepositoryRun`), run the bounded planner (`runPlanningAgent`,
-L431–L524), then run every pending page with fresh shell-free workers
-(`runPendingPageAgents` L614–L657 / `runWorkerLoop` L692+) — emitting
+L433–L524), then run every pending page with fresh shell-free workers
+(`runPendingPageAgents` L615–L658 / `runWorkerLoop` L693+) — emitting
 `repository_progress` events at each stage (`noop`, `planning`, `generating`,
 `finalizing`); the `generating` event from `emitGeneratingProgress` reports the
 focused page's position plus, when more than one worker is configured, the
-`completedCount` and the `inFlightPages` list. `runPageAgent` (L851–L965)
-builds each per-page worker: it captures a `RepositoryPageSnapshot` via
-`captureRepositoryPageSnapshot` before any model work, and on a worker that
-exits without submitting it calls `skipRepositoryPage` to restore the page and
-mark it `skipped`, collecting the snapshots and passing them to
-`finishRepositoryRun` so skipped pages keep their pre-work content and are
-reconsidered on the next update. Each worker is given an `inspect_claims`
-tool (backing `inspectRepositoryPageClaims`) and a `submit_page` tool (backing
-the sparse `submitRepositoryPage`). The planner and every page worker are
-grouped into one LangSmith thread: `resolveTraceThreadId` (from
-`config/constants.ts`) supplies the shared `configurable.thread_id` passed to
-`streamWorkerTools` (L987–L1017); `PLANNER_AGENT_NAME` names the planner
-trace and `workerAgentName(page)` names each page-worker trace, so a run's
-thread reads as one planner and one worker per page. `parseWorkerToolEvent`
-(L1025–L1060) normalizes DeepAgents `tools`-stream chunks into bounded tool
-lifecycle events (dropping worker narration and any tool outside
-`WORKER_TOOL_NAMES`). `NO_DELEGATION_MIDDLEWARE` strips the general-purpose
-`task` tool that DeepAgents 1.12 adds even with empty subagents, so the
-non-delegating repository workers keep a bounded tool surface; the
-`coerceRepositoryWorkerModelResponse` helper normalizes
+`completedCount` and the `inFlightPages` list. `runPageAgent` (L856–L894)
+captures a `RepositoryPageSnapshot` via `captureRepositoryPageSnapshot` before
+any model work, then runs up to `PAGE_WORKER_ATTEMPT_LIMIT` (2) attempts via
+`runPageWorkerAttempt` (L906–L1018); a worker that exits without submitting is
+reset to the pre-run snapshot with `restoreRepositoryPage` before the retry, and
+if it still fails it calls `skipRepositoryPage` to restore the page and mark it
+`skipped`, collecting the snapshots and passing them to `finishRepositoryRun`
+so skipped pages keep their pre-work content and are reconsidered on the next
+update. A rate-limit failure surfaces to the pool immediately rather than
+retrying. Each worker attempt is given an `inspect_claims` tool (backing
+`inspectRepositoryPageClaims`) and a `submit_page` tool (backing the sparse
+`submitRepositoryPage`). The planner and every page worker are grouped into one
+LangSmith thread: `resolveTraceThreadId` (from `config/constants.ts`) supplies
+the shared `configurable.thread_id` passed to `streamWorkerTools` (L1040–L1070);
+`PLANNER_AGENT_NAME` names the planner trace and `workerAgentName(page)` names
+each page-worker trace, so a run's thread reads as one planner and one worker
+per page. `parseWorkerToolEvent` (L1078–L1113) normalizes DeepAgents
+`tools`-stream chunks into bounded tool lifecycle events (dropping worker
+narration and any tool outside `WORKER_TOOL_NAMES`). `NO_DELEGATION_MIDDLEWARE`
+strips the general-purpose `task` tool that DeepAgents 1.12 adds even with
+empty subagents, so the non-delegating repository workers keep a bounded tool
+surface; the `coerceRepositoryWorkerModelResponse` helper normalizes
 OpenAI-compatible streaming aggregates that arrive as generic chat messages
 (coercing them back to `AIMessage`/`AIMessageChunk` with parsed tool calls)
 before LangChain validates the `wrapModelCall` response.
@@ -315,9 +347,11 @@ six-operation surface (`beginRepositoryRun`, `submitRepositoryPlan`,
 and `existingClaimCount` rather than the full Claim set;
 `inspectRepositoryPageClaims` returns the complete compact Claim set on demand.
 Its snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
-`skipRepositoryPage`, `restoreRepositoryPageMarkdown`) let a failed page worker
-be rolled back to its pre-work state and marked `skipped` rather than failing the
-whole run; `restoreRepositoryPageMarkdown` tolerates a not-found page when the
+`restoreRepositoryPage`, `skipRepositoryPage`, `restoreRepositoryPageMarkdown`)
+let a failed page worker be rolled back to its pre-work state and marked
+`skipped` rather than failing the whole run; `restoreRepositoryPage` (also used
+between worker retries) restores both the page markdown and its Claims sidecar,
+while `restoreRepositoryPageMarkdown` tolerates a not-found page when the
 snapshot held no markdown, so deleting a newly added page counts as a clean
 restore; `finishRepositoryRun` requires a snapshot for every skipped job
 (matching `jobId` and `path`) and re-applies those snapshots before finalizing.
@@ -434,22 +468,29 @@ their schedules, and power-management settings) and the home
 `INSTRUCTIONS.md`. `src/setup/credentials/` holds the provider-credential setup
 steps (`steps.ts`), persistence (`persistence.ts`), and formatting
 (`format.ts`), reading provider key/region/model requirements from
-`config/constants.ts` and the reasoning capability from `config/reasoning.ts`.
+`config/constants.ts` (including the `openai-compatible` `entra-id` auth mode,
+whose `resolveOpenAICompatibleAuthMode` import drives the Entra scope step) and
+the reasoning capability from `config/reasoning.ts`.
 
 ### config — environment, home directory, reasoning, and constants
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
 registry (path constants, provider env keys — including the IBM Bob
-`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the `bob` provider in the
-`OpenWikiProvider` union, and the `openai-compatible` streaming/responses-API
-gates plus `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
+`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the `bob` and `gemini-enterprise`
+providers in the `OpenWikiProvider` union, and the `openai-compatible`
+streaming/responses-API gates plus `OPENAI_COMPATIBLE_AUTH_ENV_KEY` (the
+`api-key`/`entra-id` mode selector), `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`
+and its `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` Azure Cognitive Services
+default, `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`, and
 `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults), and
 also owns the output-token resolution helpers
 (`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
 `BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`,
 `resolveOpenAiCompatibleStreamMessages`, and `providerUsesResponsesApi`, which
 gate reasoning effort, stream mode, and the responses API transport for
-`openai-compatible` providers; it also resolves page-worker concurrency
+`openai-compatible` providers; `resolveOpenAICompatibleAuthMode`,
+`providerUsesEntraId`, and `resolveOpenAICompatibleEntraScope` gate Entra ID
+authentication; it also resolves page-worker concurrency
 (`resolvePageConcurrency`, reading `OPENWIKI_PAGE_CONCURRENCY` between
 `DEFAULT_PAGE_CONCURRENCY` of 1 and the `MAX_PAGE_CONCURRENCY` cap of 8) and
 the provider retry count (`resolveProviderRetryAttempts`, which raises the
@@ -464,15 +505,19 @@ the LangSmith trace-thread id (`resolveTraceThreadId`, returning the
 workers into one thread). `env.ts`
 loads and saves the OpenWiki `.env` and
 is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
-now including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
-`OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`, and
-`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), from which the
-credential-diagnostic and debug key lists derive; `openwiki-home.ts` resolves the
-home/wiki directories; `reasoning.ts` resolves reasoning settings, owning the
-three reasoning transports (`responses-reasoning`,
-`chat-completions-reasoning-effort`, `gemini-thinking-level`) and the
-`openai-compatible` capability resolution that consults
-`resolveOpenAiCompatibleReasoningEffortSupported` and
+including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
+`OPENAI_COMPATIBLE_AUTH_ENV_KEY`, `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`,
+`OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`,
+`OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY`,
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY`, and the
+`OPENAI_COMPATIBLE_STREAMING_ENV_KEY`), from which the
+credential-diagnostic (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and debug
+(`DEBUG_ENV_KEYS`) key lists derive so a new managed key cannot drift;
+`openwiki-home.ts` resolves the home/wiki directories; `reasoning.ts` resolves
+reasoning settings, owning the three reasoning transports
+(`responses-reasoning`, `chat-completions-reasoning-effort`,
+`gemini-thinking-level`) and the `openai-compatible` capability resolution
+that consults `resolveOpenAiCompatibleReasoningEffortSupported` and
 `providerUsesResponsesApi` from `constants.ts`.
 
 ### integrations — host-tool integration and MCP server surface
@@ -534,7 +579,12 @@ Owns opt-out usage telemetry and error taxonomy. `src/telemetry/index.ts` is the
 public barrel re-exporting `recordRun`/`recordRunSafe`, `withRunTelemetry`,
 error classification (`classifyError`, `tagErrorStage`), and the opt-out gates
 (`isTelemetryDisabled`, `isCiEnvironment`). `senders.ts`, `errors.ts`, and
-`taxonomy.ts` carry the implementation.
+`taxonomy.ts` carry the implementation; `taxonomy.ts` owns the anonymity spine
+for error telemetry — `FIXED_ERROR_DETAILS` is the hardcoded allowlist of detail
+values each closed error family may emit, `normalizeErrorDetail` drops any
+observed detail not on its family's list (with `agent_error` gated by
+`isSafeErrorIdentifier` against a bare-identifier pattern), and `deriveOwner`
+maps each (class, detail, stage) triple to the owner responsible for the fix.
 
 ### platform — OS and filesystem primitives
 

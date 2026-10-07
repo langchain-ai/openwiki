@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.7.0
-    at: 2026-10-06T08:10:08.863Z
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -22,6 +22,8 @@ sources:
     resource: repo://src/agent/crash-guard.ts
   - id: openwiki-source-12c17ed8ca9c89ec61f28df7
     resource: repo://src/agent/docs-only-backend.ts
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
@@ -48,9 +50,11 @@ sources:
     resource: repo://src/model-availability.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
+  - id: openwiki-source-6e76d6023798412a72871e94
+    resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -277,15 +281,15 @@ Each worker loop waits a per-slot `workerStartStaggerMs` (default 1,000 ms, igno
 
 ### Page workers
 
-`runPageAgent` builds one fresh worker bounded to its assigned page job. Its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page. It is built with `name: workerAgentName(job.path)` (`"worker agent: <page>"`). Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus three completion tools:
+`runPageAgent` drives one page job with a retry-before-skip loop. It captures a pre-run snapshot, then runs up to `PAGE_WORKER_ATTEMPT_LIMIT` (2) fresh worker attempts via `runPageWorkerAttempt`. Each attempt builds a fresh worker bounded to exactly its assigned page job: its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page, and it is built with `name: workerAgentName(job.path)` (`"worker agent: <page>"`). Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus two completion tools:
 
-- `submit_page` completes the page after it is written. It accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`) against `ClaimReconciliationSchema` and forwards them to `submitRepositoryPage`; other current Claims are retained automatically. An `invalid_input` rejection becomes a correctable `ToolMessage`; any other throw marks the submission fatal. It can be called at most once per worker.
+- `submit_page` completes the page after it is written. It accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`) against `ClaimReconciliationSchema` and forwards them to `submitRepositoryPage`; other current Claims are retained automatically. An `invalid_input` rejection becomes a correctable `ToolMessage`; any other throw marks the submission fatal. It can be called at most once per worker attempt.
 - `inspect_claims` returns the page's complete current Claim set, for use only before intentionally revising or removing otherwise-current content; ordinary focused updates should not call it.
 - `submit_plan` is named in the worker tool allowlist (`WORKER_TOOL_NAMES`) for event classification but is not contributed to page workers — only the planner owns planning.
 
 The worker's middleware is again `createFilesystemMiddleware` (over `PAGE_FILESYSTEM_TOOLS`) plus `NO_DELEGATION_MIDDLEWARE`, which filters out the general-purpose `task` tool that DeepAgents contributes even when `subagents` is empty, so repository workers are deliberately non-delegating. `coerceRepositoryWorkerModelResponse` normalizes provider-streaming aggregates that arrived without `role: "assistant"` (for example reasoning-only first deltas) into proper `AIMessage`/`AIMessageChunk` so LangChain's `wrapModelCall` validator accepts them.
 
-If a page worker throws after submitting, it counts as submitted. If it throws before submitting on a non-fatal error, the runner restores the page's pre-run snapshot via `skipRepositoryPage`, records it as skipped (to be reconsidered on the next update), and emits a deferred-page warning; a fatal submission failure rethrows and is captured by the pool's `fatal` slot. The worker is streamed by `streamWorkerTools`, which streams only bounded tool lifecycle events — narration is never surfaced — and threads the shared trace thread id into its `agent.stream` call's `configurable.thread_id`; `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools (those in `WORKER_TOOL_NAMES`), tagging the page onto each event.
+A worker attempt that throws after submitting counts as submitted. If an attempt exits without submitting on a non-fatal error, `runPageAgent` restores the page and its Claims to the pre-run snapshot via `restoreRepositoryPage` and retries (so both attempts start from the same state), unless the attempt limit is already reached or the error is a provider rate limit — a rate limit is surfaced to the pool immediately rather than retried at once, because the provider is asking for less traffic. Only after the attempts are exhausted does `runPageAgent` call `skipRepositoryPage`, record the page as skipped (to be reconsidered on the next update), and emit a deferred-page warning. A fatal submission failure is not retried — the store itself is refusing, so a second attempt would fail the same way — and the thrown error propagates to the pool's `fatal` slot. The worker is streamed by `streamWorkerTools`, which streams only bounded tool lifecycle events — narration is never surfaced — and threads the shared trace thread id into its `agent.stream` call's `configurable.thread_id`; `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools (those in `WORKER_TOOL_NAMES`), tagging the page onto each event.
 
 ## The host-driven session manager
 

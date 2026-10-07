@@ -31,11 +31,16 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-106c72a9cb6dd904077fc747
     resource: repo://src/cli/runners.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # CI Scheduling and Self-Update
@@ -207,11 +212,20 @@ Every example follows the same shape:
    `CLAUDE.md`, and the workflow file) and exit early with "OpenWiki is already up
    to date." when there is no diff; otherwise they create a branch, commit,
    push, and open a merge/pull request through the provider's REST API.
+4. **Annotate and propagate the outcome.** All GitHub workflows emit a run
+   notice linking the created PR (`::notice title=OpenWiki update pull request`)
+   when a PR was opened, then a trailing **"Propagate OpenWiki failure"** step
+   runs `exit 1` when the update outcome is `failure` so a real error is not
+   hidden by the partial PR. The GitLab and Bitbucket examples end at the
+   merge/pull-request API call.
 
 The PR is scoped to the documentation paths (`openwiki`, `AGENTS.md`, `CLAUDE.md`,
 and the workflow file), branched under `openwiki/update` (GitHub) or
 `openwiki/update-<pipeline id>` (GitLab/Bitbucket), with the commit and title
-`docs: update OpenWiki`.
+`docs: update OpenWiki`. On GitHub, the workflow path is listed only when present
+(`AGENTS.md` and `CLAUDE.md` are optional); the explicit `git diff --quiet` check
+in the GitLab and Bitbucket examples lists the fixed path set including the
+workflow file.
 
 The GitHub example also models a **failure-tolerant** run. The `openwiki code
 --update` step sets `continue-on-error: true` so a failed generation does not
@@ -224,6 +238,22 @@ trailing **"Propagate OpenWiki failure"** step (`exit 1` when the outcome is
 Both the example and the live workflow delete the transient `openwiki/.run.json`
 run-state file before creating the PR, so the partial progress that survives is
 the committed wiki, not leftover in-process state.
+
+#### Trace thread per update
+
+Each scheduled update is one repository run, and OpenWiki groups all of that
+run's traces into a single LangSmith thread so the planner and the per-page
+workers collapse into one grouped trace rather than one root trace per agent.
+The thread id is the run's durable `runId` (which a resumed run keeps),
+overridable via the `OPENWIKI_TRACE_THREAD_ID` environment variable. Because CI
+runs are not resumed (see the caveat below), the default run id already gives one
+thread per scheduled update. The override exists so CI can name the thread after
+the change that caused it — for example, deriving a thread id from the commit
+that triggered the run — but none of the shipped example or live workflows set
+it today. The planner agent streams as `"planning agent"` and each page worker as
+`"worker agent: <page>"` within that shared thread; because repository workers
+have no checkpointer, sharing one thread id across concurrent workers is safe —
+it only affects LangSmith grouping, not execution state.
 
 #### Auto-merge variant
 
@@ -310,7 +340,9 @@ external repository should copy; `examples/openwiki-update-auto-merge.yml` does
 the same but adds the auto-merge/disable-auto-merge pattern; whereas
 `.github/workflows/openwiki-update.yml` runs `pnpm install --frozen-lockfile &&
 pnpm build` against the checked-out OpenWiki source to dogfood main. The live
-workflow additionally restores the protected workflow file with `git checkout --
+workflow additionally enables the Socket Firewall (`socketdev/action` in
+`firewall-free` mode) before installing dependencies, restores the protected
+workflow file with `git checkout --
 .github/workflows/openwiki-update.yml` after the run because `code --update`
 regenerates that file from an internal template and would otherwise drop the
 fork guard; the discard runs `if: ${{ !cancelled() }}` so the guard survives
@@ -335,6 +367,30 @@ uncommitted run state and the next run starts fresh rather than resuming. Resume
 only helps on a persistent checkout (for example a developer's machine). This is
 why the CI examples treat each run as a full pass and rely on the committed wiki,
 plus full git history, as the only durable state carried between runs.
+
+## Focused tests
+
+The pure cron and power-schedule surface of `src/scheduling/schedules.ts` is
+pinned by `test/scheduling/schedules.test.ts`, which deliberately excludes the
+`launchctl`/`pmset`-shelling install/list/pause/resume/delete helpers (those
+belong in integration tests):
+
+- `validateCronExpression` — accepts a valid five-field expression and describes
+  it (`0 2 * * *` → `2:00 AM`), collapses surrounding/repeated whitespace before
+  validating, rejects empty/whitespace-only input with the
+  `Enter a cron expression like 0 2 * * *.` guidance, and rejects unparseable
+  input while echoing back what was entered.
+- `getSuggestedCronExpression` — returns the saved ingestion expression when one
+  exists, otherwise falls back to `0 2 * * *` (2 AM daily).
+- `describeCronExpression` — renders a twelve-hour human description and throws
+  on an unparseable expression rather than returning junk.
+- `getSavedPowerScheduleStatus` — returns `null` when no `pmset` schedule is
+  saved and mirrors the saved `pmset` fields into a status object otherwise.
+
+The shared LangSmith thread grouping that gives one trace thread per update is
+pinned by the repository-runner suite, not the scheduling suite; see
+[repository generation](../workflows/repository-generation.md) and
+[testing overview](../testing/overview.md) for those tests.
 
 ## Related pages
 

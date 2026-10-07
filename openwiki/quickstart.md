@@ -36,7 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # OpenWiki Quickstart
@@ -52,7 +55,7 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.6.1), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.7.1), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
@@ -158,7 +161,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Understand grounded Claims: material facts tied to versioned repository evidence   | [Grounded Claims](./concepts/grounded-claims.md)             |
 | See what OKF output looks like (frontmatter, provenance, validated Mermaid)        | [Open Knowledge Format Output](./concepts/okf-output.md)     |
-| Look up supported model providers, their env keys, base URLs, auth methods, and credentials | [Model Providers and Credentials](./concepts/model-providers.md) |
+| Look up supported model providers, their env keys, base URLs, auth methods (API keys, OAuth, AWS SDK, external CLI, IBM Bob, Entra ID), and credentials | [Model Providers and Credentials](./concepts/model-providers.md) |
 
 ### Follow a workflow end to end
 
@@ -184,7 +187,7 @@ the canonical wiki pages; each one links into the deeper source map.
 
 | I want to…                                                                  | Read                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------ |
-| Run OpenWiki inside IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro, Oh My Pi, or Antigravity CLI | [Coding-Agent Integrations](./integrations/coding-agents.md) |
+| Run OpenWiki inside IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro, Oh My Pi, Antigravity CLI, or GitHub Copilot CLI | [Coding-Agent Integrations](./integrations/coding-agents.md) |
 | Understand the built-in source connectors, the ConnectorRuntime contract, and how to add a new one | [Source Connectors](./integrations/connectors.md) |
 | Explore the interactive graph visualizer (live server and static export)    | [Interactive Visualizer](./integrations/visualizer.md) |
 
@@ -247,8 +250,8 @@ follow-up `openwiki --update` to reconcile the drift.
 ## Host-driven generation
 
 OpenWiki can also run inside a host coding agent — IBM Bob, Codex, Claude Code,
-OpenCode, Cursor, Kiro, Oh My Pi (`omp`), or Antigravity CLI (`antigravity`) —
-instead of launching its own model. The integration shares one canonical skill
+OpenCode, Cursor, Kiro, Oh My Pi (`omp`), Antigravity CLI (`antigravity`), or
+GitHub Copilot CLI (`copilot`) — instead of launching its own model. The integration shares one canonical skill
 and the same six MCP operations as native generation:
 `openwiki_begin`, `openwiki_submit_plan`, `openwiki_next_page`, optional on-demand
 `openwiki_inspect_page_claims`, `openwiki_submit_page`, and `openwiki_finish`. The

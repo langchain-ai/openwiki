@@ -1,7 +1,7 @@
 ---
 type: operations-reference
 title: Configuration and Environment
-description: How OpenWiki loads, resolves, and persists configuration through environment variables and the ~/.openwiki state directory, including secret sanitization, atomic env writes, and provider/token/reasoning settings.
+description: How OpenWiki loads, resolves, and persists configuration through environment variables and the ~/.openwiki state directory, including secret sanitization, atomic env writes, Entra ID auth, and provider/token/reasoning settings.
 tags:
   [
     configuration,
@@ -10,9 +10,15 @@ tags:
     secrets,
     providers,
     reasoning,
+    entra-id,
     operations,
   ]
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 sources:
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
@@ -27,21 +33,28 @@ sources:
     resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-27fbd70857f0fae28185fe91
     resource: repo://src/platform/windows-acl.ts
+  - id: openwiki-source-c35800ddf00768a1fa848d13
+    resource: repo://src/setup/credentials/persistence.ts
+  - id: openwiki-source-76702f01df0808033c14cf17
+    resource: repo://test/agent/create-model-entra.test.ts
+  - id: openwiki-source-6e76d6023798412a72871e94
+    resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-5fc87e9739dab52c4e447110
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
 ---
 
 # Configuration and Environment
 
 OpenWiki is configured almost entirely through environment variables. Provider
-credentials, model selection, token limits, streaming toggles, and reasoning
-effort are all read from `process.env`, with a persisted fallback file at
-`~/.openwiki/.env`. This page describes where that state lives, how values are
-loaded and saved, the precedence between the shell and the saved file, how
-secrets are sanitized, and the key settings a reader needs to operate OpenWiki.
+credentials, model selection, token limits, streaming toggles, reasoning
+effort, and Entra ID authentication are all read from `process.env`, with a
+persisted fallback file at `~/.openwiki/.env`. This page describes where that
+state lives, how values are loaded and saved, the precedence between the shell
+and the saved file, how secrets are sanitized, and the key settings a reader
+needs to operate OpenWiki.
 
 Related reading: [Model providers](../concepts/model-providers.md),
 [CLI reference](./cli-reference.md), and [Onboarding](../workflows/onboarding.md).
@@ -80,11 +93,17 @@ OpenWiki reads or persists, in the exact order they are written to
 `~/.openwiki/.env`. It is the single source of truth: both the credential
 diagnostics list (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and the agent's debug-dump
 key list (`DEBUG_ENV_KEYS`) are derived from it by filtering, so they cannot
-silently drift out of sync when a new managed key is added — including the
-newer `OPENWIKI_PAGE_CONCURRENCY` key, which sits alongside
-`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` in the managed list. LangChain
-project/tracing settings are managed but are not credentials, so they are
-excluded from the diagnostics panel via `NON_CREDENTIAL_ENV_KEYS`.
+silently drift out of sync when a new managed key is added. The Entra ID keys
+`OPENAI_COMPATIBLE_AUTH` and `OPENAI_COMPATIBLE_ENTRA_SCOPE` sit alongside the
+other OpenAI-compatible settings (`OPENAI_COMPATIBLE_STREAM_MESSAGES`,
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`, and the streaming/Responses-API
+toggles) in the managed list, and the newer `OPENWIKI_PAGE_CONCURRENCY` and
+`OPENWIKI_PROVIDER_RETRY_ATTEMPTS` keys are also present. The Bob keys
+(`BOB_API_KEY`, `BOB_BASE_URL`) and Copilot keys (`COPILOT_API_KEY`,
+`COPILOT_BASE_URL`) are managed too. LangChain project/tracing settings
+(`LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`) are managed but are not
+credentials, so they are excluded from the diagnostics panel via
+`NON_CREDENTIAL_ENV_KEYS`.
 
 ## Loading and precedence
 
@@ -181,6 +200,52 @@ Fireworks, Nebius, NVIDIA, then Bedrock access/secret keys) and falling back to
 `DEFAULT_PROVIDER` (`openai`). Each provider declares its own credential env
 variables and optional base-URL override in `PROVIDER_CONFIGS`; see
 [Model providers](../concepts/model-providers.md) for the full registry.
+
+### OpenAI-compatible authentication and Entra ID
+
+The `openai-compatible` provider supports two authentication modes, selected by
+`OPENAI_COMPATIBLE_AUTH` (`api-key` or `entra-id`) and resolved by
+`resolveOpenAICompatibleAuthMode`:
+
+- **`api-key`** (default) sends a static `OPENAI_COMPATIBLE_API_KEY` as the
+  bearer credential. A missing or blank `OPENAI_COMPATIBLE_AUTH` retains this
+  behavior; an explicit value other than `api-key` or `entra-id` throws
+  "must be one of: api-key, entra-id", so an invalid mode fails closed.
+- **`entra-id`** delegates authentication to Microsoft Entra ID through Azure
+  Identity. `createEntraTokenProvider` returns an async API-key callback that
+  the OpenAI SDK invokes per request, so a long-running OpenWiki model uses
+  refreshed tokens without reconstruction. Azure Identity is loaded lazily on
+  first invocation; a configured `AZURE_FEDERATED_TOKEN_FILE` selects
+  `WorkloadIdentityCredential` (with `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`)
+  explicitly, otherwise the `DefaultAzureCredential` chain is used.
+
+The token scope comes from `OPENAI_COMPATIBLE_ENTRA_SCOPE`, resolved by
+`resolveOpenAICompatibleEntraScope`. Enterprise gateways normally declare their
+own application ID URI as the scope; when the variable is unset or blank it
+defaults to `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE`
+(`https://cognitiveservices.azure.com/.default`), the Azure OpenAI Cognitive
+Services scope. The setup wizard collects an optional custom scope (`entra-scope`
+step) and persists it only when Entra mode is chosen, alongside
+`OPENAI_COMPATIBLE_AUTH=entra-id`.
+
+`createEntraTokenProvider` validates the endpoint up front: it requires an
+HTTPS `OPENAI_COMPATIBLE_BASE_URL` with no embedded username/password and
+rejects cloud-metadata hostnames (`169.254.169.254`,
+`metadata.google.internal`) before any credential is acquired, so an unsafe
+endpoint never reaches Azure Identity. Token-acquisition and import failures
+are rethrown as a generic "Unable to obtain a Microsoft Entra ID access token"
+error that never attaches or logs the original SDK error (which can contain
+response details and credential material), and a constructor failure clears
+the cached provider so the next request can retry initialization.
+
+`providerUsesEntraId` returns true only for the `openai-compatible` provider in
+`entra-id` mode, and `providerRequiresApiKey` returns false for it (Entra does
+not need a static API key). In `createModel`, the `apiKey` field is set to the
+Entra token callback when `providerUsesEntraId(provider)` is true, otherwise to
+the provider's static key — so a stale `OPENAI_COMPATIBLE_API_KEY` is ignored in
+Entra mode. The Responses-API and streaming toggles still apply on top of Entra
+auth, so the same renewable callback works across chat-completions and
+Responses surfaces, JSON and SSE transports.
 
 ### Token limits
 
@@ -306,8 +371,9 @@ for those models even though it is valid for OpenAI GPT-5.6.
 `process.env` value. Each entry reports its source — `process.env`, the env file
 path, "process.env over <file>" when both are set, or `unset` — and a
 masked preview. Non-secret settings (provider, model, token limits, page concurrency, retry
-attempts, base URLs, region, Google project/location, OpenRouter provider-only filter, and
-the boolean toggles, including `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
+attempts, base URLs, region, Google project/location, OpenRouter provider-only filter, the
+Entra auth mode and scope, and the boolean toggles, including
+`OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
 values).
@@ -340,9 +406,12 @@ validators.
 `sanitizeDiagnosticText` is the security boundary for anything shown to the user
 or written to a log: every error message, header value, or provider response body
 that could contain a credential must pass through it first. It redacts (1) the
-exact values of secrets currently set in the environment, replacing each with
-`[REDACTED:<KEY>]`, and (2) anything matching known key/token shapes — OpenAI and
-OpenRouter `sk-…` keys, `Bearer …` headers, LangSmith `ls…` tokens, and the
+exact values of secrets currently set in the environment — iterated over a fixed
+list of credential env keys (provider API keys, AWS/Bedrock credentials, the
+OpenAI-compatible key, `LANGSMITH_API_KEY`, and Azure client
+secret/certificate-password keys), replacing each with `[REDACTED:<KEY>]` — and
+(2) anything matching known key/token shapes — OpenAI and OpenRouter `sk-…`
+keys, `Bearer …` headers, LangSmith `ls…` tokens, and the
 "Incorrect API key provided: …" phrasing. `getErrorMessage` routes user-facing
 errors through this sanitizer (with a friendlier message for provider HTTP 500s).
 

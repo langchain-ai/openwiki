@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d7f25cd37c4fc8c9a44a000f0b66ae22d9f7ac6aaf798d7a0e3df2f70a2734d0",
+  "pageVersion": "sha256:e7eaa0fd9b4ce01b8852b85e28bed6cb644afdc8b7c05763ad040885b376dc5a",
   "claims": [
     {
       "id": "claim_b4fc5fda11a9482d91f562eef48a86f6",
@@ -129,11 +129,11 @@
           "version": "repo-lines-v1:sha256:8fde068a6ed4aa4f5b3d086ba8888027de3dc084757cdbe55e157449f167b76a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRkOTYxYTUwODYxOTU2NDMyNTk4ZDg4MzMwZWE0ZmM2ZTkzMGNhMjAyMzUzOGYyYjVjNDQ0NjFmM2NiZDE1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRmOTU2MmQxN2I5ODRiNjllYmI3NWM3NjAxNjI2YmE5ODkzN2ViYzhlZmE5ZDM2NWY1NzNhY2JmMjk4NTE3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjBlNWViODBjMTdjNjExNTNkYzgxMjMzYjIwY2Y4MjZhNjlkY2NjZmZhOWYyOTk1YjAwZjU1MGRkYmI3ODk4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc5MzE1ZGM4MThiYjBlOWRhYmRiMjNhMTM4MzA2N2JlMjY5Yzk2NjNmNDM4Mzg5NjQ1ODZkNWZjZDdjODc0MyJ9"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1313-L1329",
+          "resource": "repo://src/generation/repository-run.ts#L1326-L1342",
           "version": "repo-lines-v1:sha256:a6db58deb3cf60215b0527f2af01ffcbb7f3afa439d673e916e7bb7a684db6ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4OGE0NTM5MTI0ZWFlYjNiNjBhZWMwM2QwNWVmNzU4NDcwZDc1N2I4MDczNTYzYjI0NjAzOTVhZGI1MGIzYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4MjQ0MTFkZDFiYzVkZTMyZWM4ZjU0YzFjMTk5ODdhMmEwMTk2ZWJmMjgwM2VmNDg1MzJlMzMwM2FkOGY1ZWQifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1354-L1377",
+          "resource": "repo://src/generation/repository-run.ts#L1367-L1390",
           "version": "repo-lines-v1:sha256:6d96fbdcf3dcd235d9aad950a347eb85f755a1b3bfd7bbef6186ec8d35f345b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZGY4N2E0NzMxNmM3MDhjNTUwMjA5OGU5YWY2YzQ0NTM0ZWI4MGJlYWRjZjYwNjMwMjhlZmNhODU5MzdhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYTdmNDA4MWRlMzU1YzM5MmIwYzFkOTZjMTdiYzQ0MTg3ZDllOTlmZTMzMWFiN2FlYWI3NmNhZTc1Njg5ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlN2Q2YTcyY2JkOTk4M2E0YTk1OWZjYmM1NDA3Y2I4MGYxZjM3MzMxYjNhMDViYjRiMDc1ZjA5ZGVhNWQyYTkifQ"
         }
       ]
@@ -269,11 +269,11 @@
           "version": "repo-lines-v1:sha256:8a94015a22c16acc9b273655cc36ffeeee5474b202b93a1299da0e92ecf07644:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZmIzNmQ1ZDI5M2Q2NGNjNzNkYWM1MzIzNWJkODU3MWM5YjNiYTY4OGJhM2JmMzA4ZWMwNWQyOTMxMDNmMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhMDkzZGRmODBiMjg2ZTdlMjczY2I4N2QyYmI5ZWI5YmZjM2Q4YzM3ZjkzNDZiZmJjYTEwM2ZkZDMyZjdjNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2ZmU5OWJjMjUyMzVhMDUxZjY4NzM3OGI3MDk4MGVkNDJhMWQ4ODU3MGU2NmUyZGVjNDhjNTE2NDE3ZmU5MjYifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1622-L1645",
+          "resource": "repo://src/generation/repository-run.ts#L1635-L1658",
           "version": "repo-lines-v1:sha256:cb87c901e7cbbd52f7b18edd98512e9b03d69b285d6ce0c318adcaadb5d557b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzdlYzc4NzgwNDg4MTk4MDc2M2YyOWMzMzNlNmE1MjEyNjMwN2ViYThmNmUwZTI5MjdhNDJkYTI4Y2M4MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NjI3ODE3M2NiZDVjYmU0MzA1OWJjMmQ4ZWZhNjI5ZGUxOTk3N2ZkMDc0YTgzOTZkY2NlZmMzN2UzOTcxNzAifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1682-L1712",
+          "resource": "repo://src/generation/repository-run.ts#L1695-L1725",
           "version": "repo-lines-v1:sha256:56f1156fe5864b6437e0a5515d29bce6f41c4661b54678172188c6407fb8031c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkODBjOGJkMzY2YTU4ZTIxNmE3ODM4MGEwOTAyZDBlYWMwZTk3M2YyZDY3ZGM1MGEyYTI4NDI3ZWNjZmIxYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YjQ2MWRlZTY0NjQyNmVhZjFlNzNmMjdmYzQ2MTk2NTRiNmMyZTAxMWU5Yzg2OWUwN2QzODBiODZiYzgyODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NGVlODU2ZjI2MjkyMjk1ZThlNTYwYTYwYWE3ZDVkNWNmODExZTIyODQ5NTY3ZDRhM2VjNmE5ODIyNWUxMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMDZmYTZjOTA2ODNhYjYwM2Q2ZDQ2ODQxYmY3MGI3Y2JiMWRjZjkxOTJkYjgzODBjNTM4ZGQwOGNhY2M2MTEifQ"
         }
       ]
@@ -327,7 +327,7 @@
       "statement": "nextRepositoryPage enriches the first pending job with mode, whether the page exists, existingClaimCount, and claimsRequiringAttention (the page's issue-bearing Claims projected without opaque evidence versions), so the worker is told which Claims require an explicit decision without repeating issue-free ones.",
       "evidence": [
         {
-          "resource": "repo://src/agent/repository-prompts.ts#L172-L174",
+          "resource": "repo://src/agent/repository-prompts.ts#L186-L188",
           "version": "repo-lines-v1:sha256:70791b328bba4f888b1a0cc22ccd1a94d2c32352530a28cc3ef8459eba941a06:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjZjcyMmY3YzdhYzAxOGZmZTQ1YTQ5OTE3YmRkNjRiZDhkMGI4Y2Q4MWZmNDQzODM0YzgwNjQzOWJlNzYwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQyN2Y0YTUwYTQ2NDk1MTc5YmFiNTM1ZGY3ZmZmODFjYWJmMzYwMTljZTMxZGI4YmIzZDczMjYwMDYwMzVjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZjNzZmYTQyNWRmZDkzZmYyMWIyYzA5MTIzNWU4YTVhYjM3ZmJhNDIxMzdiODFmOGFiYTRiNjFlZjA3Njc1MiJ9"
         },
         {
@@ -341,7 +341,7 @@
       "statement": "inspectRepositoryPageClaims returns the complete compact Claim set (without opaque evidence versions) for the current pending page only and throws invalid_state for any other job; it backs the inspect_claims tool that workers call on demand before intentionally revising or removing otherwise-current content, and ordinary focused updates should not call it.",
       "evidence": [
         {
-          "resource": "repo://src/agent/repository-runner.ts#L856-L863",
+          "resource": "repo://src/agent/repository-runner.ts#L927-L934",
           "version": "repo-lines-v1:sha256:c8f900ac4c1f4b84fe72b3363a307c2246b9ed3353e1c05982023277761c37b3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE3MjA2NDE1MWE2YmFiMzQ1NjQxYmNmMDI1OWRlZGRiYWZhZTA5YjA3NDQ2MDljNGE5NzI4NzhmZDE0NjZlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGEzMzBjMzYzOTM3MWE5ZGY0YmI0NDhkNDE0YmE4ZWFjNmQwOGI4OGY4OTg3ZDdjMjZhOTMyOGVlZTU5ZmNmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ZiNGQ1MmY1MDA0MDY0ZjJmNWE2ODI1MWUwMTQ3OTdkMTllMzZlZmExYTg4MzQzOGI3ODNmN2M1NWNkM2UyNCJ9"
         },
         {
@@ -359,7 +359,7 @@
       "statement": "CLAIMS_RECONCILIATION_GUIDANCE is the shared model-facing sparse-reconciliation standard embedded in both the native agent page-worker prompt and the MCP host instructions, codifying that stale or unresolved markers require an explicit decision, omitted issue-free Claims are retained, and the final page body and reconciled Claim set must agree.",
       "evidence": [
         {
-          "resource": "repo://src/agent/repository-prompts.ts#L169-L171",
+          "resource": "repo://src/agent/repository-prompts.ts#L183-L185",
           "version": "repo-lines-v1:sha256:2427f4a50a46495179bab535df7fff81cabf36019ce31db8bb3d7326006035c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlNGRiOWJlMmFiYzg0NDM4M2NiNTdiYjc3NWVjZDE1NGZjNDhjODc1YTBmNWM2Nzc3YWFmZGEyYWNmYzllMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1Y2NjMzg2OTYzYWNjNzAzNDcxYjZhMmE1NGNmOTA0M2I4YWU3NDM5NGEwODM1NzYwN2MzNDE3ZGI5YWJiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTgyNzNlYWVhOWVkNDljZWNhZWViMGFkNTcwYTY1ODE1ZjA5ZDc3NzJlYTc0MmFjZTMyYWJhYWQ2OGY0MDJjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA3OTFiMzI4YmJhNGY4ODhiMWEwY2MyMmNjZDFhOTRkMmMzMjM1MjUzMGEyOGNjM2VmODQ1OWViYTk0MWEwNiJ9"
         },
         {
@@ -377,22 +377,84 @@
       "statement": "assertPageClaimsDurable proves a page's Claims, page version, and verification are durable by loading the persisted sidecar, re-hashing the current Markdown against pageVersion, requiring a verification record and confirming it was projected into the page's verified frontmatter field, then running a session-projection comparison in which inspectClaims(page) is authoritative: a persisted-count mismatch fails, and every session Claim must match a persisted claim by id, identical statement, and an order-independent sameResourceSet evidence comparison (resources deduplicated and sorted by UTF-16 code-unit order, comparing resource identity not version tokens); assertRepositoryClaimsDurable extends this to the whole run by rejecting orphan sidecars whose Markdown no longer exists and iterating the session's getEvidenceResourcesByPage projection (skipping excludedPages and pages whose session Claim count is zero) to call assertPageClaimsDurable for every remaining claimed page.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L1422-L1499",
+          "resource": "repo://src/generation/repository-run.ts#L1435-L1512",
           "version": "repo-lines-v1:sha256:868fb413687bc5c8a454a4bf8c959e1cf76e547dad84f1a35b5a79908578587c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5Yjg2MTIzZTE5M2FkYWMzYzZlNDg4MmVkN2M1Mjg1OGU0YzUyMjRjNDg4MmU2NmRiMzY0NWViMDUyNWM4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDdkZjJmZDdhM2RhNTYyNGU4NDBiM2M3Y2M2ZGIxODQzOTgyZTUyMmIwMzg5NjUxYjc4ZjY1YTk3MjVlMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMmE4ZTMwZTkwNGJlYmUxMDM0ZWQ5ZjBhNGM2NmNhMTY3NmNiYTk3MmNkMDg0ZjUwYzFlMmZiZTI2ZmM0MjgifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1526-L1559",
+          "resource": "repo://src/generation/repository-run.ts#L1539-L1572",
           "version": "repo-lines-v1:sha256:c8c0ffd3fd7d6cdb03931f257359adc19e307bd16810a4d602e0ec14512dd6a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViM2Q3OTc5NTMxMGY3YmNjZDMyMDUzNDdlODIxMDA0NjA4YjRiODBmNGQyNjUyNTA0ZjBjNmU4Y2JmN2JlZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NTdkMmU5MWUwYjZjYzkxZmZlNDY4NTc4ZmM4ZWY1Mzg5OGUyZWJlNDk4MWYyNmRiMDkwNTIwMGJiMTQwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NjA4NjllYzI4NTNiMmM5ZTRmMTc0ZWIyNGZiNDBkZDQ2NDIxMTMzZTUyODhmMGY4MTI4OTBjOWI3ZjFlNWEifQ"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L1581-L1590",
+          "resource": "repo://src/generation/repository-run.ts#L1594-L1603",
           "version": "repo-lines-v1:sha256:ecb9e6a7b55ddd1e4865420580c447cb3334df880fe63499e27f7f2c4273e411:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmM2Q4ZTU5OWM5OTdkM2M5NTM5YjFkZTdiYzhiMGYyNDA0ZDQ0ZGRhMTBiNWY5NjBlZWYyNDFkMjEyZGQzNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNWNlZDVhYzgyZTJjYmFjZmM1NjhkYzIwYzc0YTllZDE4MGNiNjhjZjQ5NTMzOWU0YzIyOTFiNzZjMWQzZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNzBmODM4NjMyMjU1YjFiMzE4MzI5MTFiMjcwMzVlZmFmY2ZjYWFkYjVhZjE0MDhmZDYzN2JjOGMyYzU5MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dcc293af48624793bc0c7988ddc1319a",
+      "statement": "The resolver owns and interprets line-range evidence versions distinctly from the opaque comparison used by preflight and the durability proofs. A whole-file resource versions as a SHA-256 of the complete file content (repo-file-v1), so any edit changes the token; a line-range resource (repo://path#Lx-Ly) versions as a content hash plus resolver-owned relocation metadata (repo-lines-v1) recording the selected line count, first/last selected-line hashes, and up to three lines of preceding/following context. locateUnchangedLineRange re-finds a moved-but-unchanged block by content hash and context anchors and returns the same version (so the Claim stays current and produces no stale issue); locateChangedLineRange relocates a changed block between its unchanged exterior anchors and returns a new version (stale); when anchors are ambiguous or the block cannot be safely relocated the resolver returns null (unresolved).",
+      "evidence": [
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L189-L247",
+          "version": "repo-lines-v1:sha256:ac442b447b73a59c90462cf86dab3d639a016c58dd51b54d1a28b99fb6138edf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMWE3OTYyNDFiZWZjNmM2M2U5NTU1MzczZGFjNzNhYzdjYjE1NmU3YzkyYjFlMjJkMjMxZDMzMjRmYWE5NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4MTUwMjA2ZjQwNTBlMGYwYTA3YzA4ZjIzYWE5OTllZjAzNWU0M2M2ZGNmMmIwZjY0YjUyYjQ5NmM1NDZkODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkYWM0NTYyZDJmYmU4ZWQxOTU4NmE3ZDI0Njk1OTQxNjRlNjlmNWMzM2ExZTEwMTA4ZDA0NmZiYmM1ZDcwZWIifQ"
+        },
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L294-L334",
+          "version": "repo-lines-v1:sha256:dd0c272f0022eb7cfcadfcc03a326894549190b31fe6693078f7bdd209c902fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYWM2YWM4OTk0OTUyZDA4YWExMTQxNTk5ZGNmOTg2OTkwYjY0OTQ5MzdkZjY2Zjc3Nzk0Y2I4ZjlhODUwZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2MDQ1NjI2NmFkZTFkMGQ3ZGUzZjdiOTc2NjY2MmY5NmQ2NmY5MzFlMGMwNWNiYTEwZTY5ZmNlYWRkZDIzN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlYzNkMDE5NTk0NGFlZDA3OGUyMmNlYmNhMWJjNjhmOGRmMzJlYWQzZDgyYmYwOTY3ZDdiYjIyMzhiYzJhZWQifQ"
+        },
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L424-L469",
+          "version": "repo-lines-v1:sha256:8a2059c23159223401c68613236ca7c68f59a2daab6e1a860468d8bbe6da1118:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYmNkNmM0YjcwNjM1Nzc2YzZmOWJkYzE0Y2I3YzkyYWY0NWNiZTgyODhlODFhNDBjZTlkOGExYjg3YzA3ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0OWM3NGM1ZmNiNjkzNGU5NzU2MDIwZmIyMTUxMjY2MzZkMDE5YWE5ZGRmMmE5NGI5MGI3MzkzMjUzNDNjYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ODEwNzI2N2E1Y2M5ZDkxY2FmMDQ4NjY5NmY1MTRhYzFjYTQ5N2I1NzI0OTBiYTRmN2IxY2MwODU0YTczN2UifQ"
+        },
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L613-L646",
+          "version": "repo-lines-v1:sha256:584461a6287201e116aa5e93a16f1db0de24b389189aa0cc619febe1155ba212:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMWZlNzA1OTU1ZjkwZGU3OWUwMmYwZDRkZWFhZjliOTAyNjBhM2RkYWFmM2NmMmJlODc5OTJkZWQ1YjU0ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YTk5ZTA5OTllMGM2YWI4OTAwZGFjNmYwNTliYzdlOTNmMGVjZDE0NzM1YTlkZGY4OGIyYWUyNWRlNmUxYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3Yjk3MjY4NjAwMTZlYzRkMGUxOTk2MTViZWIyNDhkMWQ3ZGM2NGUwMWQ3OTI5NGQ5MTIzNGMxMjhiNmZlZmMifQ"
+        },
+        {
+          "resource": "repo://src/claims/evidence/repository/resolver.ts#L751-L762",
+          "version": "repo-lines-v1:sha256:deacf76086ad7a10a5c038dfa81d54479837aeab84086941ba8c723dc1fd5f1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MmY4Y2ViZWRjNzU3ZTJiOTY3ODU3ZjEwMmI5M2ExMDdlNWJkMTU2ZmM5MjY1Y2FiNGM3NzZlZWY4MmUxMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczYjQ0YzMyYzRmMGI4OGNhN2Q1OGM1NjljMTNkZDRhMDk5MWExYjAzOGE0YTVjZTZkNzI0MGI4YmEwYWM2MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjZTBhMjI0NTdlNjgzYmEyNTc0OGE2ZTZiMzJjNTU2MmI3Y2RjNmFkMmIxNDE0YTcxMWZjNTQyY2ZlN2E1OTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6d3d8f5a05544e08a44ed00dfbda5b9",
+      "statement": "No-op detection is only consulted when the run carries no explicit user request: shouldCheckUpdateNoop is true only when userMessage is empty, and the native driver derives force from Boolean(userMessage.trim()) while passing the message as planningContext, so a user-driven update always bypasses the no-op gate. When planningContext is non-empty the planner prompt adds a hard scoped-update mandate: the planner schedules only directly requested pages/files and genuinely affected cross-references or navigation, preserves unrelated page framing and the information architecture, and does not refresh /openwiki/quickstart.md unless the user explicitly requests it or the page map, navigation, or task-routing links actually change.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L211-L221",
+          "version": "repo-lines-v1:sha256:c41676c70531b35e2931109e8c5633cbe7bee1036a89570a6dcb8a200850babd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViZDhjNDdlMzBmZWIxYWFhZTc1ZWExZWY4ZjA5YjY2Nzg2OGQzMjg1MGY2YjUxMmM0MmEyNTY4YzJjOWZiMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YjMyMzQ4NjNlYzc1MWIwMDQxYzM0ODhlMTU1ZmQ1MTE1MzVkYjBiMzI4ZTYxZGI4ZDZjYTAwMzRmMzVkYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3ZDU2MzE0MTEzNDY4Nzk0NjBiY2Y5Mjk2YjFlZDAxMWIwMmVmYmEyNmQ2NDJlYjhlNmFmMjdmZmVkYmJlY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyOWZmZWIzMTI5YTlhNjc4N2FmNDg3YzcyNTRmOGQyMDAyMmU0YmJlZDBlYjBiNmM3MTI0ODg4N2VkMTUzZTQifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-prompts.ts#L39-L55",
+          "version": "repo-lines-v1:sha256:8a88effb3305a128faaa5a09ae0264c78c36db2456703ee1a2c4f4c255e4bf68:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1Yjk3MWRlMmZlNTU3Y2FmOWJiMzUwOTA4MWM3YjgxOTNlOGM2NWI3ZWY2NGMwYjI3NDM5ODM1NGM2MzU5YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5MjI4M2E4ZjRiNTliZWY0MGUzMjA2OTE2ZTI0OTIxOTRhOGMyZGM2ZmUyYWE3NGZkMjdiNjg2MjA5Y2I4Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjYmM5YmFjZDMzNjZlMmY5YTEwOWJmMGI0YzM1YjFjYWIwMTE4MWYyNmMwZWY0NGY4ZjJiY2YxYTI0MzVjYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNDEyZGY2ZWRiOTFiYzljMWE3OTRmOWFiY2JhMGYwZGM2NTZkNGU4YWE1YzQ1MjBhZDk1OWU1YjQ2MDUzZWEifQ"
+        },
+        {
+          "resource": "repo://src/agent/utils.ts#L190-L192",
+          "version": "repo-lines-v1:sha256:c9143d443f20355a4f165679d9e641604822b5e2ac02c5b327844484ac78b08d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzUxNTExNjFiN2IxMDQzZmJiYzljNTI3OWIxODM3MGM0YWQxYzUyYzI5MGZiNzQxMzE0YmMzMjk4Y2UxNDJhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTIwNDBlMDk1YTk0ZTJhZGE3NGU0MjFmMzcxODc1MWE5MWE4MTBiZmQ2NmY0OGY0ZTkzOWM3Yjc0ODBlYjY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg5NDMzNzJmNzg5M2I1Zjk0ODMzMGYxNGNhYjI4MDk5ZjdlZGY3Y2U2MmQxZGEyOGVkMmJhOTEyZmUwNzMyMiJ9"
+        },
+        {
+          "resource": "repo://src/cli/startup.ts#L123-L143",
+          "version": "repo-lines-v1:sha256:9efd203f687cb5894dd7f25ec63bf03550803ae9653d7c1c4de0f2a3b2476502:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MDkwYmQ1MWE5NDE3ODVhZmExZWM3Y2Q3MzZjNjc4NzlkNDc2ZWNiYWJjNzgyYjI0MTAzNTkxMjE3YzYzOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MTI5NzFjNDMzZGM0MWYwYzc0ZDc1OWNjNzVkZDEyMTI1MGZmYzdkYWJiMDQyNmEwODAxZTY1ZGI2MWQwNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MGZkMjkwYWRjN2FkMTg1ZWYzNjdkMmY5YzJkMGZmN2UwYjU5NmIzZjAzZTU2NzMzMDRlZGZhNmMyOGQzZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkOWJjOWIyYjE4MzBhMmMzNDVmZGU5YWQwNDYyNjU1Yjg2ZTA4MmU4ODgzZjExNzQ0YmQzYzFiNjEyNTcyZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4c721fadc67460a9ebd7cf17a7e025b",
+      "statement": "The submit_page tool surfaces invalid_input rejections as retryable rather than fatal: when submitRepositoryPage throws a RepositoryRunError with code invalid_input, the runner converts it into an error-status ToolMessage (via createSubmissionRejection) carrying the error code, message, and a concrete next-step instruction, keeping the worker loop active so the model can repair and resubmit. Any other error (a not_found/invalid_state failure, or a non-RepositoryRunError thrown by the store itself) sets a fatal flag and is re-thrown so the worker is not retried and the run stops. A submit_page that already succeeded throws if the model calls it again.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L232-L253",
+          "version": "repo-lines-v1:sha256:cc7ea2faac85c61b318b7cc436a1af94f74bbe6a7cd40ea63b55d7ebaed43b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNjdkMWExYTU3NmY3N2VjZWQwNjRmZmM2OTQ0Yjg0MGIwMzkxMzU2NDgxMDA2ODhlNzJkNWZjNzk3NGFjMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2YTdmNzk1MTk2NGMyZGUwMGNlMDlhMzQ4YTg3YTcxNDc0OTM1NDMxNzI3ZjMxYThhMWE0ZmY1NGUwZjAxMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YjBiNWZlOGMwYWQ2YTg3MzVmNTg3MDQxYjk1NDcxMmZhZDQ2NWRmMjNmYzZmZTgyYjdkNTdlNDZjZDFiNjAifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L940-L968",
+          "version": "repo-lines-v1:sha256:7d848c6913632294c183f7efe7ba1fe10a75b82887372f2f53497eaac2e4df9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OWIzNzAwYmMwMDc3MzkzZjBiMjRlZmZlNzQ1ZWFiZDYyMDg3NjgxNTI5MTI3Y2RiOTkyOGQzNmJkMmM0NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3MDgwYzFiNjMyN2VlOGE5YTRmMTljY2IyOWZlYTViMjk3OGQ4ZTBmNjViNDllOTg0MDU2YzY2ZWU2ZTZiN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMjc4NWNlMjJlMjA3ZDdhNzcyYjI2YzhjYzEzM2IzOWViNzkwODg0MjYyZjgxZmI2MmNjNGMzMDQwZDliMjUifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T08:10:39.081Z"
   }
 }

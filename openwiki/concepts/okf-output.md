@@ -22,7 +22,10 @@ sources:
     resource: repo://src/okf/index-labels.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.6.1", at: "2026-09-30T08:10:27.967Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Open Knowledge Format Output
@@ -131,6 +134,16 @@ only that field through YAML and removing it when given an empty list; and
 `removeFrontmatterField` drops a field (and the whole block if it becomes empty).
 This byte-preserving discipline is what lets deterministic producers stamp
 code-owned metadata without normalizing author-written frontmatter.
+
+Each of those writers funnels through `replaceFrontmatterFieldBlock`, which
+locates the target top-level field and its full span of continuation lines, then
+splices only that span. A continuation line is a blank line, an indented line,
+or a compact block-sequence item (`- ` written at the parent key's own column —
+the form PyYAML emits by default for unindented list items). Treating those
+unindented `- ` items as continuations is what keeps a multi-line `sources` or
+`verified` list written by an external producer from being split when a single
+field is rewritten; without it, the orphaned sequence items would survive as
+stray top-level lines after the field is removed.
 
 ## Generation provenance
 

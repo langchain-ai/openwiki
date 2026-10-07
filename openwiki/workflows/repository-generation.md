@@ -44,7 +44,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Repository Generation Lifecycle
@@ -224,36 +227,87 @@ stopped early). The lifecycle never lets such a worker leave partial Markdown or
 Claims behind, and it never blocks the run from finishing — instead it marks the
 job `skipped` and restores the page, deferring that page to a future run.
 
-### Per-job status and when a worker is skipped
+### Per-job status
 
 A `PageJobStatus` is one of `pending`, `skipped`, or `complete`. `skipped` is a
 third durable per-job status, distinct from `complete`, that records "this page
 was attempted, failed or abandoned, and was rolled back to its pre-worker state."
 
-The native runner handles four failure modes inside `runPageAgent`, each of
-which preserves the per-job durability guarantee differently:
+### Retry before skip
+
+`runPageAgent` captures a single `RepositoryPageSnapshot` before any model work,
+then loops up to `PAGE_WORKER_ATTEMPT_LIMIT` (2) times. Each iteration runs one
+fresh bounded worker via `runPageWorkerAttempt`. If an attempt returns
+`submitted`, the page is done and the loop returns immediately. If an attempt
+returns `skipped` and it is not the last attempt and the failure was not a
+provider rate limit, the runner restores the page to its pre-worker snapshot via
+`restoreRepositoryPage` — which writes back the snapshot Markdown (or deletes the
+page if none existed) and restores the Claims sidecar, but does not write a
+checkpoint or change the job status — so both attempts start from identical
+state. A rate-limit failure breaks the loop immediately rather than retrying at
+once, so the provider can recover. Only after the loop is exhausted does
+`runPageAgent` call `skipRepositoryPage`, which durably marks the job `skipped`
+and writes the checkpoint, then emits a deferred-page warning.
+
+```mermaid
+flowchart TD
+    Start([runPageAgent]) --> Snap[captureRepositoryPageSnapshot once]
+    Snap --> Loop{attempt less than or equal to 2}
+    Loop -- yes --> Attempt[runPageWorkerAttempt fresh worker]
+    Attempt --> Check{outcome}
+    Check -- submitted --> Done([return submitted])
+    Check -- skipped --> RL{rate limit or last attempt}
+    RL -- no, retryable --> Restore[restoreRepositoryPage to snapshot]
+    Restore --> Loop
+    RL -- yes, give up --> Skip[skipRepositoryPage with snapshot]
+    Skip --> Warn[emit deferred page warning]
+    Warn --> Ret([return skipped])
+    Loop -- no --> Skip
+```
+
+`runPageAgent` retry-before-skip control flow. A single snapshot is captured
+once; `restoreRepositoryPage` resets the page between attempts without touching
+the checkpoint; `skipRepositoryPage` is called only after every attempt is
+exhausted.
+
+The test "retries a failed page worker once before completing the page" verifies
+the recovery path: `pageRestoreCalls` is 1 (the between-attempts restore),
+`restoreCalls` (skip) is 0, and both pages end `complete`. The test "skips a page
+worker that fails every attempt and continues the queue" verifies the skip path:
+`pageRestoreCalls` is 1, `restoreCalls` is 1, and the failed page is `skipped`
+while its sibling completes. The test "retries once when a worker exits without
+submitting and completes the page" verifies the clean-exit retry path: the first
+page gets two workers (attempt plus retry), the deferred-page warning is never
+emitted, and both pages end `complete`.
+
+### Four failure modes per attempt
+
+Inside each `runPageWorkerAttempt`, four failure modes preserve the per-job
+durability guarantee differently:
 
 1. **Non-fatal pre-submit error** — the worker throws a recoverable error before
-   calling `submit_page`. The catch block calls `skipRepositoryPage` with the
-   pre-worker snapshot, restoring the page and marking the job `skipped`.
+   calling `submit_page`. The catch block returns a `skipped` outcome carrying
+   the error, which the retry loop may recover from on the next attempt.
 2. **Exit without submit** — the worker returns cleanly without ever calling
-   `submit_page` (for example, because the model stopped early). The post-loop
-   guard calls `skipRepositoryPage` with the snapshot, same as above.
+   `submit_page` (for example, because the model stopped early). The post-try
+   guard returns a `skipped` outcome, same as above.
 3. **Fatal pre-submit error** — a fatal submission failure (an error from
-   `submitRepositoryPage` that is not a correctable `invalid_input`) is rethrown
-   rather than skipped, because it signals a durable-invariant violation the
-   worker cannot correct. `submit_page` rejections with `invalid_input` are by
-   design returned to the worker as failed tool results so its loop stays active;
-   only a non-`invalid_input` failure triggers a rethrow.
+   `submitRepositoryPage` that is not a correctable `invalid_input`) sets
+   `fatalSubmissionFailure` and is rethrown, because it signals a
+   durable-invariant violation the worker cannot correct. `submit_page`
+   rejections with `invalid_input` are by design returned to the worker as
+   failed tool results so its loop stays active; only a non-`invalid_input`
+   failure triggers a rethrow. A rethrown fatal error propagates past
+   `runPageAgent` to `runWorkerLoop`, which records it in `pool.fatal`.
 4. **Post-submit failure (durability guarantee)** — a worker that throws after
    `submit_page` succeeds does NOT get rolled back. The `submitted` flag is set
    before `submitRepositoryPage` returns, so the catch block checks
-   `if (submitted) return { status: "submitted" };` and the post-loop guard does
-   the same — neither calls `skipRepositoryPage`, and the page stays durably
-   complete. The page is already a self-contained durability unit: its Claims were
-   persisted and proven durable by `assertPageClaimsDurable` before the job was
-   marked `complete`, so a later failure cannot undo that durability. The test
-   "keeps a durably completed page after a later worker failure" (the
+   `if (submitted) return { status: "submitted" };` and the post-try guard does
+   the same — neither returns a `skipped` outcome, and the page stays durably
+   complete. The page is already a self-contained durability unit: its Claims
+   were persisted and proven durable by `assertPageClaimsDurable` before the job
+   was marked `complete`, so a later failure cannot undo that durability. The
+   test "keeps a durably completed page after a later worker failure" (the
    `pageWorkerPostSubmitFailures` harness field) verifies that `restoreCalls`
    stays zero and the page's status remains `complete`.
 
@@ -266,16 +320,19 @@ and the page's existing Claims sidecar (or `null`). Snapshotting is itself
 strict: only the current pending job may be snapshotted, and the page must be
 text (a snapshot of a non-text page rejects with `invalid_state`).
 
-When a worker must be skipped, the runner calls `skipRepositoryPage` with that
-snapshot. `skipRepositoryPage` verifies the caller still owns the current pending
-job, then restores the page exactly: `restoreRepositoryPageMarkdown` writes back
-the snapshot Markdown, or deletes the page if the snapshot had none, so the
-worker's partial writes are discarded. The Claims sidecar is likewise restored —
-written back if the snapshot had Claims, deleted otherwise. A fresh process-local
-Claims runtime is rebuilt from durable state, `interrupted` last-update metadata
-is written, and a new checkpoint marks the job `skipped` without advancing the
-queue. `nextRepositoryPage` then sees the next `pending` job, so the run
-continues with the remaining pages.
+Two functions restore from that snapshot. `restoreRepositoryPage` rolls the
+Markdown and Claims sidecar back to the snapshot — `restoreRepositoryPageMarkdown`
+writes back the snapshot Markdown, or deletes the page if the snapshot had none,
+and the store writes back or deletes the Claims sidecar — but it leaves the
+pending checkpoint and run metadata untouched. It is the between-attempts reset
+inside `runPageAgent`. When the page is finally given up on, `skipRepositoryPage`
+calls `restoreRepositoryPage` and then rebuilds a fresh process-local Claims
+runtime from durable state, writes `interrupted` last-update metadata, and writes
+a new checkpoint marking the job `skipped` without advancing the queue. The
+restore, Claims rebuild, and checkpoint write all run under the `withRunMutation`
+lock so a concurrent worker's submission is fully durable before the shared
+Claims session is rebuilt from disk. `nextRepositoryPage` then sees the next
+`pending` job, so the run continues with the remaining pages.
 
 ### Tolerant not-found handling on restore and deletion
 
@@ -543,23 +600,24 @@ quickstart last, so no explicit holdback is needed.
 ### Snapshot capture and restore
 
 The native runner captures a `RepositoryPageSnapshot` via
-`captureRepositoryPageSnapshot` before each worker starts, recording the current
+`captureRepositoryPageSnapshot` before each worker attempt, recording the current
 pending job id, the page path, the pre-worker Markdown (or `null` if the page
 does not yet exist), and the page's existing Claims sidecar (or `null`).
 Snapshotting is itself strict: only the current pending job may be snapshotted,
 and the page must be text (a snapshot of a non-text page rejects with
 `invalid_state`).
 
-When a worker must be skipped, the runner calls `skipRepositoryPage` with that
-snapshot. `skipRepositoryPage` verifies the caller still owns the current pending
-job, then restores the page exactly: `restoreRepositoryPageMarkdown` writes back
-the snapshot Markdown, or deletes the page if the snapshot had none, so the
-worker's partial writes are discarded. The Claims sidecar is likewise restored —
-written back if the snapshot had Claims, deleted otherwise. A fresh process-local
-Claims runtime is rebuilt from durable state, `interrupted` last-update metadata
-is written, and a new checkpoint marks the job `skipped` without advancing the
-queue. `nextRepositoryPage` then sees the next `pending` job, so the run
-continues with the remaining pages.
+When a worker is skipped after exhausting its retries, the runner calls
+`skipRepositoryPage` with that snapshot. `skipRepositoryPage` verifies the caller
+still owns the current pending job, then restores the page exactly via
+`restoreRepositoryPage` (which writes back or deletes the Markdown and Claims
+sidecar), rebuilds a fresh process-local Claims runtime from durable state,
+writes `interrupted` last-update metadata, and writes a new checkpoint marking
+the job `skipped` without advancing the queue. The restore, Claims rebuild, and
+checkpoint write run under the `withRunMutation` lock so a concurrent worker's
+submission is fully durable before the shared Claims session is rebuilt from
+disk. `nextRepositoryPage` then sees the next `pending` job, so the run continues
+with the remaining pages.
 
 ```mermaid
 sequenceDiagram
@@ -567,6 +625,7 @@ sequenceDiagram
     participant Runner as runPendingPageAgents
     participant Pool as PageWorkerPool
     participant Worker as runWorkerLoop slot N
+    participant Agent as runPageAgent
     participant Core as nextRepositoryPage and submitRepositoryPage
     Runner ->> Pool: initialize claimed, acquiring, size, inFlight
     Runner ->> Worker: runWorkerLoops starts pool.size loops
@@ -574,17 +633,22 @@ sequenceDiagram
         Worker ->> Pool: acquireNextJob serialized
         Pool ->> Core: nextRepositoryPage exclude claimed
         Core -->> Pool: pending job or complete
-        Worker ->> Worker: captureRepositoryPageSnapshot
-        Worker ->> Worker: runPageAgent named workerAgentName(page)
-        Worker ->> Worker: streamWorkerTools threads resolveTraceThreadId
-        alt submit_page succeeds
-            Worker ->> Core: submitRepositoryPage
-            Core -->> Worker: complete
-        else non-fatal error or clean exit without submit
-            Worker ->> Core: skipRepositoryPage with snapshot
+        Worker ->> Agent: captureRepositoryPageSnapshot then runPageAgent
+        loop up to PAGE_WORKER_ATTEMPT_LIMIT
+            Agent ->> Agent: runPageWorkerAttempt fresh worker
+            Agent ->> Agent: streamWorkerTools threads resolveTraceThreadId
+            alt submit_page succeeds
+                Agent ->> Core: submitRepositoryPage
+                Core -->> Agent: complete
+            else non-fatal error or clean exit without submit
+                Agent ->> Agent: restoreRepositoryPage to snapshot if retry remains
+            else fatal error
+                Agent -->> Worker: rethrow sets pool.fatal
+            end
+        end
+        alt all attempts skipped
+            Agent ->> Core: skipRepositoryPage with snapshot
             Pool ->> Pool: pool.skipped.push snapshot
-        else fatal error
-            Pool ->> Pool: pool.fatal set
         end
     end
     Runner ->> Runner: rethrow pool.fatal if set
@@ -593,7 +657,9 @@ sequenceDiagram
 
 One pass of `runPendingPageAgents` with a concurrent worker pool. Job
 acquisition is serialized; model work runs in parallel; skip and submit mutate
-shared state under the `withRunMutation` lock. `streamWorkerTools` threads
+shared state under the `withRunMutation` lock. `runPageAgent` retries a skipped
+attempt once after restoring the page to its snapshot; only an exhausted retry
+loop calls `skipRepositoryPage`. `streamWorkerTools` threads
 `configurable.thread_id` (the run's `resolveTraceThreadId`) into every worker's
 `agent.stream` call so the planner and all page workers group into one LangSmith
 thread per run, and worker narration is never surfaced — only bounded tool

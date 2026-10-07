@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cda467eee27aca51219ecb83804ef98f0067bcbd6bb40678398ad8ed34081f12",
+  "pageVersion": "sha256:d323561bfc1fe859a46dd3e4ea6b2e795aeb49a070a5a229ccac82906a3fc040",
   "claims": [
     {
       "id": "claim_e161d3153b544232b9f17aa2f2838616",
@@ -486,7 +486,7 @@
     },
     {
       "id": "claim_9dc5b258668e4fa9ac130bd5d2c72089",
-      "statement": "The stack diagnostic is sanitized via sanitizeDiagnosticText (which redacts live secret-bearing environment-variable values and bearer-token / known provider key patterns such as sk-or-v1-…) and truncated to 2,000 characters with a trailing ellipsis so a long trace cannot flood the terminal.",
+      "statement": "The stack diagnostic is sanitized via sanitizeDiagnosticText (which redacts live secret-bearing environment-variable values and bearer-token / known provider key patterns such as sk-or-v1-…) and truncated to 2,000 characters with a trailing ellipsis so a long trace cannot flood the terminal; in debug mode getErrorDiagnostics additionally walks the cause chain to its innermost error and reports it as rootCause (its sanitized message plus allowlisted fields), so a generic wrapper like \"Connection error.\" is accompanied by the actual cause beneath it rather than the same message repeated at every level.",
       "evidence": [
         {
           "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L290-L299",
@@ -497,8 +497,16 @@
           "version": "repo-lines-v1:sha256:381fcc821b9b3de34941420b8aae05968fc3e66f158085ed4b742fda38233919:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWU5MDFiN2I5YTdjYjMxOGNmZDc4MGYxOWYxZjE3ODExNDRkZWFhZWFlNjNhYmNkYmM2OGIxMmM0ZThjZWUwNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc0NWUwZTFhODU4MmU1Nzc2MjJmODdiNGRiNDdmMjNiZDJiM2VmYWUxYTdhY2M3N2Q2NWNkNGMxNTg2N2FiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE2ZjMxNzgyN2I1MjEyMTZkNGI4NWI5ODNjZjVmMDhjZTZmYTg3YjdlMDI2NDNjNTEyYzkzNmRiNDVmZmVmNSJ9"
         },
         {
-          "resource": "repo://src/platform/diagnostics.ts#L31-L71",
-          "version": "repo-lines-v1:sha256:e1332e25bb94126cf237c3f8846c0eaaa54016d950358e8a0166c8499867ad0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDc5MTRmNWVlYjI0Mjc0NTI5NmU2ODIwM2RjMDkzOGY1Zjc0ODkwNzcwNDQ2MzYyNTMzZTk2OGNmZjBiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwOGQyMzFkMDRiMmVhMzg0NThiMmYzZTY1NzIwYmVhNmM1NTU1MTczOGI3NzA4YWRlOTI4YjUzOTBmZWU4MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxOGVhOWRiYzhlMDdlZjZlMmEwNDY3MTY3OTY1YzJjMDVjYzJhZDk1YWFjZWRiYzVjMjcyNGM4MGNkNGRkNTIifQ"
+          "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L84-L118",
+          "version": "repo-lines-v1:sha256:ba5137b0101392ec20f40910bdcd5cabc60431eb046f8925a68565d2b4d1e2bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWNhOTBlZDQ0ZGU3ZTNiYzkwYzc0MWZlZGM0NjQ2ZTlmZGIxM2UwNWQ5ZTE1NTE5MmUxNzQ2NjkzZjgzOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZGFhMzBlZDJiMmNmNDAwNmM1YTAyOTZhN2EzMDdjM2MyYTBhNzM0NzU1MTRkOGY4NjlkNTU4ZGNlMDhlNGMifQ"
+        },
+        {
+          "resource": "repo://src/platform/diagnostics.ts#L31-L73",
+          "version": "repo-lines-v1:sha256:ae8d189844e39ee73236b66ee3b35af5948c3b5a72ce222326a13c49911c83a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDc5MTRmNWVlYjI0Mjc0NTI5NmU2ODIwM2RjMDkzOGY1Zjc0ODkwNzcwNDQ2MzYyNTMzZTk2OGNmZjBiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwOGQyMzFkMDRiMmVhMzg0NThiMmYzZTY1NzIwYmVhNmM1NTU1MTczOGI3NzA4YWRlOTI4YjUzOTBmZWU4MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxOGVhOWRiYzhlMDdlZjZlMmEwNDY3MTY3OTY1YzJjMDVjYzJhZDk1YWFjZWRiYzVjMjcyNGM4MGNkNGRkNTIifQ"
+        },
+        {
+          "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L116-L142",
+          "version": "repo-lines-v1:sha256:a9643000650efd7f7cc851635c1b3c2472214d461ec2c1dc056d2f31ae33ba27:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OTliNGY1ZDAwOTEzMDkwYzViMjYyOTNlNzM1NTRkNmRmODBlNjVkNjkzOWQ1ZTNmMjdmYWNiOTk2NjZjMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZDM5MjQzNjdhMzUxYjU5OGU5NmJiZTZkOGE5NDljYzE2NGZkNmU3NDFiOGI4NDkzZTkzY2EwOWJiZGU5OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5YjYwOWEzZjNhODljNWQ3ZGQ0YzIzMDkyYmZhMGRmODNjMDRkZDU3NTQ1ZjVjM2FmYjMxMjJlZjcxNjYzOGQifQ"
         },
         {
           "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L55-L65",
@@ -558,7 +566,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T08:10:39.081Z"
   }
 }
