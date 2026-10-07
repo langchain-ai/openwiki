@@ -140,9 +140,7 @@ export async function resolveRepositoryWikiLocation(
       : normalizeRepositoryWikiDirectory(requestedDirectory);
 
   if (configured && requested && configured.wikiDirectory !== requested) {
-    throw new RepositoryWikiConfigError(
-      `${REPOSITORY_WIKI_CONFIG_FILE} selects ${JSON.stringify(configured.wikiDirectory)}, but --wiki-dir selected ${JSON.stringify(requested)}. Moving a repository wiki is not supported.`,
-    );
+    throw conflictingDirectoryError(configured.wikiDirectory, requested);
   }
 
   const directory =
@@ -166,13 +164,32 @@ export async function persistRepositoryWikiConfig(
   const directory = normalizeRepositoryWikiDirectory(wikiDirectory);
   const existing = await readRepositoryWikiConfig(repositoryRoot);
 
-  if (!existing && directory === DEFAULT_REPOSITORY_WIKI_DIRECTORY) {
+  if (existing) {
+    if (existing.wikiDirectory !== directory) {
+      throw conflictingDirectoryError(existing.wikiDirectory, directory);
+    }
+    return;
+  }
+
+  if (directory === DEFAULT_REPOSITORY_WIKI_DIRECTORY) {
     return;
   }
 
   await writeTextAtomic(
     repositoryConfigPath(repositoryRoot),
     `${JSON.stringify({ wikiDirectory: directory }, null, 2)}\n`,
+  );
+}
+
+/**
+ * Creates a migration-not-supported configuration conflict error.
+ */
+function conflictingDirectoryError(
+  configuredDirectory: string,
+  requestedDirectory: string,
+): RepositoryWikiConfigError {
+  return new RepositoryWikiConfigError(
+    `${REPOSITORY_WIKI_CONFIG_FILE} selects ${JSON.stringify(configuredDirectory)}, but the requested wiki directory was ${JSON.stringify(requestedDirectory)}. Moving a repository wiki is not supported.`,
   );
 }
 

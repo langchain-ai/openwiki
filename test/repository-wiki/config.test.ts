@@ -18,6 +18,9 @@ import {
   resolveRepositoryWikiLocation,
 } from "../../src/repository-wiki/config.ts";
 
+/**
+ * Creates an isolated repository root for one configuration test.
+ */
 async function repositoryRoot(): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), "openwiki-repository-config-"));
 }
@@ -155,14 +158,30 @@ describe("repository wiki configuration", () => {
     });
   });
 
-  test("preserves existing config mode bits", async () => {
+  test("preserves matching existing configuration and its mode bits", async () => {
     const root = await repositoryRoot();
     const file = path.join(root, REPOSITORY_WIKI_CONFIG_FILE);
     await writeFile(file, '{"wikiDirectory":"docs"}\n');
     await chmod(file, 0o600);
-    await persistRepositoryWikiConfig(root, "wiki");
+    await persistRepositoryWikiConfig(root, "docs");
     const metadata = await stat(file);
     expect(metadata.mode & 0o777).toBe(0o600);
+    await expect(readFile(file, "utf8")).resolves.toBe(
+      '{"wikiDirectory":"docs"}\n',
+    );
+  });
+
+  test("refuses to overwrite a conflicting existing configuration", async () => {
+    const root = await repositoryRoot();
+    const file = path.join(root, REPOSITORY_WIKI_CONFIG_FILE);
+    await writeFile(file, '{"wikiDirectory":"docs"}\n');
+
+    await expect(persistRepositoryWikiConfig(root, "wiki")).rejects.toThrow(
+      "Moving a repository wiki is not supported",
+    );
+    await expect(readFile(file, "utf8")).resolves.toBe(
+      '{"wikiDirectory":"docs"}\n',
+    );
   });
 
   test("does not create config for the implicit default", async () => {
