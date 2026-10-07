@@ -51,7 +51,7 @@ describe("repository wiki preparation", () => {
         await writeFile(path.join(target, "INSTRUCTIONS.md"), "# Goal\n");
       } else if (setup === "managed") {
         await mkdir(target);
-        await writeFile(path.join(target, ".run.json"), "{}\n");
+        await writeFile(path.join(target, ".page-manifest.json"), "{}\n");
       }
 
       await expect(
@@ -105,7 +105,10 @@ describe("repository wiki preparation", () => {
   test("recovers updates only from an existing managed custom wiki", async () => {
     const managedRoot = await repositoryRoot();
     await mkdir(path.join(managedRoot, "docs"));
-    await writeFile(path.join(managedRoot, "docs", ".run.json"), "{}\n");
+    await writeFile(
+      path.join(managedRoot, "docs", ".page-manifest.json"),
+      "{}\n",
+    );
 
     await expect(
       prepareRepositoryWikiLocation(managedRoot, {

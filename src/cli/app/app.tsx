@@ -36,6 +36,8 @@ import {
 } from "../../ingestion/code-mode.js";
 import { runOpenWikiIngestion } from "../../ingestion/ingestion.js";
 import { getErrorMessage } from "../../platform/diagnostics.js";
+import { resolveRepositoryWikiLocation } from "../../repository-wiki/config.js";
+import { DEFAULT_REPOSITORY_WIKI_DIRECTORY } from "../../repository-wiki/paths.js";
 import { InitSetup, needsCredentialSetup } from "../../setup/credentials.js";
 import {
   withRunTelemetry,
@@ -83,14 +85,23 @@ interface AppProps {
 
 // Coalesce bursts of tool lifecycle events so Ink redraws at most four times
 // per second while preserving the final in-memory log immediately.
+/**
+ * Delay used to batch live run-log renders.
+ */
 const RUN_LOG_RENDER_DELAY_MS = 250;
 
+/**
+ * Reads the configured reasoning effort when it is recognized.
+ */
 function getConfiguredReasoningEffort(): ReasoningEffort | null {
   const effort = process.env[OPENWIKI_REASONING_EFFORT_ENV_KEY]?.trim();
 
   return effort && isReasoningEffort(effort) ? effort : null;
 }
 
+/**
+ * Determines whether a model change invalidates the selected reasoning effort.
+ */
 function shouldClearReasoningEffort(
   provider: OpenWikiProvider,
   modelId: string | null,
@@ -107,6 +118,9 @@ function shouldClearReasoningEffort(
   return !getReasoningCapability(provider, modelId)?.values.includes(effort);
 }
 
+/**
+ * Renders and coordinates the interactive OpenWiki CLI application.
+ */
 export function App({ command }: AppProps) {
   const app = useApp();
   const startupModelId = command.kind === "run" ? command.modelId : null;
@@ -136,6 +150,7 @@ export function App({ command }: AppProps) {
     CredentialDiagnostic[] | undefined
   >(undefined);
   const activeRunLog = useRef<RunLogItem[]>([]);
+  const activeWikiDirectory = useRef(DEFAULT_REPOSITORY_WIKI_DIRECTORY);
   const activeRunRenderTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -176,6 +191,9 @@ export function App({ command }: AppProps) {
       (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
 
+  /**
+   * Cancels a queued live-log render during run transitions.
+   */
   function cancelPendingRunLogRender(): void {
     if (activeRunRenderTimer.current === null) {
       return;
@@ -196,6 +214,9 @@ export function App({ command }: AppProps) {
     requestProcessInterrupt(app.exit);
   });
 
+  /**
+   * Starts a follow-up chat turn with the submitted message.
+   */
   function submitChatMessage(message: string) {
     if (isExitMessage(message)) {
       process.exitCode = 0;
@@ -209,6 +230,9 @@ export function App({ command }: AppProps) {
     setRunState({ status: "idle" });
   }
 
+  /**
+   * Starts a repository command from the interactive shell.
+   */
   function submitCommandRun(
     nextCommand: Extract<OpenWikiCommand, "init" | "update">,
     message: string | null,
@@ -219,6 +243,9 @@ export function App({ command }: AppProps) {
     setRunState({ status: "idle" });
   }
 
+  /**
+   * Starts personal-source ingestion and streams its progress.
+   */
   function startIngestionRun(modelId: string | null) {
     const runId = activeRunId.current + 1;
     activeRunId.current = runId;
@@ -315,6 +342,9 @@ export function App({ command }: AppProps) {
       });
   }
 
+  /**
+   * Clears transient conversation and run state for a fresh session.
+   */
   function clearSession() {
     cancelPendingRunLogRender();
     activeRunId.current += 1;
@@ -330,6 +360,9 @@ export function App({ command }: AppProps) {
     setRunState({ status: "idle" });
   }
 
+  /**
+   * Persists a model selection and clears incompatible reasoning effort.
+   */
   async function selectModel(modelId: string) {
     const clearReasoningEffort = shouldClearReasoningEffort(
       sessionProvider,
@@ -348,6 +381,9 @@ export function App({ command }: AppProps) {
     }
   }
 
+  /**
+   * Persists a provider selection and its default model.
+   */
   async function selectProvider(provider: OpenWikiProvider) {
     const modelId =
       getProviderModelOptions(provider).length > 0
@@ -373,6 +409,9 @@ export function App({ command }: AppProps) {
     }
   }
 
+  /**
+   * Validates and persists a reasoning-effort selection.
+   */
   async function selectReasoningEffort(
     effort: ReasoningEffort | null,
   ): Promise<ReasoningEffortSelectionResult> {
@@ -523,7 +562,12 @@ export function App({ command }: AppProps) {
         return;
       }
 
-      const nextLog = appendRunLogEvent(activeRunLog.current, event, nextLogId);
+      const nextLog = appendRunLogEvent(
+        activeRunLog.current,
+        event,
+        nextLogId,
+        activeWikiDirectory.current,
+      );
       activeRunLog.current = nextLog;
 
       // Assistant tokens are retained for the final response, but they do not
@@ -577,8 +621,11 @@ export function App({ command }: AppProps) {
       telemetryContext,
       async () => {
         if (runMode === "code") {
+          const wikiLocation = await resolveRepositoryWikiLocation(runtimeCwd);
+          activeWikiDirectory.current = wikiLocation.directory;
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
+            wikiLocation,
           });
         }
 

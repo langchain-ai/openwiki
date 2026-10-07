@@ -13,9 +13,11 @@ import { describe, expect, test } from "vitest";
 import {
   persistRepositoryWikiConfig,
   readRepositoryWikiConfig,
+  readRepositoryWikiConfigSync,
   REPOSITORY_WIKI_CONFIG_FILE,
   RepositoryWikiConfigError,
   resolveRepositoryWikiLocation,
+  resolveRepositoryWikiLocationSync,
 } from "../../src/repository-wiki/config.ts";
 
 /**
@@ -49,6 +51,23 @@ describe("repository wiki configuration", () => {
     await expect(resolveRepositoryWikiLocation(root)).resolves.toEqual({
       directory: "docs/wiki",
       root: path.join(root, "docs", "wiki"),
+      source: "config",
+    });
+  });
+
+  test("supports descriptor-backed synchronous startup resolution", async () => {
+    const root = await repositoryRoot();
+    await writeFile(
+      path.join(root, REPOSITORY_WIKI_CONFIG_FILE),
+      '{"wikiDirectory":"docs/wiki"}\n',
+    );
+
+    expect(readRepositoryWikiConfigSync(root)).toEqual({
+      wikiDirectory: "docs/wiki",
+    });
+    expect(resolveRepositoryWikiLocationSync(root)).toEqual({
+      directory: "docs/wiki",
+      root: path.join(root, "docs/wiki"),
       source: "config",
     });
   });

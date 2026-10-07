@@ -7,6 +7,7 @@ import type {
   RunActivityScope,
   RunActivityStatus,
 } from "./types.js";
+import { DEFAULT_REPOSITORY_WIKI_DIRECTORY } from "../../repository-wiki/paths.js";
 
 /**
  * A path operation derived from an explicit filesystem tool call.
@@ -94,6 +95,9 @@ interface ActivityTreeInput {
   status?: RunActivityStatus;
 }
 
+/**
+ * Common filesystem-path keys accepted from model tool inputs.
+ */
 const PATH_KEYS = [
   "path",
   "paths",
@@ -110,6 +114,7 @@ const PATH_KEYS = [
  */
 export function getToolPathActivities(
   event: Extract<OpenWikiRunEvent, { type: "tool_start" }>,
+  wikiDirectory: string = DEFAULT_REPOSITORY_WIKI_DIRECTORY,
 ): ToolPathActivity[] {
   const input = parseToolInput(event.input);
   let operation: RunActivityOperation;
@@ -147,7 +152,7 @@ export function getToolPathActivities(
     .map((activityPath) => ({
       operation,
       path: activityPath,
-      scope: getActivityScope(activityPath),
+      scope: getActivityScope(activityPath, wikiDirectory),
     }));
 }
 
@@ -204,10 +209,18 @@ export function buildExplorationTreeLines(
  * Returns whether a normalized activity path is a persistent OpenWiki page.
  * Non-Markdown sidecars are deliberately excluded from completion page counts.
  */
-export function isOpenWikiPagePath(activityPath: string): boolean {
-  return activityPath.startsWith("openwiki/") && activityPath.endsWith(".md");
+export function isOpenWikiPagePath(
+  activityPath: string,
+  wikiDirectory: string = DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+): boolean {
+  return (
+    activityPath.startsWith(`${wikiDirectory}/`) && activityPath.endsWith(".md")
+  );
 }
 
+/**
+ * Appends a deterministic printable traversal of one activity trie.
+ */
 function appendTreeLines(
   node: ActivityTreeNode,
   prefix: string,
@@ -230,6 +243,9 @@ function appendTreeLines(
   });
 }
 
+/**
+ * Extracts string path values from bounded tool input shapes.
+ */
 function getInputPaths(input: unknown, keys: readonly string[]): string[] {
   if (typeof input === "string") {
     return [input];
@@ -260,10 +276,16 @@ function getInputPaths(input: unknown, keys: readonly string[]): string[] {
   return [];
 }
 
+/**
+ * Extracts and reduces search inputs to their non-wildcard scopes.
+ */
 function getSearchScopes(input: unknown, keys: readonly string[]): string[] {
   return getInputPaths(input, keys).map(getSearchScope);
 }
 
+/**
+ * Reduces one glob-like value to its stable search ancestor.
+ */
 function getSearchScope(value: string): string {
   const normalized = value.replaceAll("\\", "/");
   const wildcardIndex = normalized.search(/[*?[\]{}]/u);
@@ -281,6 +303,9 @@ function getSearchScope(value: string): string {
   return prefix.length > 0 ? path.posix.dirname(prefix) : ".";
 }
 
+/**
+ * Normalizes a model path for safe repository-relative display.
+ */
 function normalizeActivityPath(value: string): string | null {
   const trimmed = value.trim().replaceAll("\\", "/");
 
@@ -299,9 +324,15 @@ function normalizeActivityPath(value: string): string | null {
   return normalized.length > 0 ? normalized : ".";
 }
 
-function getActivityScope(activityPath: string): RunActivityScope {
-  return activityPath === "openwiki" ||
-    activityPath.startsWith("openwiki/") ||
+/**
+ * Classifies one normalized path against the configured wiki directory.
+ */
+function getActivityScope(
+  activityPath: string,
+  wikiDirectory: string,
+): RunActivityScope {
+  return activityPath === wikiDirectory ||
+    activityPath.startsWith(`${wikiDirectory}/`) ||
     activityPath === ".claims" ||
     activityPath.startsWith(".claims/")
     ? "openwiki"

@@ -33,7 +33,6 @@ describe("repository wiki ownership", () => {
   test.each([
     [".last-update.json", "file"],
     [".page-manifest.json", "file"],
-    [".run.json", "file"],
     [".claims", "directory"],
   ] as const)("recognizes the %s ownership marker", async (marker, kind) => {
     const root = await repositoryRoot();
@@ -52,12 +51,12 @@ describe("repository wiki ownership", () => {
     const root = await repositoryRoot();
     const wiki = path.join(root, "docs");
     await mkdir(path.join(wiki, ".claims"), { recursive: true });
-    await writeFile(path.join(wiki, ".run.json"), "{}\n");
+    await writeFile(path.join(wiki, ".page-manifest.json"), "{}\n");
     await writeFile(path.join(wiki, ".last-update.json"), "{}\n");
     await expect(inspectRepositoryWikiOwnership(root, "docs")).resolves.toEqual(
       {
         status: "managed",
-        markers: [".claims", ".last-update.json", ".run.json"],
+        markers: [".claims", ".last-update.json", ".page-manifest.json"],
       },
     );
   });
@@ -119,7 +118,7 @@ describe("repository wiki ownership", () => {
     await writeFile(path.join(symlinkRoot, "marker.json"), "{}\n");
     await symlink(
       path.join(symlinkRoot, "marker.json"),
-      path.join(symlinkRoot, "docs", ".run.json"),
+      path.join(symlinkRoot, "docs", ".last-update.json"),
     );
     const symlinked = await inspectRepositoryWikiOwnership(symlinkRoot, "docs");
     expect(symlinked.status).toBe("unsafe");
@@ -128,7 +127,7 @@ describe("repository wiki ownership", () => {
     );
 
     const malformedRoot = await repositoryRoot();
-    await mkdir(path.join(malformedRoot, "docs", ".run.json"), {
+    await mkdir(path.join(malformedRoot, "docs", ".last-update.json"), {
       recursive: true,
     });
     const malformed = await inspectRepositoryWikiOwnership(

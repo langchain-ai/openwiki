@@ -319,6 +319,40 @@ describe("HostSessionManager", () => {
 
     expect(view.root).toBe(await realpath(root));
     expect(view.phase).toBe("planning");
+    expect(view.wikiDirectory).toBe("openwiki");
+  });
+
+  test("returns and assigns the configured physical wiki directory", async () => {
+    const root = await createRepository();
+    await writeFile(
+      path.join(root, ".openwiki.json"),
+      '{"wikiDirectory":"docs"}\n',
+      "utf8",
+    );
+    const manager = createManager();
+    const view = (await manager.begin({
+      root,
+      mode: "init",
+    })) as ActiveBeginView;
+
+    expect(view.wikiDirectory).toBe("docs");
+    await manager.submitPlan({
+      runId: view.runId,
+      pages: [
+        {
+          path: "/docs/quickstart.md",
+          title: "Quickstart",
+          purpose: "Orient repository readers.",
+          seedPaths: ["README.md"],
+        },
+      ],
+    });
+    await expect(
+      manager.nextPage({ runId: view.runId }),
+    ).resolves.toMatchObject({
+      status: "pending",
+      job: { path: "/docs/quickstart.md" },
+    });
   });
 
   test("requires the exact active run ID", async () => {
@@ -463,7 +497,11 @@ describe("HostSessionManager", () => {
     })) as ActiveBeginView;
     const noop = await manager.begin({ root: completeRoot, mode: "update" });
 
-    expect(noop).toMatchObject({ status: "noop", mode: "update" });
+    expect(noop).toMatchObject({
+      status: "noop",
+      mode: "update",
+      wikiDirectory: "openwiki",
+    });
     await expect(
       manager.nextPage({ runId: active.runId }),
     ).rejects.toMatchObject({ code: "invalid_state" });

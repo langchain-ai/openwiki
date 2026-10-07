@@ -27,6 +27,7 @@ import {
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
 import { createRetrievalTools } from "./retrieval-tools.js";
+import { resolveRepositoryWikiLocation } from "../../repository-wiki/config.js";
 
 /**
  * Stable host identity and optional deterministic clock for the MCP adapter.
@@ -128,9 +129,11 @@ export class HostSessionManager {
   async begin(input: BeginRequest): Promise<unknown> {
     return this.runOperation(async () => {
       const root = await resolveRepositoryRoot(input.root);
+      const wikiLocation = await resolveRepositoryWikiLocation(root);
       const result = await beginRepositoryRun({
         root,
         mode: input.mode,
+        wikiLocation,
         language: input.language,
         force: input.force,
         actor: {
@@ -179,7 +182,9 @@ export class HostSessionManager {
     });
   }
 
-  /** Returns a pending page job's complete Claims only when requested. */
+  /**
+   * Returns a pending page job's complete Claims only when requested.
+   */
   async inspectPageClaims(input: InspectPageClaimsRequest): Promise<unknown> {
     return this.runOperation(() => {
       const run = this.requireSession(input.runId);
@@ -226,21 +231,21 @@ export class HostSessionManager {
       {
         name: "openwiki_begin",
         description:
-          "Start or resume OpenWiki repository generation. Returns status=noop for a clean update, otherwise the durable planning/generation run state. An unrecognized `language` fails the call with invalid_input instead of starting a run.",
+          "Start or resume OpenWiki repository generation. Returns the actual wikiDirectory for repository context and status=noop for a clean update; otherwise returns durable planning/generation state. An unrecognized `language` fails with invalid_input instead of starting a run.",
         schema: BeginInput,
         handle: async (input) => this.begin(BeginInput.parse(input)),
       },
       {
         name: "openwiki_submit_plan",
         description:
-          "Submit the final canonical page plan. OpenWiki validates it and durably persists the ordered PageJob queue before accepting it.",
+          "Submit the final canonical page plan using actual paths below the wikiDirectory returned by openwiki_begin. OpenWiki validates it and durably persists the ordered PageJob queue before accepting it.",
         schema: SubmitPlanInput,
         handle: async (input) => this.submitPlan(SubmitPlanInput.parse(input)),
       },
       {
         name: "openwiki_next_page",
         description:
-          "Return the first pending page job, its Claim count, and only stale or unresolved Claims requiring an explicit decision; current issue-free Claims remain compact unless inspected on demand.",
+          "Return the first pending page job with its actual writable path, Claim count, and only stale or unresolved Claims requiring an explicit decision; current issue-free Claims remain compact unless inspected on demand.",
         schema: NextPageInput,
         handle: async (input) => this.nextPage(NextPageInput.parse(input)),
       },

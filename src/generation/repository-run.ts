@@ -222,6 +222,11 @@ export interface ActiveBeginView {
   root: string;
 
   /**
+   * Actual repository-relative directory containing this wiki.
+   */
+  wikiDirectory: string;
+
+  /**
    * Repository generation command being executed.
    */
   mode: RepositoryRunMode;
@@ -295,6 +300,11 @@ export interface NoopBeginView {
    * Absolute Git repository root checked by preflight.
    */
   root: string;
+
+  /**
+   * Actual repository-relative directory containing this wiki.
+   */
+  wikiDirectory: string;
 
   /**
    * Fixed mode for no-op lifecycle results.
@@ -427,6 +437,7 @@ export async function beginRepositoryRun(
 
   await ensureCodeModeRepoSetup(input.root, {
     createWorkflow: input.mode === "init",
+    wikiLocation: location,
   });
 
   const persisted = await readRepositoryRunState(input.root, wikiPaths);
@@ -564,6 +575,7 @@ export async function beginRepositoryRun(
               view: {
                 status: "noop",
                 root: input.root,
+                wikiDirectory: wikiPaths.directory,
                 mode: "update",
                 language,
                 updatePreflight: preflight,
@@ -946,6 +958,7 @@ async function toActiveBeginView(
     status: "active",
     runId: run.state.runId,
     root: run.root,
+    wikiDirectory: run.wikiPaths.directory,
     mode: run.state.mode,
     language: run.state.language,
     languageChanged: run.state.languageChanged,

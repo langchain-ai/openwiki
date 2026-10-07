@@ -1,23 +1,46 @@
 import { existsSync, readFileSync } from "node:fs";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
 import {
   ensureOpenWikiHome,
   openWikiHomeDir,
 } from "../config/openwiki-home.js";
 import type { ConnectorId } from "../connectors/types.js";
+import {
+  resolveRepositoryWikiLocation,
+  resolveRepositoryWikiLocationSync,
+} from "../repository-wiki/config.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  resolveRepositoryWikiRoot,
+} from "../repository-wiki/paths.js";
+import {
+  assertRepositoryWikiPathSafe,
+  assertRepositoryWikiPathSafeSync,
+} from "../repository-wiki/ownership.js";
 
+/**
+ * User-level onboarding state file.
+ */
 export const openWikiOnboardingPath = path.join(
   openWikiHomeDir,
   "onboarding.json",
 );
+/**
+ * User-level personal-wiki instructions file.
+ */
 export const openWikiInstructionsPath = path.join(
   openWikiHomeDir,
   "INSTRUCTIONS.md",
 );
+/**
+ * User-authored repository wiki brief filename.
+ */
 export const REPOSITORY_INSTRUCTIONS_FILE = "INSTRUCTIONS.md";
 
+/**
+ * Persisted schedule settings for one onboarding source.
+ */
 export type OnboardingSourceScheduleConfig = {
   description: string;
   expression: string;
@@ -27,6 +50,9 @@ export type OnboardingSourceScheduleConfig = {
   warning?: string;
 };
 
+/**
+ * Persisted configuration shared by one source kind.
+ */
 export type OnboardingSourceConfig = {
   connectedAt?: string;
   connectorConfig?: Record<string, unknown>;
@@ -34,12 +60,18 @@ export type OnboardingSourceConfig = {
   schedule?: OnboardingSourceScheduleConfig;
 };
 
+/**
+ * Named persisted instance of one connector source.
+ */
 export type OnboardingSourceInstanceConfig = OnboardingSourceConfig & {
   connectorId: ConnectorId;
   id: string;
   name?: string;
 };
 
+/**
+ * Optional macOS wake and sleep configuration.
+ */
 export type OpenWikiPowerManagementConfig = {
   pmset?: {
     days: string;
@@ -51,6 +83,9 @@ export type OpenWikiPowerManagementConfig = {
   };
 };
 
+/**
+ * Complete normalized onboarding state.
+ */
 export type OpenWikiOnboardingConfig = {
   completedAt?: string;
   ingestionSchedule?: OnboardingSourceScheduleConfig;
@@ -65,6 +100,9 @@ export type OpenWikiOnboardingConfig = {
   wikiGoal?: string;
 };
 
+/**
+ * Creates the empty supported onboarding state.
+ */
 export function createEmptyOnboardingConfig(): OpenWikiOnboardingConfig {
   return {
     sourceInstances: [],
@@ -73,6 +111,9 @@ export function createEmptyOnboardingConfig(): OpenWikiOnboardingConfig {
   };
 }
 
+/**
+ * Reads and normalizes user-level onboarding state and instructions.
+ */
 export async function readOpenWikiOnboardingConfig(): Promise<OpenWikiOnboardingConfig> {
   await ensureOpenWikiHome();
 
@@ -97,6 +138,9 @@ export async function readOpenWikiOnboardingConfig(): Promise<OpenWikiOnboarding
   }
 }
 
+/**
+ * Persists normalized user-level onboarding state and instructions.
+ */
 export async function saveOpenWikiOnboardingConfig(
   config: OpenWikiOnboardingConfig,
 ): Promise<void> {
@@ -123,16 +167,33 @@ export async function saveOpenWikiOnboardingConfig(
   }
 }
 
-export function getRepositoryWikiInstructionsPath(repoRoot: string): string {
-  return path.join(repoRoot, OPEN_WIKI_DIR, REPOSITORY_INSTRUCTIONS_FILE);
+/**
+ * Resolves the instructions file inside one physical repository wiki.
+ */
+export function getRepositoryWikiInstructionsPath(
+  repoRoot: string,
+  wikiDirectory: string = DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+): string {
+  return path.join(
+    resolveRepositoryWikiRoot(repoRoot, wikiDirectory),
+    REPOSITORY_INSTRUCTIONS_FILE,
+  );
 }
 
+/**
+ * Reads the optional brief from a repository's configured wiki root.
+ */
 export async function readRepositoryWikiInstructions(
   repoRoot: string,
 ): Promise<string | undefined> {
+  const wikiLocation = await resolveRepositoryWikiLocation(repoRoot);
+  await assertRepositoryWikiPathSafe(repoRoot, wikiLocation.directory);
   try {
     const content = (
-      await readFile(getRepositoryWikiInstructionsPath(repoRoot), "utf8")
+      await readFile(
+        getRepositoryWikiInstructionsPath(repoRoot, wikiLocation.directory),
+        "utf8",
+      )
     ).trim();
     return content.length > 0 ? content : undefined;
   } catch (error) {
@@ -144,10 +205,18 @@ export async function readRepositoryWikiInstructions(
   }
 }
 
+/**
+ * Reads configured repository instructions during synchronous startup checks.
+ */
 function readRepositoryWikiInstructionsSync(
   repoRoot: string,
 ): string | undefined {
-  const instructionsPath = getRepositoryWikiInstructionsPath(repoRoot);
+  const wikiLocation = resolveRepositoryWikiLocationSync(repoRoot);
+  assertRepositoryWikiPathSafeSync(repoRoot, wikiLocation.directory);
+  const instructionsPath = getRepositoryWikiInstructionsPath(
+    repoRoot,
+    wikiLocation.directory,
+  );
 
   if (!existsSync(instructionsPath)) {
     return undefined;
@@ -157,11 +226,19 @@ function readRepositoryWikiInstructionsSync(
   return content.length > 0 ? content : undefined;
 }
 
+/**
+ * Saves a repository brief inside its configured wiki root.
+ */
 export async function saveRepositoryWikiInstructions(
   repoRoot: string,
   wikiGoal: string,
 ): Promise<void> {
-  const instructionsPath = getRepositoryWikiInstructionsPath(repoRoot);
+  const wikiLocation = await resolveRepositoryWikiLocation(repoRoot);
+  await assertRepositoryWikiPathSafe(repoRoot, wikiLocation.directory);
+  const instructionsPath = getRepositoryWikiInstructionsPath(
+    repoRoot,
+    wikiLocation.directory,
+  );
   await mkdir(path.dirname(instructionsPath), { recursive: true });
   await writeFile(instructionsPath, `${wikiGoal.trim()}\n`, {
     encoding: "utf8",
@@ -169,6 +246,9 @@ export async function saveRepositoryWikiInstructions(
   });
 }
 
+/**
+ * Tests whether normalized onboarding state is runnable.
+ */
 export function isOnboardingComplete(
   config: OpenWikiOnboardingConfig,
 ): boolean {
@@ -179,6 +259,9 @@ export function isOnboardingComplete(
   );
 }
 
+/**
+ * Checks personal onboarding completion without asynchronous startup work.
+ */
 export function isOpenWikiOnboardingCompleteSync(): boolean {
   if (!existsSync(openWikiOnboardingPath)) {
     return false;
@@ -196,6 +279,9 @@ export function isOpenWikiOnboardingCompleteSync(): boolean {
   }
 }
 
+/**
+ * Checks code onboarding completion using configured repository instructions.
+ */
 export function isRepositoryCodeOnboardingCompleteSync(
   repoRoot: string,
 ): boolean {
@@ -222,6 +308,9 @@ export function isRepositoryCodeOnboardingCompleteSync(
   }
 }
 
+/**
+ * Reads optional user-level personal-wiki instructions.
+ */
 async function readWikiInstructions(): Promise<string | undefined> {
   try {
     const content = (await readFile(openWikiInstructionsPath, "utf8")).trim();
@@ -235,6 +324,9 @@ async function readWikiInstructions(): Promise<string | undefined> {
   }
 }
 
+/**
+ * Reads user-level personal-wiki instructions synchronously.
+ */
 function readWikiInstructionsSync(): string | undefined {
   if (!existsSync(openWikiInstructionsPath)) {
     return undefined;
@@ -244,6 +336,9 @@ function readWikiInstructionsSync(): string | undefined {
   return content.length > 0 ? content : undefined;
 }
 
+/**
+ * Normalizes unknown persisted onboarding data to the supported schema.
+ */
 function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
   if (!isObject(value)) {
     return createEmptyOnboardingConfig();
@@ -363,10 +458,16 @@ function normalizeOnboardingConfig(value: unknown): OpenWikiOnboardingConfig {
   return config;
 }
 
+/**
+ * Tests whether onboarding state selects repository code mode.
+ */
 function isCodeModeConfig(config: OpenWikiOnboardingConfig): boolean {
   return (config.modeId ?? config.templateId) === "code";
 }
 
+/**
+ * Normalizes one legacy connector source configuration.
+ */
 function normalizeSourceConfig(
   value: Record<string, unknown>,
 ): OnboardingSourceConfig {
@@ -384,6 +485,9 @@ function normalizeSourceConfig(
   };
 }
 
+/**
+ * Normalizes one optional persisted source schedule.
+ */
 function normalizeSourceScheduleConfig(
   value: Record<string, unknown>,
 ): OnboardingSourceScheduleConfig {
@@ -403,6 +507,9 @@ function normalizeSourceScheduleConfig(
   };
 }
 
+/**
+ * Converts legacy source mappings into normalized source instances.
+ */
 function deriveLegacySources(
   sourceInstances: OnboardingSourceInstanceConfig[],
 ): OpenWikiOnboardingConfig["sources"] {
@@ -421,6 +528,9 @@ function deriveLegacySources(
   return sources;
 }
 
+/**
+ * Creates a stable unique source-instance identifier.
+ */
 function createSourceInstanceId(
   connectorId: ConnectorId,
   index: number,
@@ -428,6 +538,9 @@ function createSourceInstanceId(
   return `${connectorId}-${index + 1}`;
 }
 
+/**
+ * Normalizes optional persisted host power-management settings.
+ */
 function normalizePowerManagementConfig(
   value: Record<string, unknown>,
 ): OpenWikiPowerManagementConfig | undefined {
@@ -456,6 +569,9 @@ function normalizePowerManagementConfig(
   };
 }
 
+/**
+ * Tests whether text identifies a supported connector.
+ */
 function isKnownConnectorId(value: string): value is ConnectorId {
   return (
     value === "custom-mcp" ||
@@ -469,10 +585,16 @@ function isKnownConnectorId(value: string): value is ConnectorId {
   );
 }
 
+/**
+ * Tests whether an unknown value is a non-array object.
+ */
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Tests whether a filesystem failure reports an absent file.
+ */
 function isFileNotFoundError(error: unknown): boolean {
   return (
     error instanceof Error &&

@@ -1,7 +1,9 @@
+import { lstatSync } from "node:fs";
 import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
 import {
   normalizeRepositoryWikiDirectory,
+  RepositoryWikiPathError,
   resolveRepositoryWikiRoot,
 } from "./paths.js";
 
@@ -16,7 +18,6 @@ const REPOSITORY_WIKI_INSTRUCTIONS_FILE = "INSTRUCTIONS.md";
 const MANAGED_FILE_MARKERS = new Set([
   ".last-update.json",
   ".page-manifest.json",
-  ".run.json",
 ]);
 
 /**
@@ -106,6 +107,51 @@ export async function inspectRepositoryWikiOwnership(
 }
 
 /**
+ * Rejects unsafe symbolic-link or non-directory components in one wiki path.
+ */
+export async function assertRepositoryWikiPathSafe(
+  repositoryRoot: string,
+  wikiDirectory: string,
+): Promise<void> {
+  const unsafe = await inspectPathComponents(
+    repositoryRoot,
+    normalizeRepositoryWikiDirectory(wikiDirectory),
+  );
+  if (unsafe) throw unsafeRepositoryWikiPathError(unsafe.reason);
+}
+
+/**
+ * Synchronously rejects unsafe components during startup-only reads.
+ */
+export function assertRepositoryWikiPathSafeSync(
+  repositoryRoot: string,
+  wikiDirectory: string,
+): void {
+  const directory = normalizeRepositoryWikiDirectory(wikiDirectory);
+  let current = path.resolve(repositoryRoot);
+  for (const segment of directory.split("/")) {
+    current = path.join(current, segment);
+    let metadata;
+    try {
+      metadata = lstatSync(current);
+    } catch (error) {
+      if (isMissingFileError(error)) return;
+      throw error;
+    }
+    if (metadata.isSymbolicLink()) {
+      throw unsafeRepositoryWikiPathError(
+        "Repository wiki path components cannot be symbolic links",
+      );
+    }
+    if (!metadata.isDirectory()) {
+      throw unsafeRepositoryWikiPathError(
+        "Repository wiki path components must be directories",
+      );
+    }
+  }
+}
+
+/**
  * Rejects symbolic links and non-directory entries along a proposed wiki path.
  */
 async function inspectPathComponents(
@@ -149,4 +195,13 @@ async function inspectPathComponents(
  */
 function isMissingFileError(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === "ENOENT";
+}
+
+/**
+ * Creates a path-policy error for one unsafe physical wiki component.
+ */
+function unsafeRepositoryWikiPathError(
+  reason: string,
+): RepositoryWikiPathError {
+  return new RepositoryWikiPathError(`Unsafe repository wiki path: ${reason}.`);
 }

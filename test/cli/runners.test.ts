@@ -592,9 +592,10 @@ describe("runPrintCommand", () => {
       }),
     );
 
-    expect(ensureCodeModeRepoSetup).toHaveBeenCalledWith(expect.any(String), {
-      createWorkflow: true,
-    });
+    const setupArgs = vi.mocked(ensureCodeModeRepoSetup).mock.calls[0];
+    expect(typeof setupArgs[0]).toBe("string");
+    expect(setupArgs[1]?.createWorkflow).toBe(true);
+    expect(setupArgs[1]?.wikiLocation?.directory).toBe("openwiki");
     expect(runCodeModeConnectors).toHaveBeenCalled();
     // The augmented message from the connector pull reaches the agent run.
     const agentArgs = vi.mocked(runOpenWikiAgent).mock.calls[0];

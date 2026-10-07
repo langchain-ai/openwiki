@@ -63,6 +63,8 @@ import {
   installConnectorSchedule,
   validateCronExpression,
 } from "../../scheduling/schedules.js";
+import { resolveRepositoryWikiLocation } from "../../repository-wiki/config.js";
+import { DEFAULT_REPOSITORY_WIKI_DIRECTORY } from "../../repository-wiki/paths.js";
 
 import {
   addSourceInstanceConfig,
@@ -265,6 +267,9 @@ export function useInitSetup({
   const [codeRepoRoot, setCodeRepoRoot] = useState(() =>
     getDefaultCodeRepoRootPath(),
   );
+  const [codeWikiDirectory, setCodeWikiDirectory] = useState(
+    DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  );
   // Dedicated buffer for the code-repo-path field, kept separate from the shared
   // `input` (which seedInputForStep prefills with credentials on other steps) so
   // a secret never shares the buffer that feeds the thread-id path hash.
@@ -302,6 +307,22 @@ export function useInitSetup({
     return validation.valid ? validation.description : suggestedCronExpression;
   }, [suggestedCronExpression]);
   const inputDisplayWidth = getInputDisplayWidth(stdout.columns);
+
+  useEffect(() => {
+    let cancelled = false;
+    resolveRepositoryWikiLocation(codeRepoRoot)
+      .then((location) => {
+        if (!cancelled) setCodeWikiDirectory(location.directory);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCodeWikiDirectory(DEFAULT_REPOSITORY_WIKI_DIRECTORY);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [codeRepoRoot]);
 
   useEffect(() => {
     let cancelled = false;
@@ -538,6 +559,9 @@ export function useInitSetup({
     };
   }, [step, provider]);
 
+  /**
+   * Launches the selected provider's external CLI authentication flow.
+   */
   async function launchExternalCliLogin() {
     setExternalCliAuth({ kind: "logging-in" });
     setRawMode?.(false);
@@ -1159,6 +1183,9 @@ export function useInitSetup({
     }
   });
 
+  /**
+   * Routes keyboard input for the active menu-style wizard step.
+   */
   function handleMenuInput(key: PromptInputKey, move: () => void) {
     if (key.upArrow || key.downArrow) {
       setError(null);
@@ -1171,6 +1198,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Commits the active prompt value and advances the setup state machine.
+   */
   async function submit() {
     setError(null);
     setNotice(null);
@@ -2195,6 +2225,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Saves the selected connector's repository-facing ingestion goal.
+   */
   async function saveSelectedSourceDescription(description: string) {
     const connectorConfig =
       selectedSourceId === "web-search" || selectedSourceId === "hackernews"
@@ -2230,6 +2263,9 @@ export function useInitSetup({
     returnToSourceMenu();
   }
 
+  /**
+   * Advances setup after model selection.
+   */
   async function continueAfterModel(
     nextModelId: string,
     nextReasoningEffort: ReasoningEffortSelection,
@@ -2260,6 +2296,9 @@ export function useInitSetup({
     });
   }
 
+  /**
+   * Advances setup after provider credentials have been collected.
+   */
   async function continueAfterCredentials(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
@@ -2317,6 +2356,9 @@ export function useInitSetup({
     await completeSetup(options);
   }
 
+  /**
+   * Hydrates repository-specific state after confirming a code checkout.
+   */
   function continueAfterCodeRepoConfirmed(repoRoot: string) {
     setCodeRepoRoot(repoRoot);
     // Preload committed LangSmith projects (once) so the source menu shows them
@@ -2346,6 +2388,9 @@ export function useInitSetup({
   // Continues past the code-mode source menu into the wiki brief. Walks wiki-goal
   // on --init even when set; otherwise only when unset. Seeds the existing goal so
   // Enter keeps it (idempotent).
+  /**
+   * Advances code setup after optional connector configuration.
+   */
   function advanceAfterCodeSources() {
     if (walkAllSteps || !onboardingConfig.wikiGoal) {
       setInput(
@@ -2359,6 +2404,9 @@ export function useInitSetup({
     setStep("final");
   }
 
+  /**
+   * Persists final credential changes and returns completion to the CLI.
+   */
   async function completeSetup(options: CompleteSetupOptions) {
     await saveCredentialUpdates(options);
 
@@ -2393,6 +2441,9 @@ export function useInitSetup({
     });
   }
 
+  /**
+   * Persists credential values collected during this setup run.
+   */
   async function saveCredentialUpdates(options: CompleteSetupOptions) {
     setIsSaving(true);
 
@@ -2428,6 +2479,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Runs the selected connector's authorization flow when required.
+   */
   async function authorizeSelectedSource() {
     setIsAuthRunning(true);
     setError(null);
@@ -2466,6 +2520,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Advances after validating one connector's credential inputs.
+   */
   function continueAfterSourceCredentialSetup(source: SourceSetupOption) {
     if (source.authProvider) {
       setStep("source-auth");
@@ -2541,6 +2598,9 @@ export function useInitSetup({
     setStep("source-langsmith-workspaces", { back: true });
   }
 
+  /**
+   * Resets transient source state and returns to source selection.
+   */
   function returnToSourceMenu() {
     setSourceSelectionIndex(activeSourceOptions.length);
     setSourceState({ secretValues: {} });
@@ -2555,6 +2615,9 @@ export function useInitSetup({
     setStep("source-menu", { back: true });
   }
 
+  /**
+   * Saves the local Git connector's selected repository.
+   */
   async function configureLocalGitRepo(
     repoPathInput = getDefaultLocalGitRepoPath(),
   ): Promise<Record<string, unknown>> {
@@ -2595,6 +2658,9 @@ export function useInitSetup({
     return connectorConfig;
   }
 
+  /**
+   * Validates and persists the selected ingestion schedule.
+   */
   async function saveModeSchedule(cronExpression: string) {
     setIsSaving(true);
 
@@ -2628,6 +2694,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Persists the optional global macOS wake and sleep window.
+   */
   async function saveGlobalMacPowerWindow() {
     setIsSaving(true);
 
@@ -2663,6 +2732,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Persists the complete current onboarding configuration.
+   */
   async function saveConfig(config: OpenWikiOnboardingConfig) {
     setIsSaving(true);
     try {
@@ -2675,6 +2747,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Persists mode-specific onboarding state and repository instructions.
+   */
   async function saveConfigForCurrentMode(config: OpenWikiOnboardingConfig) {
     if (!isCodeMode(config)) {
       await saveConfig(config);
@@ -2698,6 +2773,9 @@ export function useInitSetup({
     }
   }
 
+  /**
+   * Completes a manually confirmed browser-login flow.
+   */
   function submitManualLogin(pasted: string): void {
     const handle = loginHandleRef.current;
 
@@ -2744,6 +2822,7 @@ export function useInitSetup({
     loginUrl,
     codeRepoPathInput,
     codeRepoRoot,
+    codeWikiDirectory,
     externalCliAuth,
     codeRepoSelectionIndex,
     cronFieldSelectionIndex,

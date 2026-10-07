@@ -659,6 +659,7 @@ describe("beginRepositoryRun", () => {
     expect(result.view).toMatchObject({
       status: "noop",
       mode: "update",
+      wikiDirectory: "openwiki",
       language: "en",
       updatePreflight: { shouldSkip: true },
     });

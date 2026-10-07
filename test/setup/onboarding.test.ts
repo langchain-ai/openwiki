@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -171,6 +178,61 @@ describe("OpenWiki onboarding instructions", () => {
       await rm(repo, { force: true, recursive: true });
     }
   });
+
+  test("uses the configured directory for repository wiki instructions", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await writeFile(
+        path.join(repo, ".openwiki.json"),
+        '{"wikiDirectory":"docs/wiki"}\n',
+        "utf8",
+      );
+      await onboarding.saveRepositoryWikiInstructions(
+        repo,
+        "Configured repository brief.",
+      );
+
+      await expect(
+        readFile(
+          onboarding.getRepositoryWikiInstructionsPath(repo, "docs/wiki"),
+          "utf8",
+        ),
+      ).resolves.toBe("Configured repository brief.\n");
+      await expect(
+        onboarding.readRepositoryWikiInstructions(repo),
+      ).resolves.toBe("Configured repository brief.");
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
+  test.skipIf(process.platform === "win32")(
+    "rejects a symlinked configured repository wiki path",
+    async () => {
+      const home = await createTempHome();
+      const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+      const outside = await mkdtemp(path.join(tmpdir(), "openwiki-outside-"));
+      const onboarding = await loadOnboardingModule(home);
+
+      try {
+        await symlink(outside, path.join(repo, "docs"));
+        await writeFile(
+          path.join(repo, ".openwiki.json"),
+          '{"wikiDirectory":"docs"}\n',
+          "utf8",
+        );
+        await expect(
+          onboarding.saveRepositoryWikiInstructions(repo, "Unsafe brief."),
+        ).rejects.toThrow("symbolic links");
+      } finally {
+        await rm(repo, { force: true, recursive: true });
+        await rm(outside, { force: true, recursive: true });
+      }
+    },
+  );
 });
 
 describe("OpenWiki onboarding completion", () => {

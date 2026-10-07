@@ -74,12 +74,17 @@ import type {
   SourceSetupOption,
   SourceSetupState,
 } from "./types.js";
+import { DEFAULT_REPOSITORY_WIKI_DIRECTORY } from "../../repository-wiki/paths.js";
 
+/**
+ * Renders the active setup prompt for the current wizard step.
+ */
 export function Prompt({
   authMode,
   authModeSelectionIndex,
   codeRepoPathInput,
   codeRepoRoot,
+  codeWikiDirectory = DEFAULT_REPOSITORY_WIKI_DIRECTORY,
   codeRepoSelectionIndex,
   externalCliAuth,
   cronFieldSelectionIndex,
@@ -117,6 +122,7 @@ export function Prompt({
   authModeSelectionIndex: number;
   codeRepoPathInput: string;
   codeRepoRoot: string;
+  codeWikiDirectory?: string;
   codeRepoSelectionIndex: number;
   externalCliAuth: ExternalCliAuthState;
   cronFieldSelectionIndex: number;
@@ -491,8 +497,8 @@ export function Prompt({
           <Text color="cyan">{codeRepoRoot}</Text>
         </Box>
         <Text color="gray">
-          OpenWiki will run in this directory and write the initial openwiki/
-          folder there.
+          OpenWiki will run in this directory and write the initial{" "}
+          {codeWikiDirectory}/ folder there.
         </Text>
         <Box flexDirection="column" marginTop={1}>
           {CODE_REPO_OPTIONS.map((option, index) => (
@@ -512,7 +518,8 @@ export function Prompt({
       <Box flexDirection="column">
         <Text>Choose the repository directory.</Text>
         <Text color="gray">
-          Enter an existing directory. OpenWiki will write openwiki/ there.
+          Enter an existing directory. OpenWiki will write {codeWikiDirectory}/
+          there.
         </Text>
         <BorderedInput
           maxDisplayWidth={inputDisplayWidth}
@@ -618,7 +625,8 @@ export function Prompt({
         <Text>{selectedSource.displayName} setup</Text>
         {selectedSource.instructions.map((instruction, index) => (
           <Text key={instruction}>
-            {index + 1}. {instruction}
+            {index + 1}.{" "}
+            {formatRepositoryWikiInstruction(instruction, codeWikiDirectory)}
           </Text>
         ))}
         {secretInput ? (
@@ -775,7 +783,7 @@ export function Prompt({
         <Text>Which projects should this wiki document in this workspace?</Text>
         <Text color="gray">
           Comma-separated project names (as in LANGCHAIN_PROJECT). Written to
-          openwiki/.langsmith.json.
+          {codeWikiDirectory}/.langsmith.json.
         </Text>
         <BorderedMultilineInput
           maxDisplayWidth={inputDisplayWidth}
@@ -936,7 +944,7 @@ export function Prompt({
         })}
         <Text color="gray">
           {selectedMode === "code"
-            ? "Run now writes the initial openwiki/ directory. Open chat skips the initial run."
+            ? `Run now writes the initial ${codeWikiDirectory}/ directory. Open chat skips the initial run.`
             : "Run now executes one source-specific ingestion and wiki update per configured source. Run later opens chat so you can start ingestion when you are ready."}
         </Text>
       </Box>
@@ -946,6 +954,23 @@ export function Prompt({
   return null;
 }
 
+/**
+ * Rewrites default-directory setup copy for the selected repository wiki.
+ *
+ * @param instruction - Static source instruction authored with the default path.
+ * @param wikiDirectory - Actual repository-relative wiki directory.
+ * @returns Instruction naming the selected physical directory.
+ */
+function formatRepositoryWikiInstruction(
+  instruction: string,
+  wikiDirectory: string,
+): string {
+  return instruction.replaceAll("openwiki/", `${wikiDirectory}/`);
+}
+
+/**
+ * Renders provider-specific external CLI authentication status and controls.
+ */
 export function ExternalCliAuthPrompt({
   authState,
   input,
@@ -1024,6 +1049,9 @@ export function ExternalCliAuthPrompt({
   );
 }
 
+/**
+ * Renders the setup wizard heading.
+ */
 export function SetupHeader() {
   return (
     <Box
@@ -1044,6 +1072,9 @@ export function SetupHeader() {
   );
 }
 
+/**
+ * Renders one labeled setup-progress row.
+ */
 export function SetupStep({
   detail,
   label,
@@ -1064,6 +1095,9 @@ export function SetupStep({
   );
 }
 
+/**
+ * Renders a bordered setup content panel.
+ */
 export function SetupPanel({
   children,
   title,
@@ -1087,12 +1121,18 @@ export function SetupPanel({
   );
 }
 
+/**
+ * Renders the cursor marker for one selectable option.
+ */
 export function SelectionMarker({ isSelected }: { isSelected: boolean }) {
   return (
     <Text color={isSelected ? "cyan" : "gray"}>{isSelected ? ">" : " "}</Text>
   );
 }
 
+/**
+ * Renders the current connection state for one source.
+ */
 export function SourceConnectionStatus({
   count,
   isConfigured,
@@ -1109,6 +1149,9 @@ export function SourceConnectionStatus({
   );
 }
 
+/**
+ * Renders a terminal-friendly OAuth authorization link.
+ */
 export function OAuthAuthorizationLink({
   authProvider,
   copiedToClipboard,
@@ -1135,6 +1178,9 @@ export function OAuthAuthorizationLink({
   );
 }
 
+/**
+ * Renders the interactive OAuth login prompt.
+ */
 export function OAuthLoginPrompt({
   copied,
   input,
@@ -1196,6 +1242,9 @@ export function OAuthLoginPrompt({
   );
 }
 
+/**
+ * Renders a bordered single-line setup input.
+ */
 export function BorderedInput({
   borderColor = "cyan",
   maxDisplayWidth,
@@ -1242,6 +1291,9 @@ export function BorderedInput({
   );
 }
 
+/**
+ * Renders a bordered multiline setup input.
+ */
 export function BorderedMultilineInput({
   borderColor = "cyan",
   maxDisplayWidth,
@@ -1273,6 +1325,9 @@ export function BorderedMultilineInput({
   );
 }
 
+/**
+ * Renders an input value with masking and cursor state.
+ */
 export function InputValueWithCursor({
   maxDisplayWidth,
   secret = false,
@@ -1308,6 +1363,9 @@ export function InputValueWithCursor({
   );
 }
 
+/**
+ * Renders the segmented cron-expression editor.
+ */
 export function SegmentedCronInput({
   activeFieldIndex,
   expression,

@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -269,4 +269,46 @@ describe("read/write round-trip", () => {
 
     await expect(readLangSmithRepoConfig(root)).resolves.toBeUndefined();
   });
+
+  test("reads and writes inside the configured repository wiki", async () => {
+    const root = await createTempRepo();
+    await writeFile(
+      path.join(root, ".openwiki.json"),
+      '{"wikiDirectory":"docs/wiki"}\n',
+      "utf8",
+    );
+    const config = {
+      workspaces: [
+        {
+          apiKeyEnv: "OPENWIKI_LANGSMITH_API_KEY",
+          projects: [{ name: "prod" }],
+        },
+      ],
+    };
+
+    await writeLangSmithRepoConfig(root, config);
+
+    expect(getLangSmithRepoConfigPath(root, "docs/wiki")).toBe(
+      path.join(root, "docs/wiki/.langsmith.json"),
+    );
+    await expect(readLangSmithRepoConfig(root)).resolves.toEqual(config);
+  });
+
+  test.skipIf(process.platform === "win32")(
+    "rejects a symlinked configured wiki path",
+    async () => {
+      const root = await createTempRepo();
+      const outside = await createTempRepo();
+      await symlink(outside, path.join(root, "docs"));
+      await writeFile(
+        path.join(root, ".openwiki.json"),
+        '{"wikiDirectory":"docs"}\n',
+        "utf8",
+      );
+
+      await expect(
+        writeLangSmithRepoConfig(root, { workspaces: [] }),
+      ).rejects.toThrow("symbolic links");
+    },
+  );
 });

@@ -8,6 +8,7 @@ import {
   type WikiWorkspaceRequired,
   type WikiWorkspaceSummary,
 } from "../linking/wiki-workspaces.js";
+import { RepositoryWikiPaths } from "../repository-wiki/paths.js";
 
 /**
  * Shared request and response bounds for repository wiki retrieval.
@@ -85,12 +86,6 @@ const STOP_WORDS = new Set(
     " ",
   ),
 );
-
-/**
- * Stable correction guidance for pages outside the public retrieval surface.
- */
-const INVALID_WIKI_PAGE_MESSAGE =
-  "Page must be a non-structural Markdown path below openwiki/.";
 
 /**
  * Search controls shared by direct callers and the MCP adapter.
@@ -478,7 +473,10 @@ export async function searchWiki(
 
   const units: SearchUnit[] = [];
   for (const wiki of scope.wikis) {
-    const store = new ClaimsStore(wiki.root);
+    const store = new ClaimsStore(
+      wiki.root,
+      new RepositoryWikiPaths(wiki.wikiDirectory),
+    );
     for (const page of await store.discoverPages()) {
       if (!isRetrievableWikiPage(page)) continue;
       const markdown = await store.readMarkdown(page);
@@ -648,12 +646,13 @@ export async function readWikiSections(
   }
 
   const selectedWiki = await resolveReadableWiki(root, request.wiki?.trim());
-
-  const normalizedPage = normalizeRetrievableWikiPage(request.page);
+  const wikiPaths = new RepositoryWikiPaths(selectedWiki.wikiDirectory);
+  const normalizedPage = normalizeRetrievableWikiPage(request.page, wikiPaths);
   const requested = request.sections.map(normalizeSectionAnchor);
-  const markdown = await new ClaimsStore(selectedWiki.root).readMarkdown(
-    normalizedPage,
-  );
+  const markdown = await new ClaimsStore(
+    selectedWiki.root,
+    wikiPaths,
+  ).readMarkdown(normalizedPage);
   const body = markdownBody(markdown);
   const tokens = marked.lexer(body);
   const available = new Map(
@@ -984,23 +983,37 @@ function repositoryPathFromResource(value: string): string {
  * Normalizes a caller-supplied page to the public retrieval subset.
  *
  * @param page - Repository-relative wiki page selected from search.
- * @returns Canonical virtual page path beginning with `/openwiki/`.
+ * @param wikiPaths - Selected repository's physical wiki path policy.
+ * @returns Canonical page path beginning with the configured wiki root.
  * @throws {WikiRetrievalError} When the path is structural, hidden, or unsafe.
  */
-function normalizeRetrievableWikiPage(page: string): string {
+function normalizeRetrievableWikiPage(
+  page: string,
+  wikiPaths: RepositoryWikiPaths,
+): string {
   let normalized: string;
   try {
-    normalized = normalizeWikiPagePath(page);
+    normalized = normalizeWikiPagePath(page, wikiPaths);
   } catch {
-    throw new WikiRetrievalError(INVALID_WIKI_PAGE_MESSAGE);
+    throw new WikiRetrievalError(invalidWikiPageMessage(wikiPaths));
   }
   if (
     page.trim().length > WIKI_RETRIEVAL_LIMITS.pageCharacters ||
     !isRetrievableWikiPage(normalized)
   ) {
-    throw new WikiRetrievalError(INVALID_WIKI_PAGE_MESSAGE);
+    throw new WikiRetrievalError(invalidWikiPageMessage(wikiPaths));
   }
   return normalized;
+}
+
+/**
+ * Builds correction guidance for pages outside one wiki's public surface.
+ *
+ * @param wikiPaths - Selected repository's physical wiki path policy.
+ * @returns Stable path guidance naming the configured repository directory.
+ */
+function invalidWikiPageMessage(wikiPaths: RepositoryWikiPaths): string {
+  return `Page must be a non-structural Markdown path below ${wikiPaths.directory}/.`;
 }
 
 /**

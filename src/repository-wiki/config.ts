@@ -1,4 +1,12 @@
-import { constants as fsConstants, type Stats } from "node:fs";
+import {
+  closeSync,
+  constants as fsConstants,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readSync,
+  type Stats,
+} from "node:fs";
 import { lstat, open } from "node:fs/promises";
 import path from "node:path";
 import { writeTextAtomic } from "../integrations/install/atomic-file.js";
@@ -127,6 +135,59 @@ export async function readRepositoryWikiConfig(
 }
 
 /**
+ * Reads and validates optional repository-root wiki configuration synchronously.
+ *
+ * This exists for startup checks that run before the React setup lifecycle can
+ * perform asynchronous work. It validates and reads through one descriptor so
+ * a pathname replacement cannot redirect the parsed content.
+ */
+export function readRepositoryWikiConfigSync(
+  repositoryRoot: string,
+): RepositoryWikiConfig | null {
+  const configPath = repositoryConfigPath(repositoryRoot);
+  let descriptor: number;
+  try {
+    descriptor = openSync(
+      configPath,
+      fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW,
+    );
+  } catch (error) {
+    if (isMissingFileError(error)) return null;
+    if (isSymbolicLinkError(error)) {
+      throw configError("cannot be a symbolic link");
+    }
+    throw error;
+  }
+
+  try {
+    const openedMetadata = fstatSync(descriptor);
+    const confirmedMetadata = lstatSync(configPath);
+    validateOpenedConfigMetadata(openedMetadata, confirmedMetadata);
+    const buffer = Buffer.alloc(MAX_REPOSITORY_WIKI_CONFIG_BYTES + 1);
+    let bytesRead = 0;
+    while (bytesRead < buffer.length) {
+      const count = readSync(
+        descriptor,
+        buffer,
+        bytesRead,
+        buffer.length - bytesRead,
+        bytesRead,
+      );
+      if (count === 0) break;
+      bytesRead += count;
+    }
+    if (bytesRead > MAX_REPOSITORY_WIKI_CONFIG_BYTES) {
+      throw configError(
+        `must not exceed ${MAX_REPOSITORY_WIKI_CONFIG_BYTES} bytes`,
+      );
+    }
+    return parseRepositoryWikiConfig(buffer.toString("utf8", 0, bytesRead));
+  } finally {
+    closeSync(descriptor);
+  }
+}
+
+/**
  * Resolves config, an optional explicit selection, or the default directory.
  */
 export async function resolveRepositoryWikiLocation(
@@ -151,6 +212,22 @@ export async function resolveRepositoryWikiLocation(
     directory,
     root: resolveRepositoryWikiRoot(repositoryRoot, directory),
     source,
+  };
+}
+
+/**
+ * Resolves config or the default directory for synchronous startup checks.
+ */
+export function resolveRepositoryWikiLocationSync(
+  repositoryRoot: string,
+): RepositoryWikiLocation {
+  const configured = readRepositoryWikiConfigSync(repositoryRoot);
+  const directory =
+    configured?.wikiDirectory ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY;
+  return {
+    directory,
+    root: resolveRepositoryWikiRoot(repositoryRoot, directory),
+    source: configured ? "config" : "default",
   };
 }
 
@@ -276,4 +353,30 @@ function isSymbolicLinkError(error: unknown): boolean {
 function sameFileIdentity(left: Stats, right: Stats): boolean {
   if (left.ino === 0 || right.ino === 0) return true;
   return left.dev === right.dev && left.ino === right.ino;
+}
+
+/**
+ * Validates descriptor and pathname metadata for a repository config file.
+ */
+function validateOpenedConfigMetadata(
+  openedMetadata: Stats,
+  confirmedMetadata: Stats,
+): void {
+  if (!openedMetadata.isFile()) {
+    throw configError("must be a regular file");
+  }
+  if (confirmedMetadata.isSymbolicLink()) {
+    throw configError("cannot be a symbolic link");
+  }
+  if (
+    !confirmedMetadata.isFile() ||
+    !sameFileIdentity(openedMetadata, confirmedMetadata)
+  ) {
+    throw configError("must remain a regular file while being read");
+  }
+  if (openedMetadata.size > MAX_REPOSITORY_WIKI_CONFIG_BYTES) {
+    throw configError(
+      `must not exceed ${MAX_REPOSITORY_WIKI_CONFIG_BYTES} bytes`,
+    );
+  }
 }
