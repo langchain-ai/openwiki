@@ -1,0 +1,29 @@
+src/repository-wiki/ownership.ts
+  s_7397b8146d0266::t_42b2a59a5211b3 8-10,12-15,21-24,107-109,146-148
+src/repository-wiki/config.ts
+  s_7397b8146d0266::t_42b2a59a5211b3 17-19,56-58,179-181,221-223,233-235,242-244,249-251,256-258
+src/repository-wiki/paths.ts
+  s_7397b8146d0266::t_42b2a59a5211b3 123-125,199-201,209-211,233-235,249-251
+  s_7397b8146d0266::t_21741700f7f7ba 12-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f4ced2dfe9ffae4ab28c8e8a752fc36ca9091d5d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7397b8146d0266": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-e0cd-78d0-bbdd-62713d2afd89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
