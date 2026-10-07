@@ -1,0 +1,51 @@
+src/repository-wiki/paths.ts
+  s_7397b8146d0266::t_a8667f30eaf07d 195,207,226
+  s_7397b8146d0266::t_f8e10c727821e2 1-145,154-184,186-194,196-206,208-225,227-241
+  s_7397b8146d0266::t_5e8edba598d4eb 146-153,185
+src/repository-wiki/ownership.ts
+  s_7397b8146d0266::t_f8e10c727821e2 1-134
+test/repository-wiki/paths.test.ts
+  s_7397b8146d0266::t_5e8edba598d4eb 115-116
+  s_7397b8146d0266::t_cc2d551861d875 1-101,103-114,117-120
+  s_7397b8146d0266::t_7294fb687b8f7f 102
+src/repository-wiki/config.ts
+  s_7397b8146d0266::t_d81c222c3d1d96 1,239
+  s_7397b8146d0266::t_7294fb687b8f7f 8,90-96,206-213,237-238,240-241
+  s_7397b8146d0266::t_5e8edba598d4eb 100-110
+  s_7397b8146d0266::t_f8e10c727821e2 2-7,9-89,97-99,111-146,148-205,214-236,242
+  s_7397b8146d0266::t_a8667f30eaf07d 147
+plans/configurable-repository-wiki-directory.md
+  s_7397b8146d0266::t_fa2e318b1153ea 1-4,6-641
+  s_7397b8146d0266::t_f8e10c727821e2 5
+test/repository-wiki/ownership.test.ts
+  s_7397b8146d0266::t_cc2d551861d875 1-13,17-18,22-77,83-85,94-98,105-123,129-133,142-148,154-155
+  s_7397b8146d0266::t_060b441d4c7f69 124,151-153
+  s_7397b8146d0266::t_a8667f30eaf07d 14-16,19-21,99-104
+  s_7397b8146d0266::t_cc04e20cd3f8d9 78-82,86-93,125-128,134-141,149-150
+test/repository-wiki/config.test.ts
+  s_7397b8146d0266::t_a8667f30eaf07d 1-5,7-9,55-59,68-72,179
+  s_7397b8146d0266::t_cc2d551861d875 10-54,60-67,73-100,112-163,165-178,180-184
+  s_7397b8146d0266::t_5e8edba598d4eb 6,164
+  s_7397b8146d0266::t_7294fb687b8f7f 101-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7147f9ea9b3b11c7eabb87d4a837ff9cc56447f3",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7397b8146d0266": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-e0cd-78d0-bbdd-62713d2afd89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
