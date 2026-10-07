@@ -63,38 +63,39 @@ export async function readRepositoryWikiConfig(
   repositoryRoot: string,
 ): Promise<RepositoryWikiConfig | null> {
   const configPath = repositoryConfigPath(repositoryRoot);
-  let metadata;
-  try {
-    metadata = await lstat(configPath);
-  } catch (error) {
-    if (isMissingFileError(error)) return null;
-    throw error;
-  }
-
-  if (metadata.isSymbolicLink() || !metadata.isFile()) {
-    throw configError("must be a regular file and cannot be a symbolic link");
-  }
-  if (metadata.size > MAX_REPOSITORY_WIKI_CONFIG_BYTES) {
-    throw configError(
-      `must not exceed ${MAX_REPOSITORY_WIKI_CONFIG_BYTES} bytes`,
-    );
-  }
-
   let handle;
   try {
     handle = await open(
       configPath,
       fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW,
     );
+  } catch (error) {
+    if (isMissingFileError(error)) return null;
+    if (isSymbolicLinkError(error)) {
+      throw configError("cannot be a symbolic link");
+    }
+    throw error;
+  }
+
+  try {
     const openedMetadata = await handle.stat();
     const confirmedMetadata = await lstat(configPath);
+    if (!openedMetadata.isFile()) {
+      throw configError("must be a regular file");
+    }
+    if (confirmedMetadata.isSymbolicLink()) {
+      throw configError("cannot be a symbolic link");
+    }
     if (
-      !openedMetadata.isFile() ||
-      confirmedMetadata.isSymbolicLink() ||
       !confirmedMetadata.isFile() ||
       !sameFileIdentity(openedMetadata, confirmedMetadata)
     ) {
       throw configError("must remain a regular file while being read");
+    }
+    if (openedMetadata.size > MAX_REPOSITORY_WIKI_CONFIG_BYTES) {
+      throw configError(
+        `must not exceed ${MAX_REPOSITORY_WIKI_CONFIG_BYTES} bytes`,
+      );
     }
     const buffer = Buffer.alloc(MAX_REPOSITORY_WIKI_CONFIG_BYTES + 1);
     let bytesRead = 0;
@@ -114,13 +115,8 @@ export async function readRepositoryWikiConfig(
       );
     }
     return parseRepositoryWikiConfig(buffer.toString("utf8", 0, bytesRead));
-  } catch (error) {
-    if (isSymbolicLinkError(error)) {
-      throw configError("cannot be a symbolic link");
-    }
-    throw error;
   } finally {
-    await handle?.close();
+    await handle.close();
   }
 }
 
