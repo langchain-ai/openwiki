@@ -566,6 +566,26 @@ The wizard opens `https://auth.openai.com` in your browser (and prints the URL f
 </details>
 
 <details>
+<summary><b>Tsubasa</b></summary>
+
+<br/>
+
+Tsubasa uses the OpenAI-compatible chat-completions endpoint at `https://api.tsubasa.sh/v1`:
+
+```bash
+OPENWIKI_PROVIDER=tsubasa
+TSUBASA_API_KEY=your-tsubasa-key
+OPENWIKI_MODEL_ID=tsubasa-fast
+OPENWIKI_MAX_OUTPUT_TOKENS=512
+```
+
+You can also select `tsubasa-pro`. Both aliases have a 32,768-token context window. In a controlled first-turn check, the stock personal-chat prompt used an estimated 32,140 input tokens: a 512-token output allowance fit, while 1,024 exceeded the context budget. The setting above bounds short responses; the small remaining context budget does not qualify longer conversations or full wiki generation.
+
+The setup picker does not apply the 512-token cap automatically. Set it explicitly before using this provider; the default output budget does not fit the stock personal-chat prompt.
+
+</details>
+
+<details>
 <summary><b>OpenAI-compatible endpoints (LiteLLM, Ollama, LM Studio, gateways)</b></summary>
 
 <br/>
