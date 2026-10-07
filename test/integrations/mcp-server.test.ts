@@ -196,6 +196,9 @@ describe("OpenWiki MCP adapter", () => {
       expect(instructions).toContain("openwiki_submit_plan");
       expect(instructions).toContain("openwiki_next_page");
       expect(instructions).toContain("Read wikiDirectory from its response");
+      expect(instructions).toContain(
+        "Pass wikiDirectory only when the user explicitly requests",
+      );
       expect(instructions).toContain("write exactly the actual job.path");
       expect(instructions).not.toContain("write exactly /openwiki/");
       expect(instructions).toContain("openwiki_inspect_page_claims");

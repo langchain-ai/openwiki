@@ -81,6 +81,16 @@ describe("repository wiki configuration", () => {
     });
   });
 
+  test("uses an explicit selection during synchronous startup resolution", async () => {
+    const root = await repositoryRoot();
+
+    expect(resolveRepositoryWikiLocationSync(root, "docs\\wiki")).toEqual({
+      directory: "docs/wiki",
+      root: path.join(root, "docs/wiki"),
+      source: "option",
+    });
+  });
+
   test("lets matching durable configuration remain authoritative", async () => {
     const root = await repositoryRoot();
     await writeFile(
@@ -101,6 +111,9 @@ describe("repository wiki configuration", () => {
       '{"wikiDirectory":"docs"}\n',
     );
     await expect(resolveRepositoryWikiLocation(root, "wiki")).rejects.toThrow(
+      "Moving a repository wiki is not supported",
+    );
+    expect(() => resolveRepositoryWikiLocationSync(root, "wiki")).toThrow(
       "Moving a repository wiki is not supported",
     );
   });

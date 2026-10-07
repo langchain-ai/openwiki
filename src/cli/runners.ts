@@ -14,6 +14,7 @@ import {
   runCodeModeConnectors,
 } from "../ingestion/code-mode.js";
 import { resolveRepositoryWikiLocation } from "../repository-wiki/config.js";
+import { prepareRepositoryWikiLocation } from "../repository-wiki/preparation.js";
 import { runOpenWikiIngestion } from "../ingestion/ingestion.js";
 import { getErrorMessage } from "../platform/diagnostics.js";
 import {
@@ -312,8 +313,17 @@ export async function runPrintCommand(
       runOptions,
       telemetryContext,
       async () => {
+        let wikiLocation;
         if (command.mode === "code") {
-          const wikiLocation = await resolveRepositoryWikiLocation(runtimeCwd);
+          wikiLocation =
+            command.command === "init" || command.command === "update"
+              ? (
+                  await prepareRepositoryWikiLocation(runtimeCwd, {
+                    mode: command.command,
+                    requestedDirectory: command.wikiDirectory,
+                  })
+                ).location
+              : await resolveRepositoryWikiLocation(runtimeCwd);
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: command.command === "init",
             wikiLocation,
@@ -335,7 +345,7 @@ export async function runPrintCommand(
         await runOpenWikiAgent(
           command.command,
           runtimeCwd,
-          { ...runOptions, userMessage },
+          { ...runOptions, userMessage, wikiLocation },
           telemetryContext,
         );
       },

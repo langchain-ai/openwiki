@@ -54,6 +54,11 @@ for the single page OpenWiki assigns you.
 1. Resolve the exact Git top-level with `git rev-parse --show-toplevel` (or
    `git -C <path> rev-parse --show-toplevel` for an explicit target).
 2. Call `openwiki_begin` with that absolute root and mode `init` or `update`.
+   If and only if the user explicitly asks to initialize the wiki in a specific
+   repository-relative directory, also pass that value as `wikiDirectory`.
+   For an update, pass `wikiDirectory` only when the user explicitly identifies
+   an existing custom wiki whose configuration needs to be recovered. Never
+   infer a directory from the presence of a generic `docs/` or `wiki/` folder.
    An active run may have been started by native OpenWiki or another supported
    host; always continue the durable run and queue returned by `openwiki_begin`.
 3. Read `wikiDirectory` from the `openwiki_begin` response. Treat it as the

@@ -154,6 +154,7 @@ export function useInitSetup({
   modelIdOverride = null,
   onComplete,
   onError,
+  requestedWikiDirectory = null,
   walkAllSteps = false,
 }: InitSetupProps): InitSetupViewProps {
   const { stdout } = useStdout();
@@ -268,7 +269,7 @@ export function useInitSetup({
     getDefaultCodeRepoRootPath(),
   );
   const [codeWikiDirectory, setCodeWikiDirectory] = useState(
-    DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+    requestedWikiDirectory ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY,
   );
   // Dedicated buffer for the code-repo-path field, kept separate from the shared
   // `input` (which seedInputForStep prefills with credentials on other steps) so
@@ -310,19 +311,21 @@ export function useInitSetup({
 
   useEffect(() => {
     let cancelled = false;
-    resolveRepositoryWikiLocation(codeRepoRoot)
+    resolveRepositoryWikiLocation(codeRepoRoot, requestedWikiDirectory)
       .then((location) => {
         if (!cancelled) setCodeWikiDirectory(location.directory);
       })
       .catch(() => {
         if (!cancelled) {
-          setCodeWikiDirectory(DEFAULT_REPOSITORY_WIKI_DIRECTORY);
+          setCodeWikiDirectory(
+            requestedWikiDirectory ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+          );
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [codeRepoRoot]);
+  }, [codeRepoRoot, requestedWikiDirectory]);
 
   useEffect(() => {
     let cancelled = false;

@@ -35,6 +35,19 @@ vi.mock("../../src/ingestion/code-mode.ts", () => ({
 vi.mock("../../src/ingestion/ingestion.ts", () => ({
   runOpenWikiIngestion: vi.fn(),
 }));
+vi.mock("../../src/repository-wiki/preparation.ts", () => ({
+  prepareRepositoryWikiLocation: vi.fn(
+    (_root: string, options: { requestedDirectory?: string | null }) =>
+      Promise.resolve({
+        location: {
+          directory: options.requestedDirectory ?? "openwiki",
+          root: "/repository/openwiki",
+          source: options.requestedDirectory ? "option" : "default",
+        },
+        configAction: options.requestedDirectory ? "persisted" : "none",
+      }),
+  ),
+}));
 vi.mock("../../src/scheduling/schedules.ts", () => ({
   deleteConnectorSchedules: vi.fn(),
   getSavedPowerScheduleStatus: vi.fn(() => null),
@@ -73,6 +86,7 @@ import {
   runCodeModeConnectors,
 } from "../../src/ingestion/code-mode.ts";
 import { runOpenWikiIngestion } from "../../src/ingestion/ingestion.ts";
+import { prepareRepositoryWikiLocation } from "../../src/repository-wiki/preparation.ts";
 import {
   deleteConnectorSchedules,
   listConnectorSchedules,
@@ -601,6 +615,37 @@ describe("runPrintCommand", () => {
     const agentArgs = vi.mocked(runOpenWikiAgent).mock.calls[0];
     expect(agentArgs[2].userMessage).toBe("augmented");
     expect(process.exitCode).toBe(0);
+  });
+
+  test("prepares and forwards an explicitly selected repository wiki", async () => {
+    vi.mocked(runCodeModeConnectors).mockResolvedValue(undefined);
+    vi.mocked(runOpenWikiAgent).mockResolvedValue(undefined as never);
+
+    await runPrintCommand(
+      makeCommand("run", {
+        command: "init",
+        dryRun: false,
+        language: null,
+        mode: "code",
+        modeSource: "option",
+        modelId: null,
+        print: true,
+        shouldStart: true,
+        userMessage: null,
+        telemetryFile: null,
+        wikiDirectory: "docs",
+      }),
+    );
+
+    expect(prepareRepositoryWikiLocation).toHaveBeenCalledWith(
+      expect.any(String),
+      { mode: "init", requestedDirectory: "docs" },
+    );
+    const setupOptions = vi.mocked(ensureCodeModeRepoSetup).mock.calls[0]?.[1];
+    expect(setupOptions?.wikiLocation?.directory).toBe("docs");
+    const agentCall = vi.mocked(runOpenWikiAgent).mock.calls[0];
+    expect(agentCall?.[0]).toBe("init");
+    expect(agentCall?.[2].wikiLocation?.directory).toBe("docs");
   });
 
   test("prints the how-to-fix panel on an auth failure and exits 1", async () => {

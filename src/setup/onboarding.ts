@@ -210,8 +210,12 @@ export async function readRepositoryWikiInstructions(
  */
 function readRepositoryWikiInstructionsSync(
   repoRoot: string,
+  requestedDirectory?: string | null,
 ): string | undefined {
-  const wikiLocation = resolveRepositoryWikiLocationSync(repoRoot);
+  const wikiLocation = resolveRepositoryWikiLocationSync(
+    repoRoot,
+    requestedDirectory,
+  );
   assertRepositoryWikiPathSafeSync(repoRoot, wikiLocation.directory);
   const instructionsPath = getRepositoryWikiInstructionsPath(
     repoRoot,
@@ -284,6 +288,7 @@ export function isOpenWikiOnboardingCompleteSync(): boolean {
  */
 export function isRepositoryCodeOnboardingCompleteSync(
   repoRoot: string,
+  requestedDirectory?: string | null,
 ): boolean {
   if (!existsSync(openWikiOnboardingPath)) {
     return false;
@@ -297,7 +302,10 @@ export function isRepositoryCodeOnboardingCompleteSync(
       return false;
     }
 
-    const wikiGoal = readRepositoryWikiInstructionsSync(repoRoot);
+    const wikiGoal = readRepositoryWikiInstructionsSync(
+      repoRoot,
+      requestedDirectory,
+    );
 
     return isOnboardingComplete({
       ...config,

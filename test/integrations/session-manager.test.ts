@@ -1,5 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -353,6 +360,87 @@ describe("HostSessionManager", () => {
       status: "pending",
       job: { path: "/docs/quickstart.md" },
     });
+  });
+
+  test("persists an explicitly requested custom wiki directory", async () => {
+    const root = await createRepository();
+    const view = (await createManager().begin({
+      root,
+      mode: "init",
+      wikiDirectory: "docs/wiki",
+    })) as ActiveBeginView;
+
+    expect(view.wikiDirectory).toBe("docs/wiki");
+    await expect(
+      readFile(path.join(root, ".openwiki.json"), "utf8"),
+    ).resolves.toBe('{\n  "wikiDirectory": "docs/wiki"\n}\n');
+  });
+
+  test("rejects a requested directory that conflicts with configuration", async () => {
+    const root = await createRepository();
+    await writeFile(
+      path.join(root, ".openwiki.json"),
+      '{"wikiDirectory":"docs"}\n',
+      "utf8",
+    );
+
+    try {
+      await createManager().begin({
+        root,
+        mode: "init",
+        wikiDirectory: "wiki",
+      });
+      throw new Error("Expected the conflicting directory to be rejected.");
+    } catch (error) {
+      expect(error).toMatchObject({
+        name: "HostIntegrationError",
+        code: "invalid_input",
+      });
+      if (!(error instanceof Error)) throw error;
+      expect(error.message).toContain(
+        "Moving a repository wiki is not supported",
+      );
+    }
+  });
+
+  test("does not persist a directory when another wiki run is active", async () => {
+    const root = await createRepository();
+    const manager = createManager();
+    await manager.begin({ root, mode: "init" });
+
+    try {
+      await manager.begin({ root, mode: "init", wikiDirectory: "docs" });
+      throw new Error("Expected the active directory change to be rejected.");
+    } catch (error) {
+      expect(error).toMatchObject({
+        name: "HostIntegrationError",
+        code: "invalid_state",
+      });
+      if (!(error instanceof Error)) throw error;
+      expect(error.message).toContain("finish it before selecting");
+    }
+    await expect(
+      readFile(path.join(root, ".openwiki.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("does not persist a directory for an invalid language request", async () => {
+    const root = await createRepository();
+
+    await expect(
+      createManager().begin({
+        root,
+        mode: "init",
+        wikiDirectory: "docs",
+        language: "Korean",
+      }),
+    ).rejects.toMatchObject({
+      name: "HostIntegrationError",
+      code: "invalid_input",
+    });
+    await expect(
+      readFile(path.join(root, ".openwiki.json"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   test("requires the exact active run ID", async () => {

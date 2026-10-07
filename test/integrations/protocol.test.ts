@@ -19,16 +19,25 @@ describe("OpenWiki host protocol", () => {
       BeginInput.parse({
         root: " /tmp/repository ",
         mode: "update",
+        wikiDirectory: " docs/wiki ",
         language: " fr ",
         force: true,
       }),
     ).toEqual({
       root: "/tmp/repository",
       mode: "update",
+      wikiDirectory: "docs/wiki",
       language: "fr",
       force: true,
     });
     expect(() => BeginInput.parse({ root: "/tmp", mode: "chat" })).toThrow();
+    expect(() =>
+      BeginInput.parse({
+        root: "/tmp",
+        mode: "init",
+        wikiDirectory: "../docs",
+      }),
+    ).toThrow();
     expect(() =>
       BeginInput.parse({ root: "/tmp", mode: "init", extra: true }),
     ).toThrow();

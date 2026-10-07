@@ -65,7 +65,7 @@ const OPENWIKI_TOOLS = [
     name: "openwiki_begin",
     label: "OpenWiki begin",
     description:
-      "Start or resume an OpenWiki repository run and return its actual wikiDirectory.",
+      "Start or resume an OpenWiki repository run. Pass wikiDirectory only for an explicit user-selected location, then use the actual wikiDirectory returned by OpenWiki.",
     parameters: z.toJSONSchema(BeginInput, { target: "draft-07" }),
     executionMode: "sequential",
   },

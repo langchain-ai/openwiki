@@ -113,6 +113,15 @@ describe("canonical OpenWiki host skill", () => {
     expect(skill).toContain("Never reuse the invalidated plan.");
   });
 
+  test("passes a wiki directory only for an explicit user selection", async () => {
+    const skill = await readFile(SKILL_PATH, "utf8");
+    const required = section(skill, "Required sequence");
+
+    expect(required).toContain("user explicitly asks");
+    expect(required).toContain("pass that value as `wikiDirectory`");
+    expect(required).toContain("Never\n   infer a directory");
+  });
+
   test("requires grounded exploration and a navigable taxonomy", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
     const required = section(skill, "Required sequence");

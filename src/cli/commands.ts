@@ -17,6 +17,7 @@ import type {
   HostTargetId,
 } from "../integrations/install/types.js";
 import { isValidHostId } from "../integrations/core/protocol.js";
+import { normalizeRepositoryWikiDirectory } from "../repository-wiki/paths.js";
 
 export type HelpRow = {
   label: string;
@@ -220,6 +221,7 @@ export type CliCommand =
       shouldStart: boolean;
       userMessage: string | null;
       telemetryFile: string | null;
+      wikiDirectory: string | null;
     }
   | {
       kind: "error";
@@ -840,6 +842,7 @@ function parseRunCommand(
   let print = false;
   let command: OpenWikiCommand = "chat";
   let telemetryFile: string | null = null;
+  let wikiDirectory: string | null = null;
 
   const userMessageParts: string[] = [];
 
@@ -903,6 +906,40 @@ function parseRunCommand(
 
       language = nextArg;
       index += 1;
+      continue;
+    }
+
+    if (arg === "--wiki-dir" || arg.startsWith("--wiki-dir=")) {
+      if (wikiDirectory !== null) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--wiki-dir may only be specified once.",
+        };
+      }
+
+      const value =
+        arg === "--wiki-dir"
+          ? argv[index + 1]
+          : arg.slice("--wiki-dir=".length);
+      if (!value || value.startsWith("-")) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: "--wiki-dir requires a repository-relative directory.",
+        };
+      }
+
+      try {
+        wikiDirectory = normalizeRepositoryWikiDirectory(value);
+      } catch (error) {
+        return {
+          kind: "error",
+          exitCode: 1,
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+      if (arg === "--wiki-dir") index += 1;
       continue;
     }
 
@@ -1076,6 +1113,22 @@ function parseRunCommand(
     mode = "code";
   }
 
+  if (wikiDirectory !== null && command === "chat") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "--wiki-dir requires --init or --update.",
+    };
+  }
+
+  if (wikiDirectory !== null && mode !== "code") {
+    return {
+      kind: "error",
+      exitCode: 1,
+      message: "--wiki-dir is only supported for repository code mode.",
+    };
+  }
+
   if (print && !shouldStart) {
     return {
       kind: "error",
@@ -1098,6 +1151,7 @@ function parseRunCommand(
     shouldStart,
     userMessage,
     telemetryFile,
+    wikiDirectory,
   };
 }
 
@@ -1321,6 +1375,11 @@ export const helpContent: HelpContent = {
         "Generate wiki documentation in the given BCP-47 locale, for example ko, zh-CN, or pt-BR.",
     },
     {
+      label: "--wiki-dir <directory>",
+      description:
+        "Choose a repository-relative wiki directory for code-mode initialization or recover an existing managed wiki for update.",
+    },
+    {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
     },
@@ -1367,9 +1426,11 @@ export const helpContent: HelpContent = {
   examples: [
     "openwiki",
     "openwiki --init",
+    "openwiki --init --wiki-dir docs",
     "openwiki personal --init",
     "openwiki code --init",
     "openwiki --update",
+    "openwiki --update --wiki-dir docs",
     "openwiki --update --mode personal",
     'openwiki "What can you do?"',
     'openwiki -p "Summarize what OpenWiki can do"',

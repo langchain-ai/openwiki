@@ -27,7 +27,13 @@ import {
 } from "./protocol.js";
 import { resolveRepositoryRoot } from "./repository-root.js";
 import { createRetrievalTools } from "./retrieval-tools.js";
-import { resolveRepositoryWikiLocation } from "../../repository-wiki/config.js";
+import { resolveLanguage } from "../../platform/language.js";
+import { RepositoryWikiConfigError } from "../../repository-wiki/config.js";
+import {
+  normalizeRepositoryWikiDirectory,
+  RepositoryWikiPathError,
+} from "../../repository-wiki/paths.js";
+import { prepareRepositoryWikiLocation } from "../../repository-wiki/preparation.js";
 
 /**
  * Stable host identity and optional deterministic clock for the MCP adapter.
@@ -129,11 +135,31 @@ export class HostSessionManager {
   async begin(input: BeginRequest): Promise<unknown> {
     return this.runOperation(async () => {
       const root = await resolveRepositoryRoot(input.root);
-      const wikiLocation = await resolveRepositoryWikiLocation(root);
+      const language = resolveLanguage(input.language);
+      if (language.kind === "unrecognized") {
+        throw new HostIntegrationError("invalid_input", language.message);
+      }
+      const requestedDirectory = input.wikiDirectory
+        ? normalizeRepositoryWikiDirectory(input.wikiDirectory)
+        : undefined;
+      if (
+        this.active &&
+        requestedDirectory &&
+        requestedDirectory !== this.active.location.directory
+      ) {
+        throw new HostIntegrationError(
+          "invalid_state",
+          `The active OpenWiki run uses ${JSON.stringify(this.active.location.directory)}; finish it before selecting ${JSON.stringify(requestedDirectory)}.`,
+        );
+      }
+      const prepared = await prepareRepositoryWikiLocation(root, {
+        mode: input.mode,
+        requestedDirectory,
+      });
       const result = await beginRepositoryRun({
         root,
         mode: input.mode,
-        wikiLocation,
+        wikiLocation: prepared.location,
         language: input.language,
         force: input.force,
         actor: {
@@ -231,7 +257,7 @@ export class HostSessionManager {
       {
         name: "openwiki_begin",
         description:
-          "Start or resume OpenWiki repository generation. Returns the actual wikiDirectory for repository context and status=noop for a clean update; otherwise returns durable planning/generation state. An unrecognized `language` fails with invalid_input instead of starting a run.",
+          "Start or resume OpenWiki repository generation. Pass wikiDirectory only when the user explicitly requests a repository-relative location; the returned wikiDirectory is authoritative for every later path. Returns status=noop for a clean update; otherwise returns durable planning/generation state. An unrecognized language or unsafe directory fails with invalid_input before starting a run.",
         schema: BeginInput,
         handle: async (input) => this.begin(BeginInput.parse(input)),
       },
@@ -328,6 +354,12 @@ export class HostSessionManager {
  * @returns The mapped integration error or the original unknown error.
  */
 function mapRepositoryRunError(error: unknown): unknown {
+  if (
+    error instanceof RepositoryWikiConfigError ||
+    error instanceof RepositoryWikiPathError
+  ) {
+    return new HostIntegrationError("invalid_input", error.message);
+  }
   if (!(error instanceof RepositoryRunError)) return error;
 
   switch (error.code) {

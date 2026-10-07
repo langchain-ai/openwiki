@@ -285,6 +285,38 @@ describe("OpenWiki onboarding completion", () => {
     }
   });
 
+  test("checks an explicitly requested wiki during startup", async () => {
+    const home = await createTempHome();
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-repo-"));
+    const onboarding = await loadOnboardingModule(home);
+
+    try {
+      await onboarding.saveOpenWikiOnboardingConfig({
+        completedAt: "2026-01-01T00:00:00.000Z",
+        modeId: "code",
+        sourceInstances: [],
+        sources: {},
+        templateId: "code",
+        version: 1,
+      });
+      const instructionsPath = onboarding.getRepositoryWikiInstructionsPath(
+        repo,
+        "docs",
+      );
+      await mkdir(path.dirname(instructionsPath), { recursive: true });
+      await writeFile(instructionsPath, "Maintain custom docs.\n", "utf8");
+
+      expect(onboarding.isRepositoryCodeOnboardingCompleteSync(repo)).toBe(
+        false,
+      );
+      expect(
+        onboarding.isRepositoryCodeOnboardingCompleteSync(repo, "docs"),
+      ).toBe(true);
+    } finally {
+      await rm(repo, { force: true, recursive: true });
+    }
+  });
+
   test("still requires a schedule for personal mode", async () => {
     const home = await createTempHome();
     const onboarding = await loadOnboardingModule(home);

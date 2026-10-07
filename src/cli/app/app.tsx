@@ -38,6 +38,7 @@ import { runOpenWikiIngestion } from "../../ingestion/ingestion.js";
 import { getErrorMessage } from "../../platform/diagnostics.js";
 import { resolveRepositoryWikiLocation } from "../../repository-wiki/config.js";
 import { DEFAULT_REPOSITORY_WIKI_DIRECTORY } from "../../repository-wiki/paths.js";
+import { prepareRepositoryWikiLocation } from "../../repository-wiki/preparation.js";
 import { InitSetup, needsCredentialSetup } from "../../setup/credentials.js";
 import {
   withRunTelemetry,
@@ -168,7 +169,7 @@ export function App({ command }: AppProps) {
     !command.shouldStart &&
     command.modeSource !== "default" &&
     process.stdin.isTTY &&
-    needsCredentialSetup(sessionModelId, runMode);
+    needsCredentialSetup(sessionModelId, runMode, command.wikiDirectory);
   const [resolvedCommand, setResolvedCommand] =
     useState<OpenWikiCommand | null>(
       command.kind === "run" &&
@@ -187,7 +188,7 @@ export function App({ command }: AppProps) {
     !command.dryRun &&
     process.stdin.isTTY &&
     runState.status === "idle" &&
-    (needsCredentialSetup(sessionModelId, runMode) ||
+    (needsCredentialSetup(sessionModelId, runMode, command.wikiDirectory) ||
       (isInitCommand && !initWizardConsumed));
   const displayModelId = sessionModelId ?? startupModelId;
 
@@ -620,8 +621,17 @@ export function App({ command }: AppProps) {
       runOptions,
       telemetryContext,
       async () => {
+        let wikiLocation;
         if (runMode === "code") {
-          const wikiLocation = await resolveRepositoryWikiLocation(runtimeCwd);
+          wikiLocation =
+            resolvedCommand === "init" || resolvedCommand === "update"
+              ? (
+                  await prepareRepositoryWikiLocation(runtimeCwd, {
+                    mode: resolvedCommand,
+                    requestedDirectory: command.wikiDirectory,
+                  })
+                ).location
+              : await resolveRepositoryWikiLocation(runtimeCwd);
           activeWikiDirectory.current = wikiLocation.directory;
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: resolvedCommand === "init",
@@ -646,7 +656,7 @@ export function App({ command }: AppProps) {
         return runOpenWikiAgent(
           resolvedCommand,
           runtimeCwd,
-          { ...runOptions, userMessage },
+          { ...runOptions, userMessage, wikiLocation },
           telemetryContext,
         );
       },
@@ -783,6 +793,7 @@ export function App({ command }: AppProps) {
         modelId={command.modelId}
         shouldStart={command.shouldStart}
         userMessage={command.userMessage}
+        wikiDirectory={command.wikiDirectory}
       />
     );
   }
@@ -793,6 +804,7 @@ export function App({ command }: AppProps) {
         allowModeSelection={false}
         mode={command.mode}
         modelIdOverride={command.modelId}
+        requestedWikiDirectory={command.wikiDirectory}
         walkAllSteps={isInitCommand}
         onComplete={(result) => {
           if (agentRunInFlight.current) {

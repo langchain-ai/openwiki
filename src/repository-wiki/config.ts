@@ -216,18 +216,26 @@ export async function resolveRepositoryWikiLocation(
 }
 
 /**
- * Resolves config or the default directory for synchronous startup checks.
+ * Resolves config, an explicit selection, or the default for startup checks.
  */
 export function resolveRepositoryWikiLocationSync(
   repositoryRoot: string,
+  requestedDirectory?: string | null,
 ): RepositoryWikiLocation {
   const configured = readRepositoryWikiConfigSync(repositoryRoot);
+  const requested =
+    requestedDirectory === undefined || requestedDirectory === null
+      ? null
+      : normalizeRepositoryWikiDirectory(requestedDirectory);
+  if (configured && requested && configured.wikiDirectory !== requested) {
+    throw conflictingDirectoryError(configured.wikiDirectory, requested);
+  }
   const directory =
-    configured?.wikiDirectory ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY;
+    configured?.wikiDirectory ?? requested ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY;
   return {
     directory,
     root: resolveRepositoryWikiRoot(repositoryRoot, directory),
-    source: configured ? "config" : "default",
+    source: configured ? "config" : requested ? "option" : "default",
   };
 }
 
