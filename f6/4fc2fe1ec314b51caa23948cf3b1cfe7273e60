@@ -1,0 +1,88 @@
+test/integrations/session-manager.test.ts
+  s_7397b8146d0266::t_35b167a3f6e423 2-9
+  s_7397b8146d0266::t_01e2e901da7b63 365-386,389-391,404-405
+  s_7397b8146d0266::t_397b4f184e8716 406-410,422-445
+  s_7397b8146d0266::t_f5b7a153b900ce 400-402
+  s_7397b8146d0266::t_646d06e69c941f 387-388,392-399,403,411-421
+integrations/openwiki/SKILL.md
+  s_7397b8146d0266::t_36ca216a7b8790 57-61
+test/cli/components/panels.test.tsx
+  s_7397b8146d0266::t_fbd824d2aef99d 36,46-47,57
+src/integrations/core/protocol.ts
+  s_7397b8146d0266::t_36ca216a7b8790 42-46
+  s_7397b8146d0266::t_d083324ae4bc2c 2,79-91
+  s_7397b8146d0266::t_134489f4f42883 41
+src/cli/components/panels.tsx
+  s_7397b8146d0266::t_b22231a5115e43 67,79,91-97
+src/cli/commands.ts
+  s_7397b8146d0266::t_36ca216a7b8790 20,224,845,912-945,1116-1131,1154,1377-1381,1429,1433
+src/integrations/core/session-manager.ts
+  s_7397b8146d0266::t_397b4f184e8716 32-35,142-154,157
+  s_7397b8146d0266::t_36ca216a7b8790 31,36,155-156,158,162,260,357-362
+  s_7397b8146d0266::t_d77dbed3f0e04e 30,138-141
+test/cli/commands.test.ts
+  s_7397b8146d0266::t_01e2e901da7b63 256,263-309
+  s_7397b8146d0266::t_be26ecdaf64190 257-262
+src/integrations/mcp/server.ts
+  s_7397b8146d0266::t_365bc50fe7edd6 31
+  s_7397b8146d0266::t_d083324ae4bc2c 30,32-33
+src/integrations/pi/openwiki.ts
+  s_7397b8146d0266::t_d083324ae4bc2c 68
+test/repository-wiki/config.test.ts
+  s_7397b8146d0266::t_f4f63159f0b227 84-93,116
+  s_7397b8146d0266::t_ef66a5bf872f87 117-118
+src/setup/credentials/types.ts
+  s_7397b8146d0266::t_d77dbed3f0e04e 33-36
+src/setup/onboarding.ts
+  s_7397b8146d0266::t_a1294e836dc1c7 213,215-218,291,305-308
+test/integrations/protocol.test.ts
+  s_7397b8146d0266::t_d083324ae4bc2c 35-40
+  s_7397b8146d0266::t_01e2e901da7b63 22,29
+  s_7397b8146d0266::t_2ab10146bb091a 34
+test/integrations/mcp-server.test.ts
+  s_7397b8146d0266::t_d083324ae4bc2c 199-201
+test/cli/runners.test.ts
+  s_7397b8146d0266::t_01e2e901da7b63 38,50,89,620-643
+  s_7397b8146d0266::t_646d06e69c941f 39-49,644-648
+  s_7397b8146d0266::t_0e2b42815d5790 649-650
+src/setup/credentials/use-init-setup.ts
+  s_7397b8146d0266::t_d77dbed3f0e04e 157,272,314,320-322,328
+src/setup/credentials/steps.ts
+  s_7397b8146d0266::t_a1294e836dc1c7 85,105-108
+  s_7397b8146d0266::t_f4f63159f0b227 74-81
+test/setup/onboarding.test.ts
+  s_7397b8146d0266::t_77a55f753f2e26 288-319
+test/integrations/skill.test.ts
+  s_7397b8146d0266::t_01e2e901da7b63 116-124
+src/cli/app/app.tsx
+  s_7397b8146d0266::t_36ca216a7b8790 41,624,626-634,659
+  s_7397b8146d0266::t_a1294e836dc1c7 172,191
+  s_7397b8146d0266::t_d77dbed3f0e04e 807
+  s_7397b8146d0266::t_b22231a5115e43 796
+src/repository-wiki/config.ts
+  s_7397b8146d0266::t_27762d4c6fbe10 219
+  s_7397b8146d0266::t_a1294e836dc1c7 223,226-232,234,238
+src/cli/runners.ts
+  s_7397b8146d0266::t_36ca216a7b8790 17,316,318-326,348
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f64fc2fe1ec314b51caa23948cf3b1cfe7273e60",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7397b8146d0266": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11307-e0cd-78d0-bbdd-62713d2afd89",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
