@@ -619,6 +619,91 @@ describe("createWikiTranslationMiddleware beforeAgent", () => {
     expect(warnings[0]).toContain("empty translation");
   });
 
+  test.each([
+    ["OpenAI and OpenRouter chat completions", { finish_reason: "length" }],
+    [
+      "the OpenAI Responses API",
+      {
+        status: "incomplete",
+        incomplete_details: { reason: "max_output_tokens" },
+      },
+    ],
+    ["Anthropic", { stop_reason: "max_tokens" }],
+    ["Bedrock Converse", { stopReason: "max_tokens" }],
+    ["Gemini", { finishReason: "MAX_TOKENS", finish_reason: "MAX_TOKENS" }],
+  ])(
+    "keeps the page and stamps it for retry when %s truncates the translation at the output limit",
+    async (_provider, responseMetadata) => {
+      const { backend, rootDir } = await setup();
+      const original =
+        "# Page\n\nFirst section.\n\n## Details\n\nSecond section.\n";
+      await backend.write("/openwiki/page.md", original);
+
+      // The provider stopped at its output-token limit, so the response holds
+      // only the first part of the page. Writing it would silently drop the rest
+      // of the page and clear the retry marker.
+      const model = {
+        invoke: () =>
+          Promise.resolve(
+            new AIMessage({
+              content: "# 页面\n\n第一部分。\n",
+              response_metadata: responseMetadata,
+            }),
+          ),
+      } as unknown as BaseChatModel;
+
+      const warnings: string[] = [];
+      await runBeforeAgent(
+        createWikiTranslationMiddleware(
+          backend,
+          "repository",
+          model,
+          switchTo("zh-CN"),
+          (message) => warnings.push(message),
+        ),
+      );
+
+      const after = await readFile(
+        path.join(rootDir, "openwiki/page.md"),
+        "utf8",
+      );
+      expect(after).toContain('openwiki_translation_pending: "zh-CN"');
+      expect(after).toContain("## Details\n\nSecond section.");
+      expect(after).not.toContain("第一部分");
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toContain("page.md");
+      expect(warnings[0]).toContain("output-token limit");
+    },
+  );
+
+  test("writes a translation that finished normally even with response metadata", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write("/openwiki/page.md", "# Page\n\nBody.\n");
+
+    const model = {
+      invoke: () =>
+        Promise.resolve(
+          new AIMessage({
+            content: "# 页面\n\n正文。\n",
+            response_metadata: { finish_reason: "stop", stop_reason: null },
+          }),
+        ),
+    } as unknown as BaseChatModel;
+
+    await runBeforeAgent(
+      createWikiTranslationMiddleware(
+        backend,
+        "repository",
+        model,
+        switchTo("zh-CN"),
+      ),
+    );
+
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe("# 页面\n\n正文。\n");
+  });
+
   test("does not rewrite the pending marker when it already matches", async () => {
     const { backend, rootDir } = await setup();
     // The page is already stamped for exactly this target, so a failed retry must
