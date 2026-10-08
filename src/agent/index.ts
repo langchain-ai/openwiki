@@ -58,6 +58,7 @@ import {
   CONVERSATION_HISTORY_MOUNT,
   createAgentBackend,
 } from "./agent-backend.js";
+import { createOptionalBedrockPromptCachingMiddleware } from "./bedrock-prompt-caching-middleware.js";
 import { runNativeRepositoryGeneration } from "./repository-runner.js";
 import {
   createVertexAuthFetch,
@@ -495,6 +496,10 @@ function createOpenWikiAgentGraph(
   const conceptType = resolveConceptTypeLabel(options.context.language);
   // The caller supplies one stamp time for the whole run, shared by generated
   // provenance here and Claims verification at successful-run finalization.
+  const promptCaching = createOptionalBedrockPromptCachingMiddleware(
+    options.model,
+  );
+
   return createDeepAgent({
     model: options.model,
     tools: createOpenWikiConnectorTools(options.outputMode),
@@ -559,6 +564,7 @@ function createOpenWikiAgentGraph(
               options.runTimestamp,
             ),
           ]),
+      ...(promptCaching ? [promptCaching] : []),
     ],
     skills: ["/skills/"],
     subagents: [],

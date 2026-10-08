@@ -40,6 +40,7 @@ import {
   AGENT_FILESYSTEM_PERMISSIONS,
   createAgentBackend,
 } from "./agent-backend.js";
+import { createOptionalBedrockPromptCachingMiddleware } from "./bedrock-prompt-caching-middleware.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import {
@@ -493,6 +494,7 @@ async function runPlanningAgent(
   });
 
   const backend = createAgentBackend(wikiBackend);
+  const promptCaching = createOptionalBedrockPromptCachingMiddleware(model);
   const agent = createDeepAgent({
     name: PLANNER_AGENT_NAME,
     model,
@@ -505,6 +507,7 @@ async function runPlanningAgent(
         tools: PLANNER_FILESYSTEM_TOOLS,
       }),
       NO_DELEGATION_MIDDLEWARE,
+      ...(promptCaching ? [promptCaching] : []),
     ],
     skills: ["/skills/"],
     subagents: [],
@@ -968,6 +971,7 @@ async function runPageWorkerAttempt(
   });
 
   const backend = createAgentBackend(wikiBackend);
+  const promptCaching = createOptionalBedrockPromptCachingMiddleware(model);
   const agent = createDeepAgent({
     name: workerAgentName(job.path),
     model,
@@ -980,6 +984,7 @@ async function runPageWorkerAttempt(
         tools: PAGE_FILESYSTEM_TOOLS,
       }),
       NO_DELEGATION_MIDDLEWARE,
+      ...(promptCaching ? [promptCaching] : []),
     ],
     skills: ["/skills/"],
     subagents: [],
