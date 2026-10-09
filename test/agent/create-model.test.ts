@@ -633,6 +633,31 @@ describe("createModel reasoning configuration", () => {
     expect(model.reasoning).toEqual({ effort: "high" });
   });
 
+  test("serializes ChatGPT OAuth GPT-6 effort in the Codex request", async () => {
+    process.env[REASONING_EFFORT_KEY] = "max";
+    process.env.OPENAI_CHATGPT_ACCESS_TOKEN = "test-access-token";
+    process.env.OPENAI_CHATGPT_REFRESH_TOKEN = "test-refresh-token";
+    process.env.OPENAI_CHATGPT_ACCOUNT_ID = "test-account-id";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response("rejected", { status: 400 })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const model = createModel("openai-chatgpt", "gpt-6-luna", 0);
+
+    await expect(model.invoke("hello")).rejects.toThrow();
+
+    const [url, init] = fetchMock.mock.calls[0] as [
+      string | URL,
+      { body: string },
+    ];
+    expect(String(url)).toBe("https://chatgpt.com/backend-api/codex/responses");
+    expect(JSON.parse(init.body)).toMatchObject({
+      model: "gpt-6-luna",
+      reasoning: { effort: "max" },
+    });
+  });
+
   test("maps NVIDIA NIM effort to the Chat Completions request field", () => {
     process.env[REASONING_EFFORT_KEY] = "high";
 

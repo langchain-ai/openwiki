@@ -12,6 +12,7 @@ export const REASONING_EFFORT_VALUES = [
   "high",
   "xhigh",
   "max",
+  "ultra",
 ] as const;
 
 export type ReasoningEffort = (typeof REASONING_EFFORT_VALUES)[number];
@@ -35,9 +36,29 @@ export type ResolveReasoningConfigOptions = {
   useResponsesApi?: boolean;
 };
 
+const OPENAI_REASONING_EFFORT_VALUES = [
+  "none",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const satisfies readonly ReasoningEffort[];
+
 const OPENAI_GPT_56_REASONING_CAPABILITY = {
   transport: "responses-reasoning",
-  values: REASONING_EFFORT_VALUES,
+  values: OPENAI_REASONING_EFFORT_VALUES,
+} as const satisfies ReasoningCapability;
+
+// Levels advertised for each model by the Codex model catalog.
+const CODEX_GPT_6_REASONING_CAPABILITY = {
+  transport: "responses-reasoning",
+  values: ["low", "medium", "high", "xhigh", "max", "ultra"],
+} as const satisfies ReasoningCapability;
+
+const CODEX_GPT_6_LUNA_REASONING_CAPABILITY = {
+  transport: "responses-reasoning",
+  values: ["low", "medium", "high", "xhigh", "max"],
 } as const satisfies ReasoningCapability;
 
 const GEMINI_THINKING_LEVEL_REASONING_CAPABILITY = {
@@ -57,6 +78,9 @@ const REASONING_CAPABILITIES: Partial<
     "gpt-5.6-terra": OPENAI_GPT_56_REASONING_CAPABILITY,
     "gpt-5.6-luna": OPENAI_GPT_56_REASONING_CAPABILITY,
     "gpt-5.6-sol": OPENAI_GPT_56_REASONING_CAPABILITY,
+    "gpt-6-astra": CODEX_GPT_6_REASONING_CAPABILITY,
+    "gpt-6-sol": CODEX_GPT_6_REASONING_CAPABILITY,
+    "gpt-6-luna": CODEX_GPT_6_LUNA_REASONING_CAPABILITY,
   },
   nvidia: {
     "nvidia/nemotron-3-super-120b-a12b": {
@@ -142,6 +166,6 @@ function getOpenAiCompatibleReasoningCapability(
     transport: useResponsesApi
       ? "responses-reasoning"
       : "chat-completions-reasoning-effort",
-    values: REASONING_EFFORT_VALUES,
+    values: OPENAI_REASONING_EFFORT_VALUES,
   };
 }
