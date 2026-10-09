@@ -217,7 +217,7 @@ describe("installConnectorSchedule (darwin native install)", () => {
       cwd,
     });
 
-    expect(result.launchAgentPath).toBe(PLIST_PATH);
+    expect(result.nativeJobPath).toBe(PLIST_PATH);
     expect(result.warning).toBeUndefined();
 
     const plist = await readFile(PLIST_PATH, "utf8");
@@ -322,7 +322,7 @@ describe("isLaunchAgentLoaded via listConnectorSchedules (darwin)", () => {
       configWithSchedule("0 2 * * *"),
     );
 
-    expect(status.launchAgentLoaded).toBe(true);
+    expect(status.nativeJobInstalled).toBe(true);
     const call = findCall("launchctl", "print");
     expect(call?.[1]).toEqual(["print", `${LAUNCHD_DOMAIN}/${LABEL}`]);
     expectSafeArgv(call as unknown[], "launchctl");
@@ -337,7 +337,7 @@ describe("isLaunchAgentLoaded via listConnectorSchedules (darwin)", () => {
       configWithSchedule("0 2 * * *"),
     );
 
-    expect(status.launchAgentLoaded).toBe(false);
+    expect(status.nativeJobInstalled).toBe(false);
   });
 });
 
@@ -412,7 +412,7 @@ describe("resumeConnectorSchedules (darwin reinstall + power reconcile)", () => 
 
     expect(result.connectorIds).toEqual(["all"]);
     expect(result.config.ingestionSchedule?.pausedAt).toBeUndefined();
-    expect(result.config.ingestionSchedule?.launchAgentPath).toBe(PLIST_PATH);
+    expect(result.config.ingestionSchedule?.nativeJobPath).toBe(PLIST_PATH);
     // An active ingestion schedule plus saved pmset drives reconciliation down
     // the install-power-window branch, re-enabling the wake schedule.
     expect(result.powerSchedule?.enabled).toBe(true);
