@@ -291,7 +291,7 @@ export async function runPrintCommand(
     // pre-agent step is recorded rather than only surfaced on stderr below.
     const telemetryContext: RunTelemetryContext = {};
 
-    await withRunTelemetry(
+    const result = await withRunTelemetry(
       command.command,
       runOptions,
       telemetryContext,
@@ -314,7 +314,7 @@ export async function runPrintCommand(
               )
             : command.userMessage;
 
-        await runOpenWikiAgent(
+        return runOpenWikiAgent(
           command.command,
           runtimeCwd,
           { ...runOptions, userMessage },
@@ -327,6 +327,18 @@ export async function runPrintCommand(
 
     if (text.length > 0) {
       process.stdout.write(`${text}\n`);
+    }
+
+    // Skipped pages were never regenerated, so scripted callers need a failing
+    // exit code. Source drift also records the run as interrupted, but every
+    // planned page was written; it keeps exit code 0 and only asks for a rerun.
+    const skippedPages = result?.skippedPages ?? [];
+    if (skippedPages.length > 0) {
+      process.stderr.write(
+        `OpenWiki skipped ${skippedPages.length} page(s) because their workers did not submit: ${skippedPages.join(", ")}. Those pages kept their previous content and the run was recorded as interrupted; run openwiki --update to retry them.\n`,
+      );
+      process.exitCode = 1;
+      return;
     }
 
     process.exitCode = 0;

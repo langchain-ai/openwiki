@@ -526,7 +526,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     });
   },
   finishRepositoryRun(
-    _run: unknown,
+    run: HarnessRun,
     options?: { onEvent?: (event: OpenWikiRunEvent) => void },
   ) {
     harness.finishCalls += 1;
@@ -537,10 +537,16 @@ vi.mock("../../src/generation/repository-run.js", () => ({
         text: "1 OpenWiki page(s) still carry code-derived frontmatter (openwiki_generated: true): legacy.md\n",
       });
     }
-    if (harness.driftOnce && harness.finishCalls === 1) {
-      return { status: "complete", sourceChanged: true };
-    }
-    return { status: "complete" };
+    const skippedPages = (run.state.plan?.pages ?? [])
+      .filter(({ status }) => status === "skipped")
+      .map(({ path }) => path);
+    return {
+      status: "complete",
+      ...(harness.driftOnce && harness.finishCalls === 1
+        ? { sourceChanged: true }
+        : {}),
+      ...(skippedPages.length > 0 ? { skippedPages } : {}),
+    };
   },
 }));
 
@@ -1028,6 +1034,48 @@ describe("runNativeRepositoryGeneration", () => {
           event.text.includes("finalized without advancing"),
       ),
     ).toBe(true);
+  });
+
+  test("reports pages skipped by their workers in plan order", async () => {
+    // Each skipped page exhausts both worker attempts. Concurrency one keeps
+    // the injected failures on the first page and the silent exits on the next.
+    harness.pageWorkerFailures = 2;
+    harness.pageWorkerFailureError = new Error("400 Bad Request");
+    harness.workerExitsWithoutSubmit = 2;
+    harness.planPaths = [
+      "/openwiki/failed.md",
+      "/openwiki/silent.md",
+      "/openwiki/later.md",
+    ];
+    const events: OpenWikiRunEvent[] = [];
+
+    const result = await runNativeRepositoryGeneration({
+      root: "/repo",
+      mode: "update",
+      modelId: "test-model",
+      model: {} as never,
+      pageConcurrency: 1,
+      workerStartStaggerMs: 0,
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(result).toEqual({
+      skipped: false,
+      skippedPages: ["/openwiki/failed.md", "/openwiki/silent.md"],
+    });
+    const warnings = events.flatMap((event) =>
+      event.type === "text" && event.text.includes("was restored")
+        ? [event.text]
+        : [],
+    );
+    expect(warnings).toEqual([
+      expect.stringContaining(
+        "/openwiki/failed.md was restored after its worker failed without submitting: 400 Bad Request.",
+      ),
+      expect.stringContaining(
+        "/openwiki/silent.md was restored after its worker exited without submitting.",
+      ),
+    ]);
   });
 
   test("forwards its own onEvent to finishRepositoryRun so frontmatter signals surface", async () => {

@@ -1608,7 +1608,8 @@ function sameResourceSet(
  * `.run.json` is removed last; every earlier failure leaves the run resumable.
  *
  * @param run - Active run whose ordered page queue is complete.
- * @returns Successful completion result after all durable gates pass.
+ * @returns Successful completion result after all durable gates pass, listing
+ * any skipped pages in plan order.
  */
 export async function finishRepositoryRun(
   run: ActiveRepositoryRun,
@@ -1616,7 +1617,11 @@ export async function finishRepositoryRun(
     skippedPageSnapshots?: readonly RepositoryPageSnapshot[];
     onEvent?: (event: OpenWikiRunEvent) => void;
   } = {},
-): Promise<{ status: "complete"; sourceChanged?: true }> {
+): Promise<{
+  status: "complete";
+  sourceChanged?: true;
+  skippedPages?: string[];
+}> {
   const plan = run.state.plan;
   if (!plan) {
     throw new RepositoryRunError(
@@ -1646,7 +1651,8 @@ export async function finishRepositoryRun(
       "Every skipped OpenWiki page job requires its original page snapshot before finish.",
     );
   }
-  const skippedPages = new Set(skippedJobs.map(({ path }) => path));
+  const skippedPagePaths = skippedJobs.map(({ path }) => path);
+  const skippedPages = new Set(skippedPagePaths);
   const sourceChangedBeforeFinish = await hasRepositorySourceChanged(run);
   const producerActorsByPage = new Map<string, string>();
   for (const [page, entry] of Object.entries(
@@ -1749,9 +1755,11 @@ export async function finishRepositoryRun(
 
   emitFrontmatterReportEvent(frontmatterReport, options.onEvent);
 
-  return sourceChanged
-    ? { status: "complete", sourceChanged: true }
-    : { status: "complete" };
+  return {
+    status: "complete",
+    ...(sourceChanged ? { sourceChanged: true as const } : {}),
+    ...(skippedPagePaths.length > 0 ? { skippedPages: skippedPagePaths } : {}),
+  };
 }
 
 /**

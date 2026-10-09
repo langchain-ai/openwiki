@@ -5,6 +5,8 @@ export type OpenWikiRunResult = {
   command: OpenWikiCommand;
   model: string;
   skipped?: boolean;
+  /** Repository pages skipped by a worker that ended without submitting. */
+  skippedPages?: string[];
 };
 
 /**
