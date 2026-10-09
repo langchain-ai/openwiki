@@ -216,4 +216,26 @@ describe("repository worker prompts", () => {
       createRepositoryPagePrompt(allPages[1], allPages, "en"),
     ).not.toContain("The complete planned page map is:");
   });
+
+  test("gives page workers the repository instructions and run request", () => {
+    const prompt = createRepositoryPagePrompt(
+      pageJob(),
+      [pageJob()],
+      "en",
+      "Keep pages under 400 lines.",
+      "User: document only src/auth.ts.",
+    );
+
+    expect(prompt).toContain("Repository OpenWiki instructions");
+    expect(prompt).toContain("Keep pages under 400 lines.");
+    expect(prompt).toContain("This run's request:");
+    expect(prompt).toContain("User: document only src/auth.ts.");
+  });
+
+  test("omits absent repository instructions and run request", () => {
+    const prompt = createRepositoryPagePrompt(pageJob(), [pageJob()], "en");
+
+    expect(prompt).not.toContain("Repository OpenWiki instructions");
+    expect(prompt).not.toContain("This run's request:");
+  });
 });
