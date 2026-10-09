@@ -465,6 +465,55 @@ describe("repository wiki retrieval", () => {
     ]);
   });
 
+  test("symbol-only headings return references that read can open", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/release.md"),
+      page({
+        title: "Release Process",
+        description: "Release behavior.",
+        source: "src/release.ts",
+        body: [
+          "## 🚀",
+          "",
+          "The launch token is MARIGOLD_LAUNCH.",
+          "",
+          "## Section",
+          "",
+          "The real section token is MARIGOLD_REAL.",
+          "",
+          "## ⚠️",
+          "",
+          "The warning token is MARIGOLD_WARN.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const references = [];
+    for (const query of ["MARIGOLD_LAUNCH", "MARIGOLD_REAL", "MARIGOLD_WARN"]) {
+      const result = requireSearchResults(await searchWiki(root, { query }));
+      references.push(result.results[0]?.ref[0]);
+    }
+
+    // Only the empty GitHub anchor is replaced; real and suffixed anchors keep their GitHub form.
+    expect(references).toEqual([
+      "openwiki/architecture/release.md#section-1",
+      "openwiki/architecture/release.md#section",
+      "openwiki/architecture/release.md#-1",
+    ]);
+
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/release.md",
+      sections: references.map((reference) => String(reference).split("#")[1]),
+    });
+    expect(read.sections.map(({ content }) => content)).toEqual([
+      "## 🚀\n\nThe launch token is MARIGOLD_LAUNCH.",
+      "## Section\n\nThe real section token is MARIGOLD_REAL.",
+      "## ⚠️\n\nThe warning token is MARIGOLD_WARN.",
+    ]);
+  });
+
   test("linked search spans repositories and identifies results for exact reads", async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), "openwiki-retrieval-"),

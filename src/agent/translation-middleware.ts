@@ -251,8 +251,9 @@ async function translateWiki(
  * Translates one concept page into the plan's target language and clears any
  * pending marker on success, writing only when the content changed.
  *
- * Throws on a model or backend failure, and on empty model output, so the caller
- * can stamp the page for retry. A successful translation always drops the pending
+ * Throws on a model or backend failure, on empty model output, and on output cut
+ * off at the model's output-token limit, so the caller can stamp the page for
+ * retry. A successful translation always drops the pending
  * marker deterministically, whatever the model returned, so a page that has just
  * been converted is never left flagged.
  *
@@ -345,7 +346,61 @@ async function translateMarkdown(
     ],
     { tags: [NOSTREAM_TAG] },
   );
+  // A response cut off at the output-token limit still carries text, but only
+  // the start of the page. Writing it would silently drop the rest of the page
+  // and clear its retry marker, so treat it as a failed translation instead.
+  if (stoppedAtOutputTokenLimit(response.response_metadata)) {
+    throw new Error(
+      "the model reached its output-token limit before finishing the translation",
+    );
+  }
   return extractText(response.content);
+}
+
+/**
+ * Stop reasons, lowercased, that mean a provider ended generation at its
+ * output-token limit: `length` (OpenAI and OpenRouter chat completions) and
+ * `max_tokens` (Anthropic, Bedrock Converse, and Gemini's `MAX_TOKENS`).
+ */
+const OUTPUT_TOKEN_LIMIT_STOP_REASONS = new Set(["length", "max_tokens"]);
+
+/**
+ * Reports whether a model response was cut off at its output-token limit.
+ *
+ * LangChain chat models surface the provider's stop reason in
+ * `response_metadata` under provider-specific keys, and the OpenAI Responses API
+ * reports it as `incomplete_details.reason`.
+ *
+ * @param metadata - The model response's `response_metadata`.
+ * @returns Whether the response is incomplete because of the output limit.
+ */
+function stoppedAtOutputTokenLimit(
+  metadata: Record<string, unknown> | undefined,
+): boolean {
+  if (!metadata) return false;
+
+  const stopReasons = [
+    metadata.finish_reason,
+    metadata.finishReason,
+    metadata.stop_reason,
+    metadata.stopReason,
+  ];
+  if (
+    stopReasons.some(
+      (reason) =>
+        typeof reason === "string" &&
+        OUTPUT_TOKEN_LIMIT_STOP_REASONS.has(reason.toLowerCase()),
+    )
+  ) {
+    return true;
+  }
+
+  const incompleteDetails = metadata.incomplete_details;
+  return (
+    typeof incompleteDetails === "object" &&
+    incompleteDetails !== null &&
+    (incompleteDetails as { reason?: unknown }).reason === "max_output_tokens"
+  );
 }
 
 /**
