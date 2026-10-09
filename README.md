@@ -589,6 +589,17 @@ OPENAI_COMPATIBLE_BASE_URL=https://api.opper.ai/v3/compat
 OPENWIKI_MODEL_ID=claude-sonnet-4-6
 ```
 
+[API Route](https://www.api-route.com) also works through the same provider:
+
+```bash
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-api-route-key
+OPENAI_COMPATIBLE_BASE_URL=https://global.api-route.com/v1
+OPENWIKI_MODEL_ID=gpt-6.1-sol
+```
+
+Verify the model ID with an authenticated `GET /v1/models` request first: the available models depend on your key's group and permissions. Use the returned ID unchanged, without adding an upstream provider prefix.
+
 ```bash
 # Ollama, after `ollama serve` and `ollama pull llama3.2`
 OPENWIKI_PROVIDER=openai-compatible
