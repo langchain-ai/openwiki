@@ -93,6 +93,11 @@ const INVALID_WIKI_PAGE_MESSAGE =
   "Page must be a non-structural Markdown path below openwiki/.";
 
 /**
+ * Readable anchor for the heading whose GitHub slug is empty, such as `## 🚀`.
+ */
+const SYMBOL_ONLY_HEADING_ANCHOR = "section";
+
+/**
  * Search controls shared by direct callers and the MCP adapter.
  */
 export interface WikiSearchRequest {
@@ -820,6 +825,15 @@ function headingSections(tokens: Token[]): ParsedHeadingSection[] {
       heading: heading.text,
       index,
     });
+  }
+  // A symbol-only heading slugs to "", which read rejects; alias it without displacing any GitHub anchor.
+  const unaddressable = headings.find(({ anchor }) => !anchor);
+  if (unaddressable) {
+    let fallback = SYMBOL_ONLY_HEADING_ANCHOR;
+    for (let suffix = 1; taken.has(fallback); suffix += 1) {
+      fallback = `${SYMBOL_ONLY_HEADING_ANCHOR}-${suffix}`;
+    }
+    unaddressable.anchor = fallback;
   }
   return headings.map((heading) => {
     let end = heading.index + 1;

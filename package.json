@@ -97,7 +97,7 @@
     "zod": "^4.4.3"
   },
   "peerDependencies": {
-    "jsdom": "^29.1.1",
+    "jsdom": "^29.1.1 || ^30.0.0",
     "mermaid": "^11.16.0"
   },
   "peerDependenciesMeta": {

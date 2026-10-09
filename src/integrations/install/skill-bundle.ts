@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
-import { lstat, readFile, readdir, writeFile } from "node:fs/promises";
+import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { OPENWIKI_VERSION } from "../../version.js";
+import { writeTextAtomic } from "./atomic-file.js";
 import type {
   HostIntegrationStatus,
   HostMcpServerCommand,
@@ -27,14 +28,12 @@ export interface SkillReceipt {
   version: string;
 
   /**
-   * Host target that owns the destination directory.
+   * Exact MCP server invocation for each host that owns the directory.
+   *
+   * Hosts such as Codex and IBM Bob read the same skill directory, so one
+   * installed skill can have several owners.
    */
-  target: HostTargetId;
-
-  /**
-   * Exact MCP server invocation installed alongside the skill.
-   */
-  mcpServerCommand: HostMcpServerCommand;
+  owners: Partial<Record<HostTargetId, HostMcpServerCommand>>;
 
   /**
    * SHA-256 hashes keyed by installed relative path.
@@ -62,7 +61,8 @@ export interface InstallationInspection {
   status: HostIntegrationStatus;
 
   /**
-   * Validated receipt for an intact managed installation.
+   * Validated receipt for an intact managed installation, including one owned
+   * only by other hosts sharing the directory.
    *
    * @default undefined - the destination is absent or modified.
    */
@@ -163,38 +163,48 @@ export async function inventorySkill(
 }
 
 /**
- * Writes a deterministic ownership receipt into a staged skill.
+ * Atomically writes a deterministic ownership receipt into a skill directory.
  *
- * @param directory - Staged skill directory.
- * @param target - Registry host owning the destination.
- * @param files - Canonical file hashes copied into staging.
- * @param mcpServerCommand - Exact MCP server invocation installed with the skill.
+ * A single owner keeps the original one-host receipt shape, so installations
+ * that never share a directory are byte-for-byte unchanged.
+ *
+ * @param directory - Staged or installed skill directory.
+ * @param owners - MCP server invocation for each host owning the destination.
+ * @param files - Canonical file hashes present in the directory.
+ * @param version - OpenWiki version that produced the files.
  */
 export async function writeReceipt(
   directory: string,
-  target: HostTargetId,
+  owners: Partial<Record<HostTargetId, HostMcpServerCommand>>,
   files: Record<string, string>,
-  mcpServerCommand: HostMcpServerCommand,
+  version: string = OPENWIKI_VERSION,
 ): Promise<void> {
-  const receipt: SkillReceipt = {
-    package: "openwiki",
-    version: OPENWIKI_VERSION,
-    target,
-    mcpServerCommand,
-    files,
-  };
-  await writeFile(
+  const entries = Object.entries(owners);
+  const [onlyOwner] = entries;
+  const receipt =
+    entries.length === 1 && onlyOwner
+      ? {
+          package: "openwiki",
+          version,
+          target: onlyOwner[0],
+          mcpServerCommand: onlyOwner[1],
+          files,
+        }
+      : { package: "openwiki", version, owners, files };
+  await writeTextAtomic(
     path.join(directory, RECEIPT_FILE),
     `${JSON.stringify(receipt, null, 2)}\n`,
-    "utf8",
   );
 }
 
 /**
  * Inspects ownership and exact content integrity for one destination.
  *
+ * An intact directory owned only by other hosts reports `not-installed` for
+ * this target while still returning its receipt, so the target can join it.
+ *
  * @param directory - Host-owned skill destination.
- * @param target - Host expected by the receipt.
+ * @param target - Host whose ownership is being inspected.
  * @returns Absent, intact, or modified state and any valid receipt.
  */
 export async function inspectInstallation(
@@ -214,12 +224,17 @@ export async function inspectInstallation(
   }
 
   try {
-    const receipt = await readReceipt(directory, target);
+    const receipt = await readReceipt(directory);
     const inventory = await inventorySkill(directory, true);
     if (!sameFiles(receipt.files, inventory.files)) {
       return { status: "modified" };
     }
-    return { status: "installed", receipt };
+    return {
+      status: Object.hasOwn(receipt.owners, target)
+        ? "installed"
+        : "not-installed",
+      receipt,
+    };
   } catch {
     return { status: "modified" };
   }
@@ -248,48 +263,56 @@ export function sameFiles(
  * Reads and strictly validates one managed ownership receipt.
  *
  * @param directory - Installed skill directory.
- * @param target - Expected registry host.
  * @returns Validated ownership receipt.
  */
-async function readReceipt(
-  directory: string,
-  target: HostTargetId,
-): Promise<SkillReceipt> {
+async function readReceipt(directory: string): Promise<SkillReceipt> {
   const parsed: unknown = JSON.parse(
     await readFile(path.join(directory, RECEIPT_FILE), "utf8"),
   );
   if (!isRecord(parsed)) throw new Error("Invalid skill receipt.");
+  const owners = receiptOwners(parsed);
   if (
-    !hasExpectedReceiptKeys(parsed) ||
+    !owners ||
     parsed.package !== "openwiki" ||
     typeof parsed.version !== "string" ||
     !parsed.version ||
-    parsed.target !== target ||
-    !isHashRecord(parsed.files) ||
-    !isMcpServerCommand(parsed.mcpServerCommand)
+    !isHashRecord(parsed.files)
   ) {
     throw new Error("Invalid skill receipt.");
   }
   return {
     package: "openwiki",
     version: parsed.version,
-    target,
-    mcpServerCommand: parsed.mcpServerCommand,
+    owners,
     files: parsed.files,
   };
 }
 
 /**
- * Accepts only the current strict receipt shape.
+ * Extracts the owning hosts from either strict receipt shape.
  *
  * @param value - Parsed receipt object.
- * @returns Whether the object contains exactly the supported keys.
+ * @returns MCP server invocation per owning host, or `undefined` when invalid.
  */
-function hasExpectedReceiptKeys(value: Record<string, unknown>): boolean {
-  return (
-    Object.keys(value).sort().join(",") ===
-    "files,mcpServerCommand,package,target,version"
-  );
+function receiptOwners(
+  value: Record<string, unknown>,
+): SkillReceipt["owners"] | undefined {
+  const keys = Object.keys(value).sort().join(",");
+  if (keys === "files,mcpServerCommand,package,target,version") {
+    return typeof value.target === "string" &&
+      value.target &&
+      isMcpServerCommand(value.mcpServerCommand)
+      ? { [value.target]: value.mcpServerCommand }
+      : undefined;
+  }
+  if (keys !== "files,owners,package,version" || !isRecord(value.owners)) {
+    return undefined;
+  }
+  const entries = Object.entries(value.owners);
+  return entries.length > 0 &&
+    entries.every(([target, command]) => target && isMcpServerCommand(command))
+    ? Object.fromEntries(entries)
+    : undefined;
 }
 
 /**
