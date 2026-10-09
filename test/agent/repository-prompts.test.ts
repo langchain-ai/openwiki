@@ -5,6 +5,7 @@ import {
   type RepositoryPageWorkerJob,
 } from "../../src/agent/repository-prompts.ts";
 import type { ActiveBeginView } from "../../src/generation/repository-run.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 /**
  * Builds a complete active planning view with focused per-test overrides.
@@ -215,5 +216,38 @@ describe("repository worker prompts", () => {
     expect(
       createRepositoryPagePrompt(allPages[1], allPages, "en"),
     ).not.toContain("The complete planned page map is:");
+  });
+
+  test("renders only actual configured paths for planner and page workers", () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const view = planningView({
+      pageUpdateWindows: [
+        {
+          pages: ["/docs/auth.md"],
+          changedPaths: ["src/auth.ts"],
+          fullReview: true,
+        },
+      ],
+      claimIssues: [],
+    });
+    const job = pageJob({
+      path: "/docs/quickstart.md",
+      relatedPages: ["/docs/auth.md"],
+    });
+    const pages = [job, pageJob({ path: "/docs/auth.md" })];
+
+    const planner = createRepositoryPlannerPrompt(
+      view,
+      "Document /docs/auth.md.",
+      wikiPaths,
+    );
+    const worker = createRepositoryPagePrompt(job, pages, "en", wikiPaths);
+
+    expect(planner).toContain("below /docs/");
+    expect(planner).toContain("/docs/quickstart.md");
+    expect(worker).toContain("You own exactly /docs/quickstart.md");
+    expect(worker).toContain('"path": "/docs/auth.md"');
+    expect(planner).not.toContain("/openwiki/");
+    expect(worker).not.toContain("/openwiki/");
   });
 });

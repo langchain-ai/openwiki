@@ -14,7 +14,10 @@ import {
   type ReadResult,
   type WriteResult,
 } from "deepagents";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -28,7 +31,7 @@ export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
  */
 type OpenWikiBackendOptions = LocalShellBackendOptions & {
   /**
-   * Confine writes to the `openwiki/` docs tree.
+   * Confine writes to the configured repository wiki tree.
    *
    * @default false
    */
@@ -48,6 +51,13 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
    * @default "repository"
    */
   outputMode?: OpenWikiOutputMode;
+
+  /**
+   * Actual repository wiki path policy used for confinement and Claims hiding.
+   *
+   * @default the implicit `openwiki/` policy
+   */
+  wikiPaths?: RepositoryWikiPaths;
 
   /**
    * Exact generated pages this backend may mutate in repository docs-only mode.
@@ -135,14 +145,15 @@ function isWorktreeGitScandirError(error: unknown): boolean {
  * not a general-purpose shell parser.
  *
  * @param command - Shell command requested by the model.
+ * @param wikiPaths - Actual repository wiki path policy.
  * @returns Whether the command names the OpenWiki Claims directory.
  */
-function referencesClaimsState(command: string): boolean {
+function referencesClaimsState(
+  command: string,
+  wikiPaths: RepositoryWikiPaths,
+): boolean {
   const normalized = command.replaceAll("\\", "/").toLowerCase();
-
-  return /(?:^|[/\s'"`=;|&()])openwiki\/\.claims(?:\/|[\s'"`=;|&()]|$)/u.test(
-    normalized,
-  );
+  return normalized.includes(`${wikiPaths.directory.toLowerCase()}/.claims`);
 }
 
 /**
@@ -205,7 +216,7 @@ async function withPathOperation<T>(
  *    denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop
  *    ignored entries; and uploads/downloads reject ignored paths.
  * 3. Docs-only confinement (`docsOnly`): in repository mode, writes are limited
- *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
+ *    to the configured wiki tree via {@link isOpenWikiDocsPath}.
  * 4. Claims ownership: repository `.claims` sidecars are hidden from generic
  *    tools and may only be accessed by OpenWiki's direct persistence layer.
  * 5. Personal mode: shell execution is always denied, including delegated calls.
@@ -219,7 +230,7 @@ async function withPathOperation<T>(
  */
 export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
-   * Whether writes are confined to the `openwiki/` docs tree (repository mode).
+   * Whether writes are confined to the configured wiki tree (repository mode).
    */
   private readonly docsOnly: boolean;
 
@@ -234,15 +245,26 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   private readonly outputMode: OpenWikiOutputMode;
 
   /**
+   * Actual repository wiki path policy for confinement and reserved state.
+   */
+  private readonly wikiPaths: RepositoryWikiPaths;
+
+  /**
    * Canonical generated pages this worker may mutate, when explicitly scoped.
    */
   private readonly writableWikiPages?: ReadonlySet<string>;
 
+  /**
+   * Creates a local backend with repository wiki confinement when requested.
+   */
   constructor(options: OpenWikiBackendOptions) {
     super(options);
     this.docsOnly = options.docsOnly === true;
     this.openWikiIgnore = options.openWikiIgnore ?? new OpenWikiIgnore([]);
     this.outputMode = options.outputMode ?? "repository";
+    this.wikiPaths =
+      options.wikiPaths ??
+      new RepositoryWikiPaths(DEFAULT_REPOSITORY_WIKI_DIRECTORY);
     this.writableWikiPages = options.writableWikiPages
       ? new Set(options.writableWikiPages.map(normalizeVirtualPath))
       : undefined;
@@ -466,7 +488,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
   /**
    * Upload files, returning `permission_denied` for any path that is excluded by
-   * `.openwikiignore` or (in docs-only mode) falls outside the `openwiki/` tree,
+   * `.openwikiignore` or (in docs-only mode) falls outside the configured wiki tree,
    * while still uploading the allowed ones. As a write path, this enforces the
    * same docs-only confinement as {@link write}/{@link edit}. Results are
    * returned in the original input order.
@@ -554,7 +576,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       };
     }
 
-    if (this.outputMode === "repository" && referencesClaimsState(command)) {
+    if (
+      this.outputMode === "repository" &&
+      referencesClaimsState(command, this.wikiPaths)
+    ) {
       return {
         exitCode: 1,
         output:
@@ -577,15 +602,15 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   /**
    * Return a refusal message when a write escapes the docs tree in docs-only
    * mode, or `null` if the write is allowed. Always allows in `local-wiki` mode
-   * or when the path is under `openwiki/`.
+   * or when the path is under the configured repository wiki root.
    */
   private getDocsOnlyWriteError(filePath: string): string | null {
     if (!this.docsOnly || this.outputMode === "local-wiki") {
       return null;
     }
 
-    if (!isOpenWikiDocsPath(filePath)) {
-      return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
+    if (!isOpenWikiDocsPath(filePath, this.wikiPaths)) {
+      return `OpenWiki repository init/update runs may only write under ${this.wikiPaths.canonicalRoot}/. Refused path: ${filePath}`;
     }
 
     if (
@@ -634,7 +659,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
    * @returns Whether the repository Claims boundary applies.
    */
   private isClaimsPath(filePath: string): boolean {
-    return this.outputMode === "repository" && isClaimsStatePath(filePath);
+    return (
+      this.outputMode === "repository" &&
+      isClaimsStatePath(filePath, this.wikiPaths)
+    );
   }
 
   /**
@@ -698,37 +726,42 @@ function markMutation<Result extends WriteResult | EditResult | DeleteResult>(
  * Determines whether a virtual path resolves inside OpenWiki-owned Claims state.
  *
  * @param filePath - Candidate virtual repository path.
+ * @param wikiPaths - Actual repository wiki path policy.
  * @returns Whether the normalized path is the Claims directory or its descendant.
  */
-export function isClaimsStatePath(filePath: string): boolean {
+export function isClaimsStatePath(
+  filePath: string,
+  wikiPaths: RepositoryWikiPaths = new RepositoryWikiPaths(
+    DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  ),
+): boolean {
   const normalized = path.posix
     .normalize(filePath.replaceAll("\\", "/"))
     .toLowerCase();
   const absolute = normalized.startsWith("/") ? normalized : `/${normalized}`;
 
-  return (
-    absolute === "/openwiki/.claims" ||
-    absolute.startsWith("/openwiki/.claims/")
-  );
+  const claimsRoot = `${wikiPaths.canonicalRoot.toLowerCase()}/.claims`;
+  return absolute === claimsRoot || absolute.startsWith(`${claimsRoot}/`);
 }
 
 /**
- * Whether a path resolves to somewhere inside the `openwiki/` docs tree.
+ * Whether a path resolves inside one configured repository wiki tree.
  *
  * The path is canonicalized (backslashes, leading slashes, and `.`/`..`
  * segments collapsed) before the prefix check so a path such as
- * `/openwiki/../AGENTS.md` cannot escape the confinement.
+ * traversal cannot escape the configured repository wiki confinement.
+ *
+ * @param filePath - Candidate model-facing virtual path.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Whether the original path stays below the configured wiki root.
  */
-export function isOpenWikiDocsPath(filePath: string): boolean {
-  const slashed = filePath.trim().replace(/\\/gu, "/");
-  // Collapse `..`/`.` segments before the prefix check so a path like
-  // "/openwiki/../AGENTS.md" cannot escape the openwiki/ confinement.
-  const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/u, "")}`);
-  const virtualPath = normalized.replace(/^\/+/u, "");
-
-  return (
-    virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)
-  );
+export function isOpenWikiDocsPath(
+  filePath: string,
+  wikiPaths: RepositoryWikiPaths = new RepositoryWikiPaths(
+    DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  ),
+): boolean {
+  return wikiPaths.contains(filePath);
 }
 
 /**

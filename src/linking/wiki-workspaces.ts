@@ -6,10 +6,15 @@ import {
 import { chmod, lstat, mkdir, open, readdir, realpath } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { UPDATE_METADATA_PATH } from "../config/constants.js";
 import { resolveOpenWikiHomeDir } from "../config/openwiki-home.js";
 import { writeTextAtomic } from "../integrations/install/atomic-file.js";
 import { restrictDirToCurrentUser } from "../platform/windows-acl.js";
+import {
+  RepositoryWikiConfigError,
+  resolveRepositoryWikiLocation,
+  type RepositoryWikiLocation,
+} from "../repository-wiki/config.js";
+import { inspectRepositoryWikiOwnership } from "../repository-wiki/ownership.js";
 
 /**
  * File containing the user's named wiki workspaces.
@@ -55,6 +60,11 @@ const EXPECTED_DISCOVERY_ERROR_CODES = new Set([
   "ENOTDIR",
   "EPERM",
 ]);
+
+/**
+ * Run metadata proving that a resolved repository wiki has completed before.
+ */
+const REPOSITORY_LAST_UPDATE_FILE = ".last-update.json";
 
 /**
  * Stable identifier accepted by workspace and retrieval operations.
@@ -274,6 +284,11 @@ export interface ResolvedWiki extends WikiIdentity {
    * Canonical absolute repository root.
    */
   root: string;
+
+  /**
+   * Actual repository-relative directory containing this wiki.
+   */
+  wikiDirectory: string;
 }
 
 /**
@@ -688,7 +703,7 @@ export async function resolveWikiSearchScope(
     return {
       status: "ready",
       current: wikiIdentity(context.current),
-      wikis: [{ ...wikiIdentity(context.current), root: context.current.root }],
+      wikis: [await materializeLocalWiki(context.current)],
     };
   }
   const containing = containingWorkspaces(context.registry, context.current.id);
@@ -703,7 +718,7 @@ export async function resolveWikiSearchScope(
     return {
       status: "ready",
       current: wikiIdentity(context.current),
-      wikis: [{ ...wikiIdentity(context.current), root: context.current.root }],
+      wikis: [await materializeWiki(context.current)],
     };
   }
   if (containing.length === 1) {
@@ -750,10 +765,10 @@ export async function resolveReadableWiki(
   const context = await loadRepositoryContext(repositoryRoot, options);
   if (!context.isRegistered) {
     if (wikiId) requireRegisteredRepository(context);
-    return { ...wikiIdentity(context.current), root: context.current.root };
+    return materializeLocalWiki(context.current);
   }
   if (!wikiId || wikiId === context.current.id) {
-    return { ...wikiIdentity(context.current), root: context.current.root };
+    return materializeWiki(context.current);
   }
   return materializeWiki(findReachableWiki(context, wikiId));
 }
@@ -992,10 +1007,54 @@ async function materializeWiki(wiki: RegisteredWiki): Promise<ResolvedWiki> {
   } catch {
     throw staleWorkspaceError();
   }
-  if (canonical !== wiki.root || !(await isWikiRepository(canonical))) {
+  const location =
+    canonical === wiki.root
+      ? await resolveLinkableWikiLocation(canonical)
+      : null;
+  if (!location) throw staleWorkspaceError();
+  return {
+    ...wikiIdentity(wiki),
+    root: canonical,
+    wikiDirectory: location.directory,
+  };
+}
+
+/**
+ * Resolves an unregistered current repository without requiring prior run
+ * metadata, while still enforcing configured-root and symlink safety.
+ *
+ * @param wiki - Current local repository identity.
+ * @returns Wiki with its canonical root and configured physical directory.
+ */
+async function materializeLocalWiki(
+  wiki: RegisteredWiki,
+): Promise<ResolvedWiki> {
+  let canonical: string;
+  try {
+    canonical = await realpath(wiki.root);
+  } catch {
     throw staleWorkspaceError();
   }
-  return { ...wikiIdentity(wiki), root: canonical };
+  if (canonical !== wiki.root) throw staleWorkspaceError();
+
+  try {
+    const location = await resolveRepositoryWikiLocation(canonical);
+    const ownership = await inspectRepositoryWikiOwnership(
+      canonical,
+      location.directory,
+    );
+    if (ownership.status === "unsafe") throw staleWorkspaceError();
+    return {
+      ...wikiIdentity(wiki),
+      root: canonical,
+      wikiDirectory: location.directory,
+    };
+  } catch (error) {
+    if (error instanceof RepositoryWikiConfigError) {
+      throw new WikiWorkspaceError(error.message);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -1132,7 +1191,7 @@ async function canonicalWikiRoots(roots: readonly string[]): Promise<string[]> {
   for (const root of canonical) {
     if (!(await isWikiRepository(root))) {
       throw new WikiWorkspaceError(
-        `Every selected repository must contain ${UPDATE_METADATA_PATH}.`,
+        "Every selected repository must contain recognized OpenWiki run metadata at its configured wiki root.",
       );
     }
   }
@@ -1431,18 +1490,52 @@ async function nearestExistingDirectory(location: string): Promise<string> {
  */
 async function isWikiRepository(directory: string): Promise<boolean> {
   return (
-    (await isGitRepository(directory)) && (await hasOpenWikiMetadata(directory))
+    (await isGitRepository(directory)) &&
+    (await resolveLinkableWikiLocation(directory)) !== null
   );
 }
 
 /**
- * Checks whether a repository contains the OpenWiki discovery marker.
+ * Checks whether a repository contains the OpenWiki discovery marker at its
+ * configured wiki root.
  *
  * @param directory - Canonical repository root.
  * @returns Whether OpenWiki has recorded repository run metadata.
  */
 async function hasOpenWikiMetadata(directory: string): Promise<boolean> {
-  return isRegularFile(path.join(directory, UPDATE_METADATA_PATH));
+  return (await resolveLinkableWikiLocation(directory)) !== null;
+}
+
+/**
+ * Resolves a repository's configured wiki and validates its durable marker.
+ *
+ * Config errors and unsafe wiki path components make a repository unavailable
+ * to discovery without guessing another directory.
+ *
+ * @param directory - Canonical repository root.
+ * @returns Resolved linkable location, or `null` when no safe wiki is present.
+ */
+async function resolveLinkableWikiLocation(
+  directory: string,
+): Promise<RepositoryWikiLocation | null> {
+  try {
+    const location = await resolveRepositoryWikiLocation(directory);
+    const ownership = await inspectRepositoryWikiOwnership(
+      directory,
+      location.directory,
+    );
+    if (ownership.status === "unsafe" || ownership.status === "absent") {
+      return null;
+    }
+    return (await isRegularFile(
+      path.join(location.root, REPOSITORY_LAST_UPDATE_FILE),
+    ))
+      ? location
+      : null;
+  } catch (error) {
+    if (error instanceof RepositoryWikiConfigError) return null;
+    throw error;
+  }
 }
 
 /**

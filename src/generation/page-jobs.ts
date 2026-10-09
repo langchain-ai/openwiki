@@ -10,6 +10,10 @@ import type {
   InspectedClaim,
 } from "../claims/brains/code/types.js";
 import type { ClaimOperation } from "../claims/core/types.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { RepositoryRunError } from "./errors.js";
 import type {
   PageJob,
@@ -18,11 +22,18 @@ import type {
 } from "./run-state.js";
 
 /**
+ * Backward-compatible path policy for unconfigured repository wikis.
+ */
+const DEFAULT_PAGE_JOB_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
+
+/**
  * Model/host proposal for one final generated Markdown page.
  */
 export interface ProposedPlanPage {
   /**
-   * Canonical or normalizable virtual Markdown path below `/openwiki/`.
+   * Canonical or normalizable Markdown path below the configured wiki root.
    */
   path: string;
 
@@ -85,13 +96,19 @@ export interface ProposedPageClaim {
  * one of the explicit fields so required grounding work cannot be skipped.
  */
 export interface ProposedPageClaimReconciliation {
-  /** Existing Claims explicitly rechecked and retained without content edits. */
+  /**
+   * Existing Claims explicitly rechecked and retained without content edits.
+   */
   confirmedClaimIds?: string[];
 
-  /** Revised existing Claims (with id) and genuinely new Claims (without id). */
+  /**
+   * Revised existing Claims (with id) and genuinely new Claims (without id).
+   */
   claims?: ProposedPageClaim[];
 
-  /** Existing Claims explicitly removed from the completed page. */
+  /**
+   * Existing Claims explicitly removed from the completed page.
+   */
   retractedClaimIds?: string[];
 }
 
@@ -117,6 +134,7 @@ export interface ProposedRepositoryPlan {
  * @param proposed - Complete proposed page and deletion set.
  * @param claimIssues - Stable preflight issues that require page work.
  * @param requiredRewritePages - Existing pages requiring language rewrites.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Complete normalized plan ready for durable persistence.
  * @throws RepositoryRunError when paths, deletion intent, or init shape is invalid.
  */
@@ -125,10 +143,15 @@ export function createRepositoryPlan(
   proposed: ProposedRepositoryPlan,
   claimIssues: readonly GroundingIssue[],
   requiredRewritePages: readonly string[] = [],
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_JOB_WIKI_PATHS,
 ): RepositoryRunPlan {
-  const pages = proposed.pages.map(normalizePlanPage);
+  const pages = proposed.pages.map((page) =>
+    normalizePlanPage(page, wikiPaths),
+  );
   const deletePages = uniqueSorted(
-    (proposed.deletePages ?? []).map(normalizePlanPagePath),
+    (proposed.deletePages ?? []).map((page) =>
+      normalizePlanPagePath(page, wikiPaths),
+    ),
   );
 
   if (mode === "init" && deletePages.length > 0) {
@@ -138,10 +161,10 @@ export function createRepositoryPlan(
     );
   }
 
-  if (deletePages.includes("/openwiki/quickstart.md")) {
+  if (deletePages.includes(wikiPaths.quickstartPage)) {
     throw new RepositoryRunError(
       "invalid_input",
-      "The canonical /openwiki/quickstart.md page cannot be deleted.",
+      `The canonical ${wikiPaths.quickstartPage} page cannot be deleted.`,
     );
   }
 
@@ -165,23 +188,35 @@ export function createRepositoryPlan(
     }
   }
 
-  if (mode === "init" && !pagePaths.has("/openwiki/quickstart.md")) {
+  if (mode === "init" && !pagePaths.has(wikiPaths.quickstartPage)) {
     throw new RepositoryRunError(
       "invalid_input",
-      "Init plan must include /openwiki/quickstart.md.",
+      `Init plan must include ${wikiPaths.quickstartPage}.`,
     );
   }
 
   if (mode === "update") {
     const deleted = new Set(deletePages);
-    addRequiredClaimIssueJobs(pages, pagePaths, deleted, claimIssues);
-    addRequiredRewriteJobs(pages, pagePaths, deleted, requiredRewritePages);
+    addRequiredClaimIssueJobs(
+      pages,
+      pagePaths,
+      deleted,
+      claimIssues,
+      wikiPaths,
+    );
+    addRequiredRewriteJobs(
+      pages,
+      pagePaths,
+      deleted,
+      requiredRewritePages,
+      wikiPaths,
+    );
   }
 
   // Quickstart is the synthesis/navigation page; generate it after domain pages.
   pages.sort((left, right) => {
-    const leftQuickstart = left.path === "/openwiki/quickstart.md";
-    const rightQuickstart = right.path === "/openwiki/quickstart.md";
+    const leftQuickstart = left.path === wikiPaths.quickstartPage;
+    const rightQuickstart = right.path === wikiPaths.quickstartPage;
     if (leftQuickstart !== rightQuickstart) return leftQuickstart ? 1 : -1;
     return compareCodeUnits(left.path, right.path);
   });
@@ -193,10 +228,14 @@ export function createRepositoryPlan(
  * Validates and canonicalizes one proposed page into a pending queue job.
  *
  * @param page - Model/host page proposal.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Normalized pending page job.
  */
-function normalizePlanPage(page: ProposedPlanPage): PageJob {
-  const canonicalPath = normalizePlanPagePath(page.path);
+function normalizePlanPage(
+  page: ProposedPlanPage,
+  wikiPaths: RepositoryWikiPaths,
+): PageJob {
+  const canonicalPath = normalizePlanPagePath(page.path, wikiPaths);
   const title = page.title.trim();
   const purpose = page.purpose.trim();
   if (!title || !purpose) {
@@ -213,7 +252,9 @@ function normalizePlanPage(page: ProposedPlanPage): PageJob {
     purpose,
     seedPaths: uniqueSorted((page.seedPaths ?? []).map(normalizeSeedPath)),
     relatedPages: uniqueSorted(
-      (page.relatedPages ?? []).map(normalizePlanPagePath),
+      (page.relatedPages ?? []).map((related) =>
+        normalizePlanPagePath(related, wikiPaths),
+      ),
     ),
     instructions: uniqueSorted(
       (page.instructions ?? [])
@@ -228,11 +269,15 @@ function normalizePlanPage(page: ProposedPlanPage): PageJob {
  * Converts one proposed wiki page path into its canonical non-working form.
  *
  * @param value - Candidate generated Markdown path.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Canonical factual page path.
  */
-function normalizePlanPagePath(value: string): string {
+function normalizePlanPagePath(
+  value: string,
+  wikiPaths: RepositoryWikiPaths,
+): string {
   try {
-    const canonical = normalizeClaimsToolPagePath(value);
+    const canonical = normalizeClaimsToolPagePath(value, wikiPaths);
     if (path.posix.basename(canonical).startsWith("_")) {
       throw new Error("reserved working page");
     }
@@ -252,16 +297,18 @@ function normalizePlanPagePath(value: string): string {
  * @param pagePaths - Canonical paths already present in the queue.
  * @param deletePages - Canonical paths explicitly selected for deletion.
  * @param issues - Stable preflight issues grouped into required page work.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  */
 function addRequiredClaimIssueJobs(
   pages: PageJob[],
   pagePaths: Set<string>,
   deletePages: Set<string>,
   issues: readonly GroundingIssue[],
+  wikiPaths: RepositoryWikiPaths,
 ): void {
   const grouped = new Map<string, GroundingIssue[]>();
   for (const issue of issues) {
-    const page = normalizeWikiPagePath(issue.page);
+    const page = normalizeWikiPagePath(issue.page, wikiPaths);
     const list = grouped.get(page) ?? [];
     list.push(issue);
     grouped.set(page, list);
@@ -296,15 +343,17 @@ function addRequiredClaimIssueJobs(
  * @param pagePaths - Canonical paths already present in the queue.
  * @param deletePages - Canonical paths explicitly selected for deletion.
  * @param requiredPages - Existing pages that must be rewritten.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  */
 function addRequiredRewriteJobs(
   pages: PageJob[],
   pagePaths: Set<string>,
   deletePages: Set<string>,
   requiredPages: readonly string[],
+  wikiPaths: RepositoryWikiPaths,
 ): void {
   for (const pageInput of requiredPages) {
-    const page = normalizeWikiPagePath(pageInput);
+    const page = normalizeWikiPagePath(pageInput, wikiPaths);
     if (pagePaths.has(page) || deletePages.has(page)) continue;
 
     pages.push({
@@ -398,13 +447,15 @@ function uniqueSorted(values: string[]): string[] {
  * @param session - Active process-local Claims session.
  * @param pageInput - Page owning the proposed Claim reconciliation.
  * @param proposedInput - Sparse explicit Claim decisions for the page.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  */
 export async function reconcilePageClaims(
   session: ClaimSession,
   pageInput: string,
   proposedInput: ProposedPageClaimReconciliation,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_JOB_WIKI_PATHS,
 ): Promise<void> {
-  const page = normalizeWikiPagePath(pageInput);
+  const page = normalizeWikiPagePath(pageInput, wikiPaths);
   const existing = session.inspectClaims(page);
   const existingById = new Map(existing.map((claim) => [claim.id, claim]));
   const targetedExistingIds = new Set<string>();

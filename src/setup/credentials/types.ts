@@ -30,6 +30,10 @@ export type InitSetupProps = {
   allowModeSelection?: boolean;
   mode: OpenWikiRunMode;
   modelIdOverride?: string | null;
+  /**
+   * Explicit repository wiki directory selected by the startup command.
+   */
+  requestedWikiDirectory?: string | null;
   onComplete: (result: InitSetupResult) => void;
   onError: (message: string) => void;
   /**

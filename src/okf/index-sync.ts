@@ -76,14 +76,22 @@ export interface WikiFrontmatterReport {
 
 /**
  * Synchronizes the index for every directory in the configured wiki.
+ *
+ * @param backend - Active generated-wiki filesystem.
+ * @param outputMode - Current wiki target.
+ * @param labels - Localized index labels.
+ * @param conceptType - Fallback type for repaired concept metadata.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
+ * @returns Frontmatter quality report from the synchronized concepts.
  */
 export async function synchronizeWikiIndexes(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   labels: IndexLabels = ENGLISH_INDEX_LABELS,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<WikiFrontmatterReport> {
-  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const root = outputMode === "local-wiki" ? "/" : repositoryWikiRoot;
   const report: WikiFrontmatterReport = {
     generatedPages: [],
     missingDescriptionPages: [],
@@ -109,13 +117,23 @@ export async function synchronizeWikiIndexes(
  * legacy or externally edited pages are migrated to a minimal OKF block (tagged
  * `openwiki_generated`) up front, letting the agent read clean metadata and
  * enrich flagged pages in the same run.
+ *
+ * @param backend - Active generated-wiki filesystem.
+ * @param outputMode - Current wiki target.
+ * @param conceptType - Fallback type for repaired concept metadata.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
  */
 export async function migrateWikiToOkf(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<void> {
-  for (const filePath of await listWikiConceptPaths(backend, outputMode)) {
+  for (const filePath of await listWikiConceptPaths(
+    backend,
+    outputMode,
+    repositoryWikiRoot,
+  )) {
     await normalizeConceptFile(backend, filePath, conceptType);
   }
 }
@@ -124,14 +142,16 @@ export async function migrateWikiToOkf(
  * Lists the non-structural Markdown concepts currently present in the wiki.
  *
  * @param backend - Filesystem abstraction rooted at the active wiki target.
- * @param outputMode - Whether the wiki lives at `/` or `/openwiki`.
+ * @param outputMode - Whether the wiki uses local or repository layout.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
  * @returns Stable, sorted virtual paths for every concept page.
  */
 export async function listWikiConceptPaths(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<string[]> {
-  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const root = outputMode === "local-wiki" ? "/" : repositoryWikiRoot;
   const directories = await collectDirectories(backend, root, true);
   return directories
     .flatMap((directory) =>

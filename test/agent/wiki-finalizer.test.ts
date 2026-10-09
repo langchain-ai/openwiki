@@ -11,6 +11,7 @@ import {
   type WikiPreparationOperation,
   type WikiPreparationOperationRunner,
 } from "../../src/agent/wiki-finalizer.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 const RUN_TIMESTAMP = "2026-08-19T18:30:00.000Z";
 
@@ -190,6 +191,59 @@ describe("finalizeWikiArtifacts", () => {
       `generated: { by: "host-agent/test", at: "${RUN_TIMESTAMP}" }`,
     );
     expect(index).toContain("[Quickstart](quickstart.md) - Start here.");
+  });
+
+  test("runs deterministic finalization below the configured wiki root", async () => {
+    const rootDir = await mkdtemp(
+      path.join(os.tmpdir(), "openwiki-finalizer-"),
+    );
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      wikiPaths,
+    });
+    await backend.write(
+      "/docs/quickstart.md",
+      [
+        "---",
+        "type: Guide",
+        "title: Quickstart",
+        "description: Start here.",
+        "---",
+        "",
+        "# Quickstart",
+        "",
+        "See [missing](./missing.md).",
+        "",
+      ].join("\n"),
+    );
+
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+      wikiPaths,
+    });
+    await finalizeWikiArtifacts({
+      backend,
+      outputMode: "repository",
+      prepared,
+      at: RUN_TIMESTAMP,
+      producerActor: "host-agent/test",
+      wikiPaths,
+    });
+
+    await expect(
+      readFile(path.join(rootDir, "docs/index.md"), "utf8"),
+    ).resolves.toContain("Quickstart");
+    await expect(
+      readFile(path.join(rootDir, "docs/quickstart.md"), "utf8"),
+    ).resolves.toContain("openwiki: broken internal link [./missing.md]");
+    await expect(
+      readFile(path.join(rootDir, "openwiki/index.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   test("preserves the prior producer when a host run leaves the body unchanged", async () => {

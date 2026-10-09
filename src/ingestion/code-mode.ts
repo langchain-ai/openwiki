@@ -15,25 +15,54 @@ import {
 } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import { createConnectorRegistry } from "../connectors/registry.js";
-import { UPDATE_METADATA_PATH } from "../config/constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
+import {
+  resolveRepositoryWikiLocation,
+  type RepositoryWikiLocation,
+} from "../repository-wiki/config.js";
 
+/**
+ * Opening marker for repository agent instructions managed by OpenWiki.
+ */
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
+
+/**
+ * Closing marker for repository agent instructions managed by OpenWiki.
+ */
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
+
+/**
+ * Default daily schedule for newly generated update workflows.
+ */
 const DEFAULT_CODE_MODE_CRON = "0 8 * * *";
+
+/**
+ * Durable update timestamp filename inside a repository wiki root.
+ */
+const LAST_UPDATE_FILE = ".last-update.json";
 
 // The heading and opening sentence every pre-marker (0.0.x) release wrote
 // straight into AGENTS.md / CLAUDE.md, before the managed markers existed. A
 // bare `## OpenWiki` heading only counts as that legacy section when the next
 // non-blank line is exactly this sentence, so a section someone wrote by hand
 // that merely shares the heading is never touched.
+/**
+ * Heading used by the pre-marker repository instruction template.
+ */
 const OPENWIKI_LEGACY_HEADING = "## OpenWiki";
+
+/**
+ * Exact identifying sentence used by the pre-marker template.
+ */
 const OPENWIKI_LEGACY_SENTENCE =
   "This repository has documentation located in the /openwiki directory.";
 // The remaining lines of that template, matched exactly. Matching a prefix here
 // would delete a line a user appended text to (their edit and everything below
 // it), so every template line stops the removal unless it is untouched.
+/**
+ * Remaining exact lines eligible for legacy template removal.
+ */
 const OPENWIKI_LEGACY_TEMPLATE_LINES = [
   "Start here:",
   "- [OpenWiki quickstart](openwiki/quickstart.md)",
@@ -45,11 +74,25 @@ const OPENWIKI_LEGACY_TEMPLATE_LINES = [
 // Each is refreshed in place when present. Only AGENTS.md is created when
 // missing: Claude Code reads AGENTS.md when no CLAUDE.md exists, but an
 // existing CLAUDE.md shadows it, so that file still needs the block.
+/**
+ * Root instruction files refreshed when they already exist.
+ */
 const CODE_MODE_AGENT_FILES = ["AGENTS.md", "CLAUDE.md"];
+
+/**
+ * Claude Code directive importing canonical repository agent instructions.
+ */
 const CLAUDE_AGENTS_IMPORT = "@AGENTS.md";
 
-/** Controls which parts of the repo OpenWiki sets up for code mode. */
+/**
+ * Controls which parts of the repo OpenWiki sets up for code mode.
+ */
 export interface CodeModeRepoSetupOptions {
+  /**
+   * Wiki location already resolved for the current repository operation.
+   */
+  wikiLocation?: RepositoryWikiLocation;
+
   /**
    * Write the scheduled-update workflow file. Only `openwiki code --init`
    * should create it; `--update` and chat runs leave an existing file alone so
@@ -57,7 +100,9 @@ export interface CodeModeRepoSetupOptions {
    * never silently overwritten.
    */
   createWorkflow?: boolean;
-  /** Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}. */
+  /**
+   * Cron expression for a freshly created workflow. Defaults to {@link DEFAULT_CODE_MODE_CRON}.
+   */
   cronExpression?: string;
   /**
    * Environment the generated workflow's provider block is derived from.
@@ -76,14 +121,17 @@ export async function ensureCodeModeRepoSetup(
   cwd: string,
   options: CodeModeRepoSetupOptions = {},
 ): Promise<void> {
+  const wikiLocation =
+    options.wikiLocation ?? (await resolveRepositoryWikiLocation(cwd));
   if (options.createWorkflow) {
     await ensureCodeModeWorkflow(
       cwd,
+      wikiLocation.directory,
       options.cronExpression ?? DEFAULT_CODE_MODE_CRON,
       options.env ?? process.env,
     );
   }
-  await writeCodeModeAgentSnippets(cwd);
+  await writeCodeModeAgentSnippets(cwd, wikiLocation.directory);
 }
 
 /**
@@ -93,6 +141,7 @@ export async function ensureCodeModeRepoSetup(
  */
 async function ensureCodeModeWorkflow(
   cwd: string,
+  wikiDirectory: string,
   cronExpression: string,
   env: NodeJS.ProcessEnv,
 ): Promise<void> {
@@ -115,7 +164,7 @@ async function ensureCodeModeWorkflow(
   await mkdir(path.dirname(workflowPath), { recursive: true });
   await writeFile(
     workflowPath,
-    createCodeModeWorkflow(cronExpression, env),
+    createCodeModeWorkflow(wikiDirectory, cronExpression, env),
     "utf8",
   );
 }
@@ -131,8 +180,9 @@ export async function runCodeModeConnectors(
   baseMessage: string | undefined,
   onEvent?: (event: OpenWikiRunEvent) => void,
 ): Promise<string | undefined> {
+  const wikiLocation = await resolveRepositoryWikiLocation(repoRoot);
   // The natural window: what has happened since we last documented this repo.
-  const windowHours = windowHoursSince(await readLastUpdatedAt(repoRoot));
+  const windowHours = windowHoursSince(await readLastUpdatedAt(wikiLocation));
   const blocks: string[] = [];
 
   for (const connector of Object.values(createConnectorRegistry())) {
@@ -195,15 +245,15 @@ function windowHoursSince(since: string | undefined): number | undefined {
 }
 
 /**
- * The last-update timestamp from openwiki/.last-update.json, or undefined when it
- * is absent (first run) or unreadable.
+ * The last-update timestamp from the configured wiki root, or undefined when
+ * it is absent (first run) or unreadable.
  */
 async function readLastUpdatedAt(
-  repoRoot: string,
+  wikiLocation: RepositoryWikiLocation,
 ): Promise<string | undefined> {
   try {
     const text = await readFile(
-      path.join(repoRoot, UPDATE_METADATA_PATH),
+      path.join(wikiLocation.root, LAST_UPDATE_FILE),
       "utf8",
     );
     const parsed = JSON.parse(text) as { updatedAt?: unknown };
@@ -213,8 +263,14 @@ async function readLastUpdatedAt(
   }
 }
 
-async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const agentsSnippet = createCodeModeAgentsSnippet();
+/**
+ * Refreshes configured-wiki guidance in supported repository agent files.
+ */
+async function writeCodeModeAgentSnippets(
+  cwd: string,
+  wikiDirectory: string,
+): Promise<void> {
+  const agentsSnippet = createCodeModeAgentsSnippet(wikiDirectory);
   // Some repositories make CLAUDE.md a link to AGENTS.md. There the import
   // would point the file at itself, so the block carries the instructions
   // instead of referring to them.
@@ -248,6 +304,9 @@ async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
   );
 }
 
+/**
+ * Prepares one validated instruction-file update without writing it.
+ */
 async function prepareCodeModeAgentSnippet(
   agentsPath: string,
   snippet: string,
@@ -444,7 +503,9 @@ function parseFenceMarker(
   return { char: match[1][0], length: match[1].length, info: match[2] };
 }
 
-/** Splice a set of character ranges out of a string, highest offset first. */
+/**
+ * Splice a set of character ranges out of a string, highest offset first.
+ */
 function removeRanges(
   content: string,
   ranges: ReadonlyArray<{ startChar: number; endChar: number }>,
@@ -529,10 +590,16 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
   return lines.join("\n          ");
 }
 
+/**
+ * Renders a scheduled repository update workflow for one physical wiki root.
+ */
 function createCodeModeWorkflow(
+  wikiDirectory: string,
   cronExpression: string,
   env: NodeJS.ProcessEnv,
 ): string {
+  const runStatePath = shellSingleQuote(`${wikiDirectory}/.run.json`);
+  const wikiPath = shellSingleQuote(wikiDirectory);
   return `name: OpenWiki Update
 
 on:
@@ -582,7 +649,7 @@ jobs:
 
       - name: Remove transient OpenWiki run state
         if: \${{ !cancelled() }}
-        run: rm -f -- openwiki/.run.json
+        run: rm -f -- ${runStatePath}
 
       - name: List OpenWiki update paths
         id: paths
@@ -590,9 +657,13 @@ jobs:
         # CLAUDE.md is listed only when present: git add fails on a missing path
         # and then stages nothing.
         run: |
-          paths=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml
-          if [ -e CLAUDE.md ]; then paths="$paths,CLAUDE.md"; fi
-          echo "list=$paths" >> "$GITHUB_OUTPUT"
+          delimiter="openwiki_paths_\${GITHUB_RUN_ID}_\${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "list<<$delimiter"
+            printf '%s\\n' ${wikiPath} AGENTS.md .github/workflows/openwiki-update.yml
+            if [ -e CLAUDE.md ]; then printf '%s\\n' CLAUDE.md; fi
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create OpenWiki update pull request
         id: create-pr
@@ -630,23 +701,33 @@ jobs:
  *
  * @returns Complete fenced AGENTS.md instruction block.
  */
-function createCodeModeAgentsSnippet(): string {
+function createCodeModeAgentsSnippet(wikiDirectory: string): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
 ## OpenWiki
 
-This repository has a generated \`openwiki/\` evidence index. It is optional just-in-time context, not required startup reading.
+This repository has a generated \`${wikiDirectory}/\` evidence index. It is optional just-in-time context, not required startup reading.
 
 - Do not enumerate, preload, or search wikis at task start. Use retrieval when the user asks for it, when unfamiliar architecture or dependency behavior materially affects the task, or when source inspection leaves an important uncertainty. Stop once the question is grounded.
 - When those conditions apply and OpenWiki retrieval tools are available, use \`openwiki_search\` for just-in-time context and \`openwiki_read\` for the relevant complete sections. If search returns \`workspace_required\`, ask which listed workspace to use and retry with its ID.
 - Use \`openwiki_list_workspaces\` or \`openwiki_list_wikis\` when workspace membership itself needs to be discovered.
-- If the retrieval tools are unavailable, read \`openwiki/quickstart.md\` and follow its links to the relevant pages.
+- If the retrieval tools are unavailable, read \`${wikiDirectory}/quickstart.md\` and follow its links to the relevant pages.
 - Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
 The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
+}
+
+/**
+ * Quotes one validated repository-relative path as a POSIX shell word.
+ *
+ * @param value - Path text to embed in a generated workflow command.
+ * @returns Single-quoted shell word with literal apostrophes escaped.
+ */
+function shellSingleQuote(value: string): string {
+  return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
 /**

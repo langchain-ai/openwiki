@@ -34,13 +34,17 @@ export type ClaimEvidenceResources = ReadonlyMap<string, readonly string[]>;
  * @param backend - Active generated-wiki filesystem.
  * @param outputMode - Current wiki target.
  * @param resourcesByPage - Complete current evidence resources per Claims page.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
  */
 export async function synchronizeClaimSources(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
   resourcesByPage: ClaimEvidenceResources,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<void> {
-  const concepts = new Set(await listWikiConceptPaths(backend, outputMode));
+  const concepts = new Set(
+    await listWikiConceptPaths(backend, outputMode, repositoryWikiRoot),
+  );
   const pages = [...resourcesByPage.keys()].sort((left, right) =>
     left.localeCompare(right),
   );

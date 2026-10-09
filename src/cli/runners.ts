@@ -13,6 +13,8 @@ import {
   ensureCodeModeRepoSetup,
   runCodeModeConnectors,
 } from "../ingestion/code-mode.js";
+import { resolveRepositoryWikiLocation } from "../repository-wiki/config.js";
+import { prepareRepositoryWikiLocation } from "../repository-wiki/preparation.js";
 import { runOpenWikiIngestion } from "../ingestion/ingestion.js";
 import { getErrorMessage } from "../platform/diagnostics.js";
 import {
@@ -45,6 +47,9 @@ import {
   formatScheduleStatus,
 } from "./schedule-format.js";
 
+/**
+ * Runs the ngrok helper command and reports its endpoint.
+ */
 export async function runNgrokCommand(
   command: Extract<CliCommand, { kind: "ngrok" }>,
 ): Promise<void> {
@@ -90,6 +95,9 @@ export async function runVisualizeCommand(
   }
 }
 
+/**
+ * Lists or mutates scheduled ingestion jobs.
+ */
 export async function runCronCommand(
   command: Extract<CliCommand, { kind: "cron" }>,
 ): Promise<void> {
@@ -129,6 +137,9 @@ export async function runCronCommand(
   }
 }
 
+/**
+ * Prints configured schedules in the requested output format.
+ */
 async function printCronSchedules(
   config: Awaited<ReturnType<typeof readOpenWikiOnboardingConfig>>,
 ): Promise<void> {
@@ -148,6 +159,9 @@ async function printCronSchedules(
   }
 }
 
+/**
+ * Runs one connector ingestion command.
+ */
 export async function runIngestCommand(
   command: Extract<CliCommand, { kind: "ingest" }>,
 ): Promise<void> {
@@ -183,6 +197,9 @@ export async function runIngestCommand(
   }
 }
 
+/**
+ * Runs provider authentication setup.
+ */
 export async function runAuthCommand(
   command: Extract<CliCommand, { kind: "auth" }>,
 ): Promise<void> {
@@ -296,9 +313,20 @@ export async function runPrintCommand(
       runOptions,
       telemetryContext,
       async () => {
+        let wikiLocation;
         if (command.mode === "code") {
+          wikiLocation =
+            command.command === "init" || command.command === "update"
+              ? (
+                  await prepareRepositoryWikiLocation(runtimeCwd, {
+                    mode: command.command,
+                    requestedDirectory: command.wikiDirectory,
+                  })
+                ).location
+              : await resolveRepositoryWikiLocation(runtimeCwd);
           await ensureCodeModeRepoSetup(runtimeCwd, {
             createWorkflow: command.command === "init",
+            wikiLocation,
           });
         }
 
@@ -317,7 +345,7 @@ export async function runPrintCommand(
         await runOpenWikiAgent(
           command.command,
           runtimeCwd,
-          { ...runOptions, userMessage },
+          { ...runOptions, userMessage, wikiLocation },
           telemetryContext,
         );
       },
@@ -363,6 +391,9 @@ export function writePrintAuthFix(error: unknown, message: string): void {
   process.stderr.write("For full detail, re-run with --debug.\n");
 }
 
+/**
+ * Prints bounded diagnostics for a failed non-interactive run.
+ */
 export function writePrintErrorDiagnostics(error: unknown): void {
   const diagnostics = getErrorDiagnostics(error);
 

@@ -17,6 +17,7 @@ import {
   writeRepositoryRunState,
   type RepositoryRunState,
 } from "../../src/generation/run-state.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 let root: string;
 
@@ -105,6 +106,30 @@ describe("repository run-state persistence", () => {
         entry.endsWith(".tmp"),
       ),
     ).toEqual([]);
+  });
+
+  test("persists actual custom paths and rejects mismatched resume state", async () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const state = JSON.parse(
+      JSON.stringify(createRunState()).replaceAll("/openwiki/", "/docs/"),
+    ) as RepositoryRunState;
+
+    await writeRepositoryRunState(root, state, wikiPaths);
+
+    expect(await readRepositoryRunState(root, wikiPaths)).toEqual(state);
+    expect(repositoryRunStatePath(root, wikiPaths)).toBe(
+      path.join(root, "docs", ".run.json"),
+    );
+    await writeFile(
+      repositoryRunStatePath(root, wikiPaths),
+      `${JSON.stringify(createRunState(), null, 2)}\n`,
+      "utf8",
+    );
+    await expect(readRepositoryRunState(root, wikiPaths)).rejects.toMatchObject(
+      {
+        code: "invalid_state",
+      } satisfies Partial<RepositoryRunError>,
+    );
   });
 
   test("does not replace durable state when validation fails", async () => {

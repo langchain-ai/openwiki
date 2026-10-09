@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import {
   afterEach,
   beforeEach,
@@ -81,7 +84,7 @@ import {
 } from "../../src/scheduling/schedules.ts";
 import { saveOpenWikiOnboardingConfig } from "../../src/setup/onboarding.ts";
 import { runVisualizeServer } from "../../src/visualize/server.ts";
-import type { CliCommand } from "../../src/cli/commands.ts";
+import { parseCommand, type CliCommand } from "../../src/cli/commands.ts";
 import {
   runAuthCommand,
   runCronCommand,
@@ -592,14 +595,48 @@ describe("runPrintCommand", () => {
       }),
     );
 
-    expect(ensureCodeModeRepoSetup).toHaveBeenCalledWith(expect.any(String), {
-      createWorkflow: true,
-    });
+    const setupArgs = vi.mocked(ensureCodeModeRepoSetup).mock.calls[0];
+    expect(typeof setupArgs[0]).toBe("string");
+    expect(setupArgs[1]?.createWorkflow).toBe(true);
+    expect(setupArgs[1]?.wikiLocation?.directory).toBe("openwiki");
     expect(runCodeModeConnectors).toHaveBeenCalled();
     // The augmented message from the connector pull reaches the agent run.
     const agentArgs = vi.mocked(runOpenWikiAgent).mock.calls[0];
     expect(agentArgs[2].userMessage).toBe("augmented");
     expect(process.exitCode).toBe(0);
+  });
+
+  test("parses, persists, and forwards a selected repository wiki", async () => {
+    vi.mocked(runCodeModeConnectors).mockResolvedValue(undefined);
+    vi.mocked(runOpenWikiAgent).mockResolvedValue(undefined as never);
+    const repositoryRoot = await mkdtemp(
+      path.join(tmpdir(), "openwiki-cli-runner-"),
+    );
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repositoryRoot);
+      const command = parseCommand(["--init", "--wiki-dir", "docs", "--print"]);
+      expect(command.kind).toBe("run");
+      if (command.kind !== "run") {
+        throw new Error(`Expected run command, received ${command.kind}.`);
+      }
+
+      await runPrintCommand(command);
+
+      await expect(
+        readFile(path.join(repositoryRoot, ".openwiki.json"), "utf8"),
+      ).resolves.toBe('{\n  "wikiDirectory": "docs"\n}\n');
+      const setupOptions = vi.mocked(ensureCodeModeRepoSetup).mock
+        .calls[0]?.[1];
+      expect(setupOptions?.wikiLocation?.directory).toBe("docs");
+      const agentCall = vi.mocked(runOpenWikiAgent).mock.calls[0];
+      expect(agentCall?.[0]).toBe("init");
+      expect(agentCall?.[2].wikiLocation?.directory).toBe("docs");
+    } finally {
+      process.chdir(previousCwd);
+      await rm(repositoryRoot, { recursive: true, force: true });
+    }
   });
 
   test("prints the how-to-fix panel on an auth failure and exits 1", async () => {

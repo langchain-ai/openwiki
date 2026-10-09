@@ -9,10 +9,9 @@ import { lstat, open, readdir, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
-  OPEN_WIKI_DIR,
-  PAGE_MANIFEST_PATH,
-  UPDATE_METADATA_PATH,
-} from "../config/constants.js";
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { writeTextAtomic } from "../integrations/install/atomic-file.js";
 import {
   isExpectedSnapshotRaceError,
@@ -22,10 +21,7 @@ import {
   getPrimaryLanguageSubtag,
   requireResolvedLanguage,
 } from "../platform/language.js";
-import {
-  readOpenWikiOnboardingConfig,
-  readRepositoryWikiInstructions,
-} from "../setup/onboarding.js";
+import { readOpenWikiOnboardingConfig } from "../setup/onboarding.js";
 import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type {
   OpenWikiCommand,
@@ -37,7 +33,11 @@ import type {
 } from "./types.js";
 const execFileAsync = promisify(execFile);
 const LOCAL_WIKI_METADATA_PATH = ".last-update.json";
+const REPOSITORY_PAGE_MANIFEST_BASENAME = ".page-manifest.json";
 const REPOSITORY_RUN_STATE_BASENAME = ".run.json";
+const DEFAULT_AGENT_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 export type OpenWikiContentSnapshot = string;
 
@@ -63,13 +63,20 @@ export type UpdateNoopStatus =
 
 /**
  * Builds the persisted per-run context used by the prompt.
+ *
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param outputMode - Current output target.
+ * @param language - Optional requested documentation language.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Persisted language, metadata, and wiki instructions context.
  */
 export async function createRunContext(
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
   language?: string | null,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<RunContext> {
-  const lastUpdate = await readLastUpdate(cwd, outputMode);
+  const lastUpdate = await readLastUpdate(cwd, outputMode, wikiPaths);
   // A validated flag wins; otherwise inherit the wiki's persisted language so an
   // update without --language keeps the existing wiki consistent instead of
   // producing a mix of the old and new language. An unrecognized value never
@@ -80,7 +87,7 @@ export async function createRunContext(
   // concrete value.
   const effectiveLanguage = requestedLanguage ?? lastUpdate?.language ?? "en";
   const languageContext = { language: effectiveLanguage };
-  const wikiGoal = await readRunWikiGoal(cwd, outputMode);
+  const wikiGoal = await readRunWikiGoal(cwd, outputMode, wikiPaths);
 
   return {
     lastUpdate,
@@ -89,12 +96,32 @@ export async function createRunContext(
   };
 }
 
+/**
+ * Reads repository instructions or the personal-wiki onboarding goal.
+ *
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param outputMode - Current output target.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Trimmed wiki goal when one exists.
+ */
 async function readRunWikiGoal(
   cwd: string,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths,
 ): Promise<string | undefined> {
   if (outputMode === "repository") {
-    return readRepositoryWikiInstructions(cwd);
+    try {
+      const content = (
+        await readFile(
+          path.join(cwd, wikiPaths.instructionsPage.slice(1)),
+          "utf8",
+        )
+      ).trim();
+      return content.length > 0 ? content : undefined;
+    } catch (error) {
+      if (isFileNotFoundError(error)) return undefined;
+      throw error;
+    }
   }
 
   return (await readOpenWikiOnboardingConfig()).wikiGoal;
@@ -107,21 +134,23 @@ async function readRunWikiGoal(
  * language is meaningful even on a clean tree, because the translation pass
  * must run before the update agent.
  *
- * Working-tree and committed changes that only touch `openwiki/` or paths
- * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
- * changing on its own never forces a rebuild.
+ * Working-tree and committed changes that only touch the configured repository
+ * wiki or paths excluded by `openWikiIgnore` do not count as meaningful, so an
+ * ignored path changing on its own never forces a rebuild.
  *
  * @param cwd - Absolute repository root.
  * @param openWikiIgnore - Active repository read boundary.
  * @param requestedLanguage - Optional output language requested for this run.
+ * @param wikiPaths - Actual repository wiki path policy.
  * @returns Skip decision and diagnostic reason.
  */
 export async function getUpdateNoopStatus(
   cwd: string,
   openWikiIgnore = new OpenWikiIgnore([]),
   requestedLanguage?: string | null,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<UpdateNoopStatus> {
-  const lastUpdate = await readLastUpdate(cwd, "repository");
+  const lastUpdate = await readLastUpdate(cwd, "repository", wikiPaths);
 
   if (!lastUpdate?.gitHead) {
     return { shouldSkip: false, reason: "missing previous update git head" };
@@ -155,7 +184,7 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !isUpdateMetadataStatusLine(line, wikiPaths))
     .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
@@ -172,7 +201,8 @@ export async function getUpdateNoopStatus(
       committedPaths.length === 0 ||
       committedPaths.some(
         (changedPath) =>
-          !isOpenWikiPath(changedPath) && !openWikiIgnore.ignores(changedPath),
+          !isOpenWikiPath(changedPath, wikiPaths) &&
+          !openWikiIgnore.ignores(changedPath),
       )
     ) {
       return { shouldSkip: false, reason: "git head changed" };
@@ -197,6 +227,15 @@ export function shouldCheckUpdateNoop(options: OpenWikiRunOptions): boolean {
  * no-op check knows the wiki may be partial and does not skip the retry.
  * A `null` override deliberately omits the checkpoint when no successful
  * repository baseline exists.
+ *
+ * @param command - Repository generation command that produced the metadata.
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param modelId - Stable model identity for the run.
+ * @param outputMode - Current output target.
+ * @param status - Whether the run completed or was interrupted.
+ * @param language - Optional persisted documentation language.
+ * @param gitHeadOverride - Optional explicit repository checkpoint.
+ * @param wikiPaths - Actual repository wiki path policy.
  */
 export async function writeLastUpdateMetadata(
   command: OpenWikiCommand,
@@ -206,8 +245,9 @@ export async function writeLastUpdateMetadata(
   status: UpdateRunStatus = "complete",
   language?: string,
   gitHeadOverride?: string | null,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<void> {
-  const metadataFile = getMetadataFilePath(cwd, outputMode);
+  const metadataFile = getMetadataFilePath(cwd, outputMode, wikiPaths);
   const gitHead =
     outputMode !== "repository"
       ? undefined
@@ -233,6 +273,16 @@ export async function writeLastUpdateMetadata(
  * OpenWiki ran). A completed run also clears any previous interrupted status
  * so the update no-op check can skip again. Returns whether metadata was
  * written (always true for non-chat runs).
+ *
+ * @param command - Command whose run metadata is being persisted.
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param modelId - Stable model identity for the run.
+ * @param outputMode - Current output target.
+ * @param snapshotBefore - Content snapshot captured before the run.
+ * @param status - Whether the run completed or was interrupted.
+ * @param language - Optional persisted documentation language.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Whether metadata was written.
  */
 export async function persistRunMetadataIfChanged(
   command: OpenWikiCommand,
@@ -242,6 +292,7 @@ export async function persistRunMetadataIfChanged(
   snapshotBefore: OpenWikiContentSnapshot | null,
   status: UpdateRunStatus = "complete",
   language?: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<boolean> {
   if (command === "chat" || snapshotBefore === null) {
     return false;
@@ -254,6 +305,8 @@ export async function persistRunMetadataIfChanged(
     outputMode,
     status,
     language,
+    undefined,
+    wikiPaths,
   );
 
   return true;
@@ -261,12 +314,18 @@ export async function persistRunMetadataIfChanged(
 
 /**
  * Hashes OpenWiki content, excluding run metadata, to detect real documentation changes.
+ *
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param outputMode - Current output target.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Stable content digest.
  */
 export async function createOpenWikiContentSnapshot(
   cwd: string,
   outputMode: OpenWikiOutputMode = "repository",
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<OpenWikiContentSnapshot> {
-  const openWikiDir = getWikiContentRoot(cwd, outputMode);
+  const openWikiDir = getWikiContentRoot(cwd, outputMode, wikiPaths);
   const hash = createHash("sha256");
 
   await addDirectoryToSnapshot(hash, openWikiDir, "");
@@ -314,11 +373,13 @@ export interface RepositorySourceSnapshot {
  *
  * @param cwd - Absolute Git repository root.
  * @param openWikiIgnore - Ignore rules loaded for this run.
+ * @param wikiPaths - Actual repository wiki path policy.
  * @returns Paired source fingerprint and Git HEAD.
  */
 export async function createRepositorySourceSnapshot(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<RepositorySourceSnapshot> {
   if (!path.isAbsolute(cwd)) {
     throw new Error("Repository source fingerprint requires an absolute root.");
@@ -355,11 +416,13 @@ export async function createRepositorySourceSnapshot(
   }
 
   const visiblePaths = [...candidatePaths]
-    .filter((candidate) => isFingerprintSourcePath(candidate, openWikiIgnore))
+    .filter((candidate) =>
+      isFingerprintSourcePath(candidate, openWikiIgnore, wikiPaths),
+    )
     .sort(compareFingerprintStrings);
   const statusEntries = parseFingerprintStatus(statusOutput)
     .filter(({ path: candidate }) =>
-      isFingerprintSourcePath(candidate, openWikiIgnore),
+      isFingerprintSourcePath(candidate, openWikiIgnore, wikiPaths),
     )
     .sort((left, right) =>
       compareFingerprintStrings(
@@ -396,13 +459,15 @@ export async function createRepositorySourceSnapshot(
  *
  * @param cwd - Absolute Git repository root.
  * @param openWikiIgnore - Ignore rules loaded for this run.
+ * @param wikiPaths - Actual repository wiki path policy.
  * @returns A versioned `sha256:` fingerprint.
  */
 export async function createRepositorySourceFingerprint(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<string> {
-  return (await createRepositorySourceSnapshot(cwd, openWikiIgnore))
+  return (await createRepositorySourceSnapshot(cwd, openWikiIgnore, wikiPaths))
     .fingerprint;
 }
 
@@ -499,10 +564,13 @@ function assertFingerprintGitPath(value: string): string {
 function isFingerprintSourcePath(
   candidate: string,
   openWikiIgnore: OpenWikiIgnore,
+  wikiPaths: RepositoryWikiPaths,
 ): boolean {
   if (candidate === OPENWIKI_IGNORE_FILE) return true;
   if (candidate === ".git" || candidate.startsWith(".git/")) return false;
-  return !isOpenWikiPath(candidate) && !openWikiIgnore.ignores(candidate);
+  return (
+    !isOpenWikiPath(candidate, wikiPaths) && !openWikiIgnore.ignores(candidate)
+  );
 }
 
 /**
@@ -700,8 +768,9 @@ function compareFingerprintStrings(left: string, right: string): number {
 async function readLastUpdate(
   cwd: string,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths,
 ): Promise<UpdateMetadata | null> {
-  const metadataFile = getMetadataFilePath(cwd, outputMode);
+  const metadataFile = getMetadataFilePath(cwd, outputMode, wikiPaths);
 
   try {
     const rawMetadata = await readFile(metadataFile, "utf8");
@@ -794,20 +863,40 @@ async function addDirectoryToSnapshot(
   }
 }
 
+/**
+ * Resolves the content tree included in a documentation snapshot.
+ *
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param outputMode - Current output target.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Absolute content root.
+ */
 function getWikiContentRoot(
   cwd: string,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths,
 ): string {
-  return outputMode === "local-wiki" ? cwd : path.join(cwd, OPEN_WIKI_DIR);
+  return outputMode === "local-wiki"
+    ? cwd
+    : path.join(cwd, wikiPaths.directory);
 }
 
+/**
+ * Resolves the run-metadata file for the selected output layout.
+ *
+ * @param cwd - Absolute repository or local-wiki root.
+ * @param outputMode - Current output target.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Absolute `.last-update.json` path.
+ */
 function getMetadataFilePath(
   cwd: string,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths,
 ): string {
   return outputMode === "local-wiki"
     ? path.join(cwd, LOCAL_WIKI_METADATA_PATH)
-    : path.join(cwd, UPDATE_METADATA_PATH);
+    : path.join(cwd, wikiPaths.directory, LOCAL_WIKI_METADATA_PATH);
 }
 
 /**
@@ -815,7 +904,6 @@ function getMetadataFilePath(
  */
 function isIgnoredSnapshotPath(relativePath: string): boolean {
   return (
-    relativePath === path.basename(UPDATE_METADATA_PATH) ||
     relativePath === LOCAL_WIKI_METADATA_PATH ||
     relativePath === REPOSITORY_RUN_STATE_BASENAME
   );
@@ -877,11 +965,24 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
  */
 const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
 
-function isUpdateMetadataStatusLine(line: string): boolean {
+/**
+ * Determines whether one Git status line names generated lifecycle metadata.
+ *
+ * @param line - One short-status output line.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Whether the line can be ignored for update no-op detection.
+ */
+function isUpdateMetadataStatusLine(
+  line: string,
+  wikiPaths: RepositoryWikiPaths,
+): boolean {
   const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
   const normalizedPath = statusPath.replace(/\\/gu, "/");
 
-  return [PAGE_MANIFEST_PATH, UPDATE_METADATA_PATH].some(
+  return [
+    `${wikiPaths.directory}/${REPOSITORY_PAGE_MANIFEST_BASENAME}`,
+    `${wikiPaths.directory}/${LOCAL_WIKI_METADATA_PATH}`,
+  ].some(
     (metadataPath) =>
       normalizedPath === metadataPath ||
       normalizedPath.endsWith(` -> ${metadataPath}`),
@@ -893,11 +994,18 @@ function isUpdateMetadataStatusLine(line: string): boolean {
  *
  * Unlike the source fingerprint, history lookup failures intentionally produce
  * an empty list and do not weaken lifecycle correctness.
+ *
+ * @param cwd - Absolute Git repository root.
+ * @param openWikiIgnore - Ignore rules loaded for this run.
+ * @param baseGitHead - Optional historical baseline for committed changes.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Visible repository paths that changed after the baseline.
  */
 export async function getRepositoryChangedPaths(
   cwd: string,
   openWikiIgnore: OpenWikiIgnore,
   baseGitHead?: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_AGENT_WIKI_PATHS,
 ): Promise<string[]> {
   const paths = new Set<string>();
 
@@ -931,7 +1039,7 @@ export async function getRepositoryChangedPaths(
 
   return [...paths]
     .filter(Boolean)
-    .filter((candidate) => !isOpenWikiPath(candidate))
+    .filter((candidate) => !isOpenWikiPath(candidate, wikiPaths))
     .filter((candidate) => !openWikiIgnore.ignores(candidate))
     .sort(compareFingerprintStrings);
 }
@@ -968,9 +1076,20 @@ async function getChangedPathsSinceLastUpdate(
     .filter(Boolean);
 }
 
-function isOpenWikiPath(changedPath: string): boolean {
+/**
+ * Determines whether a repository-relative path belongs to the generated wiki.
+ *
+ * @param changedPath - Repository-relative changed path.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Whether the path is the wiki root or one of its descendants.
+ */
+function isOpenWikiPath(
+  changedPath: string,
+  wikiPaths: RepositoryWikiPaths,
+): boolean {
   return (
-    changedPath === OPEN_WIKI_DIR || changedPath.startsWith(`${OPEN_WIKI_DIR}/`)
+    changedPath === wikiPaths.directory ||
+    changedPath.startsWith(`${wikiPaths.directory}/`)
   );
 }
 

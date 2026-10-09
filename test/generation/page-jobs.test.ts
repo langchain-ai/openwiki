@@ -10,6 +10,7 @@ import {
   createRepositoryPlan,
   reconcilePageClaims,
 } from "../../src/generation/page-jobs.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 const PAGE = "/openwiki/page.md";
 const PAGE_VERSION = `sha256:${"a".repeat(64)}`;
@@ -172,6 +173,42 @@ describe("createRepositoryPlan", () => {
     expect(plan.pages.every(({ id }) => /^[0-9a-f-]{36}$/u.test(id))).toBe(
       true,
     );
+  });
+
+  test("normalizes and orders actual paths beneath a custom wiki root", () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const plan = createRepositoryPlan(
+      "init",
+      {
+        pages: [proposedPage("quickstart.md"), proposedPage("guide.md")],
+      },
+      [],
+      [],
+      wikiPaths,
+    );
+
+    expect(plan.pages.map(({ path }) => path)).toEqual([
+      "/docs/guide.md",
+      "/docs/quickstart.md",
+    ]);
+    expect(() =>
+      createRepositoryPlan(
+        "update",
+        { pages: [], deletePages: ["quickstart.md"] },
+        [],
+        [],
+        wikiPaths,
+      ),
+    ).toThrow("/docs/quickstart.md page cannot be deleted");
+    expect(() =>
+      createRepositoryPlan(
+        "update",
+        { pages: [proposedPage("/openwiki/outside.md")] },
+        [],
+        [],
+        wikiPaths,
+      ),
+    ).toThrow(RepositoryRunError);
   });
 
   test("adds required Claim-issue jobs with normalized evidence seeds", () => {

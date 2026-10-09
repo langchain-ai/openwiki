@@ -18,9 +18,20 @@ import {
   ENGLISH_INDEX_LABELS,
   type IndexLabels,
 } from "../okf/index-labels.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../version.js";
 import type { OpenWikiOutputMode } from "./types.js";
 import { validateWikiInternalLinks } from "./wiki-link-validator.js";
+
+/**
+ * Unchanged repository wiki policy used by compatibility callers.
+ */
+const DEFAULT_FINALIZER_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 /**
  * Stable identifiers for deterministic wiki preparation operations.
@@ -98,6 +109,13 @@ export interface WikiLifecycleOptions {
    * Repository or local-wiki output layout.
    */
   outputMode: OpenWikiOutputMode;
+
+  /**
+   * Actual repository wiki path policy used outside local-wiki mode.
+   *
+   * @default the implicit `openwiki/` policy
+   */
+  wikiPaths?: RepositoryWikiPaths;
 
   /**
    * Fallback OKF concept type used during migration.
@@ -227,14 +245,15 @@ export async function prepareWikiForAuthoring({
   backend,
   outputMode,
   conceptType = ENGLISH_CONCEPT_TYPE,
+  wikiPaths = DEFAULT_FINALIZER_WIKI_PATHS,
   runOperation = runWikiOperation,
 }: WikiPreparationOptions): Promise<PreparedWikiState> {
   await runOperation("migrate", () =>
-    migrateWikiToOkf(backend, outputMode, conceptType),
+    migrateWikiToOkf(backend, outputMode, conceptType, wikiPaths.canonicalRoot),
   );
   return {
     generatedProvenance: await runOperation("provenance_snapshot", () =>
-      snapshotGeneratedProvenance(backend, outputMode),
+      snapshotGeneratedProvenance(backend, outputMode, wikiPaths.canonicalRoot),
     ),
   };
 }
@@ -255,21 +274,35 @@ export async function finalizeWikiArtifacts({
   producerActor = OPENWIKI_PRODUCER_ACTOR,
   producerActorsByPage,
   claimSources,
+  wikiPaths = DEFAULT_FINALIZER_WIKI_PATHS,
   runOperation = runWikiOperation,
 }: WikiFinalizerOptions): Promise<void> {
   if (producerActor.trim().length === 0) {
     throw new Error("Wiki finalization requires a non-empty producer actor.");
   }
-  await runOperation("mermaid", () => validateWikiMermaid(backend, outputMode));
+  await runOperation("mermaid", () =>
+    validateWikiMermaid(backend, outputMode, wikiPaths.canonicalRoot),
+  );
   await runOperation("index_sync", () =>
-    synchronizeWikiIndexes(backend, outputMode, labels, conceptType),
+    synchronizeWikiIndexes(
+      backend,
+      outputMode,
+      labels,
+      conceptType,
+      wikiPaths.canonicalRoot,
+    ),
   );
   await runOperation("link_validation", () =>
-    validateWikiInternalLinks(backend, outputMode),
+    validateWikiInternalLinks(backend, outputMode, wikiPaths),
   );
   if (claimSources) {
     await runOperation("claims_sources", () =>
-      synchronizeClaimSources(backend, outputMode, claimSources),
+      synchronizeClaimSources(
+        backend,
+        outputMode,
+        claimSources,
+        wikiPaths.canonicalRoot,
+      ),
     );
   }
   await runOperation("generated_provenance", () =>
@@ -280,6 +313,7 @@ export async function finalizeWikiArtifacts({
       at,
       producerActor,
       producerActorsByPage,
+      wikiPaths.canonicalRoot,
     ),
   );
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { ClaimSessionError } from "../../../../src/claims/core/errors.ts";
+import { RepositoryWikiPaths } from "../../../../src/repository-wiki/paths.ts";
 import {
   CLAIMS_DIRECTORY,
   isGroundedWikiPage,
@@ -38,6 +39,26 @@ describe("code-brain claim paths", () => {
 
     expect(toRepositoryPagePath(page)).toBe("openwiki/guides/configuration.md");
     expect(toClaimsSidecarRelativePath(page)).toBe("guides/configuration.json");
+  });
+
+  test("uses actual configured paths for a custom wiki root", () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+
+    expect(normalizeClaimsToolPagePath("guides/setup.md", wikiPaths)).toBe(
+      "/docs/guides/setup.md",
+    );
+    expect(normalizeWikiPagePath("/docs/guides/setup.md", wikiPaths)).toBe(
+      "/docs/guides/setup.md",
+    );
+    expect(toRepositoryPagePath("/docs/guides/setup.md", wikiPaths)).toBe(
+      "docs/guides/setup.md",
+    );
+    expect(
+      toClaimsSidecarRelativePath("/docs/guides/setup.md", wikiPaths),
+    ).toBe("guides/setup.json");
+    expect(() =>
+      normalizeWikiPagePath("/openwiki/guides/setup.md", wikiPaths),
+    ).toThrow(ClaimSessionError);
   });
 
   test.each(["index.md", "/openwiki/INSTRUCTIONS.md"])(

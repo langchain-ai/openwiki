@@ -2,7 +2,6 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { UPDATE_METADATA_PATH } from "../../src/config/constants.ts";
 import {
   readWikiSections,
   searchWiki,
@@ -71,16 +70,30 @@ async function createRoot(): Promise<string> {
 async function createLinkedRoot(
   workspace: string,
   name: string,
+  wikiDirectory = "openwiki",
 ): Promise<string> {
   const root = path.join(workspace, name);
   await mkdir(path.join(root, ".git"), { recursive: true });
-  await mkdir(path.join(root, "openwiki/architecture"), { recursive: true });
+  await mkdir(path.join(root, wikiDirectory, "architecture"), {
+    recursive: true,
+  });
   await writeFile(
-    path.join(root, "openwiki/quickstart.md"),
+    path.join(root, wikiDirectory, "quickstart.md"),
     `# ${name} quickstart\n`,
     "utf8",
   );
-  await writeFile(path.join(root, UPDATE_METADATA_PATH), "{}\n", "utf8");
+  await writeFile(
+    path.join(root, wikiDirectory, ".last-update.json"),
+    "{}\n",
+    "utf8",
+  );
+  if (wikiDirectory !== "openwiki") {
+    await writeFile(
+      path.join(root, ".openwiki.json"),
+      `${JSON.stringify({ wikiDirectory })}\n`,
+      "utf8",
+    );
+  }
   return root;
 }
 
@@ -143,6 +156,45 @@ afterEach(async () => {
 });
 
 describe("repository wiki retrieval", () => {
+  test("searches and reads actual paths across a mixed-directory workspace", async () => {
+    const workspace = await mkdtemp(
+      path.join(os.tmpdir(), "openwiki-retrieval-mixed-"),
+    );
+    temporaryRoots.push(workspace);
+    const current = await createLinkedRoot(workspace, "current");
+    const custom = await createLinkedRoot(workspace, "custom", "docs");
+    await writeFile(
+      path.join(custom, "docs/architecture/runtime.md"),
+      page({
+        title: "Runtime",
+        description: "Custom runtime behavior.",
+        source: "src/runtime.ts",
+        body: "## Startup\n\nThe CYAN_START token begins custom startup.",
+      }),
+      "utf8",
+    );
+    await saveWikiWorkspaces([{ name: "Platform", roots: [current, custom] }], {
+      configDirectory: process.env.OPENWIKI_CONFIG_DIR,
+    });
+
+    const response = requireSearchResults(
+      await searchWiki(current, { query: "CYAN_START" }),
+    );
+    const result = response.results[0];
+    expect(result).toMatchObject({
+      ref: ["docs/architecture/runtime.md#startup"],
+      wiki: "custom",
+    });
+    const read = await readWikiSections(current, {
+      page: result?.ref[0]?.split("#")[0] ?? "",
+      sections: ["startup"],
+      wiki: result?.wiki,
+    });
+    expect(read.page).toBe("docs/architecture/runtime.md");
+    expect(read.sections[0]?.content).toContain("CYAN_START");
+    expect(read.wiki).toBe("custom");
+  });
+
   test("introduction matches return a reference that reads the matching prose", async () => {
     const root = await createRoot();
     await writeFile(

@@ -17,6 +17,7 @@ import {
   ClaimsPersistenceError,
   ClaimsPersistenceSecurityError,
 } from "../../../../src/claims/core/errors.ts";
+import { RepositoryWikiPaths } from "../../../../src/repository-wiki/paths.ts";
 
 /**
  * Valid deterministic page hash used by validation fixtures.
@@ -140,6 +141,24 @@ describe("ClaimsStore", () => {
     await expect(readdir(path.dirname(sidecarPath))).resolves.toEqual([
       "claims.json",
     ]);
+  });
+
+  test("discovers pages and sidecars beneath a custom wiki root", async () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    await writeFixture("docs/concepts/claims.md", "# Claims\n");
+    const store = new ClaimsStore(rootDir, wikiPaths);
+    const page = "/docs/concepts/claims.md";
+
+    await store.writePage(page, await createPageClaims(store, page));
+
+    await expect(store.discoverPages()).resolves.toEqual([page]);
+    await expect(store.discoverSidecarPages()).resolves.toEqual([page]);
+    await expect(
+      readFile(path.join(rootDir, "docs/.claims/concepts/claims.json"), "utf8"),
+    ).resolves.toContain('"schemaVersion": 1');
+    await expect(
+      store.loadPage("/openwiki/concepts/claims.md"),
+    ).rejects.toThrow("below /docs");
   });
 
   test("deletes sidecars idempotently", async () => {

@@ -1,7 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../../../config/constants.js";
 import { isFileNotFoundError } from "../../../platform/fs-errors.js";
+import { resolveRepositoryWikiLocation } from "../../../repository-wiki/config.js";
+import { assertRepositoryWikiPathSafe } from "../../../repository-wiki/ownership.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  resolveRepositoryWikiRoot,
+} from "../../../repository-wiki/paths.js";
 import type { LangSmithProjectConfig } from "./types.js";
 
 /**
@@ -63,8 +68,14 @@ const API_KEY_ENV_PATTERN = /^OPENWIKI_LANGSMITH_API_KEY(_[A-Z0-9]+)?$/;
 /**
  * Absolute path of the committed LangSmith config for a repository.
  */
-export function getLangSmithRepoConfigPath(repoRoot: string): string {
-  return path.join(repoRoot, OPEN_WIKI_DIR, ".langsmith.json");
+export function getLangSmithRepoConfigPath(
+  repoRoot: string,
+  wikiDirectory: string = DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+): string {
+  return path.join(
+    resolveRepositoryWikiRoot(repoRoot, wikiDirectory),
+    ".langsmith.json",
+  );
 }
 
 /**
@@ -115,10 +126,17 @@ export function sanitizeLangSmithApiKeyEnv(value: unknown): string | undefined {
  */
 export async function readLangSmithRepoConfig(
   repoRoot: string,
+  wikiDirectory?: string,
 ): Promise<LangSmithRepoConfig | undefined> {
+  const directory =
+    wikiDirectory ?? (await resolveRepositoryWikiLocation(repoRoot)).directory;
+  await assertRepositoryWikiPathSafe(repoRoot, directory);
   let text: string;
   try {
-    text = await readFile(getLangSmithRepoConfigPath(repoRoot), "utf8");
+    text = await readFile(
+      getLangSmithRepoConfigPath(repoRoot, directory),
+      "utf8",
+    );
   } catch (error) {
     if (isFileNotFoundError(error)) {
       return undefined;
@@ -210,15 +228,17 @@ function parseWorkspace(entry: unknown): LangSmithWorkspaceConfig | undefined {
 }
 
 /**
- * Writes the committed config, creating openwiki/ if needed. Mirrors
- * saveRepositoryWikiInstructions: a plain write to a fixed path under the repo's
- * openwiki/ directory, so containment holds by construction.
+ * Writes the committed config inside the repository's configured wiki root.
  */
 export async function writeLangSmithRepoConfig(
   repoRoot: string,
   config: LangSmithRepoConfig,
+  wikiDirectory?: string,
 ): Promise<void> {
-  const filePath = getLangSmithRepoConfigPath(repoRoot);
+  const directory =
+    wikiDirectory ?? (await resolveRepositoryWikiLocation(repoRoot)).directory;
+  await assertRepositoryWikiPathSafe(repoRoot, directory);
+  const filePath = getLangSmithRepoConfigPath(repoRoot, directory);
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 }

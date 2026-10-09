@@ -18,6 +18,9 @@ import type {
   SetupStepState,
 } from "./types.js";
 
+/**
+ * Built-in onboarding templates offered by the setup wizard.
+ */
 export const ONBOARDING_TEMPLATES = [
   {
     description:
@@ -55,6 +58,9 @@ export const ONBOARDING_TEMPLATES = [
   },
 ] as const satisfies readonly OnboardingMode[];
 
+/**
+ * Repository and personal run modes offered during setup.
+ */
 export const RUN_MODE_OPTIONS = [
   {
     description: `Build a local personal brain wiki in ${openWikiLocalWikiDisplayPath} from configured sources.`,
@@ -63,7 +69,7 @@ export const RUN_MODE_OPTIONS = [
   },
   {
     description:
-      "Build repository documentation in ./openwiki for this codebase.",
+      "Build repository documentation in this codebase's configured wiki directory.",
     id: "code",
     name: "Code",
   },
@@ -73,6 +79,9 @@ export const RUN_MODE_OPTIONS = [
   name: string;
 }[];
 
+/**
+ * Supported authentication modes for OpenAI-compatible providers.
+ */
 export const OPENAI_COMPATIBLE_AUTH_OPTIONS = [
   { id: "api-key", label: "API key" },
   { id: "entra-id", label: "Microsoft Entra ID" },
@@ -81,6 +90,9 @@ export const OPENAI_COMPATIBLE_AUTH_OPTIONS = [
   label: string;
 }[];
 
+/**
+ * Supported LangSmith service regions.
+ */
 export const LANGSMITH_REGION_OPTIONS = [
   {
     description: "US workspaces. The default.",
@@ -107,6 +119,9 @@ export const LANGSMITH_REGION_OPTIONS = [
   name: string;
 }[];
 
+/**
+ * Connector sources exposed by the setup wizard.
+ */
 export const SOURCE_OPTIONS = [
   {
     displayName: "Local Git repository",
@@ -128,7 +143,7 @@ export const SOURCE_OPTIONS = [
     id: "langsmith",
     instructions: [
       "Document how your agent runs, grounded in its LangSmith traces.",
-      "List the projects to document; written to openwiki/.langsmith.json (committed).",
+      "List the projects to document; written to .langsmith.json in the configured wiki directory (committed).",
     ],
     // No secret input: the LangSmith key is captured by the earlier `langsmith`
     // spine step (and provided as a CI secret), and used at pull time, not here.
@@ -248,20 +263,40 @@ export const SOURCE_OPTIONS = [
   },
 ] as const satisfies readonly SourceSetupOption[];
 
+/**
+ * Schedule-entry modes offered by the cron editor.
+ */
 export const CRON_MODE_OPTIONS = [
   "Use suggested schedule",
   "Enter custom cron",
 ] as const;
+/**
+ * Host power-management choices offered during setup.
+ */
 export const POWER_MODE_OPTIONS = [
   "Set up Mac wake/sleep window",
   "Skip power setup",
 ] as const;
+/**
+ * Ordered labels for the five supported cron fields.
+ */
 export const CRON_FIELD_LABELS = ["minute", "hour", "day", "month", "weekday"];
+
+/**
+ * Actions offered after configuring one source.
+ */
 export const SOURCE_CONTINUE_OPTIONS = [
   "Go back to connections",
   "Continue without all sources",
 ] as const;
+/**
+ * Completion choices offered at the end of setup.
+ */
 export const FINAL_OPTIONS = ["Run ingestion now", "Run later"] as const;
+
+/**
+ * Confirmation choices for the selected code repository.
+ */
 export const CODE_REPO_OPTIONS = ["Confirm and continue", "Edit path"] as const;
 
 /**
@@ -276,7 +311,9 @@ export const STEP_GLYPH: Record<SetupStepState, string> = {
   pending: "○",
 };
 
-/** Color per status. Optionality is conveyed by the detail text, not the glyph. */
+/**
+ * Color per status. Optionality is conveyed by the detail text, not the glyph.
+ */
 export const STEP_COLOR: Record<SetupStepState, string> = {
   done: "green",
   current: "cyan",

@@ -10,7 +10,6 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { UPDATE_METADATA_PATH } from "../../src/config/constants.ts";
 import {
   WIKI_WORKSPACES_FILE,
   clearActiveWikiWorkspace,
@@ -60,16 +59,28 @@ async function createTemporaryRoot(prefix: string): Promise<string> {
 async function createWikiRepository(
   parent: string,
   relativePath: string,
+  wikiDirectory = "openwiki",
 ): Promise<string> {
   const root = path.join(parent, relativePath);
   await mkdir(path.join(root, ".git"), { recursive: true });
-  await mkdir(path.join(root, "openwiki"), { recursive: true });
+  await mkdir(path.join(root, wikiDirectory), { recursive: true });
   await writeFile(
-    path.join(root, "openwiki", "quickstart.md"),
+    path.join(root, wikiDirectory, "quickstart.md"),
     `# ${relativePath}\n`,
     "utf8",
   );
-  await writeFile(path.join(root, UPDATE_METADATA_PATH), "{}\n", "utf8");
+  await writeFile(
+    path.join(root, wikiDirectory, ".last-update.json"),
+    "{}\n",
+    "utf8",
+  );
+  if (wikiDirectory !== "openwiki") {
+    await writeFile(
+      path.join(root, ".openwiki.json"),
+      `${JSON.stringify({ wikiDirectory })}\n`,
+      "utf8",
+    );
+  }
   return root;
 }
 
@@ -399,6 +410,7 @@ describe("wiki workspaces", () => {
           id: "control-plane",
           name: "control-plane",
           root: unregistered,
+          wikiDirectory: "openwiki",
         },
       ],
     });
@@ -408,6 +420,7 @@ describe("wiki workspaces", () => {
       id: "control-plane",
       name: "control-plane",
       root: unregistered,
+      wikiDirectory: "openwiki",
     });
 
     const registrationError = "not registered in a wiki workspace";
@@ -464,6 +477,60 @@ describe("wiki workspaces", () => {
     expect(updated.active).toEqual([{ wiki: "first", workspace: "payments" }]);
     expect(updated.wikis.some((wiki) => wiki.id === "second")).toBe(false);
   });
+
+  test("resolves each linked repository's configured wiki directory", async () => {
+    const directory = await createTemporaryRoot("openwiki-mixed-roots-");
+    const storage = await createStorage();
+    const defaultWiki = await createWikiRepository(directory, "default");
+    const customWiki = await createWikiRepository(directory, "custom", "docs");
+    await saveWikiWorkspaces(
+      [{ name: "Mixed", roots: [defaultWiki, customWiki] }],
+      storage,
+    );
+
+    const scope = await resolveWikiSearchScope(defaultWiki, undefined, storage);
+    expect(scope.status).toBe("ready");
+    if (scope.status !== "ready") throw new Error("Expected a ready scope.");
+    expect(
+      scope.wikis.map(({ id, wikiDirectory }) => ({ id, wikiDirectory })),
+    ).toEqual([
+      { id: "custom", wikiDirectory: "docs" },
+      { id: "default", wikiDirectory: "openwiki" },
+    ]);
+  });
+
+  test.skipIf(process.platform === "win32")(
+    "does not discover unsafe or invalid configured wiki roots",
+    async () => {
+      const directory = await createTemporaryRoot("openwiki-unsafe-roots-");
+      const invalid = await createWikiRepository(directory, "invalid");
+      await writeFile(
+        path.join(invalid, ".openwiki.json"),
+        '{"wikiDirectory":"../outside"}\n',
+        "utf8",
+      );
+      const symlinked = path.join(directory, "symlinked");
+      const external = path.join(directory, "external");
+      await mkdir(path.join(symlinked, ".git"), { recursive: true });
+      await mkdir(external, { recursive: true });
+      await writeFile(path.join(external, ".last-update.json"), "{}\n", "utf8");
+      await symlink(external, path.join(symlinked, "docs"));
+      await writeFile(
+        path.join(symlinked, ".openwiki.json"),
+        '{"wikiDirectory":"docs"}\n',
+        "utf8",
+      );
+
+      const discovered = await collectRepositories(
+        discoverRepositories(directory),
+      );
+      expect(
+        discovered
+          .filter(({ root }) => root === invalid || root === symlinked)
+          .map(({ hasOpenWiki }) => hasOpenWiki),
+      ).toEqual([false, false]);
+    },
+  );
 
   test("reserves retained IDs before assigning colliding new repositories", async () => {
     const directory = await createTemporaryRoot("openwiki-identities-");

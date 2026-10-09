@@ -5,7 +5,14 @@ import { findRunSummary, formatRunCounts } from "./summary.js";
 import { countToolTargets } from "./tool-input.js";
 import type { RunLogItem, RunToolLogItem } from "./types.js";
 
+/**
+ * Maximum diagnostic events retained in one run log.
+ */
 const MAX_DEBUG_ITEMS = 20;
+
+/**
+ * Maximum completed path activities retained in one run log.
+ */
 const MAX_RECENT_ACTIVITIES = 8;
 
 /**
@@ -17,6 +24,7 @@ export function appendRunLogEvent(
   log: RunLogItem[],
   event: OpenWikiRunEvent,
   nextLogId: React.MutableRefObject<number>,
+  wikiDirectory?: string,
 ): RunLogItem[] {
   if (event.type === "repository_progress") {
     const existing = log.find((item) => item.type === "repository_progress");
@@ -52,11 +60,11 @@ export function appendRunLogEvent(
   }
 
   if (event.type === "tool_start") {
-    return appendToolStartLogItem(log, event, nextLogId);
+    return appendToolStartLogItem(log, event, nextLogId, wikiDirectory);
   }
 
   if (event.type === "tool_end") {
-    return completeToolLogItem(log, event);
+    return completeToolLogItem(log, event, wikiDirectory);
   }
 
   const debugItems = log.filter((item) => item.type === "debug");
@@ -75,6 +83,9 @@ export function appendRunLogEvent(
   ];
 }
 
+/**
+ * Appends model text to the single replaceable assistant buffer.
+ */
 function appendAssistantText(
   log: RunLogItem[],
   text: string,
@@ -102,6 +113,7 @@ function appendToolStartLogItem(
   log: RunLogItem[],
   event: Extract<OpenWikiRunEvent, { type: "tool_start" }>,
   nextLogId: React.MutableRefObject<number>,
+  wikiDirectory?: string,
 ): RunLogItem[] {
   const withoutNarration = log.filter((item) => item.type !== "text");
   const previousSummary = findRunSummary(withoutNarration);
@@ -153,7 +165,7 @@ function appendToolStartLogItem(
           index === summaryIndex ? summary : item,
         );
 
-  for (const activity of getToolPathActivities(event)) {
+  for (const activity of getToolPathActivities(event, wikiDirectory)) {
     nextLog = activatePath(nextLog, activity, event.id, nextLogId);
   }
 
@@ -168,6 +180,7 @@ function appendToolStartLogItem(
 function completeToolLogItem(
   log: RunLogItem[],
   event: Extract<OpenWikiRunEvent, { type: "tool_end" }>,
+  wikiDirectory?: string,
 ): RunLogItem[] {
   const matchingIndex = findLastToolLogItemIndex(log, event.id);
 
@@ -180,7 +193,7 @@ function completeToolLogItem(
       ? log.flatMap((item) =>
           item.type === "activity" &&
           item.activityOperation === "write" &&
-          isOpenWikiPagePath(item.activityPath) &&
+          isOpenWikiPagePath(item.activityPath, wikiDirectory) &&
           getActiveToolCallIds(item).includes(event.id)
             ? [item.activityPath]
             : [],
@@ -312,6 +325,9 @@ function getActiveToolCallIds(item?: RunLogItem): string[] {
     : [];
 }
 
+/**
+ * Activates or refreshes one exact filesystem activity entry.
+ */
 function activatePath(
   log: RunLogItem[],
   activity: ReturnType<typeof getToolPathActivities>[number],
@@ -346,6 +362,9 @@ function activatePath(
   ];
 }
 
+/**
+ * Retains all active paths and only the newest completed activities.
+ */
 function boundActivityLog(log: RunLogItem[]): RunLogItem[] {
   const nonActivities = log.filter((item) => item.type !== "activity");
   const activeActivities = log.filter(
@@ -360,6 +379,9 @@ function boundActivityLog(log: RunLogItem[]): RunLogItem[] {
   return [...nonActivities, ...activeActivities, ...recentActivities];
 }
 
+/**
+ * Removes one known log item while tolerating an absent identifier.
+ */
 function removeItemById(
   log: RunLogItem[],
   id: number | undefined,

@@ -8,6 +8,7 @@ import {
   synchronizeClaimsVerification,
 } from "../../../okf/claims-verification.js";
 import { OPENWIKI_PRODUCER_ACTOR } from "../../../version.js";
+import type { RepositoryWikiPaths } from "../../../repository-wiki/paths.js";
 import { ClaimsPersistenceError } from "../../core/errors.js";
 import { RepositoryEvidenceResolver } from "../../evidence/repository/resolver.js";
 import { runClaimsPreflight } from "./preflight.js";
@@ -45,6 +46,11 @@ export interface ClaimsRuntime {
  */
 export interface PrepareClaimsRuntimeOptions {
   /**
+   * Canonical path policy for the physical repository wiki.
+   */
+  wikiPaths?: RepositoryWikiPaths;
+
+  /**
    * Load current-run sidecars instead of starting with empty init state.
    */
   resumeInit?: boolean;
@@ -73,7 +79,7 @@ export async function prepareClaimsRuntime(
     return undefined;
   }
 
-  const store = new ClaimsStore(cwd);
+  const store = new ClaimsStore(cwd, options.wikiPaths);
   const resolver = new RepositoryEvidenceResolver({
     rootDir: cwd,
     openWikiIgnore,
@@ -83,6 +89,7 @@ export async function prepareClaimsRuntime(
 
   if (freshInit) {
     const session = new ClaimSession({
+      ...(options.wikiPaths ? { wikiPaths: options.wikiPaths } : {}),
       resolver,
       persisted: new Map(),
       issues: [],
@@ -93,6 +100,7 @@ export async function prepareClaimsRuntime(
 
   const preflight = await runClaimsPreflight(store, resolver);
   const session = new ClaimSession({
+    ...(options.wikiPaths ? { wikiPaths: options.wikiPaths } : {}),
     resolver,
     persisted: preflight.persisted,
     issues: preflight.issues,

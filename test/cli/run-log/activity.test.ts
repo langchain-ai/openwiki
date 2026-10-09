@@ -34,6 +34,23 @@ describe("getToolPathActivities", () => {
     ]);
   });
 
+  test("classifies the configured wiki directory", () => {
+    expect(
+      getToolPathActivities(
+        toolStart("write_file", {
+          file_path: "/docs/wiki/architecture/overview.md",
+        }),
+        "docs/wiki",
+      ),
+    ).toEqual([
+      {
+        operation: "write",
+        path: "docs/wiki/architecture/overview.md",
+        scope: "openwiki",
+      },
+    ]);
+  });
+
   test("uses the non-wildcard ancestor as a glob search scope", () => {
     expect(
       getToolPathActivities(toolStart("glob", { pattern: "/src/**/*.ts" })),
@@ -54,6 +71,8 @@ describe("isOpenWikiPagePath", () => {
     expect(isOpenWikiPagePath("openwiki/quickstart.md")).toBe(true);
     expect(isOpenWikiPagePath("openwiki/.last-update.json")).toBe(false);
     expect(isOpenWikiPagePath(".claims/quickstart.json")).toBe(false);
+    expect(isOpenWikiPagePath("docs/quickstart.md", "docs")).toBe(true);
+    expect(isOpenWikiPagePath("openwiki/quickstart.md", "docs")).toBe(false);
   });
 });
 

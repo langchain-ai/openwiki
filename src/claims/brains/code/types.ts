@@ -55,7 +55,7 @@ export interface PageClaims {
  */
 export interface ResolveClaimsInput {
   /**
-   * Virtual generated-page path below `/openwiki`.
+   * Canonical generated-page path below the configured repository wiki root.
    */
   page: string;
 

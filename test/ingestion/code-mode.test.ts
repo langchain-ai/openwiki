@@ -110,7 +110,7 @@ function expectFailurePreservingWorkflow(workflow: string): void {
   expect(run.id).toBe("openwiki");
   expect(run["continue-on-error"]).toBe(true);
   expect(cleanup.if).toBe("${{ !cancelled() }}");
-  expect(cleanup.run).toBe("rm -f -- openwiki/.run.json");
+  expect(cleanup.run).toMatch(/^rm -f -- '?openwiki\/\.run\.json'?$/u);
   expect(pullRequest.id).toBe("create-pr");
   expect(pullRequest.if).toBe("${{ !cancelled() }}");
   expect(pullRequest.uses).toMatch(
@@ -718,12 +718,17 @@ describe("ensureCodeModeRepoSetup workflow", () => {
 
       await promisify(execFile)("bash", ["-e", "-c", step.run ?? ""], {
         cwd: repo,
-        env: { ...process.env, GITHUB_OUTPUT: outputPath },
+        env: {
+          PATH: process.env.PATH,
+          GITHUB_OUTPUT: outputPath,
+          GITHUB_RUN_ATTEMPT: "2",
+          GITHUB_RUN_ID: "12345",
+        },
       });
 
-      const claude = hasClaude ? ",CLAUDE.md" : "";
+      const claude = hasClaude ? "CLAUDE.md\n" : "";
       expect(await readFile(outputPath, "utf8")).toBe(
-        `list=openwiki,AGENTS.md,.github/workflows/openwiki-update.yml${claude}\n`,
+        `list<<openwiki_paths_12345_2\nopenwiki\nAGENTS.md\n.github/workflows/openwiki-update.yml\n${claude}openwiki_paths_12345_2\n`,
       );
     },
   );
@@ -769,6 +774,49 @@ describe("ensureCodeModeRepoSetup workflow", () => {
       dogfoodSteps.indexOf(cleanup),
     );
   });
+
+  test.skipIf(process.platform === "win32")(
+    "uses a configured nested wiki path in snippets and workflow operations",
+    async () => {
+      const repo = await createTempRepo();
+      await writeFile(
+        path.join(repo, ".openwiki.json"),
+        '{"wikiDirectory":"project docs/wiki"}\n',
+        "utf8",
+      );
+      await ensureCodeModeRepoSetup(repo, { createWorkflow: true });
+
+      const agents = await readFile(path.join(repo, "AGENTS.md"), "utf8");
+      expect(agents).toContain("`project docs/wiki/` evidence index");
+      expect(agents).toContain("`project docs/wiki/quickstart.md`");
+      const workflow = await readFile(
+        path.join(repo, ".github/workflows/openwiki-update.yml"),
+        "utf8",
+      );
+      const steps = parseWorkflowSteps(workflow);
+      expect(
+        requireWorkflowStep(steps, "Remove transient OpenWiki run state").run,
+      ).toBe("rm -f -- 'project docs/wiki/.run.json'");
+
+      const outputPath = path.join(repo, "github-output");
+      await writeFile(outputPath, "", "utf8");
+      await promisify(execFile)(
+        "bash",
+        [
+          "-e",
+          "-c",
+          requireWorkflowStep(steps, "List OpenWiki update paths").run ?? "",
+        ],
+        {
+          cwd: repo,
+          env: { ...process.env, GITHUB_OUTPUT: outputPath },
+        },
+      );
+      expect(await readFile(outputPath, "utf8")).toContain(
+        "project docs/wiki\n",
+      );
+    },
+  );
 
   test("wires the LangSmith connector read key into the workflow env", async () => {
     const repo = await createTempRepo();

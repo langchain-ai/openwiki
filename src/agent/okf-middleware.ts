@@ -12,6 +12,10 @@ import {
   ENGLISH_INDEX_LABELS,
   type IndexLabels,
 } from "../okf/index-labels.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import { inStage } from "../telemetry/index.js";
 import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
 import type { OpenWikiOutputMode } from "./types.js";
@@ -23,6 +27,13 @@ import {
 
 const OKF_RESERVED_FILES = new Set(["index.md", "log.md"]);
 const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
+
+/**
+ * Unchanged repository wiki policy used by compatibility callers.
+ */
+const DEFAULT_MIDDLEWARE_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 /**
  * Creates middleware that keeps the wiki OKF-conformant around a run. It
@@ -45,6 +56,7 @@ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
  * @param conceptType - Fallback OKF concept type used during migration.
  * @param now - Shared ISO 8601 timestamp for generated provenance events.
  * @param claimSources - Optional deferred Claims evidence projection.
+ * @param wikiPaths - Actual repository wiki path policy for this run.
  * @returns LangChain middleware for the deterministic wiki lifecycle.
  */
 export function createOpenWikiIndexMiddleware(
@@ -54,6 +66,7 @@ export function createOpenWikiIndexMiddleware(
   conceptType: string = ENGLISH_CONCEPT_TYPE,
   now: string = new Date().toISOString(),
   claimSources?: () => ClaimEvidenceResources,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_MIDDLEWARE_WIKI_PATHS,
 ) {
   let preparedWiki: PreparedWikiState | undefined;
 
@@ -68,6 +81,7 @@ export function createOpenWikiIndexMiddleware(
         backend,
         outputMode,
         conceptType,
+        wikiPaths,
         runOperation: (operation, task) =>
           inStage("build", task, {
             errorClass: "okf_error",
@@ -97,6 +111,7 @@ export function createOpenWikiIndexMiddleware(
         outputMode,
         request.toolCall.name,
         conceptType,
+        wikiPaths,
       );
     },
     afterAgent: async () => {
@@ -111,6 +126,7 @@ export function createOpenWikiIndexMiddleware(
         prepared: preparedWiki,
         at: now,
         claimSources: claimSources?.(),
+        wikiPaths,
         runOperation: (operation, task) =>
           inStage("finalize", task, {
             errorClass: "okf_error",
@@ -131,6 +147,7 @@ export async function addFrontmatterWarning<Result>(
   outputMode: OpenWikiOutputMode,
   toolName: string,
   conceptType: string = ENGLISH_CONCEPT_TYPE,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_MIDDLEWARE_WIKI_PATHS,
 ): Promise<Result> {
   if (!WRITE_TOOLS.has(toolName)) return result;
 
@@ -142,7 +159,7 @@ export async function addFrontmatterWarning<Result>(
     .find(
       (item): item is { message: ToolMessage; path: string } =>
         typeof item.path === "string" &&
-        isWikiMarkdownPath(item.path, outputMode),
+        isWikiMarkdownPath(item.path, outputMode, wikiPaths),
     );
   if (!mutation) return result;
 
@@ -178,6 +195,7 @@ function getToolMessages(result: unknown): ToolMessage[] {
 function isWikiMarkdownPath(
   filePath: string,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths,
 ): boolean {
   const normalized = path.posix.normalize(
     `/${filePath.trim().replaceAll("\\", "/").replace(/^\/+/, "")}`,
@@ -185,7 +203,7 @@ function isWikiMarkdownPath(
   return (
     path.posix.extname(normalized).toLowerCase() === ".md" &&
     !OKF_RESERVED_FILES.has(path.posix.basename(normalized).toLowerCase()) &&
-    (outputMode === "local-wiki" || normalized.startsWith("/openwiki/"))
+    (outputMode === "local-wiki" || wikiPaths.contains(normalized))
   );
 }
 
