@@ -812,6 +812,9 @@ function emitGeneratingProgress(
  *
  * Checks HTTP 429 status fields, common provider error codes, and message
  * text, following `cause` chains so wrapped SDK errors are recognized too.
+ * AWS SDK errors (Bedrock) carry the status in `$metadata.httpStatusCode`, or
+ * only the `ThrottlingException` name when the throttle arrives mid-stream,
+ * and their token-quota message ("Too many tokens") matches no rate-limit text.
  *
  * @param error - Unknown error thrown by a worker's agent stream.
  * @returns Whether the failure was a rate limit rather than a page problem.
@@ -823,6 +826,13 @@ export function isRateLimitError(error: unknown): boolean {
     seen.add(candidate);
     const status = candidate.status ?? candidate.statusCode;
     if (status === 429 || candidate.code === 429) return true;
+    if (candidate.name === "ThrottlingException") return true;
+    if (
+      isRecord(candidate.$metadata) &&
+      candidate.$metadata.httpStatusCode === 429
+    ) {
+      return true;
+    }
     if (
       typeof candidate.code === "string" &&
       /rate.?limit/iu.test(candidate.code)

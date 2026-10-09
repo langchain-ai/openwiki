@@ -5,6 +5,10 @@ import {
   ChatMessageChunk,
   ToolMessage,
 } from "@langchain/core/messages";
+import {
+  ThrottlingException,
+  ValidationException,
+} from "@aws-sdk/client-bedrock-runtime";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 type HarnessPage = {
@@ -1218,6 +1222,35 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
     ).toHaveLength(1);
   });
 
+  test("lowers concurrency after a Bedrock token-quota throttle", async () => {
+    harness.planPaths = [
+      "/openwiki/a.md",
+      "/openwiki/b.md",
+      "/openwiki/c.md",
+      "/openwiki/d.md",
+      "/openwiki/e.md",
+    ];
+    harness.pageWorkerFailures = 1;
+    harness.pageWorkerFailureError = new ThrottlingException({
+      message: "Too many tokens, please wait before trying again.",
+      $metadata: { httpStatusCode: 429 },
+    });
+
+    const events = await runHarness({ pageConcurrency: 3 });
+
+    // Same handling as any other 429: no immediate retry of the throttled
+    // page, and one fewer worker for the rest of the run.
+    expect(harness.pageRestoreCalls).toBe(0);
+    expect(harness.restoreCalls).toBe(1);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("Reduced page concurrency to 2"),
+      ),
+    ).toHaveLength(1);
+  });
+
   test("does not lower concurrency for an ordinary worker failure", async () => {
     harness.planPaths = ["/openwiki/a.md", "/openwiki/b.md", "/openwiki/c.md"];
     harness.pageWorkerFailures = 1;
@@ -1323,6 +1356,36 @@ describe("isRateLimitError", () => {
         }),
       ),
     ).toBe(true);
+  });
+
+  test("recognizes Bedrock throttling from the AWS SDK", () => {
+    // Converse: HTTP 429, status only in $metadata.
+    expect(
+      isRateLimitError(
+        new ThrottlingException({
+          message: "Too many tokens, please wait before trying again.",
+          $metadata: { httpStatusCode: 429 },
+        }),
+      ),
+    ).toBe(true);
+    // ConverseStream: the throttle arrives as a stream event with no HTTP
+    // status, so only the exception name identifies it.
+    expect(
+      isRateLimitError(
+        new ThrottlingException({
+          message: "Too many tokens, please wait before trying again.",
+          $metadata: {},
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isRateLimitError(
+        new ValidationException({
+          message: "Input is too long for requested model.",
+          $metadata: { httpStatusCode: 400 },
+        }),
+      ),
+    ).toBe(false);
   });
 
   test("ignores unrelated failures and non-objects", () => {
