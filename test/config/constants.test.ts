@@ -27,6 +27,7 @@ import {
   isValidProviderBaseUrl,
   isValidModelId,
   isValidProvider,
+  MISTRAL_BASE_URL_ENV_KEY,
   NEBIUS_BASE_URL,
   NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
@@ -70,6 +71,7 @@ describe("isValidModelId", () => {
     expect(isValidModelId("gpt-5.4-mini")).toBe(true);
     expect(isValidModelId("claude-sonnet-5")).toBe(true);
     expect(isValidModelId("nvidia/nemotron-3-super-120b-a12b")).toBe(true);
+    expect(isValidModelId("mistral-medium-3-5")).toBe(true);
   });
 
   test("accepts comma-bearing gateway/proxy routing ids", () => {
@@ -132,6 +134,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("copilot")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
+    expect(isValidProvider("mistral")).toBe(true);
     expect(isValidProvider("gemini")).toBe(true);
     expect(isValidProvider("gemini-enterprise")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
@@ -171,6 +174,10 @@ describe("resolveConfiguredProvider", () => {
 
   test("falls back to nvidia when only an NVIDIA key is present", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
+  });
+
+  test("falls back to mistral when only a Mistral key is present", () => {
+    expect(resolveConfiguredProvider({ MISTRAL_API_KEY: "x" })).toBe("mistral");
   });
 
   test("falls back to bedrock when a complete legacy key pair is present", () => {
@@ -223,6 +230,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
     );
+    expect(resolveProviderBaseUrl("mistral", {})).toBe(
+      "https://api.mistral.ai/v1",
+    );
   });
 
   test("prefers a non-empty env override over the default", () => {
@@ -259,6 +269,11 @@ describe("resolveProviderBaseUrl", () => {
         [NVIDIA_BASE_URL_ENV_KEY]: "https://gateway.example/nvidia/v1",
       }),
     ).toBe("https://gateway.example/nvidia/v1");
+    expect(
+      resolveProviderBaseUrl("mistral", {
+        [MISTRAL_BASE_URL_ENV_KEY]: "https://gateway.example/mistral/v1",
+      }),
+    ).toBe("https://gateway.example/mistral/v1");
   });
 
   test("ignores a whitespace-only override", () => {
@@ -277,6 +292,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(
       resolveProviderBaseUrl("nvidia", { [NVIDIA_BASE_URL_ENV_KEY]: "   " }),
     ).toBe("https://integrate.api.nvidia.com/v1");
+    expect(
+      resolveProviderBaseUrl("mistral", { [MISTRAL_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://api.mistral.ai/v1");
   });
 
   test("returns undefined for a provider with no default and no override", () => {
@@ -749,6 +767,7 @@ describe("providerUsesStreaming", () => {
         "openai",
         "baseten",
         "fireworks",
+        "mistral",
         "nebius",
         "nvidia",
       ] as const) {
@@ -1244,6 +1263,7 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
+    expect(getDefaultModelId("mistral")).toBe("mistral-medium-3-5");
     expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
