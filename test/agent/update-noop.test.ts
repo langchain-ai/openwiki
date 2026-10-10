@@ -168,6 +168,37 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("skips update when commits since the last run only touch non-ASCII OpenWiki pages", async () => {
+    const repo = await createRepoWithOpenWiki();
+    // Pin Git's default so a global core.quotePath=false cannot mask the bug.
+    await git(repo, ["config", "core.quotePath", "true"]);
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await writeFile(path.join(repo, "openwiki", "架构.md"), "# 架构\n", "utf8");
+    await git(repo, ["add", "openwiki/架构.md"]);
+    await git(repo, ["commit", "-m", "add translated page"]);
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
+  test("skips update when worktree changes only touch ignored non-ASCII paths", async () => {
+    const repo = await createRepoWithOpenWiki();
+    await git(repo, ["config", "core.quotePath", "true"]);
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await mkdir(path.join(repo, "私有"));
+    await writeFile(path.join(repo, "私有", "笔记.md"), "Ignored\n", "utf8");
+
+    const status = await getUpdateNoopStatus(
+      repo,
+      OpenWikiIgnore.parse("私有/\n"),
+    );
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
   test("does not skip update when the previous run was interrupted", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);
