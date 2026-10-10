@@ -1,7 +1,7 @@
 ---
 type: workflow
 title: Repository Generation Lifecycle
-description: How OpenWiki drives resumable repository wiki generation through the six durable operations begin, submit_plan, next_page, inspect_page_claims, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json with source-fingerprint invalidation, sparse Claim reconciliation, skipped-page handling, and optional parallel page workers.
+description: How OpenWiki drives resumable repository wiki generation through the six durable operations begin, submit_plan, next_page, inspect_page_claims, submit_page, and finish, backed by an ordered PageJob queue in openwiki/.run.json with source-fingerprint invalidation, sparse Claim reconciliation, skipped-page handling, rate-limit backoff (including Bedrock ThrottlingException recognition), and optional parallel page workers.
 tags:
   [
     repository-generation,
@@ -14,6 +14,8 @@ tags:
     parallel-workers,
   ]
 sources:
+  - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
+    resource: repo://CHANGELOG.md
   - id: openwiki-source-8b316b2a9d744597bffd9c56
     resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -44,10 +46,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T08:09:16.118Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-10T08:09:16.118Z
 ---
 
 # Repository Generation Lifecycle
@@ -580,6 +582,17 @@ When a worker is skipped due to a provider rate-limit error (`isRateLimitError`)
 the pool shrinks its live `size` by one (never below 1) and emits a user-facing
 message. The remaining workers continue; the fatal-error guard ensures the run
 never finalizes with pending jobs.
+
+`isRateLimitError` recognizes rate limiting from HTTP 429 status fields
+(`status`/`statusCode`/numeric `code`), rate-limit error codes, and rate-limit
+message text, walking `cause` chains so wrapped SDK errors are caught too. It
+also recognizes AWS SDK throttling from Bedrock: a `$metadata.httpStatusCode`
+of 429 (the `Converse` path) and — because a `ConverseStream` throttle arrives
+mid-stream with no HTTP status — the `ThrottlingException` error name by itself,
+even though Bedrock's token-quota message ("Too many tokens") matches no
+rate-limit text. This `ThrottlingException`-as-rate-limit handling was added in
+0.7.2 (PR #1011) so a Bedrock throttle lowers concurrency and skips the page
+immediately instead of being treated as an ordinary retriable failure.
 
 ### Fatal-error handling
 

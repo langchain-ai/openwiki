@@ -58,10 +58,10 @@ sources:
     resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T08:09:16.118Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-10T08:09:16.118Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
@@ -355,17 +355,32 @@ at the root. The bundle root is restricted to `SKILL.md`, an `agents/` tree
 (host agent manifests such as `agents/bob.yaml` and `agents/openai.yaml`), and a
 `references/` tree; any other path is rejected. On install, a
 `.openwiki-install.json` **receipt** records the owning package, OpenWiki
-version, host target, installed MCP command, and per-file hashes.
-`inspectInstallation` uses the receipt to classify a destination as
-`not-installed`, `installed` (intact), or `modified` (present but altered or
-unmanaged).
+version, per-file SHA-256 hashes, and the owning host(s). The receipt has two
+shapes: a single-owner install keeps the original one-host form
+(`target` + `mcpServerCommand`), byte-for-byte unchanged from earlier releases,
+while a directory shared by several hosts carries an `owners` map of
+`HostTargetId → HostMcpServerCommand` (Codex and IBM Bob, for example, read the
+same `.agents/skills/openwiki` directory). `writeReceipt` picks the shape from
+the owner count so a never-shared install is identical to before.
+`inspectInstallation` reads and strictly validates either shape, compares the
+recorded hashes against a fresh inventory, and classifies the destination as
+`not-installed`, `installed` (intact and owned by this target), or `modified`
+(present but altered, missing a receipt, or a symlink). An intact directory
+owned _only by other hosts_ reports `not-installed` for this target while still
+returning its receipt, so a second host can join the shared directory.
 
 ### Transactional install/uninstall
 
-`install` stages the bundle into a private sibling directory, verifies the staged
-copy matches the canonical inventory, writes the receipt, then commits by
-snapshotting the config, mutating it, moving any prior skill aside, and atomically
-moving the staged skill into place. On any failure it rolls back the config and
+Before staging, `install` resolves the destination through
+`resolveInstallContext` and runs `assertNoSymlinkComponents` against the skill
+directory and config path: any symbolic link appearing in an existing
+destination component is refused with `invalid_input`, so a symlink pointing
+outside the scope root can never receive the managed bundle. It then stages the
+canonical bundle into a private sibling, verifies the staged copy matches the
+canonical inventory, writes the receipt (merging this target into any existing
+`owners` from a prior shared-directory receipt), and commits by snapshotting the
+config, mutating it, moving any prior skill aside, and atomically moving the
+staged skill into place. On any pre-commit failure it rolls back the config and
 prior skill; an incomplete rollback is surfaced as an `AggregateError`. When the
 installed state already matches the requested version, command, and files, it
 only reconciles config and reports whether anything changed. A `modified`
@@ -373,8 +388,12 @@ destination is refused unless `--force`, which preserves the prior skill as a
 timestamped backup.
 
 `uninstall` refuses to remove a `modified` skill or a modified/unmanaged config
-entry, snapshots the config for rollback, removes the managed entry, moves the
-skill to a cleanup backup, and prunes now-empty skill parent directories.
+entry. For a shared skill directory it computes the remaining owners
+(`ownersWithout`): if other hosts still own the directory, it rewrites the
+receipt to drop this target and leaves the skill in place; only when the last
+owner uninstalls does it move the skill to a cleanup backup. Either way it
+snapshots the config for rollback, removes the managed entry, and prunes
+now-empty skill parent directories (without ever deleting the host-owned root).
 `status` reports `installed` only when both the skill and the config entry are
 intact, `modified` when either is partially present, and `unsupported` when the
 requested scope does not exist for the host.
