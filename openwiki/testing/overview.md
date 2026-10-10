@@ -1,7 +1,7 @@
 ---
 type: testing-guide
 title: Testing Guide
-description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem (including the repository-runner parallel-worker and retry-before-skip tests), and where the separate evals/ledger and evals/deepswe evaluation suites live.
+description: How the OpenWiki test suite is laid out, the vitest and ink-testing-library tooling it uses, the pnpm test pipeline, how to scope the narrowest validation that proves a change per subsystem (including the repository-runner ThrottlingException-as-rate-limit and parallel-worker tests, and the shared-skill-directory installer tests), and where the separate evals/ledger and evals/deepswe evaluation suites live.
 tags: [testing, vitest, coverage, ink-testing-library, ci, developer-workflow, evals]
 sources:
   - id: openwiki-source-c45a528335f5cf7306567dc9
@@ -140,10 +140,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T08:09:16.118Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-10T08:09:16.118Z
 ---
 
 # Testing Guide
@@ -287,12 +287,12 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, retry-before-skip, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, and the wiki internal-link validator plus its dogfood test |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, retry-before-skip, Bedrock ThrottlingException-as-rate-limit back-off, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, and the wiki internal-link validator plus its dogfood test |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
-| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution) across nine hosts, host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
+| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, shared-skill-directory co-ownership, skill-bundle resolution) across nine hosts, host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
 | `test/cli/` (incl. `test/cli/run-log/`)                                                                                                                    | `src/cli/` — CLI wiring, Ink components, the run-log reducer/progress/summary/activity/tool-input helpers, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
 | `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
@@ -311,11 +311,13 @@ The repository runner (`runNativeRepositoryGeneration` in
 its test (`test/agent/repository-runner.test.ts`) is the broadest exercise of
 that control flow. The test mocks `deepagents` and
 `src/generation/repository-run.js` through a `vi.hoisted` harness that arms
-planner and page-worker failure modes via named counters — `pageWorkerFailures`,
-`pageWorkerPostSubmitFailures`, `workerExitsWithoutSubmit`,
-`duplicatePlanSubmission`, `invalidPlanSubmissions`, `invalidPageSubmissions`,
-`driftOnce`, `noop`, plus `pageGate`/`nextPageGate` gates and `fatalPageSubmissions`
-to control concurrent scheduling — alongside `pageRestoreCalls` (mocked
+planner and page-worker failure modes via named counters — `pageWorkerFailures`
+(plus a `pageWorkerFailureError` that can carry a `status: 429` or an AWS SDK
+`ThrottlingException`), `pageWorkerPostSubmitFailures`,
+`workerExitsWithoutSubmit`, `duplicatePlanSubmission`,
+`invalidPlanSubmissions`, `invalidPageSubmissions`, `driftOnce`, `noop`, plus
+`pageGate`/`nextPageGate` gates and `fatalPageSubmissions` to control
+concurrent scheduling — alongside `pageRestoreCalls` (mocked
 `restoreRepositoryPage`) and `restoreCalls` (mocked `skipRepositoryPage`) to
 tell a retry from a skip.
 
@@ -352,18 +354,20 @@ stateDiagram-v2
   Snapshot --> Attempt1: fresh worker
   Attempt1 --> Submitted: submit_page succeeds
   Attempt1 --> ResetRestore: exits without submitting (non-429)
-  Attempt1 --> Skip: fails with 429
+  Attempt1 --> Skip: fails with 429 (HTTP or Bedrock ThrottlingException)
   ResetRestore --> Attempt2: restoreRepositoryPage then fresh worker
   Attempt2 --> Submitted: submit_page succeeds
   Attempt2 --> Skip: exits without submitting
   Submitted --> Complete
-  Skip --> Skipped: skipRepositoryPage
+  Skip --> Skipped: skipRepositoryPage + pool size--
   Complete --> [*]
   Skipped --> Pending: re-queued on resume
 ```
 
 The `runPageAgent` per-page lifecycle: snapshot once, retry a non-submitting
-worker once, then skip (a 429 skips immediately).
+worker once, then skip. A 429 — whether an HTTP `status: 429` or an AWS SDK
+`ThrottlingException` — skips immediately and lowers pool size; `isRateLimitError`
+recognizes both.
 
 The runner can also document pages **concurrently**. `runPendingPageAgents`
 builds a `PageWorkerPool` of up to `pageConcurrency` slots, and the test passes
@@ -389,7 +393,13 @@ the concurrency contract:
   the pool size is lowered by one with a `Reduced page concurrency to <n>` text
   event; an ordinary (non-rate-limit) worker failure is reset and retried once
   (`pageRestoreCalls === 1`, `restoreCalls === 0`) and does **not** lower
-  concurrency.
+  concurrency. A Bedrock token-quota throttle is handled identically:
+  `lowers concurrency after a Bedrock token-quota throttle` arms the failure as
+  an AWS SDK `ThrottlingException` (`$metadata.httpStatusCode: 429`) and asserts
+  the same no-retry / one-fewer-worker contract, because `isRateLimitError`
+  recognizes the `ThrottlingException` name (and `$metadata.httpStatusCode`
+  429) as a rate limit even when — as with `ConverseStream` — the stream event
+  arrives with no HTTP status, so only the exception name identifies it.
 - **Fatal submission isolation.** A fatal `submitRepositoryPage` error (armed
   via `fatalPageSubmissions`) lets in-flight workers submit or skip, records
   the fatal error on the pool, stops new jobs from starting, and is rethrown
@@ -471,9 +481,15 @@ automatic task capability at the model boundary` test pins the same
 middleware's removal of the general-purpose `task` tool from the
 model-facing request, so the non-delegating workers never advertise
 delegation. `isRateLimitError` is unit-tested directly for status/`statusCode`/
-`code`/message/`cause` recognition, and `parseWorkerToolEvent` is tested to
-forward only approved worker tool lifecycle events (`read_file`, `write_file`,
-`grep`, …) while dropping `execute`/`task` and `messages`-channel narration.
+`code`/message/`cause` recognition, including the Bedrock throttling cases
+imported from `@aws-sdk/client-bedrock-runtime`: a `ThrottlingException` with
+`$metadata.httpStatusCode: 429` (the `Converse` path) is recognized as a rate
+limit, a `ThrottlingException` carrying only its name with no HTTP status (the
+`ConverseStream` path, where the throttle arrives as a stream event) is still
+recognized by name, and a `ValidationException` (HTTP 400) is **not** treated as
+a rate limit. `parseWorkerToolEvent` is tested to forward only approved worker
+tool lifecycle events (`read_file`, `write_file`, `grep`, …) while dropping
+`execute`/`task` and `messages`-channel narration.
 
 The remaining agent tests guard the prompts and adjacent surfaces:
 
@@ -968,7 +984,20 @@ it, and the MCP transport server that exposes it.
   destination components are rejected, and that
   `resolveCanonicalSkillBundle` resolves the same on-disk
   `integrations/openwiki` bundle from both source (`installer.ts`) and built
-  (`installer.js`) layouts.
+  (`installer.js`) layouts. A dedicated `shared skill directories` describe
+  block pins the multi-owner co-ownership that lets several hosts share one
+  on-disk skill directory: `hosts sharing a skill directory install and
+  uninstall independently` (bob + codex) installs codex, confirms bob still
+  reports `not-installed`, installs bob, asserts the shared receipt carries an
+  `owners` map keyed by host id (each owner's `defaultMcpServerCommand`), then
+  uninstalls codex (bob stays `installed`, the receipt rewrites to `target:
+  "bob"`) and finally uninstalls bob (the directory is removed). `project-scope
+  Antigravity and Codex share one skill` covers the project-scope sharing of
+  `.agents/skills/openwiki` (antigravity's project skill directory equals
+  codex's), and `uninstalls a host whose ownership an earlier forced install
+  replaced` simulates an older release that left a bob-only receipt behind a
+  forced install and proves a later codex uninstall still succeeds leaving bob
+  intact.
 - `test/integrations/config-adapters.test.ts` exercises the per-format MCP-config
   adapters. The atomic-write suite pins that `writeTextAtomic` preserves file
   mode bits and leaves no temporary sibling. The JSON, Codex TOML, and OpenCode
@@ -1160,13 +1189,13 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Run-log helpers:** `pnpm exec vitest run test/cli/run-log/` (reducer/progress/summary/activity/tool-input), or `-t "retains concurrent worker progress fields"` for the concurrent-worker progress field pin.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`), `-t "restores a page snapshot without skipping the pending job"` (restore leaves the page pending), or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
 - **Agent retry-before-skip:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "retries once when a worker exits without submitting and completes the page"` (recovered by retry) or `-t "skips a page worker that fails every attempt and continues the queue"` (give-up path).
-- **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off, not retried), `-t "does not lower concurrency for an ordinary worker failure"` (ordinary failure retried once), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
+- **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off, not retried), `-t "lowers concurrency after a Bedrock token-quota throttle"` (AWS SDK `ThrottlingException` treated as a rate limit), `-t "does not lower concurrency for an ordinary worker failure"` (ordinary failure retried once), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
 - **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
 - **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
 - **LangSmith thread grouping:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "tags the planner and every concurrent page worker with the run's thread id"` (shared `thread_id` on planner + every worker) or `-t "uses OPENWIKI_TRACE_THREAD_ID when CI sets it"` (trimmed env override).
 - **LangSmith trace names:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "names the planner and each page worker after its page"` (`PLANNER_AGENT_NAME` + `workerAgentName(page)`).
 - **Repository-worker response coercion:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "coerces roleless generic streaming aggregates before LangChain validates wrapModelCall"` (roleless `ChatMessageChunk` → `AIMessageChunk` with collapsed tool calls), `-t "coerces generic assistant messages before LangChain validates wrapModelCall"` (`ChatMessage` → `AIMessage`), or `-t "leaves non-assistant generic model responses untouched"`.
-- **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` or `-t "forwards only approved tool lifecycle events"`.
+- **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` or `-t "forwards only approved tool lifecycle events"`. Add `-t "recognizes Bedrock throttling from the AWS SDK"` for the `ThrottlingException` (Converse 429, name-only ConverseStream) and `ValidationException` cases.
 - **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts`.
 - **Vertex AI surface dispatch (incl. Grok routing):** `pnpm exec vitest run test/agent/vertex-surface.test.ts` (Claude→anthropic, partner/Grok→openai-maas, Gemini/unknown→gemini, auth-fetch and env neutralization).
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.
@@ -1177,7 +1206,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Host protocol schema:** `pnpm exec vitest run test/integrations/protocol.test.ts`.
 - **Host session manager:** `pnpm exec vitest run test/integrations/session-manager.test.ts`.
 - **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
-- **Host installer (registry, scope, skill bundle):** `pnpm exec vitest run test/integrations/installer.test.ts`.
+- **Host installer (registry, scope, skill bundle):** `pnpm exec vitest run test/integrations/installer.test.ts`, or `-t "hosts sharing a skill directory install and uninstall independently"` / `-t "project-scope Antigravity and Codex share one skill"` for the shared-skill-directory co-ownership contracts.
 - **Host config adapters (JSON/TOML/JSONC ownership):** `pnpm exec vitest run test/integrations/config-adapters.test.ts`.
 - **Integrations CLI dogfood:** `pnpm exec vitest run test/integrations/cli-dogfood.test.ts`.
 - **Published package-contents guard:** `pnpm exec vitest run test/integrations/package-contents.test.ts`.
