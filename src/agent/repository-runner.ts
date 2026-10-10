@@ -1,17 +1,6 @@
 import { scheduler } from "node:timers/promises";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import {
-  AIMessage,
-  AIMessageChunk,
-  ChatMessage,
-  ChatMessageChunk,
-  ToolMessage,
-  collapseToolCallChunks,
-  defaultToolCallParser,
-  type InvalidToolCall,
-  type ToolCall,
-  type ToolCallChunk,
-} from "@langchain/core/messages";
+import { ToolMessage } from "@langchain/core/messages";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
 import { createMiddleware } from "langchain";
@@ -40,6 +29,7 @@ import {
   AGENT_FILESYSTEM_PERMISSIONS,
   createAgentBackend,
 } from "./agent-backend.js";
+import { coerceAssistantModelResponse } from "./assistant-response.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { OpenWikiIgnore } from "./openwiki-ignore.js";
 import {
@@ -108,7 +98,7 @@ const NO_DELEGATION_MIDDLEWARE = createMiddleware({
       tools: request.tools?.filter(({ name }) => name !== "task"),
     });
 
-    return coerceRepositoryWorkerModelResponse(response);
+    return coerceAssistantModelResponse(response);
   },
 });
 
@@ -116,109 +106,6 @@ type PendingPageJob = Extract<
   NextRepositoryPageResult,
   { status: "pending" }
 >["job"];
-
-/**
- * Normalizes provider-streaming aggregates that are assistant output but were
- * typed as generic chat messages because the first OpenAI-compatible SSE delta
- * arrived without `role:"assistant"` (for example reasoning-only first deltas).
- *
- * LangChain validates each wrapModelCall response before the agent node can
- * continue. Coerce only this repository-worker boundary so provider transport
- * handling stays owned by the model client.
- */
-function coerceRepositoryWorkerModelResponse(response: AIMessage): AIMessage {
-  const candidate: unknown = response;
-
-  if (AIMessage.isInstance(candidate)) {
-    return candidate;
-  }
-
-  if (
-    ChatMessageChunk.isInstance(candidate) &&
-    isGenericAssistantModelResponse(candidate)
-  ) {
-    const rawToolCalls = getOpenAiRawToolCalls(candidate.additional_kwargs);
-    const toolCallFields =
-      rawToolCalls === null
-        ? {}
-        : collapseToolCallChunks(rawToolCalls.map(toToolCallChunk));
-
-    return new AIMessageChunk({
-      content: candidate.content,
-      additional_kwargs: candidate.additional_kwargs,
-      response_metadata: candidate.response_metadata,
-      id: candidate.id,
-      name: candidate.name,
-      ...toolCallFields,
-    });
-  }
-
-  if (
-    ChatMessage.isInstance(candidate) &&
-    isGenericAssistantModelResponse(candidate)
-  ) {
-    const rawToolCalls = getOpenAiRawToolCalls(candidate.additional_kwargs);
-    const toolCallFields =
-      rawToolCalls === null ? {} : parseRawOpenAiToolCalls(rawToolCalls);
-
-    return new AIMessage({
-      content: candidate.content,
-      additional_kwargs: candidate.additional_kwargs,
-      response_metadata: candidate.response_metadata,
-      id: candidate.id,
-      name: candidate.name,
-      ...toolCallFields,
-    });
-  }
-
-  return response;
-}
-
-function isGenericAssistantModelResponse(response: { role?: string }): boolean {
-  return response.role === undefined || response.role === "assistant";
-}
-
-function getOpenAiRawToolCalls(
-  additionalKwargs: Record<string, unknown> | undefined,
-): Record<string, unknown>[] | null {
-  const rawToolCalls = additionalKwargs?.tool_calls;
-
-  if (!Array.isArray(rawToolCalls)) {
-    return null;
-  }
-
-  return rawToolCalls.filter(isRecord);
-}
-
-function parseRawOpenAiToolCalls(rawToolCalls: Record<string, unknown>[]): {
-  invalid_tool_calls: InvalidToolCall[];
-  tool_calls: ToolCall[];
-} {
-  const [toolCalls, invalidToolCalls] = defaultToolCallParser(rawToolCalls);
-
-  return {
-    invalid_tool_calls: invalidToolCalls,
-    tool_calls: toolCalls,
-  };
-}
-
-function toToolCallChunk(rawToolCall: Record<string, unknown>): ToolCallChunk {
-  const rawFunction = rawToolCall.function;
-  const functionFields = isRecord(rawFunction) ? rawFunction : {};
-
-  return {
-    id: typeof rawToolCall.id === "string" ? rawToolCall.id : undefined,
-    index:
-      typeof rawToolCall.index === "number" ? rawToolCall.index : undefined,
-    name:
-      typeof functionFields.name === "string" ? functionFields.name : undefined,
-    args:
-      typeof functionFields.arguments === "string"
-        ? functionFields.arguments
-        : undefined,
-    type: "tool_call_chunk",
-  };
-}
 
 /**
  * Converts a bounded submission rejection into a failed tool result.
