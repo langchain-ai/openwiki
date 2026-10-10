@@ -33,6 +33,7 @@ import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
 } from "../okf/index-labels.js";
+import { ASSISTANT_RESPONSE_MIDDLEWARE } from "./assistant-response.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
 import { getSelectedModelAvailability } from "../model-availability.js";
 import { createOpenWikiIndexMiddleware } from "./okf-middleware.js";
@@ -559,6 +560,10 @@ function createOpenWikiAgentGraph(
               options.runTimestamp,
             ),
           ]),
+      // Last, so it wraps the model call itself: a streamed response whose
+      // first delta had no role must become an AIMessage before DeepAgents'
+      // middleware validates it.
+      ASSISTANT_RESPONSE_MIDDLEWARE,
     ],
     skills: ["/skills/"],
     subagents: [],
