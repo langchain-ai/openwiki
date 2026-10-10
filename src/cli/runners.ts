@@ -271,7 +271,12 @@ export async function runPrintCommand(
       if (event.type === "text") {
         output.push(event.text);
       } else if (event.type === "repository_progress") {
-        output.push(formatRepositoryPrintProgress(event, command.command));
+        const progress = formatRepositoryPrintProgress(event, command.command);
+        if (command.streamProgress) {
+          process.stdout.write(progress);
+        } else {
+          output.push(progress);
+        }
       }
     };
 

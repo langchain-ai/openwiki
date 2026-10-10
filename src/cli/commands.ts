@@ -217,6 +217,7 @@ export type CliCommand =
       modeSource: OpenWikiRunModeSource;
       modelId: string | null;
       print: boolean;
+      streamProgress: boolean;
       shouldStart: boolean;
       userMessage: string | null;
       telemetryFile: string | null;
@@ -838,6 +839,7 @@ function parseRunCommand(
   let modeSource = initialModeSource;
   let modelId: string | null = null;
   let print = false;
+  let streamProgress = false;
   let command: OpenWikiCommand = "chat";
   let telemetryFile: string | null = null;
 
@@ -865,6 +867,11 @@ function parseRunCommand(
 
     if (arg === "--print" || arg === "-p") {
       print = true;
+      continue;
+    }
+
+    if (arg === "--stream-progress") {
+      streamProgress = true;
       continue;
     }
 
@@ -1095,6 +1102,7 @@ function parseRunCommand(
     modeSource,
     modelId,
     print,
+    streamProgress,
     shouldStart,
     userMessage,
     telemetryFile,
@@ -1323,6 +1331,11 @@ export const helpContent: HelpContent = {
     {
       label: "-p, --print",
       description: "Run once and print the final assistant output.",
+    },
+    {
+      label: "--stream-progress",
+      description:
+        "For print mode: stream repository lifecycle progress while keeping assistant text buffered.",
     },
     {
       label: "--debug",
