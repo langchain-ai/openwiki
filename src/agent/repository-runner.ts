@@ -716,7 +716,13 @@ async function runWorkerLoop(
 
     let outcome: PageAgentOutcome;
     try {
-      outcome = await runPageAgent(run, next.job, model, onEvent);
+      outcome = await runPageAgent(
+        run,
+        next.job,
+        model,
+        onEvent,
+        () => pool.size > 1,
+      );
     } catch (error) {
       pool.fatal ??= { error };
       removeInFlightPage(pool, next.job.path);
@@ -861,13 +867,15 @@ const PAGE_WORKER_ATTEMPT_LIMIT = 2;
  * @param job - Pending page job owned by this worker.
  * @param model - Initialized model reused across attempts.
  * @param onEvent - Optional bounded worker event consumer.
+ * @param canShrinkPool - Whether the pool can still drop a worker slot.
  * @returns Whether the page was submitted, or the snapshot restored on skip.
  */
 async function runPageAgent(
   run: ActiveRepositoryRun,
   job: PendingPageJob,
   model: BaseChatModel,
-  onEvent?: (event: OpenWikiRunEvent) => void,
+  onEvent: ((event: OpenWikiRunEvent) => void) | undefined,
+  canShrinkPool: () => boolean,
 ): Promise<PageAgentOutcome> {
   const snapshot = await captureRepositoryPageSnapshot(run, job.id);
   let skipped: PageAgentOutcome = { status: "skipped", snapshot };
@@ -884,10 +892,13 @@ async function runPageAgent(
     skipped = outcome;
 
     // A rate limit means the provider is asking for less traffic, so it is
-    // surfaced to the pool immediately instead of being retried at once.
+    // surfaced to the pool immediately instead of being retried at once. A pool
+    // already down to one worker has no slot left to drop, and skipping would
+    // not lower traffic because the next page starts at once, so the page gets
+    // the same retry as any other failed attempt.
     if (
       attempt >= PAGE_WORKER_ATTEMPT_LIMIT ||
-      isRateLimitError(outcome.error)
+      (isRateLimitError(outcome.error) && canShrinkPool())
     ) {
       break;
     }
