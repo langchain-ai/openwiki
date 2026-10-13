@@ -1,5 +1,8 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  StdioClientTransport,
+  getDefaultEnvironment,
+} from "@modelcontextprotocol/sdk/client/stdio.js";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import {
@@ -107,12 +110,28 @@ function toolResultText(result: {
   return text || JSON.stringify(result.structuredContent ?? result);
 }
 
+// Some hosts embed pi in an Electron process (the Pendant VS Code extension),
+// where `process.execPath` is the Electron binary rather than node. Stdio spawns
+// the bridge with `process.execPath`, and the SDK's default environment drops
+// ELECTRON_RUN_AS_NODE, so the child starts as the host app instead of node and
+// exits. Forwarding the variable keeps that case working; on a normal node host
+// it is unset and the transport falls back to the SDK default.
+function bridgeEnvironment(): Record<string, string> | undefined {
+  const electronRunAsNode = process.env.ELECTRON_RUN_AS_NODE;
+  if (!electronRunAsNode) return undefined;
+  return {
+    ...getDefaultEnvironment(),
+    ELECTRON_RUN_AS_NODE: electronRunAsNode,
+  };
+}
+
 async function startBridge(onclose: () => void): Promise<Bridge> {
   const cliPath = fileURLToPath(new URL("../../cli/cli.js", import.meta.url));
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [cliPath, "mcp", "--host", "pi"],
     stderr: "inherit",
+    env: bridgeEnvironment(),
   });
   const client = new Client(
     { name: "openwiki-pi", version: OPENWIKI_VERSION },
