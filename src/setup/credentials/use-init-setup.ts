@@ -2609,7 +2609,7 @@ export function useInitSetup({
         ingestionSchedule: {
           description: result.description,
           expression: result.expression,
-          launchAgentPath: result.launchAgentPath,
+          nativeJobPath: result.nativeJobPath,
           updatedAt: new Date().toISOString(),
           warning: result.warning,
         },
