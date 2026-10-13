@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:759bf39112f2d5930c96da1fc9ea45308480bca145cda62b1ff6a923670b4673",
+  "pageVersion": "sha256:d4a289b0667bdab4f7d9d818d09d02d52eb42e2277f2cd43cbab5daf10d676fb",
   "claims": [
     {
       "id": "claim_877c98c88bd841fdb1bcd9de28cb0448",
@@ -95,11 +95,11 @@
       "statement": "createOpenWikiConnectorTools returns an empty tool array for repository (code) output mode, so codebase-documentation runs are never handed connector ingestion tools; the connector tools are wired into the agent from this factory.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L483-L483",
+          "resource": "repo://src/agent/index.ts#L500-L500",
           "version": "repo-lines-v1:sha256:7b5743d70b3818e4683d8c4a49f98fba193f8f0c964753a5a2635c123cfa65bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I1NzQzZDcwYjM4MThlNDY4M2Q4YzRhNDlmOThmYmExOTNmOGYwYzk2NDc1M2E1YTI2MzVjMTIzY2ZhNjViYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I1NzQzZDcwYjM4MThlNDY4M2Q4YzRhNDlmOThmYmExOTNmOGYwYzk2NDc1M2E1YTI2MzVjMTIzY2ZhNjViYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTgyMzA5ODFkNzcyYWI2NmIxNzYyMzQ1OTk0NTYxNGFmNjQwMGIwOTg0ODJlNTZmYWViMTA2NTBjZWM3MmMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQwZTJlZGRiOTE5ZDllM2RkMTczOTVhNDlhZWI0NDdlMTMwNWQzZTdjNzQ2ODU2NTk1MjM5NTgzMmM1NTU0MCJ9"
         },
         {
-          "resource": "repo://src/connectors/tools.ts#L25-L36",
+          "resource": "repo://src/connectors/tools.ts#L30-L41",
           "version": "repo-lines-v1:sha256:4d1a958666f9c0c77142f80e9a58c011c6d154534d1d24bb69d5e8273a77b053:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzY2NWM4ZTkzNWFjODdmZjJiYjkzYTY4NjU0NWJhMzAyNzBkYmY0MDMxMjVjNGZmZjEyY2I3NjMzOTJmMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjk0OWRjMTljOTNhZDQyMTRmZDMyMzc4NDczNDJiMTI1NjgxZTYyMGFmNGU1Yzc4YzE3ZmJhOWRjNDExMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMmM0YjIwNjBmZDRmMzBmYjZhYjJiYmFjYTM2NGFkODljZTg0Nzg2ZmIyNGQxOTMyYjAyM2JjYWIyZDBhMjMifQ"
         }
       ]
@@ -109,7 +109,7 @@
       "statement": "In personal/local-wiki mode the connector tool set exposes openwiki_list_connectors, openwiki_list_mcp_tools, openwiki_call_mcp_tool, openwiki_ingest_connector, openwiki_ingest_all_connectors, openwiki_list_raw_items, and openwiki_read_raw_item.",
       "evidence": [
         {
-          "resource": "repo://src/connectors/tools.ts#L37-L214",
+          "resource": "repo://src/connectors/tools.ts#L42-L219",
           "version": "repo-lines-v1:sha256:290999f5fda3bd2c403e21c6b2ea503584c82d135db62ff305a24c781ace53fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmZTBlNDAyNGRjMzI1ZTE4Yjc1ZTU2MDEyODAzMGZjZGY0MTkxZmZhMjExMGM1YTM2NjNjZDUwYzJiNjU0YzMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwNDAxOTBhMzA1OGQ5YjFlNzZiM2M1NTM3ZTcyN2I1YmMzNmRiMDU1NGI4NzFlNTBkYmI4ZGM5NWI4Njk4MjYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkZWM5MzNkNTc3NGE3Y2IwZWEyYWU3ZTk2ODBjYTk4YjE1NWVlNWQ0NGE3NjBlMmYyNDlhMmQ4MjI5MjY4MDkyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOTFkZDM3ZWRjNDlhZmE2YTM3N2ZhNjY0ZGZiOTRiNzE4MGI1YjZmM2RmNTY4YjQ0M2QxNmI5ZGMxYzBhMmIwIn0"
         }
       ]
@@ -119,11 +119,11 @@
       "statement": "The MCP discovery/call tools accept only custom-mcp and notion as connectorId; openwiki_list_mcp_tools and openwiki_call_mcp_tool reject any non-MCP-backed connector.",
       "evidence": [
         {
-          "resource": "repo://src/connectors/tools.ts#L263-L281",
+          "resource": "repo://src/connectors/tools.ts#L268-L286",
           "version": "repo-lines-v1:sha256:37946aff79b84fda134790abeca15187eed7f314c559d6f632ef0165bcd29c8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MmZiODE5NzczNWU1MzQ5ZDdjMWZkNDNiYzc2N2I2ZTNmMWFjZmQ4ZDc3YWNkMzlkMzZkMDE5Yzc5N2RhYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlMGQ0Y2NmZDBkYWIyY2IwODM0ZmZmMjUxNmM0ZjUzMDA2MzkyZDQwNDBlNmYxYjg4MDMxZjU4NGUwMzdkNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjYzYwZmFhZTUxNTI5NjkzMzFiMzNlOGYzYmFmODNiNDE4OWU1YTYzOTQ4NmU1ZDUwOGFjNjA3ODY5YWMyMmYifQ"
         },
         {
-          "resource": "repo://src/connectors/tools.ts#L49-L97",
+          "resource": "repo://src/connectors/tools.ts#L54-L102",
           "version": "repo-lines-v1:sha256:260935234766f4595f6b9f017a81b36897d63d1e2da24dc187ee70e3ade9c02d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyN2NmNjFkMzgxZTRiNmE0ZjU0MDI5ODY5N2U5Y2U0MTljOGU4ZTY2OGMzN2I4YjZmNTA1ODUxNzg5Nzc5NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTBlYjZjY2RiMGZlZmNjM2M5YTg4M2M4NzljOTg2NmJlMzM5MzFjYWFhYmYzNjYyZDdhYzRjNDEzZWM4YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmMDFkN2E4MzY5YWNhMzY5NmViMWMzZGVmM2VlMDcwZjJlM2MwZTc2MWZlZWZhNzkxNzIyYzI0MDcxNDJmNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjM2FmNjU0MmE3NWUwODgxMWUzNWViYzI1MGM5Yjc3ODM4NzAzZjUzZTlhN2EwMTFmMTgzYTgyODA3OTU0MmQifQ"
         }
       ]
@@ -133,11 +133,11 @@
       "statement": "listConnectors and the raw-read tools never return secret values: required env vars are reported as presence-only status, and openwiki_read_raw_item caps a read at 500 KB and confines it to the connector raw directory.",
       "evidence": [
         {
-          "resource": "repo://src/connectors/tools.ts#L217-L252",
+          "resource": "repo://src/connectors/tools.ts#L222-L257",
           "version": "repo-lines-v1:sha256:ef9f52f5436ec1b6c05bc3a47db9d746698f3cb70edf0b459570d943e1ed331a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5OTQ1MjBiYmIzOWNjNGZjYTMzNTI2MTg4ZTE0NzM4M2QwOTE2ZWZiNTRkNDRhM2M1MDYyOTFmNmIyMGNmZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0MDA1MjRmZDJjOWUwNzVhNzQ2YjM3MTc0M2EwMjFmNDY0ODlkNjYwYTMxNjA1YjkzNTA2MjcyODZjM2M2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYWVhMDQ3NmE3MmY4MGNlNzNmODcwYTg4MTRlOTA2ZmE4NWFkMDY4NGY1ZDg1NzZiMzhkNzAzM2UwM2YwZTkifQ"
         },
         {
-          "resource": "repo://src/connectors/tools.ts#L316-L340",
+          "resource": "repo://src/connectors/tools.ts#L348-L372",
           "version": "repo-lines-v1:sha256:1c284930d13d0b267fab8e79fd72ad3a1002f0ef1e1edb5d21cdcfcd5892db10:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxY2E5MGM2MDMzMjU5YzA5NGVkYzRjNjQzN2VmZDZjN2VhYWNkMGI3MmExOWFhMGE5ZTQ4MGE3NmU5YWQ2YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMGVjMTYzYzUwOTVhMTYyZTY1NTA1ZTEzNjI0M2RmNWM5OTlmNGE1Y2NlOTgyZWFjYTZjNjdmMzM1YWI5MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNTU0MTZlNmQ5OTdlYmY5NmI3ZDY4Y2ZjMzVlMThhMWZkODU3NDdmZGNkMmQwODI0MzA3MzhhYzNiNTZlOGEifQ"
         }
       ]
@@ -269,7 +269,7 @@
           "version": "repo-lines-v1:sha256:e9d6ff5362353906ee52813ac8bb6358f45e2f46ccfb676b70bf9b1d26c5ae79:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZmVkYjgyNTNhZWY5OThiMTg1MTRkY2JiMDJhMDk4OTgzZDE0YWUyMWNmNTU2OTk0NTZiYWMwMzY2MDM4YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYjNlN2NkMGMzYTYyMzA0NzY2ODE2MWQxMDRlOTlkODYyMDljYTNlNzc1NGEyNWIxMTlhNDkwNzg3ODA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjYzJiZGUxZGI4MWUxNDAwMmM4NGZlODY2ZmNlNjRhODE1YWU1NGJlYjhjMTJhNWI2YWFiNTBhMzE0N2MyYTMifQ"
         },
         {
-          "resource": "repo://src/connectors/mcp-client.ts#L923-L940",
+          "resource": "repo://src/connectors/mcp-client.ts#L926-L943",
           "version": "repo-lines-v1:sha256:3bb5d4a25ccdbf29eb1958baf3113067b1b21bea01aebcda7f8636310a0d0eb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMmQyZGIxYWUwYTBiN2QxYjNiZDY5OTVjOGI4MmFhZDhiNTdlZDYxZWQ1NDI5NTdlOTdlZWY0MTc2ZTMyNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZTNmZDg4NDQ0Y2M2ODQ2OWY5OWQ5MzhiOTJjY2Y5NjliZDRhZjlkZWQwNGMyMzVjZTk2ODExNTNmZjFhMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzNzU2ZTg0NjE4ZGQzZTEyZTgxOGVhODQ3ZDIxNGQ4ZmU4ZTY4NjhjZjczMThmOWVmOTZkODBhZGFhOTdjMjEifQ"
         }
       ]
@@ -297,7 +297,7 @@
       "statement": "The Gmail connector (id google) is a direct-api backend that fetches recent Gmail messages via the Gmail API and requires OAuth access and refresh token env vars (OPENWIKI_GMAIL_ACCESS_TOKEN and OPENWIKI_GMAIL_REFRESH_TOKEN).",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L78-L81",
+          "resource": "repo://src/config/constants.ts#L113-L116",
           "version": "repo-lines-v1:sha256:0a9d4477f02a8bc15eaa60a09f233796ea4612fbcfbd6a6b0406583a941745fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U4MWVkOTJlYjcxMjMzNmE4ZTQ4ZGI3NDRmMTJhMDJlNzYxODA0NTM0NTRhMDExMzY2OTlhZWQ2YTIwZTI0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMyMDUxY2Q5YTYwYWEyMGQ1Y2NiMjUzNDY2OTY4OTIzZWNlMDY4NGNkMjk5ZmExZWNkOWVlNmJiMGI4YmRiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJkMmY0M2U3NTg1ZDFhYWVkODA2MTgzOWMwNTY1M2NiZmRhYjNjZTA4ZGFlODBhMTQzZTc5MWI1NTFkYmJmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdjMWVhYTBlMTJmM2MxZDY1YzQ0YWE5ZTAxN2RiYWNiOWJjNTFlODVmYTBmZDhlNWZiNmQzN2U0NDk2MWM3ZiJ9"
         },
         {
@@ -311,7 +311,7 @@
       "statement": "The Slack connector is a direct-api backend requiring OPENWIKI_SLACK_USER_TOKEN that fetches conversations, recent messages, and assistant search context across recent_messages, my_messages_search, and assistant_search streams.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L93-L93",
+          "resource": "repo://src/config/constants.ts#L128-L128",
           "version": "repo-lines-v1:sha256:9268117cdcd0089e156017748106e873de5acbac2ba77eab658d0e0c0a0a9c47:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI2ODExN2NkY2QwMDg5ZTE1NjAxNzc0ODEwNmU4NzNkZTVhY2JhYzJiYTc3ZWFiNjU4ZDBlMGMwYTBhOWM0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI2ODExN2NkY2QwMDg5ZTE1NjAxNzc0ODEwNmU4NzNkZTVhY2JhYzJiYTc3ZWFiNjU4ZDBlMGMwYTBhOWM0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NmOGJkZTI1ZGUzOTFlYWMyNDgzNjkxMTE0YzI4Y2E2OGRlN2Y1MmRhZDFjYmU4Y2NiNjNjMjRjZDExNmQ1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI0OWM5YWRmNzNkY2NmNzIxYzk0MzY0OGJlODA4MGE0OTJlM2YyOTFlZTEzOGNkZDBlMGRkNDZiMDYzZmM2MCJ9"
         },
         {
@@ -325,7 +325,7 @@
       "statement": "The X/Twitter connector is a direct-api backend requiring OPENWIKI_X_ACCESS_TOKEN that fetches home timeline, user posts, mentions, list posts, and bookmarks via X API v2 with OAuth user context.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L94-L94",
+          "resource": "repo://src/config/constants.ts#L129-L129",
           "version": "repo-lines-v1:sha256:73f075e9b53c2c2942aef3484f98ad290ef7ece8d226caf83aa1a5d4d8c5a4db:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNmMDc1ZTliNTNjMmMyOTQyYWVmMzQ4NGY5OGFkMjkwZWY3ZWNlOGQyMjZjYWY4M2FhMWE1ZDRkOGM1YTRkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNmMDc1ZTliNTNjMmMyOTQyYWVmMzQ4NGY5OGFkMjkwZWY3ZWNlOGQyMjZjYWY4M2FhMWE1ZDRkOGM1YTRkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDg4MWYzM2MyODFhMDIxYzdmYWZkZWU2MDdhZjdmYmIwNjRlYWM3YzlmNzY4ZWY2ZGIxYzAwYmEwM2QxZDNmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyMTFmNDU4NmM5NzFkZmMzNThhMzgyMTkxZDNlOGE4ZWQyYjc5Y2RlMWVlNDc5ODY2NTlmMGNlMmEzOGFlYiJ9"
         },
         {
@@ -339,7 +339,7 @@
       "statement": "The web-search connector is a direct-api backend requiring TAVILY_API_KEY that runs Tavily searches via the LangChain Tavily integration; it is enabled by default but produces nothing without configured queries.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L98-L98",
+          "resource": "repo://src/config/constants.ts#L133-L133",
           "version": "repo-lines-v1:sha256:75dde753071292423834078688d4caa67cc9839f5ef429fb866fbad180d24961:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVkZGU3NTMwNzEyOTI0MjM4MzQwNzg2ODhkNGNhYTY3Y2M5ODM5ZjVlZjQyOWZiODY2ZmJhZDE4MGQyNDk2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVkZGU3NTMwNzEyOTI0MjM4MzQwNzg2ODhkNGNhYTY3Y2M5ODM5ZjVlZjQyOWZiODY2ZmJhZDE4MGQyNDk2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWUyMTFmNDU4NmM5NzFkZmMzNThhMzgyMTkxZDNlOGE4ZWQyYjc5Y2RlMWVlNDc5ODY2NTlmMGNlMmEzOGFlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE4NjUzM2M4NjdhNTE5YzU4Nzk5OWM3ODNiM2E1ZDhmODRlMTQzZWVjM2Q0ODdkNGM2MzhkODg1NDk0N2Q5YSJ9"
         },
         {
@@ -464,7 +464,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-09T08:09:59.193Z"
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-13T08:15:00.712Z"
   }
 }

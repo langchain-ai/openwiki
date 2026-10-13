@@ -140,10 +140,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-13T08:15:00.712Z
 ---
 
 # Testing Guide
@@ -389,7 +389,12 @@ the concurrency contract:
   the pool size is lowered by one with a `Reduced page concurrency to <n>` text
   event; an ordinary (non-rate-limit) worker failure is reset and retried once
   (`pageRestoreCalls === 1`, `restoreCalls === 0`) and does **not** lower
-  concurrency.
+  concurrency. A companion `lowers concurrency after a Bedrock token-quota
+  throttle` test arms the failure with a real `ThrottlingException` from
+  `@aws-sdk/client-bedrock-runtime` (HTTP 429 carried in `$metadata`) and asserts
+  the same one-attempt skip and `Reduced page concurrency to 2` event, so the
+  AWS-SDK throttle shape is classified as a rate limit by `isRateLimitError`
+  rather than retried as an ordinary failure.
 - **Fatal submission isolation.** A fatal `submitRepositoryPage` error (armed
   via `fatalPageSubmissions`) lets in-flight workers submit or skip, records
   the fatal error on the pool, stops new jobs from starting, and is rethrown
@@ -471,7 +476,12 @@ automatic task capability at the model boundary` test pins the same
 middleware's removal of the general-purpose `task` tool from the
 model-facing request, so the non-delegating workers never advertise
 delegation. `isRateLimitError` is unit-tested directly for status/`statusCode`/
-`code`/message/`cause` recognition, and `parseWorkerToolEvent` is tested to
+`code`/message/`cause` recognition — including a Bedrock-specific suite that
+recognizes the AWS-SDK `ThrottlingException` both from its `$metadata`
+`httpStatusCode: 429` and from the exception `name` alone (the ConverseStream
+shape that arrives mid-stream with no HTTP status), while a
+`ValidationException` with `$metadata.httpStatusCode: 400` is **not** treated
+as a rate limit — and `parseWorkerToolEvent` is tested to
 forward only approved worker tool lifecycle events (`read_file`, `write_file`,
 `grep`, …) while dropping `execute`/`task` and `messages`-channel narration.
 
@@ -1160,13 +1170,13 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Run-log helpers:** `pnpm exec vitest run test/cli/run-log/` (reducer/progress/summary/activity/tool-input), or `-t "retains concurrent worker progress fields"` for the concurrent-worker progress field pin.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`), `-t "restores a page snapshot without skipping the pending job"` (restore leaves the page pending), or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
 - **Agent retry-before-skip:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "retries once when a worker exits without submitting and completes the page"` (recovered by retry) or `-t "skips a page worker that fails every attempt and continues the queue"` (give-up path).
-- **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off, not retried), `-t "does not lower concurrency for an ordinary worker failure"` (ordinary failure retried once), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
+- **Concurrent page workers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "runs distinct pages at once and writes quickstart last"` (concurrency, held-back quickstart, in-flight progress), `-t "lowers concurrency after a rate-limited worker and continues"` (429 back-off, not retried), `-t "lowers concurrency after a Bedrock token-quota throttle"` (AWS-SDK `ThrottlingException` classified as a rate limit), `-t "does not lower concurrency for an ordinary worker failure"` (ordinary failure retried once), or `-t "lets in-flight workers settle before rethrowing a fatal submission"` (fatal isolation).
 - **Duplicate-plan tolerance:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "continues when the planner repeats the same accepted plan"`.
 - **Post-submit page durability:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "keeps a durably completed page after a later worker failure"`.
 - **LangSmith thread grouping:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "tags the planner and every concurrent page worker with the run's thread id"` (shared `thread_id` on planner + every worker) or `-t "uses OPENWIKI_TRACE_THREAD_ID when CI sets it"` (trimmed env override).
 - **LangSmith trace names:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "names the planner and each page worker after its page"` (`PLANNER_AGENT_NAME` + `workerAgentName(page)`).
 - **Repository-worker response coercion:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "coerces roleless generic streaming aggregates before LangChain validates wrapModelCall"` (roleless `ChatMessageChunk` → `AIMessageChunk` with collapsed tool calls), `-t "coerces generic assistant messages before LangChain validates wrapModelCall"` (`ChatMessage` → `AIMessage`), or `-t "leaves non-assistant generic model responses untouched"`.
-- **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` or `-t "forwards only approved tool lifecycle events"`.
+- **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` (incl. Bedrock `ThrottlingException`/`ValidationException` classification) or `-t "forwards only approved tool lifecycle events"`.
 - **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts`.
 - **Vertex AI surface dispatch (incl. Grok routing):** `pnpm exec vitest run test/agent/vertex-surface.test.ts` (Claude→anthropic, partner/Grok→openai-maas, Gemini/unknown→gemini, auth-fetch and env neutralization).
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.

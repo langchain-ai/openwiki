@@ -44,10 +44,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-13T08:15:00.712Z
 ---
 
 # Repository Generation Lifecycle
@@ -579,7 +579,14 @@ ignored for a single worker (`slot === 0`).
 When a worker is skipped due to a provider rate-limit error (`isRateLimitError`),
 the pool shrinks its live `size` by one (never below 1) and emits a user-facing
 message. The remaining workers continue; the fatal-error guard ensures the run
-never finalizes with pending jobs.
+never finalizes with pending jobs. `isRateLimitError` recognizes HTTP 429 across
+providers: it checks a `status`/`statusCode` field and a numeric `code === 429`,
+matches the AWS Bedrock `ThrottlingException` name (which is all a mid-stream
+throttle carries) and `$metadata.httpStatusCode === 429`, matches string `code`
+values and `message` text containing "429", "rate limit", or "too many
+requests", and walks `cause` chains so wrapped SDK errors are recognized too.
+Bedrock's token-quota message ("Too many tokens") deliberately matches no
+rate-limit text, so it is treated as a page problem rather than a throttle.
 
 ### Fatal-error handling
 

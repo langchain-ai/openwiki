@@ -50,10 +50,10 @@ sources:
     resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:09:59.193Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:09:59.193Z
+  - by: openwiki/0.7.2
+    at: 2026-10-13T08:15:00.712Z
 ---
 
 # Source Connectors
@@ -93,7 +93,7 @@ flowchart LR
   reg[registry.ts<br/>createConnectorRegistry] --> rt[ConnectorRuntime]
   rt -->|reads| cfg[config.json]
   rt -->|reads/writes| st[state.json]
-  rt -->|ingest| raw[raw/&lt;run-id&gt;/*.json]
+  rt -->|ingest| raw[raw/<run-id>/*.json]
   rt -->|backend| api[Provider API / MCP server / local git]
 ```
 
