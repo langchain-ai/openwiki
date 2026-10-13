@@ -117,6 +117,7 @@ export interface ProposedRepositoryPlan {
  * @param proposed - Complete proposed page and deletion set.
  * @param claimIssues - Stable preflight issues that require page work.
  * @param requiredRewritePages - Existing pages requiring language rewrites.
+ * @param requiredCoveragePages - Existing pages requiring verified Claims.
  * @returns Complete normalized plan ready for durable persistence.
  * @throws RepositoryRunError when paths, deletion intent, or init shape is invalid.
  */
@@ -125,6 +126,7 @@ export function createRepositoryPlan(
   proposed: ProposedRepositoryPlan,
   claimIssues: readonly GroundingIssue[],
   requiredRewritePages: readonly string[] = [],
+  requiredCoveragePages: readonly string[] = [],
 ): RepositoryRunPlan {
   const pages = proposed.pages.map(normalizePlanPage);
   const deletePages = uniqueSorted(
@@ -176,6 +178,7 @@ export function createRepositoryPlan(
     const deleted = new Set(deletePages);
     addRequiredClaimIssueJobs(pages, pagePaths, deleted, claimIssues);
     addRequiredRewriteJobs(pages, pagePaths, deleted, requiredRewritePages);
+    addRequiredCoverageJobs(pages, pagePaths, deleted, requiredCoveragePages);
   }
 
   // Quickstart is the synthesis/navigation page; generate it after domain pages.
@@ -313,6 +316,31 @@ function addRequiredRewriteJobs(
       title: titleFromPath(page),
       purpose:
         "Rewrite this existing page in the run's target language while preserving every accurate repository-supported fact and reconciling its complete Claim set.",
+      seedPaths: [],
+      relatedPages: [],
+      instructions: [],
+      status: "pending",
+    });
+    pagePaths.add(page);
+  }
+}
+
+/** Inserts missing existing pages whose Markdown and Claims need verification. */
+function addRequiredCoverageJobs(
+  pages: PageJob[],
+  pagePaths: Set<string>,
+  deletePages: Set<string>,
+  requiredPages: readonly string[],
+): void {
+  for (const pageInput of requiredPages) {
+    const page = normalizeWikiPagePath(pageInput);
+    if (pagePaths.has(page) || deletePages.has(page)) continue;
+    pages.push({
+      id: randomUUID(),
+      path: page,
+      title: titleFromPath(page),
+      purpose:
+        "Establish verified Claims for this existing page from current repository evidence while preserving accurate content.",
       seedPaths: [],
       relatedPages: [],
       instructions: [],
