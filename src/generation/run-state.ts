@@ -223,7 +223,7 @@ const UpdateMetadataSchema = z
     command: z.enum(["init", "update"]),
     gitHead: z.string().optional(),
     model: z.string(),
-    status: z.enum(["complete", "interrupted"]),
+    status: z.enum(["complete", "interrupted", "running"]),
     language: z.string().optional(),
   })
   .strict();
