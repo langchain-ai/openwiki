@@ -1,5 +1,7 @@
 import {
+  OPENWIKI_PLANNING_REASONING_EFFORT_ENV_KEY,
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
+  OPENWIKI_WRITING_REASONING_EFFORT_ENV_KEY,
   providerUsesResponsesApi,
   resolveOpenAiCompatibleReasoningEffortSupported,
   type OpenWikiProvider,
@@ -31,9 +33,31 @@ export type ResolvedReasoningConfig = {
   transport: ReasoningTransport;
 };
 
+/** Repository-generation phase whose reasoning effort may be overridden. */
+export type ReasoningPhase = "planning" | "writing";
+
+const PHASE_REASONING_EFFORT_ENV_KEYS: Record<ReasoningPhase, string> = {
+  planning: OPENWIKI_PLANNING_REASONING_EFFORT_ENV_KEY,
+  writing: OPENWIKI_WRITING_REASONING_EFFORT_ENV_KEY,
+};
+
 export type ResolveReasoningConfigOptions = {
   useResponsesApi?: boolean;
+  /** Prefer this phase's env key over `OPENWIKI_REASONING_EFFORT` when set. */
+  phase?: ReasoningPhase;
 };
+
+/**
+ * Whether a phase-specific reasoning effort is set, so the phase needs its own
+ * model instance.
+ */
+export function hasPhaseReasoningEffort(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return Object.values(PHASE_REASONING_EFFORT_ENV_KEYS).some(
+    (key) => env[key] !== undefined,
+  );
+}
 
 const OPENAI_GPT_56_REASONING_CAPABILITY = {
   transport: "responses-reasoning",
@@ -91,7 +115,14 @@ export function resolveReasoningConfig(
   env: NodeJS.ProcessEnv = process.env,
   options: ResolveReasoningConfigOptions = {},
 ): ResolvedReasoningConfig | undefined {
-  const rawEffort = env[OPENWIKI_REASONING_EFFORT_ENV_KEY];
+  const phaseKey = options.phase
+    ? PHASE_REASONING_EFFORT_ENV_KEYS[options.phase]
+    : undefined;
+  const envKey =
+    phaseKey !== undefined && env[phaseKey] !== undefined
+      ? phaseKey
+      : OPENWIKI_REASONING_EFFORT_ENV_KEY;
+  const rawEffort = env[envKey];
 
   if (rawEffort === undefined) {
     return undefined;
@@ -101,7 +132,7 @@ export function resolveReasoningConfig(
 
   if (!isReasoningEffort(effort)) {
     throw new Error(
-      `Invalid ${OPENWIKI_REASONING_EFFORT_ENV_KEY}. Expected one of: ${REASONING_EFFORT_VALUES.join(", ")}.`,
+      `Invalid ${envKey}. Expected one of: ${REASONING_EFFORT_VALUES.join(", ")}.`,
     );
   }
 
@@ -116,13 +147,13 @@ export function resolveReasoningConfig(
 
   if (capability === undefined) {
     throw new Error(
-      `${OPENWIKI_REASONING_EFFORT_ENV_KEY} is not supported for provider "${provider}" and model "${modelId}".`,
+      `${envKey} is not supported for provider "${provider}" and model "${modelId}".`,
     );
   }
 
   if (!capability.values.includes(effort)) {
     throw new Error(
-      `Invalid ${OPENWIKI_REASONING_EFFORT_ENV_KEY} value "${effort}" for provider "${provider}" and model "${modelId}". Supported values: ${capability.values.join(", ")}.`,
+      `Invalid ${envKey} value "${effort}" for provider "${provider}" and model "${modelId}". Supported values: ${capability.values.join(", ")}.`,
     );
   }
 
