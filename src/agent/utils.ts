@@ -836,10 +836,29 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
   }
 }
 
-async function getGitHead(cwd: string): Promise<string | undefined> {
-  const head = await runGit(cwd, ["rev-parse", "HEAD"]);
+/**
+ * Matches a full SHA-1 (40) or SHA-256 (64) Git object id.
+ */
+const GIT_OBJECT_ID_PATTERN = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u;
 
-  return head.length > 0 ? head : undefined;
+/**
+ * Returns the current commit id, or undefined when HEAD does not name a commit
+ * (for example a repository with no commits yet) or Git cannot be read.
+ */
+async function getGitHead(cwd: string): Promise<string | undefined> {
+  // `runGit` merges stderr into its result, so a failed lookup would surface
+  // git's error text as the "commit id". `--verify --quiet` prints nothing and
+  // exits non-zero when HEAD is unborn; the id check rejects anything else.
+  const [head] = await runGitLines(cwd, [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "HEAD",
+  ]);
+
+  return head !== undefined && GIT_OBJECT_ID_PATTERN.test(head)
+    ? head
+    : undefined;
 }
 
 /**
