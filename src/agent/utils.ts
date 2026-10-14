@@ -889,6 +889,36 @@ function isUpdateMetadataStatusLine(line: string): boolean {
 }
 
 /**
+ * Returns whether a recorded baseline names a commit this clone can read.
+ *
+ * A shallow clone or rewritten history can leave a page's recorded baseline
+ * missing, and a missing baseline makes its changed paths unknowable. Callers
+ * that make lifecycle decisions from changed paths must check this first,
+ * because `getRepositoryChangedPaths` treats unreadable history as "no paths".
+ *
+ * @param cwd - Repository root.
+ * @param gitHead - Recorded baseline commit id.
+ * @returns True only for a full commit id whose commit object is present.
+ */
+export async function isReadableGitCommit(
+  cwd: string,
+  gitHead: string,
+): Promise<boolean> {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(gitHead)) return false;
+
+  try {
+    await execFileAsync(
+      "git",
+      ["--no-pager", "cat-file", "-e", `${gitHead}^{commit}`],
+      { cwd, maxBuffer: 1024 * 1024 },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Returns best-effort repository-relative paths for planner context.
  *
  * Unlike the source fingerprint, history lookup failures intentionally produce
