@@ -164,7 +164,10 @@ export function splitFrontmatter(raw: string): { meta: RawMeta; body: string } {
     return { meta: {}, body: raw };
   }
   const block = raw.slice(3, end).trim();
-  const body = raw.slice(raw.indexOf("\n", end + 1) + 1);
+  const newlineAfterClose = raw.indexOf("\n", end + 1);
+  // A closing `---` that ends the file is a valid frontmatter close (the
+  // parser in `okf/frontmatter.ts` accepts it), so the page body is empty.
+  const body = newlineAfterClose === -1 ? "" : raw.slice(newlineAfterClose + 1);
   const meta: RawMeta = {};
   let pendingListKey: string | undefined;
   for (const line of block.split("\n")) {
