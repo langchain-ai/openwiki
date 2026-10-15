@@ -42,7 +42,7 @@ import {
 } from "../okf/index-labels.js";
 import type { WikiFrontmatterReport } from "../okf/index-sync.js";
 import {
-  getPrimaryLanguageSubtag,
+  isMeaningfulLanguageChange,
   requireResolvedLanguage,
   resolveLanguage,
 } from "../platform/language.js";
@@ -415,10 +415,10 @@ export async function beginRepositoryRun(
     input.language,
   );
   const language = context.language ?? "en";
-  const languageChanged =
-    requestedLanguage !== undefined &&
-    getPrimaryLanguageSubtag(requestedLanguage) !==
-      getPrimaryLanguageSubtag(context.lastUpdate?.language);
+  const languageChanged = isMeaningfulLanguageChange(
+    requestedLanguage,
+    context.lastUpdate?.language,
+  );
   const ignore = await OpenWikiIgnore.load(input.root);
 
   const replacement =
