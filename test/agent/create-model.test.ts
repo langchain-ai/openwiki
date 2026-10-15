@@ -251,6 +251,76 @@ describe("createModel Anthropic output-token limit", () => {
 
     expect(model.maxTokens).toBe(24_000);
   });
+
+  test("streams requests so a large explicit limit is not rejected by the SDK", async () => {
+    // The Anthropic SDK refuses non-streaming requests whose max_tokens implies
+    // more than 10 minutes (above ~21,333 tokens) before sending anything.
+    process.env[MAX_OUTPUT_TOKENS_KEY] = "64000";
+    const sse = [
+      {
+        type: "message_start",
+        message: {
+          id: "msg_test",
+          type: "message",
+          role: "assistant",
+          model: "claude-sonnet-5",
+          content: [],
+          stop_reason: null,
+          stop_sequence: null,
+          usage: { input_tokens: 1, output_tokens: 0 },
+        },
+      },
+      {
+        type: "content_block_start",
+        index: 0,
+        content_block: { type: "text", text: "" },
+      },
+      {
+        type: "content_block_delta",
+        index: 0,
+        delta: { type: "text_delta", text: "ok" },
+      },
+      { type: "content_block_stop", index: 0 },
+      {
+        type: "message_delta",
+        delta: { stop_reason: "end_turn", stop_sequence: null },
+        usage: { output_tokens: 1 },
+      },
+      { type: "message_stop" },
+    ]
+      .map(
+        (event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`,
+      )
+      .join("");
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(sse, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("anthropic", "claude-sonnet-5", 0);
+      const result = await model.invoke("hi");
+
+      expect(result.content).toBe("ok");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [, init] = fetchMock.mock.calls[0] as unknown as [
+        string | URL,
+        RequestInit,
+      ];
+      const body = JSON.parse(init.body as string) as {
+        stream?: boolean;
+        max_tokens?: number;
+      };
+      expect(body.stream).toBe(true);
+      expect(body.max_tokens).toBe(64_000);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 describe("createModel OpenAI-compatible transport selection", () => {
