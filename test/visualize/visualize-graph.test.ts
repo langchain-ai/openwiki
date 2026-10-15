@@ -56,6 +56,15 @@ describe("splitFrontmatter", () => {
     expect(meta).toEqual({});
     expect(body).toBe("# Just markdown\n");
   });
+
+  test("treats a closing delimiter at end of file as a valid frontmatter close", () => {
+    const { meta, body } = splitFrontmatter(
+      ["---", "type: Reference", "title: Stub page", "---"].join("\n"),
+    );
+    expect(meta.type).toBe("Reference");
+    expect(meta.title).toBe("Stub page");
+    expect(body).toBe("");
+  });
 });
 
 describe("firstHeading", () => {
