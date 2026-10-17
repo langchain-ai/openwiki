@@ -3,6 +3,7 @@ import { render } from "ink-testing-library";
 import { describe, expect, test, vi } from "vitest";
 import { WikiWorkspaceManager } from "../../../src/cli/components/wiki-workspace-manager.tsx";
 import { stripAnsi } from "./ansi.ts";
+import { flushInk } from "./flush.ts";
 import type { DiscoveredRepository } from "../../../src/linking/wiki-workspaces.ts";
 
 /**
@@ -10,8 +11,8 @@ import type { DiscoveredRepository } from "../../../src/linking/wiki-workspaces.
  *
  * @returns Promise settled on the next event-loop turn.
  */
-function flush(): Promise<void> {
-  return new Promise((resolve) => setImmediate(resolve));
+async function flush(): Promise<void> {
+  await flushInk();
 }
 
 /**

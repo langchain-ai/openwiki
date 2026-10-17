@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { InitSetup } from "../../../src/setup/credentials.tsx";
 import { getProviderApiKeyEnvKey } from "../../../src/config/constants.ts";
 import { stripAnsi as plain } from "../../cli/components/ansi.ts";
+import { flushInk } from "../../cli/components/flush.ts";
 
 // The wizard's config load and credential save touch ~/.openwiki. Stub the
 // readers/writers so the state machine runs end to end without reading or
@@ -67,8 +68,7 @@ afterEach(() => {
 
 /** Yields to microtasks and one macrotask so pending async work can settle. */
 async function tick(): Promise<void> {
-  await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushInk();
 }
 
 /**
@@ -80,14 +80,15 @@ async function waitForFrame(
   lastFrame: () => string | undefined,
   predicate: (frame: string) => boolean,
 ): Promise<string> {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const frame = plain(lastFrame());
-    if (predicate(frame)) {
+  return vi.waitFor(
+    async () => {
+      await tick();
+      const frame = plain(lastFrame());
+      expect(predicate(frame)).toBe(true);
       return frame;
-    }
-    await tick();
-  }
-  return plain(lastFrame());
+    },
+    { timeout: 2_000, interval: 10 },
+  );
 }
 
 /**

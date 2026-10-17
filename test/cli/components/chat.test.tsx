@@ -9,6 +9,7 @@ import {
 import type { CompletedRun } from "../../../src/cli/components/types.ts";
 import { saveOpenWikiEnv } from "../../../src/config/env.ts";
 import { stripAnsi as plain } from "./ansi.ts";
+import { flushInk } from "./flush.ts";
 
 // The secret-input path persists credentials to ~/.openwiki/.env. Mock the writer
 // so the tests exercise that path without ever touching the real filesystem; the
@@ -27,9 +28,7 @@ async function noopAsync(): Promise<void> {}
  * work (submit, credential save, menu selection) completes before assertions.
  */
 async function flush(): Promise<void> {
-  await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  await Promise.resolve();
+  await flushInk();
 }
 
 describe("ChatHistory", () => {

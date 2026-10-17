@@ -49,6 +49,15 @@ describe("Rows", () => {
 });
 
 describe("StatusLine", () => {
+  test("can mount and unmount with the supported React renderer", () => {
+    const view = render(
+      <StatusLine tone="success" label="Renderer" value="ready" />,
+    );
+
+    expect(plain(view.lastFrame())).toContain("Renderer ready");
+    expect(() => view.unmount()).not.toThrow();
+  });
+
   test("renders the label and value with a bullet marker", () => {
     const { lastFrame } = render(
       <StatusLine tone="success" label="Model" value="opus" />,
