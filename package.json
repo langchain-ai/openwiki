@@ -89,7 +89,7 @@
     "ink": "^5.2.1",
     "jsonc-parser": "^3.3.1",
     "langchain": "^1.5.10",
-    "langsmith": "^0.10.5",
+    "langsmith": "^0.9.0",
     "marked": "^18.0.11",
     "posthog-node": "^5.51.4",
     "react": "^18.3.1",
