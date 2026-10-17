@@ -86,7 +86,7 @@
     "cronstrue": "3.27.0",
     "deepagents": "1.13.2",
     "google-auth-library": "^11.0.2",
-    "ink": "^5.2.1",
+    "ink": "~6.8.0",
     "jsonc-parser": "^3.3.1",
     "langchain": "^1.5.10",
     "langsmith": "^0.10.5",
