@@ -45,14 +45,14 @@
   },
   "scripts": {
     "openwiki": "node dist/cli/cli.js",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
+    "build": "node ./node_modules/typescript7/bin/tsc -p tsconfig.json && node ./node_modules/typescript7/bin/tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
     "changeset:version": "changeset version",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli/cli.tsx",
     "eval:ledger": "tsx evals/ledger/run.ts",
     "eval:ledger:reevaluate": "tsx evals/ledger/reevaluate.ts",
-    "eval:ledger:typecheck": "tsc --noEmit -p evals/ledger/tsconfig.json",
+    "eval:ledger:typecheck": "node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "integrations:dev": "pnpm run build && node scripts/install-local-integration.mjs",
@@ -65,7 +65,7 @@
     "stamp:channel": "node scripts/stamp-build-channel.cjs",
     "start": "node dist/cli/cli.js",
     "test": "pnpm run typecheck && pnpm run build && pnpm run coverage",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json"
+    "typecheck": "node ./node_modules/typescript7/bin/tsc --noEmit -p tsconfig.json && node ./node_modules/typescript7/bin/tsc --noEmit -p tsconfig.client.json"
   },
   "dependencies": {
     "@anthropic-ai/vertex-sdk": "^0.19.6",
@@ -123,8 +123,9 @@
     "mermaid": "^11.17.2",
     "prettier": "^3.9.6",
     "tsx": "^4.23.12",
-    "typescript": "^7.0.2",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.68.0",
+    "typescript7": "npm:typescript@7.0.2",
     "vitest": "^4.1.11"
   },
   "packageManager": "pnpm@11.25.0"
