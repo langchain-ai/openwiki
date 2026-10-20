@@ -514,6 +514,49 @@ describe("repository wiki retrieval", () => {
     ]);
   });
 
+  test("keeps combining marks in heading anchors like GitHub", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/translation.md"),
+      page({
+        title: "Translation",
+        description: "Translated page behavior.",
+        source: "src/translation.ts",
+        body: [
+          "## हिन्दी अनुवाद",
+          "",
+          "The Hindi token is SAFFRON_HINDI.",
+          "",
+          "## Café setup",
+          "",
+          "The decomposed accent token is SAFFRON_ACCENT.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const references = [];
+    for (const query of ["SAFFRON_HINDI", "SAFFRON_ACCENT"]) {
+      const result = requireSearchResults(await searchWiki(root, { query }));
+      references.push(result.results[0]?.ref[0]);
+    }
+
+    // GitHub keeps Devanagari vowel signs and a decomposed acute accent in the anchor.
+    expect(references).toEqual([
+      "openwiki/architecture/translation.md#हिन्दी-अनुवाद",
+      "openwiki/architecture/translation.md#café-setup",
+    ]);
+
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/translation.md",
+      sections: ["हिन्दी-अनुवाद", "café-setup"],
+    });
+    expect(read.sections.map(({ content }) => content)).toEqual([
+      "## हिन्दी अनुवाद\n\nThe Hindi token is SAFFRON_HINDI.",
+      "## Café setup\n\nThe decomposed accent token is SAFFRON_ACCENT.",
+    ]);
+  });
+
   test("linked search spans repositories and identifies results for exact reads", async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), "openwiki-retrieval-"),
