@@ -732,7 +732,13 @@ function rewriteLinks(node: WikiNode): void {
     .forEach((a) => {
       const href = a.getAttribute("href") ?? "";
       if (!href.endsWith(".md") && !href.includes(".md#")) return;
-      const clean = href.split("#")[0];
+      let clean = href.split("#")[0];
+      try {
+        // marked percent-encodes non-ASCII targets; node ids use the raw name.
+        clean = decodeURIComponent(clean);
+      } catch {
+        // Keep literal percent signs; the target must still match a node.
+      }
       const target = normalize(dir, clean).replace(/\.md$/, "");
       if (byId(target)) {
         a.classList.add("wikilink");
