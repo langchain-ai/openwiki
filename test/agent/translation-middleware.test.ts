@@ -89,16 +89,20 @@ describe("resolveTranslationPlan", () => {
     });
   });
 
-  test("does not switch for a region-only change with the same primary subtag", () => {
+  test("does not switch for a same-script region-only change", () => {
     expect(resolveTranslationPlan("update", "en-GB", "en")).toEqual({
       target: "en-GB",
       source: "en",
       translateAll: false,
     });
+  });
+
+  test("switches when the writing script changes under the same primary subtag", () => {
+    // zh-CN (Hans) → zh-TW (Hant) must retranslate every page.
     expect(resolveTranslationPlan("update", "zh-TW", "zh-CN")).toEqual({
       target: "zh-TW",
       source: "zh-CN",
-      translateAll: false,
+      translateAll: true,
     });
   });
 
