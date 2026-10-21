@@ -533,6 +533,34 @@ describe("reasoning capabilities", () => {
     ).toThrow(/not supported/u);
   });
 
+  test("prefers a phase-specific effort and falls back to the shared one", () => {
+    const env = {
+      OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED: "true",
+      OPENWIKI_REASONING_EFFORT: "medium",
+      OPENWIKI_WRITING_REASONING_EFFORT: "none",
+    };
+    const resolve = (phase?: "planning" | "writing") =>
+      resolveReasoningConfig("openai-compatible", "local", env, {
+        useResponsesApi: false,
+        phase,
+      })?.effort;
+
+    expect(resolve("writing")).toBe("none");
+    expect(resolve("planning")).toBe("medium");
+    expect(resolve()).toBe("medium");
+    expect(() =>
+      resolveReasoningConfig(
+        "openai-compatible",
+        "local",
+        {
+          ...env,
+          OPENWIKI_PLANNING_REASONING_EFFORT: "huge",
+        },
+        { phase: "planning" },
+      ),
+    ).toThrow(/OPENWIKI_PLANNING_REASONING_EFFORT/u);
+  });
+
   test("resolves supported values for OpenAI, Gemini, and NVIDIA NIM", () => {
     expect(
       resolveReasoningConfig("openai-chatgpt", "gpt-5.6-luna", {

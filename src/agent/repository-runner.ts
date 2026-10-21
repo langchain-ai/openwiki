@@ -292,6 +292,12 @@ export interface NativeRepositoryGenerationOptions {
   model: BaseChatModel;
 
   /**
+   * Model for the planner when it needs different settings, such as reasoning
+   * effort, from page workers. Defaults to `model`.
+   */
+  planningModel?: BaseChatModel;
+
+  /**
    * Maximum page workers running at once.
    *
    * Each worker still owns exactly one page. With more than one worker the
@@ -362,7 +368,7 @@ export async function runNativeRepositoryGeneration(
     await runPlanningAgent(
       run,
       view,
-      options.model,
+      options.planningModel ?? options.model,
       run.state.planningContext,
       options.onEvent,
     );
