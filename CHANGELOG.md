@@ -1,5 +1,11 @@
 # openwiki
 
+## 0.7.3
+
+### Patch Changes
+
+- [#990](https://github.com/langchain-ai/openwiki/pull/990) [`6c14bff`](https://github.com/langchain-ai/openwiki/commit/6c14bff27830034bfd70c15bde46825d7686ec60) Thanks [@dependabot](https://github.com/apps/dependabot)! - Use a React 19-compatible CLI renderer and keep browser graph types independent of the Node.js graph loader.
+
 ## 0.7.2
 
 ### Patch Changes
