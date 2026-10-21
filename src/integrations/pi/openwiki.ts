@@ -10,6 +10,8 @@ import {
   SubmitPageInput,
   SubmitPlanInput,
 } from "../core/protocol.js";
+import { createRetrievalTools } from "../core/retrieval-tools.js";
+import { resolveOpenWikiHomeDir } from "../../config/openwiki-home.js";
 import { OPENWIKI_VERSION } from "../../version.js";
 
 type JsonSchema = Record<string, unknown>;
@@ -43,6 +45,13 @@ type Bridge = {
 };
 
 const OPENWIKI_TOOLS = [
+  ...createRetrievalTools().map(({ name, description, schema }) => ({
+    name,
+    label: name.replace("openwiki_", "OpenWiki ").replaceAll("_", " "),
+    description,
+    parameters: z.toJSONSchema(schema, { target: "draft-07" }),
+    executionMode: "sequential" as const,
+  })),
   {
     name: "openwiki_begin",
     label: "OpenWiki begin",
@@ -112,6 +121,7 @@ async function startBridge(onclose: () => void): Promise<Bridge> {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [cliPath, "mcp", "--host", "pi"],
+    env: { OPENWIKI_CONFIG_DIR: resolveOpenWikiHomeDir() },
     stderr: "inherit",
   });
   const client = new Client(
