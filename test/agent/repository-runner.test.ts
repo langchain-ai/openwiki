@@ -846,6 +846,34 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.finishCalls).toBe(1);
   });
 
+  test("retries a rate-limited page when the pool cannot shrink further", async () => {
+    harness.pageWorkerFailures = 1;
+    harness.pageWorkerFailureError = Object.assign(
+      new Error("Request failed with status code 429"),
+      { status: 429 },
+    );
+    harness.planPaths = ["/openwiki/throttled.md", "/openwiki/later.md"];
+
+    const events = await runHarness();
+
+    // A single worker has no slot to give back, and skipping would not lower
+    // traffic because the next page starts at once. The throttled page gets the
+    // same reset-and-retry as any other failed attempt instead of being lost.
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
+    expect(
+      harness.currentRun?.state.plan?.pages.map(({ status }) => status),
+    ).toEqual(["complete", "complete"]);
+    expect(harness.finishCalls).toBe(1);
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("Reduced page concurrency"),
+      ),
+    ).toBe(false);
+  });
+
   test("keeps a durably completed page after a later worker failure", async () => {
     harness.pageWorkerPostSubmitFailures = 1;
     harness.planPaths = ["/openwiki/completed.md"];
