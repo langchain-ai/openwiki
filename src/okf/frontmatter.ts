@@ -633,7 +633,7 @@ function replaceFrontmatterFieldBlock(
 }
 
 /** Renders and replaces one complete structured YAML field. */
-function setFrontmatterValue(
+export function setFrontmatterValue(
   content: string,
   key: string,
   value: unknown,
