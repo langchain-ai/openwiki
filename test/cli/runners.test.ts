@@ -540,6 +540,44 @@ describe("runPrintCommand", () => {
     expect(output).toContain("Finalizing repository wiki");
     expect(output).not.toContain("read_file");
     expect(output).not.toContain("tool_start");
+    expect(stdout).toHaveLength(1);
+  });
+
+  test("streams progress before the buffered final output when requested", async () => {
+    vi.mocked(runOpenWikiAgent).mockImplementation(
+      (
+        _command: unknown,
+        _cwd: unknown,
+        options: { onEvent?: (event: unknown) => void },
+      ) => {
+        options.onEvent?.({
+          type: "repository_progress",
+          stage: "planning",
+          resumed: false,
+        });
+        options.onEvent?.({ type: "text", source: "agent", text: "wiki done" });
+        return Promise.resolve(undefined as never);
+      },
+    );
+
+    await runPrintCommand(
+      makeCommand("run", {
+        command: "update",
+        dryRun: false,
+        language: null,
+        mode: "code",
+        modeSource: "option",
+        modelId: null,
+        print: true,
+        shouldStart: true,
+        streamProgress: true,
+        userMessage: null,
+        telemetryFile: null,
+      }),
+    );
+
+    expect(stdout[0]).toBe("Planning repository wiki\n");
+    expect(stdout.at(-1)).toBe("wiki done\n");
   });
 
   test("runs the agent, prints collected text, and exits 0", async () => {

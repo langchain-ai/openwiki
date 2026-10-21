@@ -25,6 +25,7 @@ function runCommand(
     modeSource: "default",
     modelId: null,
     print: false,
+    streamProgress: false,
     shouldStart: true,
     telemetryFile: null,
     userMessage: null,
