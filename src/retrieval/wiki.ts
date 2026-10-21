@@ -1075,13 +1075,18 @@ function normalizeSectionAnchor(value: string): string {
 /**
  * Produces the GitHub-compatible base anchor for one Markdown heading.
  *
+ * Combining marks stay in the anchor, as they do on GitHub, so vowel signs in
+ * scripts such as Devanagari or Thai and decomposed accents survive. Emoji
+ * variation selectors are still dropped so emoji-only headings keep their
+ * readable fallback anchors.
+ *
  * @param heading - Parsed Markdown heading.
  * @returns Lowercase anchor before duplicate suffixing.
  */
 function headingSlug(heading: Tokens.Heading): string {
   return inlineHeadingText(heading.tokens)
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}_\s-]/gu, "")
+    .replace(/[^\p{L}\p{M}\p{N}_\s-]|\p{Variation_Selector}/gu, "")
     .replace(/ /gu, "-");
 }
 
