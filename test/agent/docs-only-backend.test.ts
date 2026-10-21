@@ -97,21 +97,63 @@ describe("OpenWikiLocalShellBackend", () => {
     ).resolves.toBe("updated");
   });
 
-  test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
-    const backend = new OpenWikiLocalShellBackend({
-      docsOnly: false,
-      rootDir,
-      virtualMode: true,
-    });
+  test.each([undefined, "repository"] as const)(
+    "confines chat mutations to docs with outputMode %s",
+    async (outputMode) => {
+      const rootDir = await mkdtemp(
+        path.join(os.tmpdir(), "openwiki-backend-"),
+      );
+      await mkdir(path.join(rootDir, "src"));
+      const sourcePath = path.join(rootDir, "src/example.ts");
+      const original = "export const example = 1;\n";
+      await writeFile(sourcePath, original);
+      const backend = new OpenWikiLocalShellBackend({
+        docsOnly: false,
+        outputMode,
+        rootDir,
+        virtualMode: true,
+        writableWikiPages: ["/openwiki/page.md"],
+      });
 
-    await expect(backend.write("/notes.md", "ok")).resolves.toEqual(
-      expect.objectContaining({ path: "/notes.md" }),
-    );
-    await expect(
-      readFile(path.join(rootDir, "notes.md"), "utf8"),
-    ).resolves.toBe("ok");
-  });
+      for (const source of ["/src/example.ts", "/openwiki/../src/example.ts"]) {
+        const write = await backend.write(source, "bad");
+        expect(write.error).toContain(`Refused path: ${source}`);
+        const edit = await backend.edit(source, "example", "injected");
+        expect(edit.error).toContain(`Refused path: ${source}`);
+        const deletion = await backend.delete(source);
+        expect(deletion.error).toContain(`Refused path: ${source}`);
+        await expect(readFile(sourcePath, "utf8")).resolves.toBe(original);
+      }
+      const newSource = await backend.write("/src/injected.ts", "bad");
+      expect(newSource.error).toContain("Refused path: /src/injected.ts");
+      await expect(
+        readFile(path.join(rootDir, "src/injected.ts"), "utf8"),
+      ).rejects.toThrow();
+      await expect(
+        backend.uploadFiles([
+          ["/src/example.ts", new TextEncoder().encode("bad")],
+        ]),
+      ).resolves.toEqual([
+        expect.objectContaining({ error: "permission_denied" }),
+      ]);
+      await expect(readFile(sourcePath, "utf8")).resolves.toBe(original);
+      const read = await backend.read("/src/example.ts");
+      expect(read.error).toBeUndefined();
+      expect(read.content).toContain("export const example = 1;");
+
+      const unassigned = await backend.write("/openwiki/other.md", "bad");
+      expect(unassigned.error).toContain("may not modify");
+      const write = await backend.write("/openwiki/page.md", "before");
+      expect(write.error).toBeUndefined();
+      const edit = await backend.edit("/openwiki/page.md", "before", "after");
+      expect(edit.error).toBeUndefined();
+      await expect(
+        readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+      ).resolves.toBe("after");
+      const deletion = await backend.delete("/openwiki/page.md");
+      expect(deletion.error).toBeUndefined();
+    },
+  );
 
   test("handles file-backed Git worktree metadata without crashing glob", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
