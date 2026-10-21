@@ -124,13 +124,26 @@ export type RepositoryPageWorkerJob = PageJob & {
  * @param job - Assigned page and its compact required Claim context.
  * @param allPages - Complete ordered page queue for quickstart navigation.
  * @param language - Resolved output language for generated prose.
+ * @param wikiGoal - Repository-wide OpenWiki instructions for this run.
+ * @param planningContext - Actual user and connector context for this run.
  * @returns Complete page-worker system prompt.
  */
 export function createRepositoryPagePrompt(
   job: RepositoryPageWorkerJob,
   allPages: readonly PageJob[],
   language: string,
+  wikiGoal?: string,
+  planningContext?: string,
 ): string {
+  const repositoryContext = [
+    wikiGoal?.trim()
+      ? `\nRepository OpenWiki instructions (these take precedence over the defaults above where they conflict):\n${wikiGoal.trim()}\n`
+      : "",
+    planningContext?.trim()
+      ? `\nThis run's request:\n${planningContext.trim()}\n`
+      : "",
+  ].join("");
+
   return `You own exactly ${job.path}.
 
 Title: ${job.title}
@@ -195,7 +208,7 @@ ${
         2,
       )}\nUse it to produce a compact task-routing map and link to the major domains.`
     : ""
-}`;
+}${repositoryContext}`;
 }
 
 /**
