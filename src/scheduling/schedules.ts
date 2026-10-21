@@ -17,6 +17,20 @@ import type { OpenWikiOnboardingConfig } from "../setup/onboarding.js";
 const execFileAsync = promisify(execFile);
 const DEFAULT_FIRST_HOUR = 2;
 
+/** Name of the Windows scheduled task installed by `installConnectorSchedule`. */
+const SCHTASKS_TASK_NAME = "OpenWiki Ingestion";
+
+/**
+ * Escapes a value for inclusion inside a double-quoted `cmd.exe` argument.
+ *
+ * The shim runs under `cmd.exe`, where `%` introduces variable expansion and
+ * `"` toggles quoting; both must be neutralized so hostile paths cannot change
+ * what the shim executes.
+ */
+function escapeCmdShimValue(value: string): string {
+  return value.replace(/%/gu, "%%").replace(/"/gu, "^");
+}
+
 export type CronValidationResult =
   | {
       description: string;
@@ -32,7 +46,7 @@ export type CronValidationResult =
 export type ScheduleInstallResult = {
   description: string;
   expression: string;
-  launchAgentPath?: string;
+  nativeJobPath?: string;
   warning?: string;
 };
 
@@ -41,9 +55,9 @@ export type ConnectorScheduleStatus = {
   description: string;
   displayName?: string;
   expression: string;
-  launchAgentLoaded: boolean;
-  launchAgentPath?: string;
-  launchAgentPlistExists: boolean;
+  nativeJobInstalled: boolean;
+  nativeJobPath?: string;
+  nativeJobPathExists: boolean;
   pausedAt?: string;
   sourceInstanceId: string;
   updatedAt: string;
@@ -144,12 +158,18 @@ export async function installConnectorSchedule({
     throw new Error(validation.error);
   }
 
+  void connectorId;
+
+  if (process.platform === "win32") {
+    return installConnectorScheduleWindows({ cwd, validation });
+  }
+
   if (process.platform !== "darwin") {
     return {
       description: validation.description,
       expression: validation.expression,
       warning:
-        "Schedule saved, but native installation is currently macOS-only.",
+        "Schedule saved, but native installation is currently supported on macOS and Windows only.",
     };
   }
 
@@ -163,7 +183,6 @@ export async function installConnectorSchedule({
     };
   }
 
-  void connectorId;
   const label = getLaunchAgentLabel();
   const launchAgentsDir = getLaunchAgentsDir();
   const logsDir = path.join(openWikiHomeDir, "logs");
@@ -191,14 +210,14 @@ export async function installConnectorSchedule({
   );
   await chmod(plistPath, 0o600);
 
-  await unloadLaunchAgent();
+  await unloadSchedulerJob();
   const launchdDomain = getLaunchdDomain();
   await execFileAsync("launchctl", ["bootstrap", launchdDomain, plistPath]);
 
   return {
     description: validation.description,
     expression: validation.expression,
-    launchAgentPath: plistPath,
+    nativeJobPath: plistPath,
   };
 }
 
@@ -210,18 +229,18 @@ export async function listConnectorSchedules(
     return [];
   }
 
-  const launchAgentPath = schedule.launchAgentPath;
+  const nativeJobPath = schedule.nativeJobPath;
   return [
     {
       description: schedule.description,
       displayName: "All ingestion",
       expression: schedule.expression,
-      launchAgentLoaded: schedule.pausedAt
+      nativeJobInstalled: schedule.pausedAt
         ? false
-        : await isLaunchAgentLoaded(),
-      launchAgentPath,
-      launchAgentPlistExists: launchAgentPath
-        ? await pathExists(launchAgentPath)
+        : await isSchedulerJobInstalled(),
+      nativeJobPath,
+      nativeJobPathExists: nativeJobPath
+        ? await pathExists(nativeJobPath)
         : false,
       pausedAt: schedule.pausedAt,
       sourceInstanceId: "all",
@@ -257,7 +276,7 @@ export async function pauseConnectorSchedules(
       updatedAt: new Date().toISOString(),
     },
   };
-  await unloadLaunchAgent();
+  await unloadSchedulerJob();
 
   const reconciled = await reconcileOpenWikiPowerSchedule(nextConfig);
   return {
@@ -303,7 +322,7 @@ export async function resumeConnectorSchedules({
     ingestionSchedule: {
       description: result.description,
       expression: result.expression,
-      launchAgentPath: result.launchAgentPath,
+      nativeJobPath: result.nativeJobPath,
       updatedAt: new Date().toISOString(),
       warning: result.warning,
     },
@@ -339,8 +358,8 @@ export async function deleteConnectorSchedules(
 
   const nextConfig = cloneOnboardingConfig(config);
   delete nextConfig.ingestionSchedule;
-  await unloadLaunchAgent();
-  await removeLaunchAgentPlist();
+  await unloadSchedulerJob();
+  await removeSchedulerJobFile();
 
   const reconciled = await reconcileOpenWikiPowerSchedule(nextConfig);
   return {
@@ -885,6 +904,267 @@ function getLaunchAgentsDir(): string {
 
 function getLaunchAgentPath(): string {
   return path.join(getLaunchAgentsDir(), `${getLaunchAgentLabel()}.plist`);
+}
+
+/**
+ * Translates a simple cron expression into `schtasks /Create` arguments.
+ *
+ * Supports exactly the subset `parseLaunchdCalendarInterval` accepts on macOS,
+ * so behavior stays symmetric across platforms:
+ *
+ * - `M H * * *` → `/SC DAILY /ST HH:MM`
+ * - `M H * * W` → `/SC WEEKLY /D <MON..SUN> /ST HH:MM`
+ * - `M H D * *` → `/SC MONTHLY /D <1..31> /ST HH:MM`
+ *
+ * Cron ORs day-of-month and day-of-week when both are restricted, but a
+ * schtasks trigger ANDs them; the combination is rejected (falling back to the
+ * "too complex" warning) rather than installing a near-dead timer. Month-pinned
+ * expressions are rejected too: schtasks has no /SC MONTHLY month selector.
+ *
+ * @returns The `/Create` argument list, or null when the expression cannot be
+ *   represented directly.
+ */
+export function parseSchtasksTriggerArgs(expression: string): string[] | null {
+  const parsed = parseSimpleCronFields(expression);
+  if (!parsed) {
+    return null;
+  }
+
+  const { day, hour, minute, month, weekday } = parsed;
+
+  const parsedMinute = getSingleCronNumber(minute, { max: 59, min: 0 });
+  if (parsedMinute === null) {
+    return null;
+  }
+
+  const parsedHour = getSingleCronNumber(hour, { max: 23, min: 0 });
+  if (parsedHour === null) {
+    return null;
+  }
+
+  if (month !== "*") {
+    return null;
+  }
+
+  const dayRestricted = day !== "*";
+  const weekdayRestricted = weekday !== "*";
+  if (dayRestricted && weekdayRestricted) {
+    return null;
+  }
+
+  const startTime = `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+
+  if (weekdayRestricted) {
+    const parsedWeekday = getSingleCronNumber(weekday, { max: 7, min: 0 });
+    if (parsedWeekday === null) {
+      return null;
+    }
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    return [
+      "/SC",
+      "WEEKLY",
+      "/D",
+      dayNames[parsedWeekday === 7 ? 0 : parsedWeekday],
+      "/ST",
+      startTime,
+    ];
+  }
+
+  if (dayRestricted) {
+    const parsedDay = getSingleCronNumber(day, { max: 31, min: 1 });
+    if (parsedDay === null) {
+      return null;
+    }
+    // /SC MONTHLY /D only accepts day values 1-31, which getSingleCronNumber
+    // already enforces.
+    return ["/SC", "MONTHLY", "/D", String(parsedDay), "/ST", startTime];
+  }
+
+  return ["/SC", "DAILY", "/ST", startTime];
+}
+
+function getSchtasksTaskName(): string {
+  return SCHTASKS_TASK_NAME;
+}
+
+function getSchtasksShimDir(): string {
+  return openWikiHomeDir;
+}
+
+function getSchtasksShimPath(): string {
+  return path.join(getSchtasksShimDir(), "ingestion.schedule.cmd");
+}
+
+/**
+ * Builds the `cmd.exe` shim the scheduled task executes.
+ *
+ * `schtasks /TR` has a ~261-character limit, no working-directory field, and
+ * no output redirection, so the task points at this short shim instead. It
+ * mirrors the launchd plist's ProgramArguments, WorkingDirectory, and
+ * StandardOut/ErrorPath behavior.
+ */
+function createSchtasksShim({
+  cwd,
+  logPath,
+  openWikiConfigDir,
+}: {
+  cwd: string;
+  logPath: string;
+  openWikiConfigDir?: string;
+}): string {
+  const cliPath = process.argv[1] ? path.resolve(process.argv[1]) : "";
+  const node = escapeCmdShimValue(process.execPath);
+  const cli = escapeCmdShimValue(cliPath);
+  const workDir = escapeCmdShimValue(cwd);
+  const log = escapeCmdShimValue(logPath);
+  const configDirLine = openWikiConfigDir
+    ? `set "${OPENWIKI_CONFIG_DIR_ENV_KEY}=${escapeCmdShimValue(openWikiConfigDir)}"\r\n`
+    : "";
+
+  return [
+    "@echo off",
+    configDirLine.trimEnd(),
+    `cd /d "${workDir}" || exit /b 1`,
+    `"${node}" "${cli}" ingest all --scheduled --print >> "${log}" 2>&1`,
+    "",
+  ]
+    .filter((line) => line !== undefined)
+    .join("\r\n");
+}
+
+async function installConnectorScheduleWindows({
+  cwd,
+  validation,
+}: {
+  cwd: string;
+  validation: Extract<
+    CronValidationResult,
+    { description: string; expression: string; valid: true }
+  >;
+}): Promise<ScheduleInstallResult> {
+  const triggerArgs = parseSchtasksTriggerArgs(validation.expression);
+  if (!triggerArgs) {
+    await removeSchtasksTask();
+    await removeSchtasksShim();
+    return {
+      description: validation.description,
+      expression: validation.expression,
+      warning:
+        "Schedule saved, but this cron expression is too complex for direct Windows Task Scheduler installation.",
+    };
+  }
+
+  const shimPath = getSchtasksShimPath();
+  const logsDir = path.join(openWikiHomeDir, "logs");
+  const configuredDir = process.env[OPENWIKI_CONFIG_DIR_ENV_KEY]?.trim();
+
+  await ensureOpenWikiHome();
+  await mkdir(logsDir, { recursive: true });
+  await writeFile(
+    shimPath,
+    createSchtasksShim({
+      cwd,
+      logPath: path.join(logsDir, "ingestion.schedule.log"),
+      openWikiConfigDir: configuredDir
+        ? resolveOpenWikiHomeDir(process.env)
+        : undefined,
+    }),
+    "utf8",
+  );
+
+  try {
+    // triggerArgs is ["/SC", <schedule>, ...]; /F overwrites any existing task
+    // of the same name, matching launchd's bootout-before-bootstrap behavior.
+    await execFileAsync("schtasks", [
+      "/Create",
+      "/F",
+      ...triggerArgs,
+      "/TN",
+      getSchtasksTaskName(),
+      "/TR",
+      shimPath,
+    ]);
+  } catch (error) {
+    await removeSchtasksTask();
+    await removeSchtasksShim();
+    return {
+      description: validation.description,
+      expression: validation.expression,
+      warning: `Schedule saved to the wiki config, but installing the Windows scheduled task failed: ${getErrorMessage(error)}`,
+    };
+  }
+
+  return {
+    description: validation.description,
+    expression: validation.expression,
+    nativeJobPath: shimPath,
+  };
+}
+
+async function removeSchtasksTask(): Promise<void> {
+  await execFileAsync("schtasks", [
+    "/Delete",
+    "/F",
+    "/TN",
+    getSchtasksTaskName(),
+  ]).catch(() => null);
+}
+
+async function removeSchtasksShim(): Promise<void> {
+  await unlink(getSchtasksShimPath()).catch((error: unknown) => {
+    if (isFileNotFoundError(error)) {
+      return;
+    }
+
+    throw error;
+  });
+}
+
+async function isSchtasksTaskInstalled(): Promise<boolean> {
+  try {
+    await execFileAsync("schtasks", ["/Query", "/TN", getSchtasksTaskName()]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Platform dispatcher for uninstalling the native scheduler job. Each
+ * platform-specific helper early-returns on other platforms.
+ */
+async function unloadSchedulerJob(): Promise<void> {
+  if (process.platform === "win32") {
+    await removeSchtasksTask();
+    return;
+  }
+
+  await unloadLaunchAgent();
+}
+
+/**
+ * Platform dispatcher for deleting the native scheduler job file. Each
+ * platform-specific helper early-returns on other platforms.
+ */
+async function removeSchedulerJobFile(): Promise<void> {
+  if (process.platform === "win32") {
+    await removeSchtasksShim();
+    return;
+  }
+
+  await removeLaunchAgentPlist();
+}
+
+/**
+ * Platform dispatcher for querying whether the native scheduler job is
+ * installed. Each platform-specific helper early-returns on other platforms.
+ */
+async function isSchedulerJobInstalled(): Promise<boolean> {
+  if (process.platform === "win32") {
+    return isSchtasksTaskInstalled();
+  }
+
+  return isLaunchAgentLoaded();
 }
 
 async function unloadLaunchAgent(): Promise<void> {
