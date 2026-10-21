@@ -516,6 +516,49 @@ describe("reasoning capabilities", () => {
     });
   });
 
+  test("exposes the GPT-6 capabilities with ultra only where the catalog lists it", () => {
+    expect(getReasoningCapability("openai-chatgpt", "gpt-6-luna")).toEqual({
+      transport: "responses-reasoning",
+      values: ["low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("openai-chatgpt", "gpt-6-sol")).toEqual({
+      transport: "responses-reasoning",
+      values: ["low", "medium", "high", "xhigh", "max", "ultra"],
+    });
+    expect(getReasoningCapability("openai-chatgpt", "gpt-6-astra")).toEqual({
+      transport: "responses-reasoning",
+      values: ["low", "medium", "high", "xhigh", "max", "ultra"],
+    });
+  });
+
+  test("resolves ultra for the GPT-6 models that expose it and rejects it elsewhere", () => {
+    expect(
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-sol", {
+        OPENWIKI_REASONING_EFFORT: " ultra ",
+      }),
+    ).toEqual({ effort: "ultra", transport: "responses-reasoning" });
+
+    // `ultra` is scoped to the models that list it, so a GPT-6 model without it
+    // and the GPT-5.6 models reject it before a request is sent.
+    expect(() =>
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-luna", {
+        OPENWIKI_REASONING_EFFORT: "ultra",
+      }),
+    ).toThrow(/Supported values: low, medium, high, xhigh, max/u);
+    expect(() =>
+      resolveReasoningConfig("openai", "gpt-5.6-luna", {
+        OPENWIKI_REASONING_EFFORT: "ultra",
+      }),
+    ).toThrow(/Supported values: none, low, medium, high, xhigh, max/u);
+
+    // The GPT-6 models do not advertise `none`, so it stays unsupported there.
+    expect(() =>
+      resolveReasoningConfig("openai-chatgpt", "gpt-6-luna", {
+        OPENWIKI_REASONING_EFFORT: "none",
+      }),
+    ).toThrow(/Supported values: low, medium, high, xhigh, max/u);
+  });
+
   test("leaves reasoning unset when the environment variable is absent", () => {
     expect(
       resolveReasoningConfig("openai", "gpt-5.6-luna", {}),

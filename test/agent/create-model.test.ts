@@ -633,6 +633,42 @@ describe("createModel reasoning configuration", () => {
     expect(model.reasoning).toEqual({ effort: "high" });
   });
 
+  test("maps ChatGPT OAuth GPT-6 effort to the Responses reasoning payload", () => {
+    process.env.OPENAI_CHATGPT_ACCESS_TOKEN = "test-access-token";
+    process.env.OPENAI_CHATGPT_REFRESH_TOKEN = "test-refresh-token";
+    process.env.OPENAI_CHATGPT_ACCOUNT_ID = "test-account-id";
+
+    process.env[REASONING_EFFORT_KEY] = "ultra";
+    const ultraModel = createModel(
+      "openai-chatgpt",
+      "gpt-6-sol",
+      0,
+    ) as unknown as {
+      reasoning?: { effort?: string };
+      _getReasoningParams(options?: unknown): unknown;
+    };
+
+    expect(ultraModel.reasoning).toEqual({ effort: "ultra" });
+    // The constructor field alone is not enough: `_getReasoningParams` returns
+    // nothing unless @langchain/openai recognizes the model name as
+    // reasoning-capable. This pins that a GPT-6 request carries the effort
+    // rather than silently dropping it.
+    expect(ultraModel._getReasoningParams({})).toEqual({ effort: "ultra" });
+
+    process.env[REASONING_EFFORT_KEY] = "max";
+    const lunaModel = createModel(
+      "openai-chatgpt",
+      "gpt-6-luna",
+      0,
+    ) as unknown as {
+      reasoning?: { effort?: string };
+      _getReasoningParams(options?: unknown): unknown;
+    };
+
+    expect(lunaModel.reasoning).toEqual({ effort: "max" });
+    expect(lunaModel._getReasoningParams({})).toEqual({ effort: "max" });
+  });
+
   test("maps NVIDIA NIM effort to the Chat Completions request field", () => {
     process.env[REASONING_EFFORT_KEY] = "high";
 
