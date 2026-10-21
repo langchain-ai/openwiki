@@ -173,6 +173,73 @@ describe("mcp connector read-only execution", () => {
     expect(writeConnectorState).toHaveBeenCalledTimes(1);
   });
 
+  test("reports an error when every tool call returns isError", async () => {
+    const operations = [{ args: { q: "x" }, name: "search", type: "tool" }];
+    configure({
+      enabled: true,
+      readOnlyOperations: operations as never,
+      transport: TRANSPORT as never,
+    });
+    // MCP reports tool execution failures (an expired token, a bad argument)
+    // inside a normal result with isError, not as a JSON-RPC error.
+    vi.mocked(executeMcpReadOnlyOperations).mockResolvedValue({
+      operations: [
+        {
+          name: "search",
+          result: {
+            content: [{ text: "401 Bad credentials", type: "text" }],
+            isError: true,
+          },
+          type: "tool",
+        },
+      ],
+    } as never);
+    const connector = createMcpConnector(INPUT);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("error");
+    expect(result.rawFiles).toEqual([]);
+    expect(result.warnings).toEqual(["search: 401 Bad credentials"]);
+    expect(writeRawJson).not.toHaveBeenCalled();
+    expect(writeConnectorState).toHaveBeenCalledTimes(1);
+  });
+
+  test("keeps successful operations and warns about failed tool calls", async () => {
+    const operations = [
+      { name: "search", type: "tool" },
+      { name: "fetch", type: "tool" },
+    ];
+    configure({
+      enabled: true,
+      readOnlyOperations: operations as never,
+      transport: TRANSPORT as never,
+    });
+    vi.mocked(executeMcpReadOnlyOperations).mockResolvedValue({
+      operations: [
+        { name: "search", result: { content: [] }, type: "tool" },
+        {
+          name: "fetch",
+          result: {
+            content: [{ text: "page not found", type: "text" }],
+            isError: true,
+          },
+          type: "tool",
+        },
+      ],
+    } as never);
+    const connector = createMcpConnector(INPUT);
+
+    const result = await connector.ingest();
+
+    expect(result.status).toBe("success");
+    expect(result.message).toBe("Executed 1 read-only MCP operation(s).");
+    expect(result.warnings).toEqual(["fetch: page not found"]);
+    expect(writtenPayload().operations).toEqual([
+      { name: "search", result: { content: [] }, type: "tool" },
+    ]);
+  });
+
   test("merges source-instance connectorConfig over disk config", async () => {
     configure({
       enabled: false,
