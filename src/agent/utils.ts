@@ -156,6 +156,7 @@ export async function getUpdateNoopStatus(
     .map((line) => line.trimEnd())
     .filter(Boolean)
     .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !lineReferencesOpenWikiPath(line))
     .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
@@ -976,6 +977,27 @@ function isOpenWikiPath(changedPath: string): boolean {
 
 function normalizeGitPath(value: string): string {
   return value.trim().replace(/\\/gu, "/");
+}
+
+/**
+ * Whether every path on one line of git output lives under `openwiki/`.
+ *
+ * Everything OpenWiki generates lives there, so an uncommitted wiki leaves one
+ * status line per generated file without touching any source the wiki derives
+ * from. The committed half of the same check already ignores those paths
+ * wholesale; matching that here keeps "changed" meaning "changed source" for
+ * tracked and untracked output alike.
+ *
+ * A line that only *mentions* an `openwiki/` path keeps its other path and
+ * stays meaningful, so a change that moves a page into or out of the wiki is
+ * not swallowed. A line with no extractable path is left meaningful.
+ */
+function lineReferencesOpenWikiPath(line: string): boolean {
+  const paths = extractGitPaths(line);
+
+  return (
+    paths.length > 0 && paths.every((candidate) => isOpenWikiPath(candidate))
+  );
 }
 
 /**
