@@ -14,7 +14,7 @@ import {
 } from "@langchain/core/messages";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
-import { createMiddleware } from "langchain";
+import { createMiddleware, toolCallLimitMiddleware } from "langchain";
 import { z } from "zod";
 import { resolveTraceThreadId } from "../config/constants.js";
 import { RepositoryRunError } from "../generation/errors.js";
@@ -111,6 +111,19 @@ const NO_DELEGATION_MIDDLEWARE = createMiddleware({
     return coerceRepositoryWorkerModelResponse(response);
   },
 });
+
+// A rejected submission is returned to the model for correction. Weaker models
+// can resubmit the same rejected payload hundreds of times, so cap completion
+// calls per worker: the planner fails, and a page worker is skipped.
+const MAX_SUBMISSIONS_PER_WORKER = 5;
+
+function submissionLimit(toolName: "submit_plan" | "submit_page") {
+  return toolCallLimitMiddleware({
+    toolName,
+    runLimit: MAX_SUBMISSIONS_PER_WORKER,
+    exitBehavior: "error",
+  });
+}
 
 type PendingPageJob = Extract<
   NextRepositoryPageResult,
@@ -504,6 +517,7 @@ async function runPlanningAgent(
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         tools: PLANNER_FILESYSTEM_TOOLS,
       }),
+      submissionLimit("submit_plan"),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
@@ -989,6 +1003,7 @@ async function runPageWorkerAttempt(
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         tools: PAGE_FILESYSTEM_TOOLS,
       }),
+      submissionLimit("submit_page"),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],

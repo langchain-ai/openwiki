@@ -49,6 +49,7 @@ type ModelToolRequest = {
 };
 
 type CapturedMiddleware = {
+  name?: string;
   wrapModelCall?: (
     request: ModelToolRequest,
     handler: (request: ModelToolRequest) => Promise<unknown>,
@@ -855,6 +856,22 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.restoreCalls).toBe(0);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
     expect(harness.finishCalls).toBe(1);
+  });
+
+  test("caps completion-tool calls per worker", async () => {
+    await runHarness();
+
+    expect(
+      harness.agentOptions.map(({ middleware }) =>
+        middleware
+          .map(({ name }) => name)
+          .filter((name) => name?.startsWith("ToolCallLimitMiddleware")),
+      ),
+    ).toEqual([
+      ["ToolCallLimitMiddleware[submit_plan]"],
+      ["ToolCallLimitMiddleware[submit_page]"],
+      ["ToolCallLimitMiddleware[submit_page]"],
+    ]);
   });
 
   test("filters DeepAgents' automatic task capability at the model boundary", async () => {
