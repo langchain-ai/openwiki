@@ -477,6 +477,121 @@ describe("createModel OpenAI-compatible transport selection", () => {
   });
 });
 
+describe("createModel OpenAI-compatible custom headers", () => {
+  const HEADERS_KEY = "OPENAI_COMPATIBLE_HEADERS";
+  let savedApiKey: string | undefined;
+  let savedBaseUrl: string | undefined;
+  let savedHeaders: string | undefined;
+
+  beforeEach(() => {
+    savedApiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+    savedBaseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
+    savedHeaders = process.env[HEADERS_KEY];
+    process.env.OPENAI_COMPATIBLE_API_KEY = "test-compatible-key";
+    process.env.OPENAI_COMPATIBLE_BASE_URL = "https://vllm.example/v1";
+  });
+
+  afterEach(() => {
+    restoreEnv("OPENAI_COMPATIBLE_API_KEY", savedApiKey);
+    restoreEnv("OPENAI_COMPATIBLE_BASE_URL", savedBaseUrl);
+    restoreEnv(HEADERS_KEY, savedHeaders);
+    vi.unstubAllGlobals();
+  });
+
+  test("merges configured headers into chat-completions requests", async () => {
+    process.env[HEADERS_KEY] =
+      '{"x-portkey-api-key":"pk-123","x-portkey-config":"pc-abc"}';
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const model = createModel("openai-compatible", "local-model", 0) as {
+      clientConfig?: { fetch?: typeof fetch };
+    };
+    const compatibleFetch = model.clientConfig?.fetch;
+
+    if (!compatibleFetch) {
+      throw new Error("Expected openai-compatible to install a fetch wrapper.");
+    }
+
+    await compatibleFetch("https://vllm.example/v1/chat/completions", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [{ content: [{ type: "text", text: "hi" }] }],
+      }),
+      headers: { Authorization: "Bearer placeholder" },
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, { headers: Headers }];
+    expect(init.headers.get("x-portkey-api-key")).toBe("pk-123");
+    expect(init.headers.get("x-portkey-config")).toBe("pc-abc");
+    // Headers the client already set are preserved alongside the extras.
+    expect(init.headers.get("Authorization")).toBe("Bearer placeholder");
+  });
+
+  test("merges configured headers into non-chat-completions requests too", async () => {
+    process.env[HEADERS_KEY] = '{"x-portkey-config":"pc-abc"}';
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const model = createModel("openai-compatible", "local-model", 0) as {
+      clientConfig?: { fetch?: typeof fetch };
+    };
+    const compatibleFetch = model.clientConfig?.fetch;
+
+    if (!compatibleFetch) {
+      throw new Error("Expected openai-compatible to install a fetch wrapper.");
+    }
+
+    await compatibleFetch("https://vllm.example/v1/models", { method: "GET" });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, { headers: Headers }];
+    expect(init.headers.get("x-portkey-config")).toBe("pc-abc");
+  });
+
+  test("leaves headers untouched when unset", async () => {
+    delete process.env[HEADERS_KEY];
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const model = createModel("openai-compatible", "local-model", 0) as {
+      clientConfig?: { fetch?: typeof fetch };
+    };
+    const compatibleFetch = model.clientConfig?.fetch;
+
+    if (!compatibleFetch) {
+      throw new Error("Expected openai-compatible to install a fetch wrapper.");
+    }
+
+    await compatibleFetch("https://vllm.example/v1/models", { method: "GET" });
+
+    const [, init] = fetchMock.mock.calls[0] as [
+      string,
+      { headers?: unknown } | undefined,
+    ];
+    expect(init?.headers).toBeUndefined();
+  });
+
+  test("fails fast on malformed header JSON", () => {
+    process.env[HEADERS_KEY] = "{not json";
+
+    expect(() => createModel("openai-compatible", "local-model", 0)).toThrow(
+      "OPENAI_COMPATIBLE_HEADERS must be a JSON object of header names to string values",
+    );
+  });
+});
+
 describe("createModel provider-neutral maxTokens mapping", () => {
   const OPENAI_KEY = "OPENAI_API_KEY";
   const BEDROCK_REGION_KEY = "BEDROCK_AWS_REGION";
