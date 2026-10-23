@@ -654,6 +654,14 @@ OPENWIKI_REASONING_EFFORT=high
 
 When `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` is also set, the effort is sent through the Responses API reasoning field. Otherwise it is sent as the chat-completions `reasoning_effort` model argument.
 
+**Custom headers (gateway auth or routing).** Some gateways (for example Portkey-fronted deployments) authenticate or route requests on a custom header instead of, or in addition to, `Authorization`. Set a JSON object of header names to string values; it's merged into every request this provider sends and overrides any header the client already set:
+
+```bash
+OPENAI_COMPATIBLE_HEADERS='{"x-portkey-api-key":"your-portkey-key","x-portkey-config":"pc-..."}'
+```
+
+An unset or blank value sends no extra headers. Malformed JSON, a non-object value, or a non-string header value fails fast with a clear error rather than silently dropping the header.
+
 </details>
 
 <details>
