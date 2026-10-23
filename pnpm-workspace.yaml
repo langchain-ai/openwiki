@@ -23,7 +23,7 @@ allowBuilds:
 overrides:
   brace-expansion: 5.0.12
   fast-uri: 3.1.8
-  hono: 4.13.7
+  hono: 4.13.11
   js-yaml@3: ^3.15.1
   js-yaml@4: ^4.3.1
   katex: 0.18.2
@@ -34,7 +34,7 @@ overrides:
   source-map-js: 1.2.2
   undici: ^7.29.1
 minimumReleaseAgeExclude:
-  - "@modelcontextprotocol/sdk@1.31.0"
+  - "@modelcontextprotocol/sdk@1.32.1"
   - "@langchain/core@1.2.4"
   - "@langchain/openai"
   - "@langchain/openai@1.5.4"
@@ -50,7 +50,7 @@ minimumReleaseAgeExclude:
   - "deepagents@1.12.0"
   - "brace-expansion@5.0.12"
   - "fast-uri@3.1.8"
-  - "hono@4.13.7"
+  - "hono@4.13.11"
   - "katex@0.18.2"
   - "langchain@1.5.3"
   - "nanoid@3.3.18"
