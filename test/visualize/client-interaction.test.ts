@@ -237,6 +237,33 @@ describe("visualizer client graph interaction", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    location.hash = "";
+  });
+
+  test("opens the default entry page without a #page fragment", async () => {
+    await importClient();
+    expect(document.getElementById("detail")!.textContent).toContain(
+      "Quickstart",
+    );
+  });
+
+  test("#page=<id> opens that page and highlights it", async () => {
+    location.hash = "#page=overview";
+    await importClient();
+    expect(document.getElementById("detail")!.textContent).toContain(
+      "Overview",
+    );
+    expect(document.querySelector(".nav-item.active")?.textContent).toContain(
+      "Overview",
+    );
+  });
+
+  test("an unknown #page id falls back to the default entry page", async () => {
+    location.hash = "#page=no/such/page";
+    await importClient();
+    expect(document.getElementById("detail")!.textContent).toContain(
+      "Quickstart",
+    );
   });
 
   test("registers node click and hover handlers", async () => {

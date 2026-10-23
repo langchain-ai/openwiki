@@ -819,8 +819,21 @@ async function load(firstTime: boolean): Promise<void> {
     lastSig = sig;
   }
   // else: identical topology -> leave the graph and viewport untouched entirely.
-  if (current && byId(current)) renderReader(current);
+  const requested = firstTime ? requestedPageId() : null;
+  if (requested) selectNode(requested);
+  else if (current && byId(current)) renderReader(current);
   else if (firstTime && anchorId) renderReader(anchorId);
+}
+
+/**
+ * The page named by a `#page=<id>` URL fragment (e.g. `#page=apps/p4admin`), if
+ * it exists in the loaded graph. Lets a link open the visualizer on a specific
+ * page instead of the default entry page. A fragment is never sent to the
+ * server, so no route changes; an unknown or malformed id is ignored.
+ */
+function requestedPageId(): string | null {
+  const raw = new URLSearchParams(location.hash.replace(/^#/, "")).get("page");
+  return raw && byId(raw) ? raw : null;
 }
 
 /**
