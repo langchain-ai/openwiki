@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:933f66e5facdbced678206539014c7a2fe4c178c7ea582dcbc00a42c28ab310f",
+  "pageVersion": "sha256:29037ff39923355014cd592da5cfc421f0d85494d6042e8eff58cc686a77d5b1",
   "claims": [
     {
       "id": "claim_cecbf09a48a44444b2ef62cbac04bd3b",
@@ -27,7 +27,7 @@
       "statement": "`buildGraph(wikiRoot)` is the shared graph builder for both live and static modes: it collects Markdown files, reads them into nodes, resolves links into edges, and returns a WikiGraph with root basename, ISO generatedAt timestamp, sorted distinct types, nodes, and edges.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L329-L345",
+          "resource": "repo://src/visualize/graph.ts#L205-L221",
           "version": "repo-lines-v1:sha256:ac7b350435f15aac26a929bbcc534b43f459872cd2565daa5225602679743bc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhZGY3YmU0NWRjNWU1ODg5ZDRmMDgwYjIxMTNhMTQwYWVlNGUwZTgyYzZiYWZkNGVlNTY3ZDI2NTVjNzc3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -37,11 +37,11 @@
       "statement": "A node's id is its path relative to the wiki root with the `.md` suffix stripped, giving a stable identifier independent of absolute filesystem location.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L219-L227",
+          "resource": "repo://src/visualize/graph.ts#L95-L103",
           "version": "repo-lines-v1:sha256:f0f2272c3c99d8dca22d171e51b3e2f69903ee1cdda5de386168adbdadc83c4c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRiNTdmOGJmMTNjMWM4MzU3OWNmMDBkM2NmMGZjMmJjODZlNThhNmFiMDU0MWY4Nzc4ZTE5YjkzMjdjMjk5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ0OTJkMmQzN2NhYzk5ZWM1ZmM3YzQwODgwZWNjNWI2ZGZjZjBmMGI2M2JkNmUyOWY5MDMwYzNjNjY3MDUxZiJ9"
         },
         {
-          "resource": "repo://src/visualize/graph.ts#L275-L295",
+          "resource": "repo://src/visualize/graph.ts#L151-L171",
           "version": "repo-lines-v1:sha256:0f4d2a9a29886b4cb3d286523b0a30ed844c6914f9536c86a25c111693178622:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZjg5Y2NiMTkwMjE3YTFmMTk0Y2EyNjY4NTZlNzZhYWEwZmFhNWNkZDBhYWY5NDNjZjhmOGNhOWYzMjAwZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzMzMwYTVjMTU3MjgwYzg1NmMwODg4NjZiOWU3OTlmMzA1MjdmMTFlMzgxZWIzN2E1M2QxNzNhOTExZTBjMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MWQwMDE1NjQxNDg0YzcwODZmMWFlNWI4MzIzNzcxMDE2ZDM2Yjc0YjFjMDQ4MmY0ZDlhMTVlNGFjOTQ1NTcifQ"
         }
       ]
@@ -51,11 +51,11 @@
       "statement": "Node metadata is read from the OKF frontmatter fields type, title, description, and tags, with deterministic fallbacks: title resolves from frontmatter, then section name for index.md or first H1, then filename; type defaults to `Section` for index.md pages and `Reference` otherwise.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L201-L210",
+          "resource": "repo://src/visualize/graph.ts#L77-L86",
           "version": "repo-lines-v1:sha256:ddd3bbd760ac3177d1c5fcae5101f0f8a9e632ea438eed4c2cf8368e0fc1a07c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NTEwNWI2NTQ2OWZlOTY3MzFjNzZjY2E0MzY5MDBhN2Y0MWUxNjYyOWNmYzljN2M0MmY4OTNkNGFhYjJjMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyN2FmZDZlMWE4YjUxMjk1YmM2NTBkN2NmZTY3OTgwZjFkNDc3ZWRlMWRmMDJmZGVkZTU2YTlmM2NiYzBkNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MWMxM2Y0NWYyYTY0YjUzOTJjNzhkMDQ5ZGFkNzE1YmM3ODA3Mzk4MTY5NzY1NGVmMmVhY2NlMjNkODA0YTAifQ"
         },
         {
-          "resource": "repo://src/visualize/graph.ts#L275-L295",
+          "resource": "repo://src/visualize/graph.ts#L151-L171",
           "version": "repo-lines-v1:sha256:0f4d2a9a29886b4cb3d286523b0a30ed844c6914f9536c86a25c111693178622:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZjg5Y2NiMTkwMjE3YTFmMTk0Y2EyNjY4NTZlNzZhYWEwZmFhNWNkZDBhYWY5NDNjZjhmOGNhOWYzMjAwZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzMzMwYTVjMTU3MjgwYzg1NmMwODg4NjZiOWU3OTlmMzA1MjdmMTFlMzgxZWIzN2E1M2QxNzNhOTExZTBjMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4MWQwMDE1NjQxNDg0YzcwODZmMWFlNWI4MzIzNzcxMDE2ZDM2Yjc0YjFjMDQ4MmY0ZDlhMTVlNGFjOTQ1NTcifQ"
         }
       ]
@@ -65,7 +65,7 @@
       "statement": "`splitFrontmatter` parses only the small YAML subset OpenWiki emits (scalar values, inline `[a, b]` arrays, and dashed lists) and returns the frontmatter map plus the body with the frontmatter block removed.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L156-L196",
+          "resource": "repo://src/visualize/graph.ts#L32-L72",
           "version": "repo-lines-v1:sha256:8094144e83d0f8873f8c11d749bbe3381fdcab61cbbc3cb279c277e43b6f1930:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MTllZGI0YzY1OGJlYWJiYmE4MTViNDExNjcyMGQ3MmY4NWUyYmRkYWRlMjVjYTExOWU5OTBlMGE5OTY4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4Y2U1ZDcwMGRmOWI0MGNhMzMyNGM1YzAyMzgzMDI2OWY4NGI5MTc4MjViYjcyODM3NjRjM2Y4NDEzMjlkN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1MmY4ZWZjZmNmNGEwNWYxOTk2YmRmZTM4YjZmYTgxNzkwYjI4ZDVmNTZmMjJiNDU4MWRmMmQ0ODBmOGYyNmYifQ"
         }
       ]
@@ -75,11 +75,11 @@
       "statement": "linkNodes derives edges from relative Markdown `.md` links resolved against the linking page's directory into node ids; before resolving, each link is run through decodeURIComponent (wrapped in try/catch so a literal invalid percent sequence is kept raw rather than thrown), the target must still match an existing node, and self-links, links to pages not present in the graph, and duplicate edges are dropped, while each surviving edge also records a reciprocal backlink on the target node.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L143-L145",
+          "resource": "repo://src/visualize/graph.ts#L19-L21",
           "version": "repo-lines-v1:sha256:3c1bf21fad43ca1784e5d547da6b69a14a082b2617368681b16fb6db64fce0e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ5ZWZkMDNlZmJmZmQ5NjBkZjAxNTc2NTQ3MTVkNmUyOTA1MjQzN2E1ZjI2ZWQ4MjQ3ZWRhMmJkNzA1NDg5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc3Y2RhNzQ1ZDZiZGY3OTJjMWM2YmRmY2FjYmNhNTcwYjVkODkyYjI5ODcxNzExNmI1OTVjYjI1OTRmOWY0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGJmMTUwYmFlN2FiOTRlZDNkZGE4ODkzZDhhYTdhMjVlYjM3YWMxYjJjMTEwNjIxMjE0YjM5NTNmOGVjZDc0ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg3NzQxYjhlMjQ4YmZhNmExYjg3NTM4YjA1NjJhNTE5MjUwN2I3NTQ0ZGI2OWRjYThjNjEzZjk1Nzg2NjM2ZSJ9"
         },
         {
-          "resource": "repo://src/visualize/graph.ts#L297-L327",
+          "resource": "repo://src/visualize/graph.ts#L173-L203",
           "version": "repo-lines-v1:sha256:780f168546a9f69954011a95ed7f31a9bd552b5abbb7cb4975e3da0755c6c5b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNWZlM2ZhNzM2YTQzNzRhZjQ0MTIzNWUxNTI0YWE2ZGJkYmFiZDAwNWYwZmY3Zjg0NDcwMjY0ZTgyZjEyODUifQ"
         }
       ]
@@ -89,11 +89,11 @@
       "statement": "The Markdown walk is confined to the wiki: paths resolving outside wikiRoot are skipped, symlink dirents (neither file nor directory) are never followed, and the scaffolding files INSTRUCTIONS.md and log.md are excluded from the graph.",
       "evidence": [
         {
-          "resource": "repo://src/visualize/graph.ts#L137-L140",
+          "resource": "repo://src/visualize/graph.ts#L13-L16",
           "version": "repo-lines-v1:sha256:edac987d0e6af2d8bb9ac081ccf6b5cbb174770f5fcbee909336a02022e986c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE0ZWZkOGNmMzBmZDQzNTcxNGY4NmY0MTczN2I5YmQ4NDZkYTdlM2MzYzdjMWNkNzkwODJjOWY2MDM4OTE1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGI1ODNjYzg3MDg2MjIzZGEyYTIxYjJkM2U5ZjZlNjUxMDM0NDYwZDVmNmUxNTZkMmU0YWNhNzI4MzY4NDBiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjJjYmZlMDg4MjQ1MmYyOTZhYTRkZTFiMTA2MWY3YTI3YmU3ZDA0OTVmY2I5MzI4OTJkOWM2MDI4ZTU2OWVjMiJ9"
         },
         {
-          "resource": "repo://src/visualize/graph.ts#L245-L270",
+          "resource": "repo://src/visualize/graph.ts#L121-L146",
           "version": "repo-lines-v1:sha256:1ab1f1a01814bc09cd6d9651525f2d88ef6795c4d935e89b6202e7040ab9aa1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiOGQyMDkxMTVkZjUzYTE4NWNiYzRmZWEwNjNkMTY4OGM5YTBhNTdiMGQzYWRiMTY5NTcxZmJlNTRmYmE5NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MTFmNzMwZTgwNjMyYTBlNDBjN2IyOGM1ZmY2MTU2YmNjNzI4MGRlODIxNWU0MmM5NjJiZDM3ZDgwNDBiNWIifQ"
         }
       ]
@@ -320,15 +320,19 @@
     },
     {
       "id": "claim_641f7a7cfe40491d836cf977aa19886d",
-      "statement": "The client is compiled separately via tsconfig.client.json (with DOM libs) as part of the build pipeline `tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs`.",
+      "statement": "The client is compiled separately via tsconfig.client.json (with DOM libs) as part of the build pipeline `node ./node_modules/typescript7/bin/tsc -p tsconfig.json && node ./node_modules/typescript7/bin/tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs`, where `typescript7` is the npm alias for `typescript@7.0.2`.",
       "evidence": [
         {
-          "resource": "repo://package.json#L48-L48",
-          "version": "repo-lines-v1:sha256:cd5733702726d1aa56fef9aaaaebe0335554087ecb7cbc1f9a32d4f297f28368:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q1NzMzNzAyNzI2ZDFhYTU2ZmVmOWFhYWFlYmUwMzM1NTU0MDg3ZWNiN2NiYzFmOWEzMmQ0ZjI5N2YyODM2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q1NzMzNzAyNzI2ZDFhYTU2ZmVmOWFhYWFlYmUwMzM1NTU0MDg3ZWNiN2NiYzFmOWEzMmQ0ZjI5N2YyODM2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk5ZTViYmIxNjA0OTgwZjI0Nzg0MTM3YmQ0N2M4NzhiZTM1OTAxOGFjZDg1ZGIzZDhiNzI3MTZmZDRmNjZmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM0NDZjMjU1NmNmZWU4MjRlZWI0YTlhYWQ0MmQyZjgxNjYxY2I5MTY2NThjOWRjMjRiNjBkM2NiOTUwZmRhYiJ9"
+          "resource": "repo://package.json#L128-L128",
+          "version": "repo-lines-v1:sha256:0827caf9422fa5bf6b45936a9710715a9ec82862d613bc8976359ab1cc9d23fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyN2NhZjk0MjJmYTViZjZiNDU5MzZhOTcxMDcxNWE5ZWM4Mjg2MmQ2MTNiYzg5NzYzNTlhYjFjYzlkMjNmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyN2NhZjk0MjJmYTViZjZiNDU5MzZhOTcxMDcxNWE5ZWM4Mjg2MmQ2MTNiYzg5NzYzNTlhYjFjYzlkMjNmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2U1MDAxYzFkODVmOTVlMDA4YTE1NGFjOGUyYmNlZjFmZDY4NTIzNTViZDA2ZjQ3NmQwYWVjM2ZkZTc2OWFjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjI1MDAzYjBmMWUxZGViM2FiNDcxNjNiNGMyNTg1MTcxYzEwNDkxNWE3Yzg5NWQ3NWI4NDJlOTRjZWU5MTE1NCJ9"
         },
         {
-          "resource": "repo://tsconfig.client.json#L1-L9",
-          "version": "repo-lines-v1:sha256:35c1ff70e09df87610ed9fea3294477f371257a215b7ade4f00d75318ac4beb2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://package.json#L48-L48",
+          "version": "repo-lines-v1:sha256:0c86a5bae67106838a0c07436d27640151fffbe216ca5b9a8323709b998f2c3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM4NmE1YmFlNjcxMDY4MzhhMGMwNzQzNmQyNzY0MDE1MWZmZmJlMjE2Y2E1YjlhODMyMzcwOWI5OThmMmMzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM4NmE1YmFlNjcxMDY4MzhhMGMwNzQzNmQyNzY0MDE1MWZmZmJlMjE2Y2E1YjlhODMyMzcwOWI5OThmMmMzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTEyNDdhZDdlNjU0NDE1OGVmZDE0NGRmNTNjYzBhODc4MGVjYjA3OGQ4ZTNmNWIxODJmZDE4NWE0NzdjY2ZkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM0NDZjMjU1NmNmZWU4MjRlZWI0YTlhYWQ0MmQyZjgxNjYxY2I5MTY2NThjOWRjMjRiNjBkM2NiOTUwZmRhYiJ9"
+        },
+        {
+          "resource": "repo://tsconfig.client.json#L1-L8",
+          "version": "repo-lines-v1:sha256:9b427d820f5e85180149f9e3cd59b5e7aa79d1ae31728926e072e0d844a7476d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDc3ZjA1YjkxODIzOTJhZTljNDE2MTBkYjc0NzI2ZmMxZDQ3M2FhNWU1MTI3YWYwZGFmODhmYjVjODhjZWVlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
         }
       ]
     },
@@ -405,10 +409,36 @@
           "version": "repo-lines-v1:sha256:f7740d1b4cc819570a4531b093bc408f5ac9007539598980c9d6475ae9727069:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZDA4Mzg1MTVkZWQwZDc2MWNiYzQzZDk5ZTE1YjY1YzU4NWY2YmM4ZmNmOTY0NjEyZjVlMmI2MmEwMDk0YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMTYwMmFjZmI3Yzk2NzIwOGM2N2YwYmY1ZmZjYjlmODFkMjk2M2RmYTJlNzFjNGU4ZjVlNzNlZTVkM2QzMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_744bd6a4430844bf9e5dafce9116dcb7",
+      "statement": "The browser-facing graph type subset (WikiMeta, WikiNode, WikiEdge, WikiGraph) was extracted into src/visualize/graph-types.ts, a module with no runtime imports, so the client bundle compiled under tsconfig.client.json (DOM libs) can import the graph types without pulling in graph.ts and its node:fs/promises/node:path loader; graph.ts imports these types from ./graph-types.js and re-exports them, preserving its public type surface, while client.ts and client-lib.ts import the types directly from graph-types.js.",
+      "evidence": [
+        {
+          "resource": "repo://src/visualize/client-lib.ts#L1-L1",
+          "version": "repo-lines-v1:sha256:e38826c9423f31f1d88a0595097b2cd22e7de0bfda6de6f030ed81cb63cfae13:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM4ODI2Yzk0MjNmMzFmMWQ4OGEwNTk1MDk3YjJjZDIyZTdkZTBiZmRhNmRlNmYwMzBlZDgxY2I2M2NmYWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM4ODI2Yzk0MjNmMzFmMWQ4OGEwNTk1MDk3YjJjZDIyZTdkZTBiZmRhNmRlNmYwMzBlZDgxY2I2M2NmYWUxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM2MGIwZGZiZThkNDQzODgzNTE5ZGRhODBiY2ZkZTQyMjUwMDFmYTEyODI4NDg1ZDQwM2I3MDYyOTc5MWIxOCJ9"
+        },
+        {
+          "resource": "repo://src/visualize/client.ts#L1-L1",
+          "version": "repo-lines-v1:sha256:ecd49b574746f5d087621fc91df0b85bd2f75bc8111a008d36c3d74bbdd77291:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNkNDliNTc0NzQ2ZjVkMDg3NjIxZmM5MWRmMGI4NWJkMmY3NWJjODExMWEwMDhkMzZjM2Q3NGJiZGQ3NzI5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNkNDliNTc0NzQ2ZjVkMDg3NjIxZmM5MWRmMGI4NWJkMmY3NWJjODExMWEwMDhkMzZjM2Q3NGJiZGQ3NzI5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODI3YmQ4ODM2MWVlZjE5Nzc1ZGJmYzY2ZDFiZmRjNmFjYjQzNWFiMzljMDVjZTNmMDhlMTY2OWE3NDg3ZDAzNyJ9"
+        },
+        {
+          "resource": "repo://src/visualize/graph-types.ts#L1-L127",
+          "version": "repo-lines-v1:sha256:80c37f9feb360eba1b6415c6ab341e03956e8edf7969a8f1de774da67ab80281:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/visualize/graph.ts#L1-L7",
+          "version": "repo-lines-v1:sha256:f19bc41c59caf67abc167f492433597d5edc246328d81e1a8b4d565b2cf188ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE1NGIyYWMzNmQ1ZmNmODJlOTc0MjBiNDE1ZWYxZTU0NmQ1YWIwYmFjYTYzMmE0ODg5ZjIyMzNlOGRlODQ5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGFiNjNjODM0OGI4MmNhMWFiMzhlNjM1ZTcyN2YyNTQxMWNiNWUxOGEzNDQ1OTU0M2Q2YTNjMWE0MzUwNDJmOCJ9"
+        },
+        {
+          "resource": "repo://tsconfig.client.json#L5-L8",
+          "version": "repo-lines-v1:sha256:dcadc29c28c08503281652d9219c94f7fe2f7b649faf3f8d82388191596fe512:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwZTNiZmU2MjYzYTYxMjhiYzViMDU1ZGY4ODhiNGI0MWIxOWM2OGZhOTQ4ZTI3NDllMGUyM2Q1NmI0MzMxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDc3ZjA1YjkxODIzOTJhZTljNDE2MTBkYjc0NzI2ZmMxZDQ3M2FhNWU1MTI3YWYwZGFmODhmYjVjODhjZWVlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjQ0YTgxZGM5YTkxNWQ1ZTY1N2RhODQzMTllMWQwM2YwZmI3OGEzZTliMDdiMmYxYTYwZTY3ZmIxNTRiYTY4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-13T08:15:00.712Z"
+    "at": "2026-10-24T08:08:18.494Z"
   }
 }
