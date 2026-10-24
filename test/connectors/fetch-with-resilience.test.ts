@@ -13,6 +13,26 @@ import {
 const noSleep = () => Promise.resolve();
 const fixedRandom = () => 0.5;
 
+// Mirrors fetch: reject at once when the signal is already aborted, otherwise
+// stay pending until it aborts. Caller cancellation and a timeout abort both
+// surface as AbortError; the tests distinguish them by who aborted.
+function abortingFetch(signal?: AbortSignal): Promise<Response> {
+  const abortError = () =>
+    new DOMException("The operation was aborted", "AbortError");
+  if (signal?.aborted) {
+    return Promise.reject(abortError());
+  }
+  return new Promise((_resolve, reject) => {
+    signal?.addEventListener(
+      "abort",
+      () => {
+        reject(abortError());
+      },
+      { once: true },
+    );
+  });
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -314,6 +334,65 @@ describe("fetchWithResilience", () => {
 
     expect(response.status).toBe(200);
     expect(stub).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not retry when the caller signal is already aborted", async () => {
+    // A caller cancel is not transient. An already-aborted signal must fail
+    // the first attempt and stop, with no backoff sleep.
+    const controller = new AbortController();
+    controller.abort();
+    const delays: number[] = [];
+    const stub = vi.fn((_input: unknown, init?: { signal?: AbortSignal }) =>
+      abortingFetch(init?.signal),
+    );
+    vi.stubGlobal("fetch", stub);
+
+    await expect(
+      fetchWithResilience(
+        "https://api.example.com/x",
+        { signal: controller.signal },
+        {
+          maxRetries: 3,
+          sleep: (ms) => {
+            delays.push(ms);
+            return Promise.resolve();
+          },
+          random: fixedRandom,
+        },
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
+
+    expect(stub).toHaveBeenCalledTimes(1);
+    expect(delays).toEqual([]);
+  });
+
+  test("does not retry when the caller aborts an in-flight request", async () => {
+    // Aborting while fetch is still pending must reject that attempt and
+    // stop. Later attempts would also see the aborted caller signal.
+    const controller = new AbortController();
+    const delays: number[] = [];
+    const stub = vi.fn((_input: unknown, init?: { signal?: AbortSignal }) =>
+      abortingFetch(init?.signal),
+    );
+    vi.stubGlobal("fetch", stub);
+
+    const pending = fetchWithResilience(
+      "https://api.example.com/x",
+      { signal: controller.signal },
+      {
+        maxRetries: 3,
+        sleep: (ms) => {
+          delays.push(ms);
+          return Promise.resolve();
+        },
+        random: fixedRandom,
+      },
+    );
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(stub).toHaveBeenCalledTimes(1);
+    expect(delays).toEqual([]);
   });
 
   test("wraps a non-Error rejection in an Error when retries are exhausted", async () => {

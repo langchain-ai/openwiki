@@ -11,6 +11,11 @@
  *     honoring a numeric or HTTP-date `Retry-After` header within the cap,
  *   - the same backoff on network errors (connection reset, DNS, timeout).
  *
+ * A caller AbortSignal is merged with the per-attempt timeout. Caller
+ * cancellation is not retried: if that signal is aborted, the helper stops
+ * immediately and does not sleep. A timeout-only abort leaves the caller
+ * signal unset and is still treated as transient.
+ *
  * Auth failures (401/403) and other 4xx are returned as-is: they are not
  * transient, and callers such as Gmail need to see a 401 to trigger a token
  * refresh. Retrying them would waste attempts and could lock accounts.
@@ -134,7 +139,9 @@ export async function fetchWithResilience(
       return response;
     } catch (error) {
       lastError = error;
-      if (attempt >= maxRetries) {
+      // Timeout aborts are transient and share AbortError with caller
+      // cancellation. Only the caller signal says the caller gave up.
+      if (init.signal?.aborted === true || attempt >= maxRetries) {
         break;
       }
       await sleep(backoffDelayMs(attempt, baseDelayMs, random));
