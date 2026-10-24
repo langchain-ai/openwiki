@@ -78,6 +78,12 @@ sources:
     resource: repo://src/integrations/core/retrieval-tools.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
+  - id: openwiki-source-2557815e72f267f9941d446a
+    resource: repo://src/integrations/install/installer.ts
+  - id: openwiki-source-c194ba7f94bf86a83012a7b4
+    resource: repo://src/integrations/install/registry.ts
+  - id: openwiki-source-0d3cbb56d1014c5a7cb718ba
+    resource: repo://src/integrations/install/skill-bundle.ts
   - id: openwiki-source-eab9328975981f427c4218d0
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-1324a62ac93d0625148b498e
@@ -102,16 +108,18 @@ sources:
     resource: repo://src/telemetry/index.ts
   - id: openwiki-source-04684180af5ec3c4b1911941
     resource: repo://src/telemetry/taxonomy.ts
+  - id: openwiki-source-610ff51ff8da46ab065496a5
+    resource: repo://src/visualize/client.ts
+  - id: openwiki-source-37e0e714b8257069ec052301
+    resource: repo://src/visualize/graph-types.ts
   - id: openwiki-source-d92f623adbf6b31c3542d58d
     resource: repo://src/visualize/graph.ts
-  - id: openwiki-source-4d856d692c32be213c8c46b4
-    resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-24T08:08:18.494Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-24T08:08:18.494Z
 ---
 
 # Source Map
@@ -555,17 +563,29 @@ repository root. `src/integrations/mcp/server.ts` exposes OpenWiki over MCP,
 advertising an `INSTRUCTIONS` preamble that incorporates
 `CLAIMS_RECONCILIATION_GUIDANCE` from `claims/guidance.ts` so the host model
 follows the same sparse-reconciliation standard as the native page-worker prompt
-(stdio in `stdio.ts`); `src/integrations/install/` handles host installation,
-with `registry.ts` (`HOST_TARGETS`) mapping supported host targets (bob, codex,
-claude, opencode, cursor, kiro, omp, antigravity) to their skill/MCP config
-locations.
+(stdio in `stdio.ts`); `src/integrations/install/` handles host skill
+installation: `registry.ts` (`HOST_TARGETS`) maps supported host targets (bob,
+codex, claude, opencode, cursor, kiro, omp, antigravity, copilot) to their
+skill/MCP config locations; `installer.ts` (`HostIntegrationInstaller`) performs
+transactional install/upgrade/uninstall of the canonical skill bundle with
+injectable commit operations and forced-backup conflict handling; and
+`skill-bundle.ts` inventories and validates the canonical skill directory
+(`inventorySkill`/`inspectInstallation`, gating the bundle to `SKILL.md`,
+`agents`, and `references` roots), resolves the canonical bundle path
+(`resolveCanonicalSkillBundle`), and writes the SHA-256 ownership receipt
+(`writeReceipt`) that lets one shared skill directory track multiple host
+owners.
 
 ### visualize — local graph viewer
 
 Owns the interactive wiki/graph viewer. `src/visualize/server.ts`
-(`createRequestHandler`) serves the app; `graph.ts` builds the graph model;
-`page.ts`, `client.ts`, `client-lib.ts`, and `static-export.ts` render and export
-it.
+(`createRequestHandler`) serves the app; `graph.ts` builds the graph model from
+the wiki files (parsing frontmatter and Markdown links) and re-exports the graph
+types; `graph-types.ts` holds the browser-facing graph types (`WikiNode`,
+`WikiEdge`, `WikiGraph`, `WikiMeta`) independently of the Node.js loader in
+`graph.ts`, so the viewer's data model can be shared without pulling in the
+filesystem-loading code. `page.ts`, `client.ts`, `client-lib.ts`, and
+`static-export.ts` render and export it.
 
 ### scheduling — recurring connector and generation runs
 
@@ -605,9 +625,11 @@ Owns the offline evaluation harnesses that measure whether generated wikis stay
 accurate as their source of truth evolves, and whether OpenWiki improves a
 coding agent. Unlike every other subsystem, the evals live under `evals/`
 (not `src/`) and are invoked via `pnpm` scripts — `eval:ledger` and
-`eval:ledger:reevaluate` — rather than the main CLI binary, with their own
-TypeScript project (`evals/ledger/tsconfig.json`). It is split into two
-independent sub-harnesses.
+`eval:ledger:reevaluate` (run via `tsx`) and `eval:ledger:typecheck` (a
+`--noEmit` typecheck of `evals/ledger/tsconfig.json` run through the bundled
+`typescript7` compiler, `node ./node_modules/typescript7/bin/tsc`) — rather
+than the main CLI binary, with their own TypeScript project
+(`evals/ledger/tsconfig.json`). It is split into two independent sub-harnesses.
 
 **LEDGER** (`evals/ledger/`) — the Longitudinal Evaluation of Documentation
 Grounding, Evolution, and Revision — replays a benchmark's Git checkpoints, runs

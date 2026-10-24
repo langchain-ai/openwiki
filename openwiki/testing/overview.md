@@ -136,14 +136,16 @@ sources:
     resource: repo://test/visualize/visualize-graph.test.ts
   - id: openwiki-source-dbb4558a2e1f7159813c79c5
     resource: repo://test/x-connector-stream-isolation.test.ts
+  - id: openwiki-source-42403648c3f500ce06398039
+    resource: repo://tsconfig.client.json
   - id: openwiki-source-98d5ddb014a0fd4d678f6f2a
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-24T08:08:18.494Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+    at: 2026-10-24T08:08:18.494Z
 ---
 
 # Testing Guide
@@ -169,6 +171,16 @@ while preserving complete failure output.
 - **No global config beyond `vitest.config.ts`.** Test discovery keeps Vitest's
   defaults; the only tuning is one discovery exclusion and the coverage block
   (see below).
+- **TypeScript toolchain: `typescript7`.** The `typecheck` and `build` stages
+  both invoke `node ./node_modules/typescript7/bin/tsc` — the `typescript7` dev
+  dependency (which aliases `npm:typescript@7.0.2`) — rather than a bare `tsc`
+  from the editor-facing `typescript` (`6.0.3`) package. `@types/node@26.4.0`,
+  `react@19.3.0`/`@types/react@19.3.0`, and `ink@~6.8.0` round out the
+  type-check surface.
+- **Optional peers: jsdom and mermaid.** `jsdom` is an *optional* peer
+  (`^29.1.1 || ^30.0.0`, dev `30.0.1`) that backs the `@vitest-environment jsdom`
+  suites and the Mermaid DOM shim; `mermaid` is an *optional* peer
+  (`^11.16.0`, dev `11.17.2`) and is the rendering library the shim targets.
 
 Tests import source modules directly by relative path (for example
 `../../src/agent/index.ts`), so a source module can be unit-tested without
@@ -185,17 +197,21 @@ flowchart TD
   A["pnpm test"] --> B["typecheck"]
   B --> C["build"]
   C --> D["coverage"]
-  B -.-> B1["tsc --noEmit tsconfig.json + tsconfig.client.json"]
-  C -.-> C1["tsc project build + copy-visualize-assets"]
+  B -.-> B1["typescript7/tsc --noEmit tsconfig.json + tsconfig.client.json"]
+  C -.-> C1["typescript7/tsc project build + copy-visualize-assets"]
   D -.-> D1["vitest run --coverage"]
 ```
 
 The `pnpm test` gate: typecheck, then build, then the coverage run.
 
-1. **`typecheck`** runs `tsc --noEmit` against both the server project
-   (`tsconfig.json`) and the browser/client project (`tsconfig.client.json`).
-2. **`build`** compiles both TypeScript projects and copies the visualize
-   client assets.
+1. **`typecheck`** runs `node ./node_modules/typescript7/bin/tsc --noEmit`
+   against both the server project (`tsconfig.json`) and the browser/client
+   project (`tsconfig.client.json`). The `typescript7` binary is the pinned
+   build compiler (`npm:typescript@7.0.2`), not the editor-facing `typescript`
+   package.
+2. **`build`** compiles both TypeScript projects via the same `typescript7/tsc`
+   binary (server `tsconfig.json`, then `tsconfig.client.json`) and copies the
+   visualize client assets (`scripts/copy-visualize-assets.cjs`).
 3. **`coverage`** runs `vitest run --coverage`, which executes every test and
    produces a coverage report.
 
@@ -261,8 +277,11 @@ the application `src/` root). Two npm scripts wrap the harness:
 - `pnpm run eval:ledger` — runs `tsx evals/ledger/run.ts`, the live
   checkpoint-replay evaluation (replays a benchmark's Git history through
   OpenWiki and grades each frozen wiki snapshot).
-- `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
-  evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
+- `pnpm run eval:ledger:typecheck` — runs
+  `node ./node_modules/typescript7/bin/tsc --noEmit -p
+  evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source (it
+  uses the same pinned `typescript7` build compiler as the application
+  `typecheck`, not a bare `tsc`).
   (A `eval:ledger:reevaluate` script re-judges a completed run without
   re-invoking OpenWiki.)
 

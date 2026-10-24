@@ -42,10 +42,10 @@ sources:
     resource: repo://evals/ledger/system/openwiki-system.ts
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
-generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-24T08:08:18.494Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+    at: 2026-10-24T08:08:18.494Z
 ---
 
 # Evaluation Systems (LEDGER and DeepSWE)
@@ -217,7 +217,7 @@ LEDGER is invoked through pnpm scripts defined in `package.json`:
 
 - `pnpm run eval:ledger -- --benchmark <dir>` — end-to-end run.
 - `pnpm run eval:ledger:reevaluate -- --benchmark <dir> --run <results-dir>` — re-evaluate a completed run without invoking OpenWiki.
-- `pnpm run eval:ledger:typecheck` — `tsc --noEmit -p evals/ledger/tsconfig.json`.
+- `pnpm run eval:ledger:typecheck` — `node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json`. The typecheck invokes the locally pinned `typescript7` compiler binary (the `typescript7` dependency aliases `npm:typescript@7.0.2`), rather than a bare `tsc` from the default `typescript` package.
 
 Recognized flags are `--benchmark <dir>`, `--results <dir>`, `--system-model <id>`, `--evaluator-model <id>`, and `--verbose`. Unknown flags and missing values are hard errors (`LedgerError`) so a typo never runs with a surprising default. `--verbose` does not accept a value; it prints every stale and hallucinated claim beneath the checkpoint that produced it.
 
