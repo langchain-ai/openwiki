@@ -65,6 +65,7 @@ describe("sanitizeDiagnosticText", () => {
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
   const originalCopilotKey = process.env.COPILOT_API_KEY;
   const originalNvidiaKey = process.env.NVIDIA_API_KEY;
+  const originalCrusoeKey = process.env.CRUSOE_API_KEY;
 
   beforeEach(() => {
     delete process.env.NEBIUS_API_KEY;
@@ -72,6 +73,7 @@ describe("sanitizeDiagnosticText", () => {
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
     delete process.env.COPILOT_API_KEY;
     delete process.env.NVIDIA_API_KEY;
+    delete process.env.CRUSOE_API_KEY;
   });
 
   afterEach(() => {
@@ -102,6 +104,12 @@ describe("sanitizeDiagnosticText", () => {
       delete process.env.NVIDIA_API_KEY;
     } else {
       process.env.NVIDIA_API_KEY = originalNvidiaKey;
+    }
+
+    if (originalCrusoeKey === undefined) {
+      delete process.env.CRUSOE_API_KEY;
+    } else {
+      process.env.CRUSOE_API_KEY = originalCrusoeKey;
     }
   });
 
@@ -147,6 +155,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("nvapi-secret-value-67890");
     expect(result).toContain("[REDACTED:NVIDIA_API_KEY]");
+  });
+
+  test("redacts the exact value of CRUSOE_API_KEY when set", () => {
+    process.env.CRUSOE_API_KEY = "crusoe-secret-value-24680";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key crusoe-secret-value-24680 attached",
+    );
+
+    expect(result).not.toContain("crusoe-secret-value-24680");
+    expect(result).toContain("[REDACTED:CRUSOE_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {

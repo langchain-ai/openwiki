@@ -733,6 +733,50 @@ describe("createModel reasoning configuration", () => {
       restoreEnv("NVIDIA_API_KEY", savedNvidiaKey);
     }
   });
+
+  test("sends Crusoe requests to the Crusoe managed inference endpoint", async () => {
+    const savedCrusoeKey = process.env.CRUSOE_API_KEY;
+    process.env.CRUSOE_API_KEY = "test-crusoe-key";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            model: "moonshotai/Kimi-K2.6",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "ok" },
+                finish_reason: "stop",
+              },
+            ],
+          }),
+          { headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("crusoe", "moonshotai/Kimi-K2.6", 0);
+
+      await model.invoke("hello");
+
+      const [url, init] = fetchMock.mock.calls[0] as [
+        string | URL,
+        { body: string },
+      ];
+      expect(String(url)).toBe(
+        "https://api.inference.crusoecloud.com/v1/chat/completions",
+      );
+      const body = JSON.parse(init.body) as Record<string, unknown>;
+      expect(body.model).toBe("moonshotai/Kimi-K2.6");
+      expect(body.reasoning_effort).toBeUndefined();
+    } finally {
+      restoreEnv("CRUSOE_API_KEY", savedCrusoeKey);
+    }
+  });
 });
 
 describe("createModel openrouter output-token cap", () => {

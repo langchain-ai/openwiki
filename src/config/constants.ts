@@ -8,6 +8,8 @@ export const BOB_API_KEY_ENV_KEY = "BOB_API_KEY";
 export const BOB_BASE_URL_ENV_KEY = "BOB_BASE_URL";
 export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
+export const CRUSOE_API_KEY_ENV_KEY = "CRUSOE_API_KEY";
+export const CRUSOE_BASE_URL_ENV_KEY = "CRUSOE_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
@@ -140,6 +142,7 @@ export type OpenWikiProvider =
   | "bedrock"
   | "bob"
   | "copilot"
+  | "crusoe"
   | "fireworks"
   | "gemini"
   | "gemini-enterprise"
@@ -287,6 +290,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "baseten",
   "nebius",
   "nvidia",
+  "crusoe",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -344,6 +348,22 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
     ],
     responsesApi: /^gpt-5/u,
+  },
+  crusoe: {
+    apiKeyEnvKey: CRUSOE_API_KEY_ENV_KEY,
+    baseURL: "https://api.inference.crusoecloud.com/v1",
+    baseUrlEnvKey: CRUSOE_BASE_URL_ENV_KEY,
+    label: "Crusoe Cloud",
+    modelOptions: [
+      { id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6" },
+      { id: "zai/GLM-5.2", label: "GLM 5.2" },
+      { id: "deepseek-ai/DeepSeek-V4-Pro", label: "DeepSeek V4 Pro" },
+      {
+        id: "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B",
+        label: "Nemotron 3 Super 120B A12B",
+      },
+      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
+    ],
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -991,16 +1011,18 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                    : env[CRUSOE_API_KEY_ENV_KEY]
+                      ? "crusoe"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 
