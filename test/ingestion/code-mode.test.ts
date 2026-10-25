@@ -300,6 +300,21 @@ Trailing notes that must survive.
     );
   });
 
+  test("does not claim a scheduled update exists in repository guidance", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      "No scheduled wiki workflow is installed.\n",
+      "utf8",
+    );
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(content).toContain("No scheduled wiki workflow is installed.");
+    expect(content).not.toContain(
+      "The scheduled OpenWiki GitHub Actions workflow refreshes",
+    );
+  });
+
   test("is idempotent across repeated runs", async () => {
     const repo = await createTempRepo();
 

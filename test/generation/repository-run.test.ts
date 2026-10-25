@@ -2577,6 +2577,69 @@ describe("update hardening", () => {
     await expect(readFile(unaffectedPath, "utf8")).resolves.toBe(before);
   });
 
+  test("finishes a focused update without changing unrelated stale Claims", async () => {
+    const root = await createRepository(["unrelated.md"]);
+    const unrelatedPath = path.join(root, "openwiki", "unrelated.md");
+    await writeFile(
+      unrelatedPath,
+      (await readFile(unrelatedPath, "utf8")).replace(
+        "---\n",
+        "---\nverified:\n  - by: openwiki/0.7.0\n    at: 2026-08-23T12:00:00.000Z\n",
+      ),
+      "utf8",
+    );
+    const store = new ClaimsStore(root);
+    await store.writePage("/openwiki/unrelated.md", {
+      schemaVersion: 1,
+      pageVersion: await store.hashPage("/openwiki/unrelated.md"),
+      claims: [
+        {
+          id: "claim_unrelated",
+          statement: "The repository has a README.",
+          evidence: [
+            {
+              resource: "repo://README.md",
+              version: "repo-file-v1:sha256:outdated",
+            },
+          ],
+        },
+      ],
+    });
+    const sidecarPath = path.join(
+      root,
+      "openwiki",
+      ".claims",
+      "unrelated.json",
+    );
+    const beforePage = await readFile(unrelatedPath, "utf8");
+    const beforeClaims = await readFile(sidecarPath, "utf8");
+    const run = await beginForcedUpdate(root);
+    await expect(
+      submitRepositoryPlan(run, {
+        pages: [
+          {
+            path: "/openwiki/quickstart.md",
+            title: "Quickstart",
+            purpose: "Refresh the entry point.",
+          },
+        ],
+        deferUnplannedClaimIssues: true,
+      }),
+    ).resolves.toEqual({ status: "accepted", totalPages: 1 });
+    expect(run.state.plan?.deferredClaimPages).toEqual([
+      "/openwiki/unrelated.md",
+    ]);
+    await completeCurrentPage(run, "Quickstart");
+    await finishRepositoryRun(run);
+    await expect(readFile(unrelatedPath, "utf8")).resolves.toBe(beforePage);
+    await expect(readFile(sidecarPath, "utf8")).resolves.toBe(beforeClaims);
+    await expect(
+      readFile(path.join(root, "openwiki", ".last-update.json"), "utf8").then(
+        JSON.parse,
+      ),
+    ).resolves.toMatchObject({ status: "interrupted" });
+  });
+
   test("resumes an interrupted update from its first pending page", async () => {
     const root = await createRepository(["second.md"]);
     const initial = await beginForcedUpdate(root);

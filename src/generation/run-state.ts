@@ -113,6 +113,9 @@ export interface RepositoryRunPlan {
    * Existing pages explicitly selected for deletion by an update.
    */
   deletePages: string[];
+
+  /** Stale Claim pages intentionally left for a later full update. */
+  deferredClaimPages?: string[];
 }
 
 /**
@@ -291,6 +294,7 @@ const RepositoryRunStateSchema = z
       .object({
         pages: z.array(PageJobSchema),
         deletePages: z.array(z.string()),
+        deferredClaimPages: z.array(z.string()).optional(),
       })
       .strict()
       .optional(),
