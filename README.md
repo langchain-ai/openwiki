@@ -590,6 +590,14 @@ OPENWIKI_MODEL_ID=claude-sonnet-4-6
 ```
 
 ```bash
+# Open-weight-only gateway (for example DemonRoute, which serves 556 open-weight models behind one prepaid key)
+OPENWIKI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=your-demonroute-key
+OPENAI_COMPATIBLE_BASE_URL=https://api.demonroute.com/v1
+OPENWIKI_MODEL_ID=openai/gpt-oss-120b
+```
+
+```bash
 # Ollama, after `ollama serve` and `ollama pull llama3.2`
 OPENWIKI_PROVIDER=openai-compatible
 OPENAI_COMPATIBLE_API_KEY=ollama
