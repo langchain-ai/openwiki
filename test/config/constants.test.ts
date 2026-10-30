@@ -504,6 +504,18 @@ describe("reasoning capabilities", () => {
       transport: "responses-reasoning",
       values: ["none", "low", "medium", "high", "xhigh", "max"],
     });
+    expect(getReasoningCapability("openai", "gpt-6-astra")).toEqual({
+      transport: "responses-reasoning",
+      values: ["low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("openai", "gpt-6.1-terra")).toEqual({
+      transport: "responses-reasoning",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("openai", "gpt-6-luna")).toEqual({
+      transport: "responses-reasoning",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
     expect(getReasoningCapability("gemini", GEMINI_REASONING_MODEL)).toEqual({
       transport: "gemini-thinking-level",
       values: GEMINI_REASONING_VALUES,
@@ -514,6 +526,43 @@ describe("reasoning capabilities", () => {
       transport: "chat-completions-reasoning-effort",
       values: ["none", "low", "high"],
     });
+  });
+
+  test("shares one reasoning capability table between openai and openai-chatgpt", () => {
+    for (const modelId of [
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-6-astra",
+      "gpt-6-sol",
+      "gpt-6-luna",
+    ]) {
+      expect(getReasoningCapability("openai-chatgpt", modelId)).toEqual(
+        getReasoningCapability("openai", modelId),
+      );
+    }
+  });
+
+  test("omits the none effort only for gpt-6.1-sol and gpt-6-astra", () => {
+    for (const provider of ["openai", "openai-chatgpt"] as const) {
+      for (const modelId of ["gpt-6.1-sol", "gpt-6-astra"]) {
+        expect(getReasoningCapability(provider, modelId)?.values).not.toContain(
+          "none",
+        );
+        expect(() =>
+          resolveReasoningConfig(provider, modelId, {
+            OPENWIKI_REASONING_EFFORT: "none",
+          }),
+        ).toThrow(/Supported values: low, medium, high, xhigh, max/u);
+      }
+
+      for (const modelId of ["gpt-6.1-terra", "gpt-6-sol", "gpt-6-luna"]) {
+        expect(
+          resolveReasoningConfig(provider, modelId, {
+            OPENWIKI_REASONING_EFFORT: "none",
+          }),
+        ).toEqual({ effort: "none", transport: "responses-reasoning" });
+      }
+    }
   });
 
   test("leaves reasoning unset when the environment variable is absent", () => {
@@ -917,6 +966,11 @@ describe("getProviderModelOptions", () => {
       { id: "gpt-5.6-terra", label: "5.6 Terra" },
       { id: "gpt-5.6-luna", label: "5.6 Luna" },
       { id: "gpt-5.6-sol", label: "5.6 Sol" },
+      { id: "gpt-6.1-sol", label: "6.1 Sol" },
+      { id: "gpt-6.1-terra", label: "6.1 Terra" },
+      { id: "gpt-6-astra", label: "6 Astra" },
+      { id: "gpt-6-sol", label: "6 Sol" },
+      { id: "gpt-6-luna", label: "6 Luna" },
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
     ]);
@@ -1222,6 +1276,60 @@ describe("resolveProviderLocation", () => {
 });
 
 describe("getProviderModelOptions", () => {
+  test("gemini-enterprise offers the Claude 5.5 and Fable 5.1 Model Garden IDs", () => {
+    const ids = getProviderModelOptions("gemini-enterprise").map(
+      (model) => model.id,
+    );
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "claude-opus-5-5",
+        "claude-sonnet-5-5",
+        "claude-haiku-5-5",
+        "claude-fable-5-1",
+      ]),
+    );
+  });
+
+  test("offers the Claude 5.5, Fable 5.1, and GPT-6 models on the providers that serve them", () => {
+    const idsOf = (provider: Parameters<typeof getProviderModelOptions>[0]) =>
+      getProviderModelOptions(provider).map((model) => model.id);
+
+    expect(idsOf("anthropic")).toEqual(
+      expect.arrayContaining([
+        "claude-opus-5-5",
+        "claude-sonnet-5-5",
+        "claude-haiku-5-5",
+        "claude-fable-5-1",
+      ]),
+    );
+    expect(idsOf("copilot")).toEqual(
+      expect.arrayContaining([
+        "gpt-6.1-sol",
+        "gpt-6.1-terra",
+        "gpt-6-astra",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "claude-opus-5.5",
+        "claude-sonnet-5.5",
+        "claude-haiku-5.5",
+        "claude-fable-5.1",
+      ]),
+    );
+    expect(idsOf("openrouter")).toEqual(
+      expect.arrayContaining([
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6.1-terra",
+        "openai/gpt-6-astra",
+        "openai/gpt-6-sol",
+        "openai/gpt-6-luna",
+        "anthropic/claude-opus-5.5",
+        "anthropic/claude-sonnet-5.5",
+        "anthropic/claude-haiku-5.5",
+        "anthropic/claude-fable-5.1",
+      ]),
+    );
+  });
+
   test("offers the latest Gemini Flash models on both Gemini providers", () => {
     const expectedModels = [
       { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
