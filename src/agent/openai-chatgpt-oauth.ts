@@ -49,6 +49,11 @@ export function createCodexFetch(
   modelId: string,
   fetchImpl: typeof fetch = globalThis.fetch,
 ): typeof fetch {
+  // Reasoning items the Codex backend refused to decrypt. LangChain replays
+  // every earlier reasoning item on each turn, so a refused item would fail
+  // every later request of the conversation too; leave it out from then on.
+  const rejectedReasoningIds = new Set<string>();
+
   return async (input, init) => {
     const isCodexRequest = isCodexResponsesRequest(input);
     const useLunaProtocol = modelId === CODEX_LUNA_MODEL_ID && isCodexRequest;
@@ -140,8 +145,121 @@ export function createCodexFetch(
       init = { ...init, headers };
     }
 
-    return fetchImpl(input, init);
+    if (!isCodexRequest) {
+      return fetchImpl(input, init);
+    }
+
+    return fetchWithReasoningRecovery(
+      fetchImpl,
+      input,
+      init,
+      rejectedReasoningIds,
+    );
   };
+}
+
+/**
+ * The Codex backend's 400 when it cannot decrypt a replayed reasoning item
+ * (langchain-ai/openwiki#921). The item id is the only part a retry needs.
+ */
+const REJECTED_REASONING_PATTERN =
+  /encrypted content for item (rs_[A-Za-z0-9_-]+) could not be verified/u;
+
+/**
+ * Sends a Codex request, and when the backend refuses one of the replayed
+ * reasoning items, sends it again without that item. Each refused id is
+ * remembered in `rejected` so the rest of the conversation leaves it out
+ * before sending. A 400 that names no reasoning item, names one already
+ * dropped, or names one this request does not carry is returned unchanged.
+ */
+async function fetchWithReasoningRecovery(
+  fetchImpl: typeof fetch,
+  input: Parameters<typeof fetch>[0],
+  init: RequestInit | undefined,
+  rejected: Set<string>,
+): Promise<Response> {
+  let attempt = withoutRejectedReasoning(init, rejected);
+
+  for (;;) {
+    const response = await fetchImpl(input, attempt);
+
+    if (response.status !== 400) {
+      return response;
+    }
+
+    const rejectedId = await readRejectedReasoningId(response);
+
+    if (rejectedId === null || rejected.has(rejectedId)) {
+      return response;
+    }
+
+    rejected.add(rejectedId);
+    const retry = withoutRejectedReasoning(attempt, rejected);
+
+    if (retry === attempt) {
+      return response;
+    }
+
+    if (process.env.OPENWIKI_DEBUG === "1") {
+      process.stderr.write(
+        `Codex refused reasoning item ${rejectedId}; retrying without it.\n`,
+      );
+    }
+
+    attempt = retry;
+  }
+}
+
+async function readRejectedReasoningId(
+  response: Response,
+): Promise<string | null> {
+  try {
+    const body = await response.clone().text();
+    return REJECTED_REASONING_PATTERN.exec(body)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns `init` with every refused reasoning item removed from the JSON
+ * `input`, or the same `init` object when there is nothing to remove.
+ */
+function withoutRejectedReasoning(
+  init: RequestInit | undefined,
+  rejected: ReadonlySet<string>,
+): RequestInit | undefined {
+  if (rejected.size === 0 || typeof init?.body !== "string") {
+    return init;
+  }
+
+  let payload: unknown;
+
+  try {
+    payload = JSON.parse(init.body);
+  } catch {
+    return init;
+  }
+
+  if (!isRecord(payload) || !Array.isArray(payload.input)) {
+    return init;
+  }
+
+  const kept = payload.input.filter(
+    (item) =>
+      !(
+        isRecord(item) &&
+        item.type === "reasoning" &&
+        typeof item.id === "string" &&
+        rejected.has(item.id)
+      ),
+  );
+
+  if (kept.length === payload.input.length) {
+    return init;
+  }
+
+  return { ...init, body: JSON.stringify({ ...payload, input: kept }) };
 }
 
 /**
