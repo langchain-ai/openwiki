@@ -17,6 +17,7 @@ import {
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
+  RUNCRATE_API_KEY_ENV_KEY,
 } from "../config/constants.js";
 
 /**
@@ -47,6 +48,7 @@ export function sanitizeDiagnosticText(value: string): string {
     NEBIUS_API_KEY_ENV_KEY,
     NVIDIA_API_KEY_ENV_KEY,
     OPENAI_API_KEY_ENV_KEY,
+    RUNCRATE_API_KEY_ENV_KEY,
     OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
     ANTHROPIC_API_KEY_ENV_KEY,
     OPENROUTER_API_KEY_ENV_KEY,

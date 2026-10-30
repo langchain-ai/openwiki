@@ -957,7 +957,8 @@ export function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
     provider === "fireworks" ||
     provider === "gemini" ||
     provider === "gemini-enterprise" ||
-    provider === "nebius"
+    provider === "nebius" ||
+    provider === "runcrate"
     ? "a"
     : "an";
 }

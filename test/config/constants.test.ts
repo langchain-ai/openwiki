@@ -28,6 +28,7 @@ import {
   isValidModelId,
   isValidProvider,
   NEBIUS_BASE_URL,
+  RUNCRATE_BASE_URL,
   NVIDIA_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
@@ -220,6 +221,7 @@ describe("resolveProviderBaseUrl", () => {
       "https://api.githubcopilot.com",
     );
     expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
+    expect(resolveProviderBaseUrl("runcrate", {})).toBe(RUNCRATE_BASE_URL);
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
     );
@@ -751,6 +753,7 @@ describe("providerUsesStreaming", () => {
         "fireworks",
         "nebius",
         "nvidia",
+        "runcrate",
       ] as const) {
         expect(providerUsesStreaming(provider)).toBe(false);
       }
@@ -1241,6 +1244,9 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
     expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
     expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
+    expect(getDefaultModelId("runcrate")).toBe(
+      "deepseek-ai/DeepSeek-V4.1-Flash",
+    );
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
