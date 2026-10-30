@@ -94,7 +94,7 @@ Host-specific locations and notes:
 - Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`.
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
 - GitHub Copilot CLI uses `~/.copilot/skills` and `~/.copilot/mcp-config.json` at user scope; `.github/skills` and `.github/mcp.json` at the project.
-- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
+- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill, four read-only retrieval tools, and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
 
 On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
 
