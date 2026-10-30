@@ -745,6 +745,10 @@ export DO_NOT_TRACK=1   # cross-tool standard
 
 To see exactly what a run would send, add `--telemetry-file=<path>` to any run.
 
+## Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/openwiki/)
+
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a PR. We intentionally keep PRs tightly scoped to one change each, and PRs that bundle unrelated changes may be closed with a request to split them.
