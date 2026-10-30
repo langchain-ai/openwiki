@@ -46,6 +46,7 @@ describe("formatCwd", () => {
   test("abbreviates a path under the home directory", () => {
     process.env.HOME = "/Users/example";
 
+    expect(formatCwd("/Users/example")).toBe("~");
     expect(formatCwd("/Users/example/dev/openwiki")).toBe("~/dev/openwiki");
   });
 
@@ -53,6 +54,14 @@ describe("formatCwd", () => {
     process.env.HOME = "/Users/example";
 
     expect(formatCwd("/var/log")).toBe("/var/log");
+  });
+
+  test("leaves sibling paths sharing the home prefix unchanged", () => {
+    process.env.HOME = "/Users/example";
+
+    expect(formatCwd("/Users/example-backup/openwiki")).toBe(
+      "/Users/example-backup/openwiki",
+    );
   });
 
   test("returns the path unchanged when HOME is unset", () => {
