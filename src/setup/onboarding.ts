@@ -21,7 +21,15 @@ export const REPOSITORY_INSTRUCTIONS_FILE = "INSTRUCTIONS.md";
 export type OnboardingSourceScheduleConfig = {
   description: string;
   expression: string;
+  /**
+   * Path of the installed native scheduler job (a launchd plist on macOS or
+   * a Task Scheduler command shim on Windows).
+   *
+   * @deprecated legacy key spelling retained for reading old configs; new
+   * writes use {@link nativeJobPath}.
+   */
   launchAgentPath?: string;
+  nativeJobPath?: string;
   pausedAt?: string;
   updatedAt: string;
   warning?: string;
@@ -390,10 +398,14 @@ function normalizeSourceScheduleConfig(
   return {
     description: typeof value.description === "string" ? value.description : "",
     expression: typeof value.expression === "string" ? value.expression : "",
-    launchAgentPath:
-      typeof value.launchAgentPath === "string"
-        ? value.launchAgentPath
-        : undefined,
+    // `launchAgentPath` is the legacy key spelling; migrate it so configs
+    // written by older versions keep resolving their installed job.
+    nativeJobPath:
+      typeof value.nativeJobPath === "string"
+        ? value.nativeJobPath
+        : typeof value.launchAgentPath === "string"
+          ? value.launchAgentPath
+          : undefined,
     pausedAt: typeof value.pausedAt === "string" ? value.pausedAt : undefined,
     updatedAt:
       typeof value.updatedAt === "string"
