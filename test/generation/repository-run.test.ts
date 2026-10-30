@@ -181,9 +181,14 @@ async function writeWikiPage(
  * Creates a committed Git repository with stable code-mode setup and wiki.
  *
  * @param extraPages - Additional factual pages committed before the run.
+ * @param persistedLanguage - Wiki language recorded in the baseline update
+ *   metadata.
  * @returns Absolute temporary repository root.
  */
-async function createRepository(extraPages: string[] = []): Promise<string> {
+async function createRepository(
+  extraPages: string[] = [],
+  persistedLanguage: string = "en",
+): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), "openwiki-repository-run-"));
   temporaryDirectories.push(root);
   await git(root, ["init", "--quiet"]);
@@ -220,7 +225,7 @@ async function createRepository(extraPages: string[] = []): Promise<string> {
         gitHead: head,
         model: "previous-model",
         status: "complete",
-        language: "en",
+        language: persistedLanguage,
       },
       null,
       2,
@@ -2543,6 +2548,28 @@ describe("update hardening", () => {
         JSON.parse,
       ),
     ).resolves.toMatchObject({ status: "complete", language: "fr" });
+  });
+
+  test("treats a script-variant switch as a language change", async () => {
+    // zh-CN and zh-TW share the primary subtag but differ in script
+    // (Simplified vs Traditional), so the switch must queue a rewrite of
+    // every existing page instead of a plain incremental update.
+    const root = await createRepository(["architecture.md"], "zh-CN");
+
+    const result = await beginRepositoryRun({
+      root,
+      mode: "update",
+      language: "zh-TW",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+    const run = requireActiveRun(result);
+    expect(result.view).toMatchObject({
+      status: "active",
+      language: "zh-TW",
+      languageChanged: true,
+    });
+    expect(run.state.requiredRewritePages).toEqual(run.state.initialPages);
   });
 
   test("leaves an unaffected page byte-for-byte unchanged", async () => {
