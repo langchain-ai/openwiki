@@ -1515,7 +1515,7 @@ function resolveAnthropicMaxOutputTokens(
 
   const normalizedModelId = stripPublisherPath(modelId);
 
-  return /^claude-(?:haiku|sonnet|opus)-(?:4|5)(?:[-.@]|$)/u.test(
+  return /^claude-(?:haiku|sonnet|opus|fable)-(?:4|5)(?:[-.@]|$)/u.test(
     normalizedModelId,
   )
     ? DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS
