@@ -109,6 +109,7 @@ export const SubmitPlanInput = z
     // planned deletions. Init validation still requires quickstart downstream.
     pages: z.array(PlanPageInput),
     deletePages: z.array(CanonicalString).optional(),
+    deferUnplannedClaimIssues: z.boolean().optional(),
   })
   .strict();
 

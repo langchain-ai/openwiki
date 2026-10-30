@@ -75,6 +75,10 @@ for the single page OpenWiki assigns you.
      deletes, moves, or materially regroups wiki pages, include quickstart so its
      task-routing map is refreshed;
    - an update with no required page edits or deletions may submit `pages: []`;
+   - for a deliberately focused update, set `deferUnplannedClaimIssues: true`
+     on `openwiki_submit_plan` to leave unrelated stale Claim pages for a later
+     full update. The completed run remains marked interrupted until that debt
+     is reconciled;
    - call `openwiki_submit_plan` with final canonical page paths, concise page
      purposes, useful seed source paths, meaningful `relatedPages`, page-relevant
      global `instructions`, and any page deletions required by an update.

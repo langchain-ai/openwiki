@@ -1017,6 +1017,7 @@ function samePlanIgnoringJobIds(
       }),
     ),
     deletePages: [...plan.deletePages],
+    deferredClaimPages: [...(plan.deferredClaimPages ?? [])],
   });
   return JSON.stringify(simplify(left)) === JSON.stringify(simplify(right));
 }
@@ -1374,11 +1375,12 @@ export async function submitRepositoryPage(
       // worker may be mid-edit on them, so projecting a verification stamp
       // into their front matter or rehashing their sidecar here would record
       // transient bytes. Their own submit (or finish) finalizes them.
-      const otherPendingPages = new Set(
-        latestPlan.pages
+      const otherPendingPages = new Set([
+        ...latestPlan.pages
           .filter(({ id, status }) => status === "pending" && id !== current.id)
           .map(({ path }) => path),
-      );
+        ...(latestPlan.deferredClaimPages ?? []),
+      ]);
       await run.claimsRuntime.finalize(run.state.startedAt, otherPendingPages);
       await assertPageClaimsDurable(run, current.path);
     } catch (error) {
@@ -1646,7 +1648,10 @@ export async function finishRepositoryRun(
       "Every skipped OpenWiki page job requires its original page snapshot before finish.",
     );
   }
-  const skippedPages = new Set(skippedJobs.map(({ path }) => path));
+  const skippedPages = new Set([
+    ...skippedJobs.map(({ path }) => path),
+    ...(plan.deferredClaimPages ?? []),
+  ]);
   const sourceChangedBeforeFinish = await hasRepositorySourceChanged(run);
   const producerActorsByPage = new Map<string, string>();
   for (const [page, entry] of Object.entries(
@@ -1688,7 +1693,11 @@ export async function finishRepositoryRun(
     at: run.state.startedAt,
     producerActor: run.state.actor.producerActor,
     producerActorsByPage,
-    claimSources: run.claimsRuntime.session.getEvidenceResourcesByPage(),
+    claimSources: new Map(
+      [...run.claimsRuntime.session.getEvidenceResourcesByPage()].filter(
+        ([page]) => !skippedPages.has(page),
+      ),
+    ),
     runOperation: captureFrontmatterReport,
   });
 
