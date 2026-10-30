@@ -41,6 +41,7 @@ import {
   providerUsesStreaming,
   resolveConfiguredProvider,
   resolveMaxOutputTokens,
+  resolveOpenAiCompatibleHeaders,
   resolveOpenAiCompatibleReasoningEffortSupported,
   resolveOpenAiCompatibleStreaming,
   resolveOpenAiCompatibleUseResponsesApi,
@@ -1047,6 +1048,64 @@ describe("OpenAI-compatible authentication configuration", () => {
     );
     expect(getProviderCredentialHint("openai-compatible")).toContain(
       "OPENAI_COMPATIBLE_ENTRA_SCOPE",
+    );
+  });
+});
+
+describe("resolveOpenAiCompatibleHeaders", () => {
+  test("returns undefined when unset or blank", () => {
+    expect(resolveOpenAiCompatibleHeaders({})).toBeUndefined();
+    expect(
+      resolveOpenAiCompatibleHeaders({ OPENAI_COMPATIBLE_HEADERS: "   " }),
+    ).toBeUndefined();
+  });
+
+  test("parses a JSON object of string header values", () => {
+    expect(
+      resolveOpenAiCompatibleHeaders({
+        OPENAI_COMPATIBLE_HEADERS:
+          '{"x-portkey-api-key":"pk-123","x-portkey-config":"pc-abc"}',
+      }),
+    ).toEqual({
+      "x-portkey-api-key": "pk-123",
+      "x-portkey-config": "pc-abc",
+    });
+  });
+
+  test("rejects malformed JSON", () => {
+    expect(() =>
+      resolveOpenAiCompatibleHeaders({
+        OPENAI_COMPATIBLE_HEADERS: "{not json",
+      }),
+    ).toThrow(
+      "OPENAI_COMPATIBLE_HEADERS must be a JSON object of header names to string values",
+    );
+  });
+
+  test("rejects a non-object value", () => {
+    expect(() =>
+      resolveOpenAiCompatibleHeaders({
+        OPENAI_COMPATIBLE_HEADERS: '["x-portkey-api-key", "pk-123"]',
+      }),
+    ).toThrow(
+      "OPENAI_COMPATIBLE_HEADERS must be a JSON object of header names to string values",
+    );
+    expect(() =>
+      resolveOpenAiCompatibleHeaders({
+        OPENAI_COMPATIBLE_HEADERS: '"just a string"',
+      }),
+    ).toThrow(
+      "OPENAI_COMPATIBLE_HEADERS must be a JSON object of header names to string values",
+    );
+  });
+
+  test("rejects a non-string header value", () => {
+    expect(() =>
+      resolveOpenAiCompatibleHeaders({
+        OPENAI_COMPATIBLE_HEADERS: '{"x-portkey-api-key":123}',
+      }),
+    ).toThrow(
+      'OPENAI_COMPATIBLE_HEADERS value for "x-portkey-api-key" must be a string.',
     );
   });
 });

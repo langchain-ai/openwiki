@@ -126,6 +126,7 @@ import {
   providerUsesStreaming,
   resolveConfiguredMaxOutputTokens,
   resolveConfiguredProvider,
+  resolveOpenAiCompatibleHeaders,
   resolveOpenAiCompatibleStreamMessages,
   resolveOpenAICompatibleEntraScope,
   resolveOpenRouterMaxTokens,
@@ -1335,11 +1336,46 @@ export function createModel(
 }
 
 function createOpenAiCompatibleFetch(): typeof fetch {
-  return (input, init) =>
-    globalThis.fetch(
+  // Resolved once per model instantiation rather than per request: like the
+  // API key, a hand-edited env var is expected to require a fresh model (and
+  // thus a fresh agent run) to take effect.
+  const extraHeaders = resolveOpenAiCompatibleHeaders();
+
+  return (input, init) => {
+    const initWithHeaders = mergeOpenAiCompatibleHeaders(init, extraHeaders);
+
+    return globalThis.fetch(
       input,
-      normalizeOpenAiCompatibleChatCompletionsInit(input, init) ?? init,
+      normalizeOpenAiCompatibleChatCompletionsInit(input, initWithHeaders) ??
+        initWithHeaders,
     );
+  };
+}
+
+/**
+ * Merge user-configured extra headers (see
+ * {@link resolveOpenAiCompatibleHeaders}) into an outgoing request's headers.
+ * Applied to every request this fetch wrapper sends — not just chat
+ * completions — since a gateway may key routing or auth off the same header
+ * regardless of path. Extra headers take precedence over any header the
+ * OpenAI client already set, matching the explicit opt-in nature of the
+ * setting.
+ */
+function mergeOpenAiCompatibleHeaders(
+  init: Parameters<typeof fetch>[1],
+  extraHeaders: Record<string, string> | undefined,
+): Parameters<typeof fetch>[1] {
+  if (!extraHeaders || Object.keys(extraHeaders).length === 0) {
+    return init;
+  }
+
+  const headers = new Headers(init?.headers);
+
+  for (const [key, value] of Object.entries(extraHeaders)) {
+    headers.set(key, value);
+  }
+
+  return { ...init, headers };
 }
 
 function normalizeOpenAiCompatibleChatCompletionsInit(
