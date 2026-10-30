@@ -32,6 +32,7 @@ vi.mock("@modelcontextprotocol/sdk/client/index.js", () => ({
 }));
 
 vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
+  getDefaultEnvironment: () => ({}),
   StdioClientTransport: class {
     onclose?: () => void;
 
