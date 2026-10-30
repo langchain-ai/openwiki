@@ -35,9 +35,14 @@ export type ResolveReasoningConfigOptions = {
   useResponsesApi?: boolean;
 };
 
-const OPENAI_GPT_56_REASONING_CAPABILITY = {
+const OPENAI_FULL_EFFORT_REASONING_CAPABILITY = {
   transport: "responses-reasoning",
   values: REASONING_EFFORT_VALUES,
+} as const satisfies ReasoningCapability;
+
+const OPENAI_NO_NONE_REASONING_CAPABILITY = {
+  transport: "responses-reasoning",
+  values: ["low", "medium", "high", "xhigh", "max"],
 } as const satisfies ReasoningCapability;
 
 const GEMINI_THINKING_LEVEL_REASONING_CAPABILITY = {
@@ -45,19 +50,24 @@ const GEMINI_THINKING_LEVEL_REASONING_CAPABILITY = {
   values: ["low", "medium", "high"],
 } as const satisfies ReasoningCapability;
 
+const OPENAI_REASONING_CAPABILITIES: Readonly<
+  Record<string, ReasoningCapability>
+> = {
+  "gpt-5.6-terra": OPENAI_FULL_EFFORT_REASONING_CAPABILITY,
+  "gpt-5.6-luna": OPENAI_FULL_EFFORT_REASONING_CAPABILITY,
+  "gpt-5.6-sol": OPENAI_FULL_EFFORT_REASONING_CAPABILITY,
+  "gpt-6.1-sol": OPENAI_NO_NONE_REASONING_CAPABILITY,
+  "gpt-6.1-terra": OPENAI_FULL_EFFORT_REASONING_CAPABILITY,
+  "gpt-6-astra": OPENAI_NO_NONE_REASONING_CAPABILITY,
+  "gpt-6-sol": OPENAI_FULL_EFFORT_REASONING_CAPABILITY,
+  "gpt-6-luna": OPENAI_FULL_EFFORT_REASONING_CAPABILITY,
+};
+
 const REASONING_CAPABILITIES: Partial<
   Record<OpenWikiProvider, Readonly<Record<string, ReasoningCapability>>>
 > = {
-  openai: {
-    "gpt-5.6-terra": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-luna": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-sol": OPENAI_GPT_56_REASONING_CAPABILITY,
-  },
-  "openai-chatgpt": {
-    "gpt-5.6-terra": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-luna": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-sol": OPENAI_GPT_56_REASONING_CAPABILITY,
-  },
+  openai: OPENAI_REASONING_CAPABILITIES,
+  "openai-chatgpt": OPENAI_REASONING_CAPABILITIES,
   nvidia: {
     "nvidia/nemotron-3-super-120b-a12b": {
       transport: "chat-completions-reasoning-effort",
