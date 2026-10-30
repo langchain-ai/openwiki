@@ -119,6 +119,21 @@ describe("runOpenWikiAgent repository routing", () => {
     expect(harness.createDeepAgent).not.toHaveBeenCalled();
   });
 
+  test("returns the repository pages that the runner skipped", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "openwiki-routing-"));
+    temporaryDirectories.push(root);
+    harness.runNativeRepositoryGeneration.mockResolvedValue({
+      skipped: false,
+      skippedPages: ["/openwiki/quickstart.md"],
+    });
+
+    const result = await runOpenWikiAgent("update", root, {
+      outputMode: "repository",
+    });
+
+    expect(result.skippedPages).toEqual(["/openwiki/quickstart.md"]);
+  });
+
   test("retains personal init on the shared graph path", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "openwiki-routing-"));
     temporaryDirectories.push(root);
