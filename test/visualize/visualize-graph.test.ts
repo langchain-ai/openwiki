@@ -56,6 +56,26 @@ describe("splitFrontmatter", () => {
     expect(meta).toEqual({});
     expect(body).toBe("# Just markdown\n");
   });
+
+  test("treats EOF after the closing delimiter as an empty body", () => {
+    // Editors that strip a final blank line leave the closing --- as the last
+    // bytes. okf/frontmatter accepts that; the visualizer must too.
+    const { meta, body } = splitFrontmatter(
+      "---\ntype: Reference\ntitle: Stub page\n---",
+    );
+    expect(meta.type).toBe("Reference");
+    expect(meta.title).toBe("Stub page");
+    expect(body).toBe("");
+  });
+
+  test("treats CRLF files ending at the closing delimiter as an empty body", () => {
+    const { meta, body } = splitFrontmatter(
+      "---\r\ntype: Reference\r\ntitle: Stub page\r\n---",
+    );
+    expect(meta.type).toBe("Reference");
+    expect(meta.title).toBe("Stub page");
+    expect(body).toBe("");
+  });
 });
 
 describe("firstHeading", () => {
@@ -66,6 +86,16 @@ describe("firstHeading", () => {
 });
 
 describe("buildGraph", () => {
+  test("strips front matter from a stub page that ends at the closing delimiter", async () => {
+    const root = await makeWiki({
+      "stub.md": "---\ntype: Reference\ntitle: Stub page\n---",
+    });
+    const graph = await buildGraph(root);
+    expect(graph.nodes).toHaveLength(1);
+    expect(graph.nodes[0].body).toBe("");
+    expect(graph.nodes[0].size).toBe(0);
+  });
+
   test("builds nodes, resolves links to edges, and records backlinks", async () => {
     const root = await makeWiki({
       "index.md": "---\ntype: Section\n---\n# Files\n[Arch](architecture.md)\n",

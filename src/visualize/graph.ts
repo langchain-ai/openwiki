@@ -40,10 +40,14 @@ export function splitFrontmatter(raw: string): { meta: RawMeta; body: string } {
     return { meta: {}, body: raw };
   }
   const block = raw.slice(3, end).trim();
-  const body = raw.slice(raw.indexOf("\n", end + 1) + 1);
+  // When the file ends at the closing --- (no trailing newline), indexOf
+  // returns -1; treat that as an empty body so we match okf/frontmatter.ts
+  // (FRONTMATTER_BLOCK accepts (?:\r?\n|$)).
+  const newlineAfterClose = raw.indexOf("\n", end + 1);
+  const body = newlineAfterClose === -1 ? "" : raw.slice(newlineAfterClose + 1);
   const meta: RawMeta = {};
   let pendingListKey: string | undefined;
-  for (const line of block.split("\n")) {
+  for (const line of block.split(/\r?\n/)) {
     const listItem = line.match(/^\s*-\s+(.*)$/);
     if (listItem && pendingListKey) {
       (meta[pendingListKey] as string[]).push(stripQuotes(listItem[1].trim()));
