@@ -70,7 +70,7 @@
   "dependencies": {
     "@anthropic-ai/vertex-sdk": "^0.19.6",
     "@aws-sdk/client-bedrock-runtime": "^3.1120.0",
-    "@azure/identity": "^4.13.3",
+    "@azure/identity": "^4.14.1",
     "@langchain/anthropic": "^1.5.8",
     "@langchain/aws": "^1.4.4",
     "@langchain/core": "^1.2.9",
@@ -94,7 +94,7 @@
     "posthog-node": "^5.51.4",
     "react": "^19.3.0",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "jsdom": "^29.1.1 || ^30.0.0",
