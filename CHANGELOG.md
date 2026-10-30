@@ -1,5 +1,13 @@
 # openwiki
 
+## 0.7.3
+
+### Patch Changes
+
+- [#1086](https://github.com/langchain-ai/openwiki/pull/1086) [`7bb583d`](https://github.com/langchain-ai/openwiki/commit/7bb583d664f2d1c2484fa44b9d591f6103ca8166) Thanks [@dependabot](https://github.com/apps/dependabot)! - Update runtime dependencies to address security vulnerabilities in DOMPurify, Azure authentication, request parsing, HTTP transport, and schema validation.
+
+- [#990](https://github.com/langchain-ai/openwiki/pull/990) [`6c14bff`](https://github.com/langchain-ai/openwiki/commit/6c14bff27830034bfd70c15bde46825d7686ec60) Thanks [@dependabot](https://github.com/apps/dependabot)! - Use a React 19-compatible CLI renderer and keep browser graph types independent of the Node.js graph loader.
+
 ## 0.7.2
 
 ### Patch Changes
