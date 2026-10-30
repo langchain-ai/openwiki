@@ -58,9 +58,10 @@ describe("createModel OpenAI-compatible Entra authentication", () => {
     expect(fields.apiKey).not.toBe("stale-static-key");
     expect(fields.useResponsesApi).toBe(responsesApi === "true");
     expect(fields.clientConfig.baseURL).toBe(BASE_URL);
-    expect(fields.clientConfig.fetch).toBeTypeOf(
-      responsesApi === "true" ? "undefined" : "function",
-    );
+    // The provider retry wrapper now installs a fetch on every ChatOpenAI
+    // transport, so Responses-API runs carry the retry fetch too (without the
+    // Chat Completions content-normalization layer). See create-model.test.ts.
+    expect(fields.clientConfig.fetch).toBeTypeOf("function");
   });
 
   test("rejects an unsafe endpoint before model construction", () => {
