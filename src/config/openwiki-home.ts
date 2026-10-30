@@ -5,24 +5,42 @@ import { restrictDirToCurrentUser } from "../platform/windows-acl.js";
 
 export const OPENWIKI_CONFIG_DIR_ENV_KEY = "OPENWIKI_CONFIG_DIR";
 
+/**
+ * Resolves the user's home directory, preferring `process.env.HOME` when it is
+ * set. `os.homedir()` already returns `$HOME` on POSIX, but on Windows it reads
+ * `USERPROFILE` and silently ignores `$HOME`. Honoring `$HOME` keeps Windows
+ * behavior consistent with POSIX, which is what the test and tooling isolation
+ * (pointing `$HOME` at a throwaway directory) relies on. When `$HOME` is unset
+ * we fall back to `os.homedir()` so production defaults are unchanged.
+ */
+export function resolveUserHomeDir(
+  environment: NodeJS.ProcessEnv = process.env,
+): string {
+  const homeEnv = environment.HOME?.trim();
+  return homeEnv ? path.resolve(homeEnv) : os.homedir();
+}
+
 export function resolveOpenWikiHomeDir(
   environment: NodeJS.ProcessEnv = process.env,
 ): string {
   const configuredDir = environment[OPENWIKI_CONFIG_DIR_ENV_KEY]?.trim();
 
   if (!configuredDir) {
-    return path.join(os.homedir(), ".openwiki");
+    return path.join(resolveUserHomeDir(environment), ".openwiki");
   }
 
   // `path.resolve` does not expand a leading `~`, and several environments
   // that set env vars (PowerShell, docker-compose, a hand-edited `.env`) leave
   // it literal. Mirror the tilde handling used by `normalizeLocalPath`.
   if (configuredDir === "~") {
-    return path.join(os.homedir());
+    return path.join(resolveUserHomeDir(environment));
   }
 
   if (configuredDir.startsWith("~/") || configuredDir.startsWith("~\\")) {
-    return path.resolve(os.homedir(), configuredDir.slice(2));
+    return path.resolve(
+      resolveUserHomeDir(environment),
+      configuredDir.slice(2),
+    );
   }
 
   return path.resolve(configuredDir);
