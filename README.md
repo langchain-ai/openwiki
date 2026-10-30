@@ -699,6 +699,13 @@ For native worker concurrency and provider retry settings, see [Parallel page wo
 
 **Reasoning effort.** Set `OPENWIKI_REASONING_EFFORT` to configure reasoning for a supported provider and model. OpenAI GPT-5.6 models use the Responses API values `none`, `low`, `medium`, `high`, `xhigh`, and `max`. Gemini 3.6 Flash maps `low`, `medium`, and `high` to Gemini's thinking level. NVIDIA NIM's Nemotron 3 Super supports `none`, `low`, and `high`. In an interactive chat, use `/effort` to choose an available value or `/effort default` to restore the provider default. Leave the variable unset to preserve the provider default; invalid provider, model, or effort combinations fail before a request is sent.
 
+For repository `init` and `update`, `OPENWIKI_PLANNING_REASONING_EFFORT` and `OPENWIKI_WRITING_REASONING_EFFORT` override `OPENWIKI_REASONING_EFFORT` for the planner and the page writers respectively. Use `none` to turn reasoning off for a phase, for example a deep plan with fast page writing:
+
+```bash
+OPENWIKI_PLANNING_REASONING_EFFORT=high
+OPENWIKI_WRITING_REASONING_EFFORT=none
+```
+
 </details>
 
 > [!NOTE]
