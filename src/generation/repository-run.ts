@@ -572,7 +572,7 @@ export async function beginRepositoryRun(
       input.root,
       input.actor.metadataModel,
       "repository",
-      "interrupted",
+      "running",
       language,
       context.lastUpdate?.gitHead ?? null,
     );
