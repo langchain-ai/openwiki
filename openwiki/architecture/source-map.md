@@ -102,16 +102,22 @@ sources:
     resource: repo://src/telemetry/index.ts
   - id: openwiki-source-04684180af5ec3c4b1911941
     resource: repo://src/telemetry/taxonomy.ts
+  - id: openwiki-source-ece93fbb8cb5e37f8a4eb963
+    resource: repo://src/visualize/client-lib.ts
+  - id: openwiki-source-610ff51ff8da46ab065496a5
+    resource: repo://src/visualize/client.ts
+  - id: openwiki-source-37e0e714b8257069ec052301
+    resource: repo://src/visualize/graph-types.ts
   - id: openwiki-source-d92f623adbf6b31c3542d58d
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-4d856d692c32be213c8c46b4
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-31T08:05:31.828Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-10-31T08:05:31.828Z
 ---
 
 # Source Map
@@ -563,9 +569,13 @@ locations.
 ### visualize — local graph viewer
 
 Owns the interactive wiki/graph viewer. `src/visualize/server.ts`
-(`createRequestHandler`) serves the app; `graph.ts` builds the graph model;
-`page.ts`, `client.ts`, `client-lib.ts`, and `static-export.ts` render and export
-it.
+(`createRequestHandler`) serves the app; `graph.ts` is the Node-side graph
+loader/builder (parsing frontmatter and resolving links from the wiki files);
+`graph-types.ts` is the shared types module that owns `WikiMeta`, `WikiNode`,
+`WikiEdge`, and `WikiGraph` and is imported by both the Node graph loader
+(`graph.ts`) and the browser client (`client.ts`, `client-lib.ts`), keeping the
+two sides decoupled; and `page.ts`, `client.ts`, `client-lib.ts`, and
+`static-export.ts` render and export it.
 
 ### scheduling — recurring connector and generation runs
 
@@ -604,10 +614,13 @@ environment.
 Owns the offline evaluation harnesses that measure whether generated wikis stay
 accurate as their source of truth evolves, and whether OpenWiki improves a
 coding agent. Unlike every other subsystem, the evals live under `evals/`
-(not `src/`) and are invoked via `pnpm` scripts — `eval:ledger` and
-`eval:ledger:reevaluate` — rather than the main CLI binary, with their own
-TypeScript project (`evals/ledger/tsconfig.json`). It is split into two
-independent sub-harnesses.
+(not `src/`) and are invoked via `pnpm` scripts rather than the main CLI binary,
+with their own TypeScript project (`evals/ledger/tsconfig.json`). The run
+scripts — `eval:ledger` and `eval:ledger:reevaluate`, both executed through
+`tsx` — drive the harness, while `eval:ledger:typecheck` type-checks the project
+with `node ./node_modules/typescript7/bin/tsc --noEmit -p
+evals/ledger/tsconfig.json` (the `typescript7` package is an alias pinning
+TypeScript 7). It is split into two independent sub-harnesses.
 
 **LEDGER** (`evals/ledger/`) — the Longitudinal Evaluation of Documentation
 Grounding, Evolution, and Revision — replays a benchmark's Git checkpoints, runs

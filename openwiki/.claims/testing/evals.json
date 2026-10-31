@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4815ef4c4e84c2a07a89b14fd3299c4137a1f90e6c5efa7392ee6caf5e4d80c2",
+  "pageVersion": "sha256:72eb2bacab7bedd5e9e5229ac85ef6e1abcc27cf6f6d03da56a974865b3c9cee",
   "claims": [
     {
       "id": "claim_94f228e67cb14c1a96bd6c1ca3df4c63",
@@ -186,7 +186,7 @@
     },
     {
       "id": "claim_2bfdef5f64ce4b8aa8b83217ce5c4617",
-      "statement": "LEDGER CLI is exposed via pnpm scripts eval:ledger (end-to-end), eval:ledger:reevaluate (re-judge a saved run without invoking OpenWiki), and eval:ledger:typecheck, with flags --benchmark, --results, --system-model, --evaluator-model, and --verbose; unknown flags and missing values are hard errors.",
+      "statement": "LEDGER CLI is exposed via pnpm scripts eval:ledger (running `tsx evals/ledger/run.ts`, end-to-end), eval:ledger:reevaluate (running `tsx evals/ledger/reevaluate.ts`, re-judge a saved run without invoking OpenWiki), and eval:ledger:typecheck (running `node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json`, where typescript7 is an npm alias for typescript@7.0.2); recognized flags are --benchmark, --results, --system-model, --evaluator-model, and --verbose, and unknown flags and missing values are hard errors.",
       "evidence": [
         {
           "resource": "repo://evals/ledger/README.md#L197-L224",
@@ -197,8 +197,12 @@
           "version": "repo-lines-v1:sha256:cbefcc484b067fb8055446a7851f5b9e87bb2018318281b98cfdeb69ebafa098:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YWMxOWMzM2M1ZjUxNDc3MDFhYjQ4YzE4M2QwNjg1OWU0ODlkMDQyMTE5Mzc4MWU3MjdkNzJlYTcwODIyMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNGZhOTRmZjQ3OTU2ZDNhZmMxMDdlMWU4MDY5NDI0Zjg1ZDM0Mzg2NWE0YTI0ZmQ0NjE2YmNiN2M1OTU1YjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZGZmZGRhZjI3NzE5YmViNTJhYzcyNTQ2MjYzZmNhNGM4MWUzNzIzOWIzMmJiMGFiYTliNDE3ZGY5MzA3OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
+          "resource": "repo://package.json#L128-L128",
+          "version": "repo-lines-v1:sha256:0827caf9422fa5bf6b45936a9710715a9ec82862d613bc8976359ab1cc9d23fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyN2NhZjk0MjJmYTViZjZiNDU5MzZhOTcxMDcxNWE5ZWM4Mjg2MmQ2MTNiYzg5NzYzNTlhYjFjYzlkMjNmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgyN2NhZjk0MjJmYTViZjZiNDU5MzZhOTcxMDcxNWE5ZWM4Mjg2MmQ2MTNiYzg5NzYzNTlhYjFjYzlkMjNmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2U1MDAxYzFkODVmOTVlMDA4YTE1NGFjOGUyYmNlZjFmZDY4NTIzNTViZDA2ZjQ3NmQwYWVjM2ZkZTc2OWFjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjI1MDAzYjBmMWUxZGViM2FiNDcxNjNiNGMyNTg1MTcxYzEwNDkxNWE3Yzg5NWQ3NWI4NDJlOTRjZWU5MTE1NCJ9"
+        },
+        {
           "resource": "repo://package.json#L53-L55",
-          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+          "version": "repo-lines-v1:sha256:52e92d29a84d56a837f38f77732db762444a9c055170cd11d567da7a99966dce:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTBkNmNiMzZjNWQ2YWVkMzU3NTNiMWYwMjA3NGY0ZTM4N2JkMGRhZDQ2NzBjZDBlY2ZmNGQ1NjBkZmIxNDE5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
         }
       ]
     },
@@ -299,6 +303,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-13T08:15:00.712Z"
+    "at": "2026-10-31T08:05:31.828Z"
   }
 }
