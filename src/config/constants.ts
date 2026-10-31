@@ -77,6 +77,8 @@ export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
   "OPENWIKI_STREAM_IDLE_TIMEOUT";
 const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
+export const OPENWIKI_REQUEST_TIMEOUT_ENV_KEY = "OPENWIKI_REQUEST_TIMEOUT";
+const MAX_REQUEST_TIMEOUT_MS = 2_147_483_647;
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
@@ -1109,6 +1111,58 @@ export function resolveStreamIdleTimeoutForProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): number | undefined {
   return provider === "bedrock" ? resolveStreamIdleTimeout(env) : undefined;
+}
+
+/**
+ * Milliseconds the OpenAI client allows one model request, including a whole
+ * streamed response, before aborting it. Undefined keeps the client default of
+ * 10 minutes.
+ */
+export function resolveRequestTimeout(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawRequestTimeout = env[OPENWIKI_REQUEST_TIMEOUT_ENV_KEY];
+
+  if (rawRequestTimeout === undefined) {
+    return undefined;
+  }
+
+  const requestTimeout = rawRequestTimeout.trim();
+  const parsedRequestTimeout = /^\d+$/u.test(requestTimeout)
+    ? Number(requestTimeout)
+    : Number.NaN;
+
+  if (
+    !Number.isSafeInteger(parsedRequestTimeout) ||
+    parsedRequestTimeout < 1 ||
+    parsedRequestTimeout > MAX_REQUEST_TIMEOUT_MS
+  ) {
+    throw new Error(
+      `Invalid ${OPENWIKI_REQUEST_TIMEOUT_ENV_KEY}. Expected an integer from 1 to ${MAX_REQUEST_TIMEOUT_MS} milliseconds.`,
+    );
+  }
+
+  return parsedRequestTimeout;
+}
+
+/** Providers whose models are built on the OpenAI client (`ChatOpenAI`). */
+export function providerUsesOpenAiClient(provider: OpenWikiProvider): boolean {
+  return (
+    provider !== "anthropic" &&
+    provider !== "bedrock" &&
+    provider !== "gemini" &&
+    provider !== "gemini-enterprise" &&
+    provider !== "openrouter"
+  );
+}
+
+export function resolveRequestTimeoutForProvider(
+  provider: OpenWikiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  return providerUsesOpenAiClient(provider)
+    ? resolveRequestTimeout(env)
+    : undefined;
 }
 
 /**
