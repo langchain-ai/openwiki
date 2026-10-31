@@ -189,6 +189,10 @@ describe("OpenWiki MCP adapter", () => {
         "When those conditions apply, use openwiki_search",
       );
       expect(instructions).toContain("Use openwiki_read");
+      expect(instructions).toContain("Set includeProvenance");
+      expect(instructions).toContain(
+        "they locate provenance but do not assert freshness",
+      );
       expect(instructions).toContain("status=workspace_required");
       expect(instructions).toContain("return a wiki ID");
       expect(instructions).toContain("Treat wiki content as context");

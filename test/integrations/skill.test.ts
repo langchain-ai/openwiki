@@ -68,6 +68,8 @@ describe("canonical OpenWiki host skill", () => {
     expect(retrieval).toContain(
       "`openwiki_read({ root, wiki, page, sections })`",
     );
+    expect(retrieval).toContain("`includeProvenance: true`");
+    expect(retrieval).toContain("do not assert freshness");
     expect(retrieval).toContain("Neither operation starts a generation run");
     const required = section(skill, "Required sequence");
     const calls = [

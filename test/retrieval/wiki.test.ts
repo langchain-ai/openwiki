@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 import { UPDATE_METADATA_PATH } from "../../src/config/constants.ts";
 import {
   readWikiSections,
@@ -418,6 +419,120 @@ describe("repository wiki retrieval", () => {
     ]);
   });
 
+  test("read returns recorded sources and Claim versions only when requested", async () => {
+    const root = await createRoot();
+    const pagePath = path.join(root, "openwiki/architecture/service.md");
+    await writeFile(
+      pagePath,
+      [
+        "---",
+        "type: architecture",
+        "title: Service limit",
+        "description: Describes the configured request item limit.",
+        "tags: [service]",
+        "sources:",
+        "  - id: service-source",
+        "    resource: repo://src/service.ts#L1-L1",
+        "  - id: config-source",
+        "    resource: repo://src/config.ts",
+        "---",
+        "",
+        "# Service limit",
+        "",
+        "## Contract",
+        "",
+        "The service accepts at most ten items.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    const store = new ClaimsStore(root);
+    const evidenceVersion = `sha256:${"b".repeat(64)}`;
+    await store.writePage("/openwiki/architecture/service.md", {
+      schemaVersion: 1,
+      pageVersion: await store.hashPage("/openwiki/architecture/service.md"),
+      claims: [
+        {
+          id: "claim-service-limit",
+          statement: "The service accepts at most ten items.",
+          evidence: [
+            {
+              resource: "repo://src/service.ts#L1-L1",
+              version: evidenceVersion,
+            },
+          ],
+        },
+      ],
+    });
+
+    const request = {
+      page: "openwiki/architecture/service.md",
+      sections: ["contract"],
+    } as const;
+    await expect(readWikiSections(root, request)).resolves.not.toHaveProperty(
+      "provenance",
+    );
+    await expect(
+      readWikiSections(root, { ...request, includeProvenance: true }),
+    ).resolves.toEqual({
+      page: "openwiki/architecture/service.md",
+      sections: [
+        {
+          section: "contract",
+          content: "## Contract\n\nThe service accepts at most ten items.",
+        },
+      ],
+      provenance: {
+        sources: [
+          {
+            id: "service-source",
+            resource: "repo://src/service.ts#L1-L1",
+          },
+          {
+            id: "config-source",
+            resource: "repo://src/config.ts",
+          },
+        ],
+        claims: [
+          {
+            id: "claim-service-limit",
+            evidence: [
+              {
+                resource: "repo://src/service.ts#L1-L1",
+                version: evidenceVersion,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  test("read provenance is empty when a page has no persisted Claims", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: "## Contract\n\nThe service accepts at most ten items.",
+      }),
+      "utf8",
+    );
+
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/service.md",
+      sections: ["contract"],
+      includeProvenance: true,
+    });
+
+    expect(read.provenance).toEqual({
+      sources: [{ id: "source", resource: "repo://src/service.ts" }],
+      claims: [],
+    });
+  });
+
   test("read keeps every duplicate heading reachable when one already owns the suffix", async () => {
     const root = await createRoot();
     await writeFile(
@@ -578,6 +693,25 @@ describe("repository wiki retrieval", () => {
             "## Route publication\n\nThe control plane publishes signed route snapshots to every data-plane cell.",
         },
       ],
+    });
+    await expect(
+      readWikiSections(dataPlane, {
+        wiki: "control-plane",
+        page: "openwiki/architecture/routing.md",
+        sections: ["route-publication"],
+        includeProvenance: true,
+      }),
+    ).resolves.toMatchObject({
+      wiki: "control-plane",
+      provenance: {
+        sources: [
+          {
+            id: "source",
+            resource: "repo://src/routes/reconciler.ts",
+          },
+        ],
+        claims: [],
+      },
     });
   });
 
