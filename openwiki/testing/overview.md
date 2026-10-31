@@ -30,6 +30,14 @@ sources:
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-eab9328975981f427c4218d0
     resource: repo://src/integrations/mcp/server.ts
+  - id: openwiki-source-ece93fbb8cb5e37f8a4eb963
+    resource: repo://src/visualize/client-lib.ts
+  - id: openwiki-source-610ff51ff8da46ab065496a5
+    resource: repo://src/visualize/client.ts
+  - id: openwiki-source-37e0e714b8257069ec052301
+    resource: repo://src/visualize/graph-types.ts
+  - id: openwiki-source-d92f623adbf6b31c3542d58d
+    resource: repo://src/visualize/graph.ts
   - id: openwiki-source-76702f01df0808033c14cf17
     resource: repo://test/agent/create-model-entra.test.ts
   - id: openwiki-source-6e76d6023798412a72871e94
@@ -64,8 +72,8 @@ sources:
     resource: repo://test/claims/core/mutations.test.ts
   - id: openwiki-source-b29e22b2bea9905b27e8e8e8
     resource: repo://test/claims/evidence/repository/resolver.test.ts
-  - id: openwiki-source-61040321732e97cebb914633
-    resource: repo://test/cli/components/markdown.test.tsx
+  - id: openwiki-source-204b8d11edac6ee7ca207981
+    resource: repo://test/cli/components/primitives.test.tsx
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
   - id: openwiki-source-f66c47a0c6537f764ad36878
@@ -140,10 +148,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-31T08:05:31.828Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+    at: 2026-10-31T08:05:31.828Z
 ---
 
 # Testing Guide
@@ -157,15 +165,21 @@ while preserving complete failure output.
 
 ## Tooling
 
-- **Test runner: Vitest.** `vitest` (and `@vitest/coverage-v8`) are dev
-  dependencies; there is no separate framework. Tests import `describe`,
-  `expect`, `test`, `vi`, and the `beforeEach`/`afterEach` hooks directly from
-  `vitest`.
-- **Ink component tests: ink-testing-library.** Terminal UI written with Ink is
-  exercised by rendering React components with `render` from
-  `ink-testing-library` and asserting on the rendered frame (`lastFrame()`).
-  These tests are the `.tsx` files under `test/cli/components/` and
-  `test/setup/credentials/`.
+- **Test runner: Vitest 4.** `vitest` (`^4.1.11`) and
+  `@vitest/coverage-v8` (`^4.1.11`) are dev dependencies; there is no separate
+  framework. Tests import `describe`, `expect`, `test`, `vi`, and the
+  `beforeEach`/`afterEach` hooks directly from `vitest`.
+- **Type checker for the gate: `typescript7`.** The `typecheck`, `build`, and
+  `eval:ledger:typecheck` scripts all invoke `tsc` through the `typescript7`
+  npm alias — `"typescript7": "npm:typescript@7.0.2"` in `devDependencies`,
+  resolved as `node ./node_modules/typescript7/bin/tsc` — rather than the
+  baseline `typescript` (`6.0.3`) dependency, so the gate type-checks and builds
+  against a newer TypeScript compiler than the one the editor sees.
+- **Ink component tests: ink-testing-library.** Terminal UI written with Ink
+  (`ink` `~6.8.0`, `react` `^19.3.0`) is exercised by rendering React components
+  with `render` from `ink-testing-library` (`^4.0.0`) and asserting on the
+  rendered frame (`lastFrame()`). These tests are the `.tsx` files under
+  `test/cli/components/` and `test/setup/credentials/`.
 - **No global config beyond `vitest.config.ts`.** Test discovery keeps Vitest's
   defaults; the only tuning is one discovery exclusion and the coverage block
   (see below).
@@ -185,17 +199,22 @@ flowchart TD
   A["pnpm test"] --> B["typecheck"]
   B --> C["build"]
   C --> D["coverage"]
-  B -.-> B1["tsc --noEmit tsconfig.json + tsconfig.client.json"]
-  C -.-> C1["tsc project build + copy-visualize-assets"]
+  B -.-> B1["typescript7/bin/tsc --noEmit -p tsconfig.json + tsconfig.client.json"]
+  C -.-> C1["typescript7/bin/tsc -p tsconfig.json + tsconfig.client.json + copy-visualize-assets"]
   D -.-> D1["vitest run --coverage"]
 ```
 
-The `pnpm test` gate: typecheck, then build, then the coverage run.
+The `pnpm test` gate: typecheck, then build, then the coverage run. Every `tsc`
+invocation goes through the `typescript7` binary — an npm alias
+(`"typescript7": "npm:typescript@7.0.2"` in `devDependencies`) resolved to
+`node ./node_modules/typescript7/bin/tsc` — rather than the project's baseline
+`typescript` dependency.
 
-1. **`typecheck`** runs `tsc --noEmit` against both the server project
-   (`tsconfig.json`) and the browser/client project (`tsconfig.client.json`).
-2. **`build`** compiles both TypeScript projects and copies the visualize
-   client assets.
+1. **`typecheck`** runs `tsc --noEmit` via the `typescript7` alias against both
+   the server project (`tsconfig.json`) and the browser/client project
+   (`tsconfig.client.json`).
+2. **`build`** compiles both TypeScript projects through `typescript7/bin/tsc`
+   and copies the visualize client assets.
 3. **`coverage`** runs `vitest run --coverage`, which executes every test and
    produces a coverage report.
 
@@ -262,9 +281,9 @@ the application `src/` root). Two npm scripts wrap the harness:
   checkpoint-replay evaluation (replays a benchmark's Git history through
   OpenWiki and grades each frozen wiki snapshot).
 - `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
-  evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
-  (A `eval:ledger:reevaluate` script re-judges a completed run without
-  re-invoking OpenWiki.)
+  evals/ledger/tsconfig.json` through the `typescript7` alias, the focused
+  typecheck for the LEDGER source. (A `eval:ledger:reevaluate` script re-judges
+  a completed run without re-invoking OpenWiki.)
 
 These are separate from the application `typecheck`/`test` scripts and must
 be run explicitly when changing the LEDGER harness.
@@ -905,7 +924,12 @@ provider configs, and the OpenWiki home/connector path helpers.
 ### Visualize: page, graph, and client interaction
 
 `test/visualize/` mirrors `src/visualize/`. It splits the visualizer into the
-parts that can run in plain Node and the browser-only client glue that cannot:
+parts that can run in plain Node and the browser-only client glue that cannot.
+The shared graph data model (`WikiGraph`/`WikiNode`/`WikiEdge`/`WikiMeta`) lives
+in `src/visualize/graph-types.ts`, which imports nothing and is imported by both
+the Node.js graph loader `graph.ts` and the browser modules `client.ts`/`client-lib.ts`,
+so the loader and the browser render path stay decoupled around a common type
+contract:
 
 - `test/visualize/page.test.ts` asserts on the rendered `PAGE`/`STATIC_PAGE`
   HTML documents exported by `src/visualize/page.ts`. It pins the exact CDN
