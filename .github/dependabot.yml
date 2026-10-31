@@ -4,6 +4,14 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # deepagents (pinned in package.json) declares a peer range of
+      # langsmith >=0.7.1 <0.10.0, so langsmith 0.10+ triggers an ERESOLVE
+      # warning on `npm install -g openwiki`. Remove this once deepagents widens
+      # its langsmith peer range.
+      - dependency-name: langsmith
+        versions:
+          - ">=0.10.0"
     groups:
       minor-and-patch:
         patterns:
