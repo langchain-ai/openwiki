@@ -140,10 +140,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-11-01T08:05:43.330Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+    at: 2026-11-01T08:05:43.330Z
 ---
 
 # Testing Guide
@@ -157,15 +157,15 @@ while preserving complete failure output.
 
 ## Tooling
 
-- **Test runner: Vitest.** `vitest` (and `@vitest/coverage-v8`) are dev
-  dependencies; there is no separate framework. Tests import `describe`,
-  `expect`, `test`, `vi`, and the `beforeEach`/`afterEach` hooks directly from
-  `vitest`.
+- **Test runner: Vitest.** `vitest` (`^4.1.11`) and
+  `@vitest/coverage-v8` (`^4.1.11`) are dev dependencies; there is no separate
+  framework. Tests import `describe`, `expect`, `test`, `vi`, and the
+  `beforeEach`/`afterEach` hooks directly from `vitest`.
 - **Ink component tests: ink-testing-library.** Terminal UI written with Ink is
   exercised by rendering React components with `render` from
-  `ink-testing-library` and asserting on the rendered frame (`lastFrame()`).
-  These tests are the `.tsx` files under `test/cli/components/` and
-  `test/setup/credentials/`.
+  `ink-testing-library` (`^4.0.0`) and asserting on the rendered frame
+  (`lastFrame()`). These tests are the `.tsx` files under `test/cli/components/`
+  and `test/setup/credentials/`.
 - **No global config beyond `vitest.config.ts`.** Test discovery keeps Vitest's
   defaults; the only tuning is one discovery exclusion and the coverage block
   (see below).
@@ -192,10 +192,13 @@ flowchart TD
 
 The `pnpm test` gate: typecheck, then build, then the coverage run.
 
-1. **`typecheck`** runs `tsc --noEmit` against both the server project
-   (`tsconfig.json`) and the browser/client project (`tsconfig.client.json`).
-2. **`build`** compiles both TypeScript projects and copies the visualize
-   client assets.
+1. **`typecheck`** runs `tsc --noEmit` (via the pinned `typescript7`
+   binary) against both the server project (`tsconfig.json`) and the
+   browser/client project (`tsconfig.client.json`).
+2. **`build`** compiles both TypeScript projects (again through the
+   `typescript7` binary) and then runs
+   `node scripts/copy-visualize-assets.cjs` to copy the visualize client
+   assets.
 3. **`coverage`** runs `vitest run --coverage`, which executes every test and
    produces a coverage report.
 
@@ -261,7 +264,8 @@ the application `src/` root). Two npm scripts wrap the harness:
 - `pnpm run eval:ledger` — runs `tsx evals/ledger/run.ts`, the live
   checkpoint-replay evaluation (replays a benchmark's Git history through
   OpenWiki and grades each frozen wiki snapshot).
-- `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
+- `pnpm run eval:ledger:typecheck` — runs
+  `node ./node_modules/typescript7/bin/tsc --noEmit -p
   evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
   (A `eval:ledger:reevaluate` script re-judges a completed run without
   re-invoking OpenWiki.)
