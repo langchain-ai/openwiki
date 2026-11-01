@@ -372,9 +372,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     // IDs are the current dated releases from docs.mistral.ai/models; Mistral
     // also exposes rolling "*-latest" aliases that can be pasted directly.
     modelOptions: [
+      { id: "mistral-small-2603", label: "Mistral Small 4" },
       { id: "mistral-medium-3-5", label: "Mistral Medium 3.5" },
       { id: "mistral-large-2512", label: "Mistral Large 3" },
-      { id: "mistral-small-2603", label: "Mistral Small 4" },
       { id: "codestral-2508", label: "Codestral" },
     ],
   },

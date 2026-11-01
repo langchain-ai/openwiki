@@ -1263,7 +1263,7 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
-    expect(getDefaultModelId("mistral")).toBe("mistral-medium-3-5");
+    expect(getDefaultModelId("mistral")).toBe("mistral-small-2603");
     expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
