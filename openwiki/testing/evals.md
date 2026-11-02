@@ -22,10 +22,14 @@ sources:
     resource: repo://evals/ledger/metrics/score.ts
   - id: openwiki-source-949522a1dfce74920badb2b6
     resource: repo://evals/ledger/README.md
+  - id: openwiki-source-8fe49b679bb29b6d5403548c
+    resource: repo://evals/ledger/reevaluate.ts
   - id: openwiki-source-e002292edb3472e7a17649a6
     resource: repo://evals/ledger/replay/git-replay.ts
   - id: openwiki-source-e6c741496df7b14585c58ed3
     resource: repo://evals/ledger/replay/workspace.ts
+  - id: openwiki-source-bdd14aa92ae4a01628e282cd
+    resource: repo://evals/ledger/run.ts
   - id: openwiki-source-5185d105a452db1bae7fe294
     resource: repo://evals/ledger/run/args.ts
   - id: openwiki-source-f059e6c5f2ba00b3969268a2
@@ -42,10 +46,10 @@ sources:
     resource: repo://evals/ledger/system/openwiki-system.ts
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
-generated: { by: "openwiki/0.5.1", at: "2026-09-14T08:10:27.832Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-11-01T08:05:43.330Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+    at: 2026-11-01T08:05:43.330Z
 ---
 
 # Evaluation Systems (LEDGER and DeepSWE)
@@ -217,7 +221,7 @@ LEDGER is invoked through pnpm scripts defined in `package.json`:
 
 - `pnpm run eval:ledger -- --benchmark <dir>` — end-to-end run.
 - `pnpm run eval:ledger:reevaluate -- --benchmark <dir> --run <results-dir>` — re-evaluate a completed run without invoking OpenWiki.
-- `pnpm run eval:ledger:typecheck` — `tsc --noEmit -p evals/ledger/tsconfig.json`.
+- `pnpm run eval:ledger:typecheck` — `node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json`.
 
 Recognized flags are `--benchmark <dir>`, `--results <dir>`, `--system-model <id>`, `--evaluator-model <id>`, and `--verbose`. Unknown flags and missing values are hard errors (`LedgerError`) so a typo never runs with a surprising default. `--verbose` does not accept a value; it prints every stale and hallucinated claim beneath the checkpoint that produced it.
 

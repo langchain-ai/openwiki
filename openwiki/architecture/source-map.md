@@ -108,10 +108,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-11-01T08:05:43.330Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.2
+    at: 2026-11-01T08:05:43.330Z
 ---
 
 # Source Map
@@ -604,9 +604,15 @@ environment.
 Owns the offline evaluation harnesses that measure whether generated wikis stay
 accurate as their source of truth evolves, and whether OpenWiki improves a
 coding agent. Unlike every other subsystem, the evals live under `evals/`
-(not `src/`) and are invoked via `pnpm` scripts — `eval:ledger` and
-`eval:ledger:reevaluate` — rather than the main CLI binary, with their own
-TypeScript project (`evals/ledger/tsconfig.json`). It is split into two
+(not `src/`) and are invoked via `pnpm` scripts rather than the main CLI binary:
+`eval:ledger` (`tsx evals/ledger/run.ts`),
+`eval:ledger:reevaluate` (`tsx evals/ledger/reevaluate.ts`), and
+`eval:ledger:typecheck`
+(`node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json`).
+The ledger scripts run the harness entrypoints directly through `tsx`, while
+`eval:ledger:typecheck` type-checks the harness's own TypeScript project
+(`evals/ledger/tsconfig.json`, which extends the root `tsconfig.json` with
+`noEmit` and `rootDir` of the repo root). It is split into two
 independent sub-harnesses.
 
 **LEDGER** (`evals/ledger/`) — the Longitudinal Evaluation of Documentation
