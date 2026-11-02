@@ -11,7 +11,11 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
+import {
+  createDeepAgent,
+  createFilesystemMiddleware,
+  type DeepAgent,
+} from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -409,7 +413,7 @@ export type OpenWikiAgentOptions = {
  */
 export async function createOpenWikiAgent(
   options: OpenWikiAgentOptions,
-): Promise<ReturnType<typeof createDeepAgent>> {
+): Promise<DeepAgent> {
   if (!path.isAbsolute(options.cwd)) {
     throw new Error("OpenWiki agent cwd must be an absolute path.");
   }
@@ -467,7 +471,7 @@ type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
 
 function createOpenWikiAgentGraph(
   options: OpenWikiAgentGraphOptions,
-): ReturnType<typeof createDeepAgent> {
+): DeepAgent {
   const wikiBackend = new OpenWikiLocalShellBackend({
     docsOnly: options.command !== "chat",
     openWikiIgnore: options.openWikiIgnore,

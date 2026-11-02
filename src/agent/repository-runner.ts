@@ -13,7 +13,11 @@ import {
   type ToolCallChunk,
 } from "@langchain/core/messages";
 import { DynamicStructuredTool } from "@langchain/core/tools";
-import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
+import {
+  createDeepAgent,
+  createFilesystemMiddleware,
+  type DeepAgent,
+} from "deepagents";
 import { createMiddleware, toolCallLimitMiddleware } from "langchain";
 import { z } from "zod";
 import { resolveTraceThreadId } from "../config/constants.js";
@@ -1063,7 +1067,7 @@ function emitDeferredPageWarning(
  * @param page - Canonical page owned by a page worker, tagged onto its events.
  */
 async function streamWorkerTools(
-  agent: ReturnType<typeof createDeepAgent>,
+  agent: DeepAgent,
   messages: Array<{ role: "user"; content: string }>,
   traceThreadId: string,
   onEvent?: (event: OpenWikiRunEvent) => void,
