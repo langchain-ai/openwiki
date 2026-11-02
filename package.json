@@ -45,14 +45,14 @@
   },
   "scripts": {
     "openwiki": "node dist/cli/cli.js",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
+    "build": "node ./node_modules/typescript7/bin/tsc -p tsconfig.json && node ./node_modules/typescript7/bin/tsc -p tsconfig.client.json && node scripts/copy-visualize-assets.cjs",
     "changeset:version": "changeset version",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "coverage": "vitest run --coverage",
     "dev": "tsx src/cli/cli.tsx",
     "eval:ledger": "tsx evals/ledger/run.ts",
     "eval:ledger:reevaluate": "tsx evals/ledger/reevaluate.ts",
-    "eval:ledger:typecheck": "tsc --noEmit -p evals/ledger/tsconfig.json",
+    "eval:ledger:typecheck": "node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "integrations:dev": "pnpm run build && node scripts/install-local-integration.mjs",
@@ -65,12 +65,12 @@
     "stamp:channel": "node scripts/stamp-build-channel.cjs",
     "start": "node dist/cli/cli.js",
     "test": "pnpm run typecheck && pnpm run build && pnpm run coverage",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json"
+    "typecheck": "node ./node_modules/typescript7/bin/tsc --noEmit -p tsconfig.json && node ./node_modules/typescript7/bin/tsc --noEmit -p tsconfig.client.json"
   },
   "dependencies": {
-    "@anthropic-ai/vertex-sdk": "^0.19.6",
+    "@anthropic-ai/vertex-sdk": "^1.1.0",
     "@aws-sdk/client-bedrock-runtime": "^3.1120.0",
-    "@azure/identity": "^4.13.3",
+    "@azure/identity": "^4.14.1",
     "@langchain/anthropic": "^1.5.8",
     "@langchain/aws": "^1.4.4",
     "@langchain/core": "^1.2.9",
@@ -78,27 +78,27 @@
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.4",
     "@langchain/openai": "^1.5.11",
     "@langchain/openrouter": "^0.4.10",
-    "@langchain/protocol": "^0.0.19",
+    "@langchain/protocol": "^0.0.20",
     "@langchain/tavily": "1.2.0",
-    "@modelcontextprotocol/sdk": "^1.31.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "ci-info": "^4.4.0",
-    "cron-parser": "5.10.1",
-    "cronstrue": "3.27.0",
-    "deepagents": "1.13.2",
+    "cron-parser": "5.10.2",
+    "cronstrue": "3.38.0",
+    "deepagents": "1.15.1",
     "google-auth-library": "^11.0.2",
-    "ink": "^5.2.1",
+    "ink": "~8.0.0",
     "jsonc-parser": "^3.3.1",
     "langchain": "^1.5.10",
-    "langsmith": "^0.10.5",
+    "langsmith": "^0.9.0",
     "marked": "^18.0.11",
     "posthog-node": "^5.51.4",
-    "react": "^18.3.1",
+    "react": "^19.3.0",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "jsdom": "^29.1.1 || ^30.0.0",
-    "mermaid": "^11.16.0"
+    "mermaid": "^11.16.0 || ^12.0.0"
   },
   "peerDependenciesMeta": {
     "jsdom": {
@@ -115,17 +115,18 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.4.0",
-    "@types/react": "^18.3.31",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@types/react": "^19.3.0",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.9.1",
     "ink-testing-library": "^4.0.0",
     "jsdom": "^30.0.1",
-    "mermaid": "^11.17.2",
+    "mermaid": "^12.2.0",
     "prettier": "^3.9.6",
     "tsx": "^4.23.12",
-    "typescript": "^5.9.3",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.68.0",
-    "vitest": "^4.1.11"
+    "typescript7": "npm:typescript@7.0.2",
+    "vitest": "^5.0.5"
   },
   "packageManager": "pnpm@11.25.0"
 }

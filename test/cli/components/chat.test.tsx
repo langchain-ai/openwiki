@@ -9,6 +9,7 @@ import {
 import type { CompletedRun } from "../../../src/cli/components/types.ts";
 import { saveOpenWikiEnv } from "../../../src/config/env.ts";
 import { stripAnsi as plain } from "./ansi.ts";
+import { flushInk } from "./flush.ts";
 
 // The secret-input path persists credentials to ~/.openwiki/.env. Mock the writer
 // so the tests exercise that path without ever touching the real filesystem; the
@@ -27,9 +28,7 @@ async function noopAsync(): Promise<void> {}
  * work (submit, credential save, menu selection) completes before assertions.
  */
 async function flush(): Promise<void> {
-  await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  await Promise.resolve();
+  await flushInk();
 }
 
 describe("ChatHistory", () => {
@@ -272,7 +271,9 @@ describe("ChatInput keyboard interactions", () => {
      */
     const press = async (data: string): Promise<void> => {
       utils.stdin.write(data);
-      await flush();
+      // Ink 8 buffers a bare Escape briefly so it can distinguish the key
+      // from the start of a multi-byte terminal control sequence.
+      await flushInk(data === "\u001b" ? 25 : 0);
     };
 
     // Let the mount effect attach the stdin listener before any keystroke.

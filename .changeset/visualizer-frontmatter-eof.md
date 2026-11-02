@@ -2,4 +2,4 @@
 "openwiki": patch
 ---
 
-fix: treat EOF after a page's closing front-matter `---` as an empty body in the visualizer, matching the CLI parser
+fix: parse CRLF front matter correctly in the visualizer and preserve an empty body when the closing delimiter is at EOF

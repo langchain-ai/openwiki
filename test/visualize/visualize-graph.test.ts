@@ -57,11 +57,9 @@ describe("splitFrontmatter", () => {
     expect(body).toBe("# Just markdown\n");
   });
 
-  test("treats EOF after the closing delimiter as an empty body", () => {
-    // Editors that strip a final blank line leave the closing --- as the last
-    // bytes. okf/frontmatter accepts that; the visualizer must too.
+  test("treats a closing delimiter at end of file as a valid frontmatter close", () => {
     const { meta, body } = splitFrontmatter(
-      "---\ntype: Reference\ntitle: Stub page\n---",
+      ["---", "type: Reference", "title: Stub page", "---"].join("\n"),
     );
     expect(meta.type).toBe("Reference");
     expect(meta.title).toBe("Stub page");
