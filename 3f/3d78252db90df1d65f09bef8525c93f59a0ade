@@ -1,0 +1,24 @@
+.changeset/retrieval-page-provenance.md
+  s_631434594bcc9d::t_5579839b2e6359 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3f3d78252db90df1d65f09bef8525c93f59a0ade",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_631434594bcc9d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19aa1-0d6b-70f1-be4a-20acfb6ef2f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
