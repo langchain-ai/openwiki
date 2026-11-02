@@ -1,0 +1,33 @@
+.changeset/configurable-wiki-directories.md
+  s_7b43710945c2b6::t_985b490bd491b1 1-5
+test/repository-wiki/preparation.test.ts
+  s_7b43710945c2b6::t_985b490bd491b1 172-185
+src/repository-wiki/preparation.ts
+  s_7b43710945c2b6::t_985b490bd491b1 8,70
+test/generation/repository-run.test.ts
+  s_7b43710945c2b6::t_985b490bd491b1 3-10,373-397
+  s_7b43710945c2b6::t_28583c7878be7b 398-399
+src/generation/repository-run.ts
+  s_7b43710945c2b6::t_985b490bd491b1 52,437
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3aaa7e90623536822d1011601922db9c0a4fc827",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7b43710945c2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19acc-8776-7471-a9b8-7b879a19f2fa",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
