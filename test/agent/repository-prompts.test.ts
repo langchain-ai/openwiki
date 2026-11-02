@@ -96,6 +96,8 @@ describe("repository worker prompts", () => {
     );
     expect(prompt).toContain("src/auth.ts");
     expect(prompt).toContain("Baseline abc123");
+    expect(prompt).toContain("Repository files are at the filesystem root");
+    expect(prompt).toContain("never a directory");
     expect(prompt).toContain("/openwiki/auth.md");
     expect(prompt).toContain("inside its own committed update window");
     expect(prompt).toContain("claim_auth (stale)");
@@ -178,6 +180,7 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("repo://src/auth.ts");
     expect(prompt).toContain("currently owns 7 Claim(s)");
     expect(prompt).toContain("Write only /openwiki/auth.md");
+    expect(prompt).toContain("Repository files are at the filesystem root");
     expect(prompt).toContain("use hrefs relative to this");
     expect(prompt).toContain("not Markdown link destinations");
     expect(prompt).toContain(
