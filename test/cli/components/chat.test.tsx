@@ -271,7 +271,9 @@ describe("ChatInput keyboard interactions", () => {
      */
     const press = async (data: string): Promise<void> => {
       utils.stdin.write(data);
-      await flush();
+      // Ink 8 buffers a bare Escape briefly so it can distinguish the key
+      // from the start of a multi-byte terminal control sequence.
+      await flushInk(data === "\u001b" ? 25 : 0);
     };
 
     // Let the mount effect attach the stdin listener before any keystroke.
