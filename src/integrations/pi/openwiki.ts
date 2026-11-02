@@ -152,9 +152,11 @@ async function startBridge(onclose: () => void): Promise<Bridge> {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [cliPath, "mcp", "--host", "pi"],
-    env: { OPENWIKI_CONFIG_DIR: resolveOpenWikiHomeDir() },
+    env: {
+      ...bridgeEnvironment(),
+      OPENWIKI_CONFIG_DIR: resolveOpenWikiHomeDir(),
+    },
     stderr: "inherit",
-    env: bridgeEnvironment(),
   });
   const client = new Client(
     { name: "openwiki-pi", version: OPENWIKI_VERSION },
