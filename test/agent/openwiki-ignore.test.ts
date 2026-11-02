@@ -247,6 +247,7 @@ describe("OpenWikiLocalShellBackend", () => {
     const uploads = await backend.uploadFiles([
       ["secrets/token.txt", new TextEncoder().encode("x")],
       ["public.txt", new TextEncoder().encode("y")],
+      ["openwiki/public.md", new TextEncoder().encode("allowed")],
     ]);
     const uploadByPath = new Map(
       uploads.map((result) => [result.path, result]),
@@ -254,7 +255,10 @@ describe("OpenWikiLocalShellBackend", () => {
     expect(uploadByPath.get("secrets/token.txt")?.error).toBe(
       "permission_denied",
     );
-    expect(uploadByPath.get("public.txt")?.error).not.toBe("permission_denied");
+    expect(uploadByPath.get("public.txt")?.error).toBe("permission_denied");
+    expect(uploadByPath.get("openwiki/public.md")?.error).not.toBe(
+      "permission_denied",
+    );
 
     const downloads = await backend.downloadFiles([
       "secrets/token.txt",
