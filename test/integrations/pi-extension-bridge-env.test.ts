@@ -80,9 +80,9 @@ function stubHostRuntime(runtime: "electron" | "bun" | "node"): void {
  */
 async function runBridgeTool(): Promise<TransportOptions> {
   vi.resetModules();
-  const extension: Extension = (
-    await import("../../dist/integrations/pi/openwiki.js")
-  ).default;
+  const extensionModule: unknown =
+    await import("../../dist/integrations/pi/openwiki.js");
+  const extension = (extensionModule as { default: Extension }).default;
   const tools = new Map<string, RegisteredTool>();
   extension({
     registerTool(tool: RegisteredTool) {
