@@ -107,12 +107,44 @@ function toolResultText(result: {
   return text || JSON.stringify(result.structuredContent ?? result);
 }
 
+/**
+ * Builds the environment additions for the spawned CLI child.
+ *
+ * `startBridge` spawns the CLI with `process.execPath`. Under a plain Node host
+ * that is the Node binary, but under an Electron host it is the Electron binary,
+ * which runs the CLI as a Node process only when `ELECTRON_RUN_AS_NODE` is set.
+ * A standalone Bun-compiled host (Pi built with `bun build --compile`) is the
+ * same problem in another runtime: `process.execPath` is that executable, and it
+ * runs its bundled entrypoint rather than the CLI script unless `BUN_BE_BUN=1`
+ * (Bun >= 1.2.16) makes it behave as the Bun CLI.
+ *
+ * The SDK's default child environment is an allowlist (`HOME`, `LOGNAME`, `PATH`,
+ * `SHELL`, `TERM`, `USER`) that drops either variable, so a host that already
+ * exported one has to have it re-exported, and a host that never set it has to
+ * have it supplied. Without it the child starts the host app instead of the stdio
+ * server and exits, which the host reports as `MCP error -32000: Connection
+ * closed`.
+ *
+ * @returns Environment additions for the child, or `undefined` to keep the SDK's
+ * default environment for a plain Node host.
+ */
+function bridgeEnvironment(): Record<string, string> | undefined {
+  const inheritedElectron = process.env.ELECTRON_RUN_AS_NODE;
+  if (inheritedElectron) return { ELECTRON_RUN_AS_NODE: inheritedElectron };
+  if (process.versions.electron) return { ELECTRON_RUN_AS_NODE: "1" };
+  const inheritedBun = process.env.BUN_BE_BUN;
+  if (inheritedBun) return { BUN_BE_BUN: inheritedBun };
+  if (process.versions.bun) return { BUN_BE_BUN: "1" };
+  return undefined;
+}
+
 async function startBridge(onclose: () => void): Promise<Bridge> {
   const cliPath = fileURLToPath(new URL("../../cli/cli.js", import.meta.url));
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [cliPath, "mcp", "--host", "pi"],
     stderr: "inherit",
+    env: bridgeEnvironment(),
   });
   const client = new Client(
     { name: "openwiki-pi", version: OPENWIKI_VERSION },
