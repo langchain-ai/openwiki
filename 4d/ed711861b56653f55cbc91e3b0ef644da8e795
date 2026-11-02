@@ -1,0 +1,22 @@
+test/integrations/pi-extension-bridge-env.test.ts
+  s_631434594bcc9d::t_bafe1e994a4843 84,125-128,139-142,156-159,168-171,174,181
+  s_631434594bcc9d::t_257222656869cc 1,55
+src/integrations/pi/openwiki.ts
+  s_631434594bcc9d::t_bafe1e994a4843 155-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4ded711861b56653f55cbc91e3b0ef644da8e795",
+  "prompts": {},
+  "sessions": {
+    "s_631434594bcc9d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19aa1-0d6b-70f1-be4a-20acfb6ef2f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
