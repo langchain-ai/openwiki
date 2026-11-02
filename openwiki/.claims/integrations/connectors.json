@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d4a289b0667bdab4f7d9d818d09d02d52eb42e2277f2cd43cbab5daf10d676fb",
+  "pageVersion": "sha256:80aa614fd24a4e7d8e86f970d0adc176ff0c3541f683a863a2ca028b4cc1802e",
   "claims": [
     {
       "id": "claim_877c98c88bd841fdb1bcd9de28cb0448",
@@ -95,7 +95,7 @@
       "statement": "createOpenWikiConnectorTools returns an empty tool array for repository (code) output mode, so codebase-documentation runs are never handed connector ingestion tools; the connector tools are wired into the agent from this factory.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L500-L500",
+          "resource": "repo://src/agent/index.ts#L504-L504",
           "version": "repo-lines-v1:sha256:7b5743d70b3818e4683d8c4a49f98fba193f8f0c964753a5a2635c123cfa65bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I1NzQzZDcwYjM4MThlNDY4M2Q4YzRhNDlmOThmYmExOTNmOGYwYzk2NDc1M2E1YTI2MzVjMTIzY2ZhNjViYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I1NzQzZDcwYjM4MThlNDY4M2Q4YzRhNDlmOThmYmExOTNmOGYwYzk2NDc1M2E1YTI2MzVjMTIzY2ZhNjViYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTgyMzA5ODFkNzcyYWI2NmIxNzYyMzQ1OTk0NTYxNGFmNjQwMGIwOTg0ODJlNTZmYWViMTA2NTBjZWM3MmMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQwZTJlZGRiOTE5ZDllM2RkMTczOTVhNDlhZWI0NDdlMTMwNWQzZTdjNzQ2ODU2NTk1MjM5NTgzMmM1NTU0MCJ9"
         },
         {
@@ -391,12 +391,12 @@
       "statement": "All direct-API connectors and the HTTP MCP client fetch through fetchWithResilience, which adds a per-attempt timeout and bounded exponential backoff with full jitter on 429/5xx and network errors (honoring Retry-After within a cap) while returning 401/403 and other 4xx unchanged so callers can refresh tokens instead of retrying.",
       "evidence": [
         {
-          "resource": "repo://src/connectors/http.ts#L1-L52",
-          "version": "repo-lines-v1:sha256:fdcfa611f52bef297786ddbe2d5cb49326dd97f348c91f1cd422fea9e882ff28:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ODM5Zjk2MmI1MmZhMDAyZTEzMDU0MmJjMjQ5ZDZhNTYwZThlYzVmZjQ3Mjk0ODkwZjY1ZDNlOTRhOTk1NWMifQ"
+          "resource": "repo://src/connectors/http.ts#L1-L19",
+          "version": "repo-lines-v1:sha256:8a2a89b626a2fcbda3bde9aca04745719c7de6d0f08e1d5e93a42afcae902e88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNzAzYmQyODdkY2VhNDExODFlMjE5MTI3YmZlNTBjYmU0YmNiY2RlYzI2NTI5ODQyNzY5MDlkYTVmOTllY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2YWU1ZDdiZTJhMzk2Y2U5MWNlZTYyNzlmMGQ1Y2U3Njk0MTdiZmZkZDc4YmVhNGUyMWI4YTc0MTNhNzMxMGMifQ"
         },
         {
-          "resource": "repo://src/connectors/http.ts#L95-L145",
-          "version": "repo-lines-v1:sha256:7c68756851eb1b754549dc4f725c08a2767c3c5b06b559505178233a5e782117:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNDI2ZWQ5MmM2ZmMyOWYzZWYwZjliMGI2MzUwNDc0MDNmMTI0YTQ3MDFhNjIwZGFiNWVmMGYxZDUxNTM3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzYjZiNDQyNDQyNjE5OWJlOTVlNmIxNGRjM2IxM2M0MTAwZDViZjJhYjEzYTVlYzkyOTUyOWYyNjE5YTE0OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/connectors/http.ts#L144-L200",
+          "version": "repo-lines-v1:sha256:7c597561c2f6905335e94b11458808495af279f3bfc0e29710c8f3d1506b86ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNDI2ZWQ5MmM2ZmMyOWYzZWYwZjliMGI2MzUwNDc0MDNmMTI0YTQ3MDFhNjIwZGFiNWVmMGYxZDUxNTM3ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzYjZiNDQyNDQyNjE5OWJlOTVlNmIxNGRjM2IxM2M0MTAwZDViZjJhYjEzYTVlYzkyOTUyOWYyNjE5YTE0OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -464,7 +464,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.2",
-    "at": "2026-10-13T08:15:00.712Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }

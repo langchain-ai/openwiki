@@ -13,9 +13,6 @@ tags:
     entra-id,
     operations,
   ]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
 sources:
   - id: openwiki-source-049f71d42424ecd8987d5e9f
     resource: repo://src/agent/entra-auth.ts
@@ -44,6 +41,9 @@ sources:
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
 generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Configuration and Environment
