@@ -301,7 +301,9 @@ export function useInitSetup({
     const validation = validateCronExpression(suggestedCronExpression);
     return validation.valid ? validation.description : suggestedCronExpression;
   }, [suggestedCronExpression]);
-  const inputDisplayWidth = getInputDisplayWidth(stdout.columns);
+  const inputDisplayWidth = getInputDisplayWidth(
+    (stdout as NodeJS.WriteStream).columns,
+  );
 
   useEffect(() => {
     let cancelled = false;
