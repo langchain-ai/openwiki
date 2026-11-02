@@ -1,0 +1,46 @@
+package.json
+  s_1a66138ba2593b::t_b0163f16eb1ba7 101
+  s_1a66138ba2593b::t_4e6a11eb36f849 126
+.changeset/confine-repository-chat-writes.md
+  s_1a66138ba2593b::t_adddd4e95adbba 1-5
+src/setup/credentials/use-init-setup.ts
+  s_1a66138ba2593b::t_b0163f16eb1ba7 304-306
+src/cli/components/run-view.tsx
+  s_1a66138ba2593b::t_b0163f16eb1ba7 480,482,487,490,493,495
+pnpm-workspace.yaml
+  s_1a66138ba2593b::t_adddd4e95adbba 24,26,28,32-33,36,40,42,50,53,62,64-65,69-70,74,79-80
+.github/workflows/release.yml
+  s_1a66138ba2593b::t_adddd4e95adbba 33
+test/cli/components/chat.test.tsx
+  s_1a66138ba2593b::t_01e279a637fd54 274-276
+src/agent/docs-only-backend.ts
+  s_1a66138ba2593b::t_adddd4e95adbba 31,33,245-246,589
+test/agent/openwiki-ignore.test.ts
+  s_1a66138ba2593b::t_adddd4e95adbba 250,258-261
+.github/workflows/openwiki-update.yml
+  s_1a66138ba2593b::t_adddd4e95adbba 31
+test/cli/components/flush.ts
+  s_1a66138ba2593b::t_01e279a637fd54 3,11
+.github/workflows/checks.yml
+  s_1a66138ba2593b::t_adddd4e95adbba 25,49,81,116,140,198
+test/agent/docs-only-backend.test.ts
+  s_1a66138ba2593b::t_adddd4e95adbba 100-116,118-156
+pnpm-lock.yaml
+  s_1a66138ba2593b::t_3276b7a3f724c4 8,10,12,16-17,20,24,155-156,159,165,727-728,759-761,1395,1899-1901,2027-2028,2265-2266,2414-2415,2541-2542,2600-2601,2872-2873,3160-3164,3198-3199,3257,3800,4022,4047,4075-4076,4235,4537,4540,4542-4543,4548-4549,4553,4557,4561,4565,4567,4570,4579,4581,4583,4586-4587,4590-4591,4597,4599-4600,4604,4607-4608,4612,4617,4619,4711,4719,4724,4726,4757,4814,5223-5224,5302,5350,5376,5411,5673,5823,5912,5953,5977,5979,6181,6459,6461,6491,6493-6496,6498,6502-6503,6545,6559,6562,6566,6573
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1c66d1c88ef4d5f3f63ea7597a71440adf4da74d",
+  "prompts": {},
+  "sessions": {
+    "s_1a66138ba2593b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19a6a-4db8-7672-9ea4-05bdafbbcbbe",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
