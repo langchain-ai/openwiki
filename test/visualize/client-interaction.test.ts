@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { marked } from "marked";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 /**
@@ -55,13 +56,27 @@ const graphPayload = {
       type: "Guide",
       description: "",
       tags: [],
-      body: "# Overview",
+      body: "# Overview\n\n[创建订单](guides/创建订单.md)",
       size: 50,
-      links: [],
+      links: ["guides/创建订单"],
       backlinks: ["quickstart"],
     },
+    {
+      id: "guides/创建订单",
+      title: "创建订单",
+      type: "Guide",
+      description: "",
+      tags: [],
+      body: "# 创建订单",
+      size: 20,
+      links: [],
+      backlinks: ["overview"],
+    },
   ],
-  edges: [{ source: "quickstart", target: "overview" }],
+  edges: [
+    { source: "quickstart", target: "overview" },
+    { source: "overview", target: "guides/创建订单" },
+  ],
 };
 
 /** Minimal DOM mirroring the structure page.ts renders (post-#670 layout). */
@@ -219,7 +234,9 @@ async function importClient(): Promise<void> {
   await import("../../src/visualize/client.ts");
   // Wait for the bootstrap load(true) promise to populate the sidebar.
   await vi.waitFor(() => {
-    expect(document.querySelectorAll(".nav-item").length).toBe(2);
+    expect(document.querySelectorAll(".nav-item").length).toBe(
+      graphPayload.nodes.length,
+    );
   });
 }
 
@@ -269,6 +286,25 @@ describe("visualizer client graph interaction", () => {
     handlers.onNodeClick!({ id: "overview" });
     const active = document.querySelector(".nav-item.active");
     expect(active?.textContent).toContain("Overview");
+  });
+
+  // Regression for issue #1066: marked percent-encodes non-ASCII link targets,
+  // so the href never matched the node id and the click fell through to a
+  // native navigation that 404s.
+  test("in-page links to non-ASCII page names navigate in-app", async () => {
+    await importClient();
+    vi.stubGlobal("marked", marked);
+    handlers.onNodeClick!({ id: "overview" });
+
+    const link = document.querySelector<HTMLAnchorElement>("#detail .md a")!;
+    expect(link.getAttribute("href")).toBe(
+      "guides/%E5%88%9B%E5%BB%BA%E8%AE%A2%E5%8D%95.md",
+    );
+    link.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+
+    expect(document.querySelector(".doc-title")?.textContent).toBe("创建订单");
   });
 
   test("does not draw graph labels by default", async () => {
