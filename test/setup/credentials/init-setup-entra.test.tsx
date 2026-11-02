@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { InitSetup } from "../../../src/setup/credentials.tsx";
 import { stripAnsi as plain } from "../../cli/components/ansi.ts";
+import { flushInk } from "../../cli/components/flush.ts";
 
 vi.mock("../../../src/setup/onboarding.ts", async (importOriginal) => {
   const actual =
@@ -75,7 +76,7 @@ async function waitForFrame(
     if (frame.includes(text)) {
       return frame;
     }
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushInk();
   }
   return plain(lastFrame());
 }
@@ -100,14 +101,14 @@ describe("InitSetup Entra selection", () => {
       await waitForFrame(lastFrame, "Choose how the OpenAI-compatible gateway"),
     ).toContain("Microsoft Entra ID");
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushInk();
     stdin.write("\r");
     const baseUrlFrame = await waitForFrame(lastFrame, "HTTPS API root");
     expect(baseUrlFrame).toContain("OPENAI_COMPATIBLE_BASE_URL");
     expect(baseUrlFrame).toContain("https://gateway.example.com/openai/v1");
     expect(baseUrlFrame).not.toContain("Paste your");
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushInk();
     stdin.write("\r");
     const scopeFrame = await waitForFrame(
       lastFrame,

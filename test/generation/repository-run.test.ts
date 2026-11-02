@@ -980,6 +980,62 @@ describe("beginRepositoryRun", () => {
     ).toBe(true);
   });
 
+  test("does not fast-forward a page whose baseline is missing from a shallow clone", async () => {
+    const root = await createRepository();
+    const baselineHead = await git(root, ["rev-parse", "HEAD"]);
+    await git(root, ["add", "openwiki/.last-update.json"]);
+    await git(root, ["commit", "--quiet", "-m", "record update metadata"]);
+    await writeFile(
+      path.join(root, "README.md"),
+      "# Repository\n\nChanged after the baseline.\n",
+      "utf8",
+    );
+    await git(root, ["add", "README.md"]);
+    await git(root, ["commit", "--quiet", "-m", "change source"]);
+    const currentHead = await git(root, ["rev-parse", "HEAD"]);
+
+    const shallowRoot = await mkdtemp(
+      path.join(tmpdir(), "openwiki-shallow-checkout-"),
+    );
+    temporaryDirectories.push(shallowRoot);
+    await git(root, [
+      "clone",
+      "--quiet",
+      "--depth",
+      "1",
+      `file://${root}`,
+      shallowRoot,
+    ]);
+    await expect(
+      git(shallowRoot, ["cat-file", "-t", baselineHead]),
+    ).rejects.toThrow();
+
+    const result = await beginRepositoryRun({
+      root: shallowRoot,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+
+    expect(result.view).toMatchObject({
+      status: "active",
+      pageUpdateWindows: [
+        {
+          baseGitHead: baselineHead,
+          pages: ["/openwiki/quickstart.md"],
+          fullReview: true,
+        },
+      ],
+    });
+    const manifest = await readRepositoryPageManifest(shallowRoot);
+    expect(manifest.pages["/openwiki/quickstart.md"]?.gitHead).toBe(
+      baselineHead,
+    );
+    expect(manifest.pages["/openwiki/quickstart.md"]?.gitHead).not.toBe(
+      currentHead,
+    );
+  });
+
   test("routes a clean page without manifest coverage to full review", async () => {
     const root = await createRepository();
     await rm(path.join(root, "openwiki", ".claims", "quickstart.json"));
