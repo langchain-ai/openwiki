@@ -462,6 +462,71 @@ test("preserves prior page coverage when a worker is skipped", async () => {
   ).toEqual(priorCoverage);
 });
 
+test("keeps the verification stamp of a skipped page", async () => {
+  const root = await createRepository();
+  await writeFile(path.join(root, "README.md"), "# Repository at H1\n", "utf8");
+  await git(root, ["add", "README.md"]);
+  await git(root, ["commit", "--quiet", "-m", "source at H1"]);
+
+  // Establish a verified baseline for the page.
+  const firstRun = await beginForcedUpdate(root);
+  await submitRepositoryPlan(firstRun, {
+    pages: [
+      {
+        path: "/openwiki/quickstart.md",
+        title: "Quickstart",
+        purpose: "Create the entry point.",
+      },
+    ],
+  });
+  await completeCurrentPage(firstRun, "Quickstart at H1");
+  await finishRepositoryRun(firstRun);
+
+  const verifiedMarkdown = await readFile(
+    path.join(root, "openwiki/quickstart.md"),
+    "utf8",
+  );
+  expect(verifiedMarkdown).toContain("verified:");
+
+  // Skip that verified page during a later update.
+  await writeFile(path.join(root, "README.md"), "# Repository at H2\n", "utf8");
+  await git(root, ["add", "README.md"]);
+  await git(root, ["commit", "--quiet", "-m", "source at H2"]);
+  const secondRun = await beginForcedUpdate(root);
+  await submitRepositoryPlan(secondRun, {
+    pages: [
+      {
+        path: "/openwiki/quickstart.md",
+        title: "Quickstart",
+        purpose: "Refresh the entry point again.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(secondRun);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+  const snapshot = await captureRepositoryPageSnapshot(secondRun, next.job.id);
+  await secondRun.backend.write(next.job.path, validPage("Partial H2"));
+  await skipRepositoryPage(secondRun, snapshot);
+  await finishRepositoryRun(secondRun, {
+    skippedPageSnapshots: [snapshot],
+  });
+
+  // The page body is restored, so its OpenWiki verification event must survive
+  // with a sidecar hash that still matches the Markdown on disk.
+  const restoredMarkdown = await readFile(
+    path.join(root, "openwiki/quickstart.md"),
+    "utf8",
+  );
+  expect(restoredMarkdown).toBe(verifiedMarkdown);
+  expect(restoredMarkdown).toContain("verified:");
+
+  const store = new ClaimsStore(root);
+  const sidecar = await store.loadPage("/openwiki/quickstart.md");
+  expect(sidecar?.pageVersion).toBe(
+    await store.hashPage("/openwiki/quickstart.md"),
+  );
+});
+
 test.each([
   { mode: "init" as const, page: "/openwiki/quickstart.md" },
   { mode: "update" as const, page: "/openwiki/new-page.md" },
