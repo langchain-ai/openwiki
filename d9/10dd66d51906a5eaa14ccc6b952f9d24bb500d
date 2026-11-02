@@ -1,0 +1,30 @@
+src/connectors/http.ts
+  s_7b43710945c2b6::t_93e537986e352b 126-128,131-136
+  s_7b43710945c2b6::t_8417123b4bae67 42-43,45,55-56,58-62,64-69,113-122,124-125,129-130,179,191-195
+  s_7b43710945c2b6::t_a0ad690613844d 29-32,57,63,123,137
+  s_7b43710945c2b6::t_a9833c224d066d 54
+  s_7b43710945c2b6::t_48f8d86b035be8 138
+test/connectors/fetch-with-resilience.test.ts
+  s_7b43710945c2b6::t_8417123b4bae67 398-451
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d910dd66d51906a5eaa14ccc6b952f9d24bb500d",
+  "prompts": {},
+  "humans": {
+    "h_f78d33d4280f3f": {
+      "author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  },
+  "sessions": {
+    "s_7b43710945c2b6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19acc-8776-7471-a9b8-7b879a19f2fa",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
