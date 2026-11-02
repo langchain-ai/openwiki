@@ -1123,6 +1123,17 @@ export function createModel(
   maxOutputTokens?: number,
   streamIdleTimeout?: number,
 ) {
+  if (provider === "mistral") {
+    if (!getProviderApiKey(provider)?.trim()) {
+      throw new Error("MISTRAL_API_KEY is required for the Mistral provider.");
+    }
+    if (process.env.OPENAI_CUSTOM_HEADERS?.trim()) {
+      throw new Error(
+        "Remove OPENAI_CUSTOM_HEADERS when using the Mistral provider.",
+      );
+    }
+  }
+
   const retryOptions = { maxRetries: providerRetryAttempts };
   const configuredMaxOutputTokens =
     maxOutputTokens ?? resolveConfiguredMaxOutputTokens(provider);
