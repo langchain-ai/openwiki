@@ -1,3 +1,4 @@
+import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 /**
@@ -51,6 +52,7 @@ type Extension = (pi: {
 }) => void;
 
 const realVersions = process.versions;
+const configDirectory = path.resolve("openwiki-config");
 
 /**
  * Reports `process.versions` as an Electron host, a Bun-compiled host or a
@@ -79,6 +81,7 @@ function stubHostRuntime(runtime: "electron" | "bun" | "node"): void {
  * @returns The transport options captured for the newest bridge.
  */
 async function runBridgeTool(): Promise<TransportOptions> {
+  vi.stubEnv("OPENWIKI_CONFIG_DIR", configDirectory);
   vi.resetModules();
   const extensionModule: unknown =
     await import("../../dist/integrations/pi/openwiki.js");
@@ -119,7 +122,10 @@ describe("native Pi package bridge environment", () => {
     // process.execPath is the Electron binary here, so the child only runs
     // cli.js as a Node process when the bridge sets the variable itself.
     expect(options.command).toBe(process.execPath);
-    expect(options.env).toEqual({ ELECTRON_RUN_AS_NODE: "1" });
+    expect(options.env).toEqual({
+      ELECTRON_RUN_AS_NODE: "1",
+      OPENWIKI_CONFIG_DIR: configDirectory,
+    });
   });
 
   test("forwards ELECTRON_RUN_AS_NODE when the host already exported it", async () => {
@@ -130,7 +136,10 @@ describe("native Pi package bridge environment", () => {
 
     // The SDK's default child environment is an allowlist that drops this
     // variable, so it has to be re-exported to the child.
-    expect(options.env).toEqual({ ELECTRON_RUN_AS_NODE: "1" });
+    expect(options.env).toEqual({
+      ELECTRON_RUN_AS_NODE: "1",
+      OPENWIKI_CONFIG_DIR: configDirectory,
+    });
   });
 
   test("spawns the CLI as Bun when a standalone Bun host never set BUN_BE_BUN", async () => {
@@ -144,7 +153,10 @@ describe("native Pi package bridge environment", () => {
     // a real `bun build --compile` binary (Bun 1.4.3): with it the child prints
     // the CLI's output, without it the child runs the bundled entry.
     expect(options.command).toBe(process.execPath);
-    expect(options.env).toEqual({ BUN_BE_BUN: "1" });
+    expect(options.env).toEqual({
+      BUN_BE_BUN: "1",
+      OPENWIKI_CONFIG_DIR: configDirectory,
+    });
   });
 
   test("forwards BUN_BE_BUN when the host already exported it", async () => {
@@ -153,16 +165,19 @@ describe("native Pi package bridge environment", () => {
 
     const options = await runBridgeTool();
 
-    expect(options.env).toEqual({ BUN_BE_BUN: "1" });
+    expect(options.env).toEqual({
+      BUN_BE_BUN: "1",
+      OPENWIKI_CONFIG_DIR: configDirectory,
+    });
   });
 
-  test("keeps a plain Node host on the SDK's default child environment", async () => {
+  test("adds only the OpenWiki config directory for a plain Node host", async () => {
     stubHostRuntime("node");
     delete process.env.ELECTRON_RUN_AS_NODE;
     delete process.env.BUN_BE_BUN;
 
     const options = await runBridgeTool();
 
-    expect(options.env).toBeUndefined();
+    expect(options.env).toEqual({ OPENWIKI_CONFIG_DIR: configDirectory });
   });
 });
