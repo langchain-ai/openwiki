@@ -1,5 +1,6 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 import {
   getProviderAuthMethod,
   getProviderConfig,
@@ -18,6 +19,25 @@ import { createConnectorRegistry } from "../connectors/registry.js";
 import { UPDATE_METADATA_PATH } from "../config/constants.js";
 import { createConnectorSynthesisGuidance } from "./ingestion.js";
 import type { OpenWikiRunEvent } from "../agent/types.js";
+
+// The scheduled-update workflow OpenWiki manages. The create-if-missing step and
+// the managed agent snippet both resolve it from here, so the snippet cannot
+// look for a schedule somewhere the create step would not have written one.
+const CODE_MODE_WORKFLOW_SEGMENTS = [
+  ".github",
+  "workflows",
+  "openwiki-update.yml",
+] as const;
+
+// GitHub Actions trigger keys read out of the managed workflow. `yaml` keeps a
+// bare `on` as the string key (YAML 1.2 core schema), so no boolean-key dance.
+const WORKFLOW_TRIGGER_KEY = "on";
+const WORKFLOW_SCHEDULE_KEY = "schedule";
+
+const SCHEDULED_WORKFLOW_SENTENCE =
+  "The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki.";
+const HAND_EDIT_GUIDANCE =
+  "Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.";
 
 const OPENWIKI_AGENTS_SNIPPET_START = "<!-- OPENWIKI:START -->";
 const OPENWIKI_AGENTS_SNIPPET_END = "<!-- OPENWIKI:END -->";
@@ -83,7 +103,62 @@ export async function ensureCodeModeRepoSetup(
       options.env ?? process.env,
     );
   }
-  await writeCodeModeAgentSnippets(cwd);
+  // Read the workflow state after the create step, so an `--init` that just
+  // wrote the file and an `--update` on a repo that already had one are both
+  // described accurately.
+  await writeCodeModeAgentSnippets(
+    cwd,
+    await hasConfirmedCodeModeSchedule(cwd),
+  );
+}
+
+/** Absolute path of the scheduled-update workflow OpenWiki manages for `cwd`. */
+function codeModeWorkflowPath(cwd: string): string {
+  return path.join(cwd, ...CODE_MODE_WORKFLOW_SEGMENTS);
+}
+
+/**
+ * Whether this repo is confirmed to refresh its wiki on a schedule: the managed
+ * workflow exists *and* still declares a `schedule` trigger. The file alone is
+ * not enough -- OpenWiki stopped overwriting it so operators can customize it,
+ * and one reduced to `workflow_dispatch` runs only when someone asks. Anything
+ * that stops us confirming a schedule -- absent, a directory in its place, a
+ * permission error, unparseable YAML -- answers `false`, because the snippet may
+ * only assert a schedule it can positively confirm. Deliberately not fatal: the
+ * `--update` and MCP paths never read this path before, and an odd `.github`
+ * must not turn a docs refresh into a failed run.
+ */
+async function hasConfirmedCodeModeSchedule(cwd: string): Promise<boolean> {
+  try {
+    return declaresScheduleTrigger(
+      await readFile(codeModeWorkflowPath(cwd), "utf8"),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** True when a workflow document declares at least one `on.schedule` entry. */
+function declaresScheduleTrigger(workflow: string): boolean {
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(workflow);
+  } catch {
+    // A workflow OpenWiki cannot parse is one whose recurrence it cannot vouch
+    // for. The run itself is unaffected.
+    return false;
+  }
+
+  const triggers = readRecord(parsed)?.[WORKFLOW_TRIGGER_KEY];
+  const schedule = readRecord(triggers)?.[WORKFLOW_SCHEDULE_KEY];
+  return Array.isArray(schedule) && schedule.length > 0;
+}
+
+/** The value as a plain keyed object, or undefined when it is not one. */
+function readRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 /**
@@ -96,12 +171,7 @@ async function ensureCodeModeWorkflow(
   cronExpression: string,
   env: NodeJS.ProcessEnv,
 ): Promise<void> {
-  const workflowPath = path.join(
-    cwd,
-    ".github",
-    "workflows",
-    "openwiki-update.yml",
-  );
+  const workflowPath = codeModeWorkflowPath(cwd);
 
   try {
     await readFile(workflowPath, "utf8");
@@ -213,8 +283,11 @@ async function readLastUpdatedAt(
   }
 }
 
-async function writeCodeModeAgentSnippets(cwd: string): Promise<void> {
-  const agentsSnippet = createCodeModeAgentsSnippet();
+async function writeCodeModeAgentSnippets(
+  cwd: string,
+  hasScheduledWorkflow: boolean,
+): Promise<void> {
+  const agentsSnippet = createCodeModeAgentsSnippet(hasScheduledWorkflow);
   // Some repositories make CLAUDE.md a link to AGENTS.md. There the import
   // would point the file at itself, so the block carries the instructions
   // instead of referring to them.
@@ -623,6 +696,22 @@ jobs:
 }
 
 /**
+ * The maintenance paragraph of the managed AGENTS.md block. The scheduled-workflow
+ * sentence is only stated for a repo that has the workflow; otherwise it is left
+ * out entirely rather than replaced with a claim about how the wiki *is* kept
+ * current. OpenWiki cannot know that: the README also documents GitLab CI and
+ * Bitbucket Pipelines schedules, which leave no `.github/workflows` file, so
+ * asserting "on demand" there would trade one wrong statement for another.
+ */
+function createCodeModeMaintenanceParagraph(
+  hasScheduledWorkflow: boolean,
+): string {
+  return hasScheduledWorkflow
+    ? `${SCHEDULED_WORKFLOW_SENTENCE} ${HAND_EDIT_GUIDANCE}`
+    : HAND_EDIT_GUIDANCE;
+}
+
+/**
  * Creates the repository-agent guidance managed by OpenWiki.
  *
  * Retrieval tools take precedence over eagerly loading the local quickstart so
@@ -630,7 +719,7 @@ jobs:
  *
  * @returns Complete fenced AGENTS.md instruction block.
  */
-function createCodeModeAgentsSnippet(): string {
+function createCodeModeAgentsSnippet(hasScheduledWorkflow: boolean): string {
   return `${OPENWIKI_AGENTS_SNIPPET_START}
 
 ## OpenWiki
@@ -644,7 +733,7 @@ This repository has a generated \`openwiki/\` evidence index. It is optional jus
 - Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+${createCodeModeMaintenanceParagraph(hasScheduledWorkflow)}
 
 ${OPENWIKI_AGENTS_SNIPPET_END}`;
 }
