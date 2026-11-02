@@ -5,6 +5,7 @@ import {
   type RepositoryWikiLocation,
 } from "./config.js";
 import {
+  assertRepositoryWikiPathSafe,
   inspectRepositoryWikiOwnership,
   type RepositoryWikiOwnership,
 } from "./ownership.js";
@@ -66,6 +67,7 @@ export async function prepareRepositoryWikiLocation(
     repositoryRoot,
     options.requestedDirectory,
   );
+  await assertRepositoryWikiPathSafe(repositoryRoot, location.directory);
 
   if (location.source === "config") {
     return {

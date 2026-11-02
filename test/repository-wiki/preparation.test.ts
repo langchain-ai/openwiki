@@ -169,4 +169,18 @@ describe("repository wiki preparation", () => {
       }),
     ).rejects.toThrow("Moving a repository wiki is not supported");
   });
+
+  test("rejects a configured wiki path that becomes a symbolic link", async () => {
+    const root = await repositoryRoot();
+    const external = await repositoryRoot();
+    await writeFile(
+      path.join(root, REPOSITORY_WIKI_CONFIG_FILE),
+      '{"wikiDirectory":"docs"}\n',
+    );
+    await symlink(external, path.join(root, "docs"));
+
+    await expect(
+      prepareRepositoryWikiLocation(root, { mode: "update" }),
+    ).rejects.toThrow("symbolic link");
+  });
 });

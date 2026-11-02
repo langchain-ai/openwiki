@@ -49,6 +49,7 @@ import {
 } from "../platform/language.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import type { RepositoryWikiLocation } from "../repository-wiki/config.js";
+import { assertRepositoryWikiPathSafe } from "../repository-wiki/ownership.js";
 import {
   DEFAULT_REPOSITORY_WIKI_DIRECTORY,
   normalizeRepositoryWikiDirectory,
@@ -433,6 +434,7 @@ export async function beginRepositoryRun(
   const requestedLanguage =
     resolvedRequest.kind === "resolved" ? resolvedRequest.language : undefined;
   const location = resolveRunWikiLocation(input);
+  await assertRepositoryWikiPathSafe(input.root, location.directory);
   const wikiPaths = new RepositoryWikiPaths(location.directory);
 
   await ensureCodeModeRepoSetup(input.root, {

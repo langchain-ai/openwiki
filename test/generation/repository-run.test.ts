@@ -1,6 +1,13 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -361,6 +368,33 @@ test("shares one custom wiki path policy across durable run state", async () => 
     run.state,
   );
   await expect(readRepositoryRunState(root)).resolves.toBeNull();
+});
+
+test("rejects a symlinked custom wiki before repository-run I/O", async () => {
+  const root = await createRepository();
+  const external = await mkdtemp(
+    path.join(tmpdir(), "openwiki-repository-run-external-"),
+  );
+  temporaryDirectories.push(external);
+  await symlink(external, path.join(root, "docs"));
+
+  await expect(
+    beginRepositoryRun({
+      root,
+      mode: "update",
+      force: true,
+      wikiLocation: {
+        directory: "docs",
+        root: path.join(root, "docs"),
+        source: "config",
+      },
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    }),
+  ).rejects.toThrow("symbolic link");
+  await expect(
+    readFile(path.join(external, ".run.json"), "utf8"),
+  ).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 test("restores the exact pending Markdown and Claims snapshot", async () => {
