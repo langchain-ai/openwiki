@@ -1215,6 +1215,12 @@ export function createModel(
       apiKey: getProviderApiKey(provider),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
       ...(maxTokens !== undefined ? { maxTokens } : {}),
+      // The Anthropic SDK rejects non-streaming requests whose max_tokens
+      // implies more than 10 minutes (above ~21,333 tokens) before sending
+      // them, which caps OPENWIKI_MAX_OUTPUT_TOKENS well below the models'
+      // real output limits (issue #1046). Streaming has no such guard, and
+      // ChatAnthropic still returns one aggregated message from `.invoke()`.
+      streaming: true,
       ...retryOptions,
     });
   }
@@ -1580,6 +1586,9 @@ function createGeminiEnterpriseModel(
               }),
           ),
         ...(maxTokens !== undefined ? { maxTokens } : {}),
+        // Same non-streaming max_tokens guard as the direct Anthropic provider
+        // (AnthropicVertex shares the SDK's Messages resource); see #1046.
+        streaming: true,
         ...retryOptions,
       });
     }
