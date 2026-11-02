@@ -70,7 +70,7 @@
   "dependencies": {
     "@anthropic-ai/vertex-sdk": "^0.19.6",
     "@aws-sdk/client-bedrock-runtime": "^3.1120.0",
-    "@azure/identity": "^4.13.3",
+    "@azure/identity": "^4.14.1",
     "@langchain/anthropic": "^1.5.8",
     "@langchain/aws": "^1.4.4",
     "@langchain/core": "^1.2.9",
@@ -80,7 +80,7 @@
     "@langchain/openrouter": "^0.4.10",
     "@langchain/protocol": "^0.0.19",
     "@langchain/tavily": "1.2.0",
-    "@modelcontextprotocol/sdk": "^1.31.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "ci-info": "^4.4.0",
     "cron-parser": "5.10.1",
     "cronstrue": "3.27.0",
@@ -94,7 +94,7 @@
     "posthog-node": "^5.51.4",
     "react": "^19.3.0",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "jsdom": "^29.1.1 || ^30.0.0",
@@ -116,7 +116,7 @@
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.4.0",
     "@types/react": "^19.3.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.12",
     "eslint": "^10.9.1",
     "ink-testing-library": "^4.0.0",
     "jsdom": "^30.0.1",
@@ -126,7 +126,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "^8.68.0",
     "typescript7": "npm:typescript@7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "packageManager": "pnpm@11.25.0"
 }
