@@ -395,6 +395,60 @@ describe("fetchWithResilience", () => {
     expect(delays).toEqual([]);
   });
 
+  test("stops a retryable response backoff when the caller aborts", async () => {
+    const controller = new AbortController();
+    let notifySleepStarted: () => void = () => undefined;
+    const sleepStarted = new Promise<void>((resolve) => {
+      notifySleepStarted = resolve;
+    });
+    const sleep = vi.fn(() => {
+      notifySleepStarted();
+      return new Promise<void>(() => undefined);
+    });
+    const stub = stubFetchSequence([
+      () => new Response("unavailable", { status: 503 }),
+      () => new Response("ok", { status: 200 }),
+    ]);
+
+    const pending = fetchWithResilience(
+      "https://api.example.com/x",
+      { signal: controller.signal },
+      { maxRetries: 3, sleep, random: fixedRandom },
+    );
+    await sleepStarted;
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(stub).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  test("stops a network-error backoff when the caller aborts", async () => {
+    const controller = new AbortController();
+    let notifySleepStarted: () => void = () => undefined;
+    const sleepStarted = new Promise<void>((resolve) => {
+      notifySleepStarted = resolve;
+    });
+    const sleep = vi.fn(() => {
+      notifySleepStarted();
+      return new Promise<void>(() => undefined);
+    });
+    const stub = vi.fn(() => Promise.reject(new Error("ECONNRESET")));
+    vi.stubGlobal("fetch", stub);
+
+    const pending = fetchWithResilience(
+      "https://api.example.com/x",
+      { signal: controller.signal },
+      { maxRetries: 3, sleep, random: fixedRandom },
+    );
+    await sleepStarted;
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(stub).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
   test("wraps a non-Error rejection in an Error when retries are exhausted", async () => {
     // fetch can reject with a non-Error (e.g. a string); the helper must still
     // surface a real Error so callers can rely on `.message`. The non-Error
