@@ -116,7 +116,7 @@
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.4.0",
     "@types/react": "^19.3.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.12",
     "eslint": "^10.9.1",
     "ink-testing-library": "^4.0.0",
     "jsdom": "^30.0.1",
@@ -126,7 +126,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "^8.68.0",
     "typescript7": "npm:typescript@7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "packageManager": "pnpm@11.25.0"
 }
