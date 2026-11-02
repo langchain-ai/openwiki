@@ -12,6 +12,12 @@ updates:
       - dependency-name: langsmith
         versions:
           - ">=0.10.0"
+      # typescript-eslint currently requires TypeScript <6.1. TypeScript 7 is
+      # exercised side-by-side through the typescript7 alias used by build and
+      # typecheck. Remove this once typescript-eslint supports TypeScript 7.
+      - dependency-name: typescript
+        versions:
+          - ">=7.0.0"
     groups:
       minor-and-patch:
         patterns:
