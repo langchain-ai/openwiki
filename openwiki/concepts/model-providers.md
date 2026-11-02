@@ -30,10 +30,10 @@ sources:
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Model Providers and Credentials
@@ -134,19 +134,18 @@ guard skips the `apiKeyEnvKey` check), and `providerRequiresApiKey` returns
 `OPENAI_COMPATIBLE_ENTRA_SCOPE`) whenever the missing key is for
 `openai-compatible`.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 7: ... gateway Create->>Entra: build prov Expecting 'participant', 'participant_actor', 'destroy', got 'SOLID_ARROW' -->
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 6: ...d gateway Create->>Entra: build prov Expecting 'participant', 'participant_actor', 'destroy', got 'SOLID_ARROW' -->
 ```text
 sequenceDiagram
     participant Create as createModel
     participant Entra as createEntraTokenProvider
     participant Azure as Azure Identity SDK
     participant GW as Entra-secured gateway
-
     Create->>Entra: build provider for baseURL plus scope
-    Entra->>Entra: SSRF guard, HTTPS-only, no metadata hosts
+    Entra->>Entra: SSRF guard HTTPS-only no metadata hosts
     Create->>Azure: OpenAI SDK calls token provider per request
     Azure->>Azure: DefaultAzureCredential or WorkloadIdentityCredential
-    Azure->>Create: bearer token (cached and auto-refreshed)
+    Azure->>Create: bearer token cached and auto-refreshed
     Create->>GW: request with Authorization Bearer token
 ```
 

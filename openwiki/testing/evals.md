@@ -48,8 +48,8 @@ sources:
     resource: repo://package.json
 generated: { by: "openwiki/0.7.2", at: "2026-11-01T08:05:43.330Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-11-01T08:05:43.330Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Evaluation Systems (LEDGER and DeepSWE)
