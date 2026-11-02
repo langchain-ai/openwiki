@@ -212,6 +212,73 @@ export interface WikiReadRequest {
    * Omitted to read the repository where retrieval began.
    */
   wiki?: string;
+
+  /**
+   * Whether to include the page's recorded provenance.
+   *
+   * @default false
+   */
+  includeProvenance?: boolean;
+}
+
+/**
+ * One recorded OKF source entry exposed alongside a page read.
+ */
+export interface WikiProvenanceSource {
+  /**
+   * Optional author-supplied source identifier.
+   */
+  id?: string;
+
+  /**
+   * Source resource recorded in page frontmatter.
+   */
+  resource: string;
+}
+
+/**
+ * One recorded evidence resource and version owned by a page Claim.
+ */
+export interface WikiProvenanceEvidence {
+  /**
+   * Stable resolver-owned source identity.
+   */
+  resource: string;
+
+  /**
+   * Opaque resolver-owned version observed when the Claim was established.
+   */
+  version: string;
+}
+
+/**
+ * One page Claim reduced to its stable identity and recorded evidence.
+ */
+export interface WikiProvenanceClaim {
+  /**
+   * Stable OpenWiki-generated claim identifier.
+   */
+  id: string;
+
+  /**
+   * Recorded evidence references for this Claim.
+   */
+  evidence: WikiProvenanceEvidence[];
+}
+
+/**
+ * Recorded page-level provenance without a freshness or verification claim.
+ */
+export interface WikiProvenance {
+  /**
+   * Existing OKF frontmatter sources in authored order.
+   */
+  sources: WikiProvenanceSource[];
+
+  /**
+   * Claims persisted for this page with their recorded evidence versions.
+   */
+  claims: WikiProvenanceClaim[];
 }
 
 /**
@@ -242,6 +309,13 @@ export interface WikiReadResponse {
    * Complete selected sections in the caller's requested order.
    */
   sections: WikiReadSection[];
+
+  /**
+   * Recorded page-level provenance when explicitly requested.
+   *
+   * Omitted by default so an ordinary section read stays compact.
+   */
+  provenance?: WikiProvenance;
 
   /**
    * Linked wiki identity that supplied the page.
@@ -656,9 +730,8 @@ export async function readWikiSections(
 
   const normalizedPage = normalizeRetrievableWikiPage(request.page);
   const requested = request.sections.map(normalizeSectionAnchor);
-  const markdown = await new ClaimsStore(selectedWiki.root).readMarkdown(
-    normalizedPage,
-  );
+  const store = new ClaimsStore(selectedWiki.root);
+  const markdown = await store.readMarkdown(normalizedPage);
   const body = markdownBody(markdown);
   const tokens = marked.lexer(body);
   const available = new Map(
@@ -678,8 +751,47 @@ export async function readWikiSections(
       content: available.get(section) as string,
     })),
   };
+  if (request.includeProvenance) {
+    response.provenance = await readPageProvenance(
+      store,
+      normalizedPage,
+      markdown,
+    );
+  }
   if (request.wiki !== undefined) response.wiki = selectedWiki.id;
   return response;
+}
+
+/**
+ * Reads recorded page provenance without resolving or re-verifying evidence.
+ *
+ * The returned source strings and Claim evidence versions describe what the
+ * page and its persisted sidecar recorded. They do not assert that the
+ * referenced repository bytes still exist or match, nor that a Claim was
+ * semantically verified.
+ *
+ * @param store - Claims store for the selected repository wiki.
+ * @param page - Canonical virtual page path below `/openwiki`.
+ * @param markdown - Complete page Markdown already read through the store.
+ * @returns Existing frontmatter sources and persisted Claim evidence.
+ */
+async function readPageProvenance(
+  store: ClaimsStore,
+  page: string,
+  markdown: string,
+): Promise<WikiProvenance> {
+  const fields = parseFrontmatterFields(markdown) ?? {};
+  const persisted = await store.loadPage(page);
+  return {
+    sources: provenanceSources(fields),
+    claims: (persisted?.claims ?? []).map(({ id, evidence }) => ({
+      id,
+      evidence: evidence.map(({ resource, version }) => ({
+        resource,
+        version,
+      })),
+    })),
+  };
 }
 
 /**
@@ -1114,6 +1226,26 @@ function inlineHeadingText(tokens: readonly Token[]): string {
  */
 function markdownBody(markdown: string): string {
   return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, "").trim();
+}
+
+/**
+ * Extracts all recorded OKF source entries for public provenance.
+ *
+ * @param fields - Parsed frontmatter fields.
+ * @returns Bounded source identities and resources in authored order.
+ */
+function provenanceSources(
+  fields: Record<string, unknown>,
+): WikiProvenanceSource[] {
+  if (!Array.isArray(fields.sources)) return [];
+  return fields.sources.flatMap((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+    const entry = value as Record<string, unknown>;
+    const resource = stringField(entry.resource);
+    if (!resource) return [];
+    const id = stringField(entry.id);
+    return [{ ...(id ? { id } : {}), resource }];
+  });
 }
 
 /**

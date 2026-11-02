@@ -28,9 +28,9 @@ export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
  */
 type OpenWikiBackendOptions = LocalShellBackendOptions & {
   /**
-   * Confine writes to the `openwiki/` docs tree.
+   * Confine writes to the `openwiki/` docs tree; always enforced in repository mode.
    *
-   * @default false
+   * @default true in repository mode
    */
   docsOnly?: boolean;
 
@@ -240,9 +240,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
 
   constructor(options: OpenWikiBackendOptions) {
     super(options);
-    this.docsOnly = options.docsOnly === true;
     this.openWikiIgnore = options.openWikiIgnore ?? new OpenWikiIgnore([]);
     this.outputMode = options.outputMode ?? "repository";
+    this.docsOnly =
+      this.outputMode === "repository" || options.docsOnly === true;
     this.writableWikiPages = options.writableWikiPages
       ? new Set(options.writableWikiPages.map(normalizeVirtualPath))
       : undefined;
@@ -585,7 +586,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     }
 
     if (!isOpenWikiDocsPath(filePath)) {
-      return `OpenWiki repository init/update runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
+      return `OpenWiki repository runs may only write under /${OPEN_WIKI_DIR}/. Refused path: ${filePath}`;
     }
 
     if (
