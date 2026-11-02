@@ -54,8 +54,8 @@ sources:
     resource: repo://test/generation/page-jobs.test.ts
 generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Claims Reconciliation on Update
