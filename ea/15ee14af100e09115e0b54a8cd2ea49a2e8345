@@ -1,0 +1,19 @@
+test/integrations/pi-extension-bridge-env.test.ts
+  s_631434594bcc9d::t_b07ef08d6ce123 83-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ea15ee14af100e09115e0b54a8cd2ea49a2e8345",
+  "prompts": {},
+  "sessions": {
+    "s_631434594bcc9d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19aa1-0d6b-70f1-be4a-20acfb6ef2f8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
