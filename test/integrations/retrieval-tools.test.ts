@@ -49,6 +49,22 @@ describe("repository retrieval tool contracts", () => {
     });
   });
 
+  test("read can opt into recorded page provenance", () => {
+    expect(
+      ReadInput.parse({
+        root: "/repo",
+        page: "openwiki/architecture/routing.md",
+        sections: ["publication"],
+        includeProvenance: true,
+      }),
+    ).toEqual({
+      root: "/repo",
+      page: "openwiki/architecture/routing.md",
+      sections: ["publication"],
+      includeProvenance: true,
+    });
+  });
+
   test("tool descriptions explain workspace discovery and read routing", () => {
     const tools = new Map(
       createRetrievalTools().map((tool) => [tool.name, tool]),
@@ -71,6 +87,12 @@ describe("repository retrieval tool contracts", () => {
     );
     expect(tools.get("openwiki_read")?.description).toContain(
       "result's wiki ID",
+    );
+    expect(tools.get("openwiki_read")?.description).toContain(
+      "includeProvenance",
+    );
+    expect(tools.get("openwiki_read")?.description).toContain(
+      "does not assert freshness or verification",
     );
   });
 });
