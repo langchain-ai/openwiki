@@ -477,21 +477,22 @@ function ExplorationMap({
 
 function useTerminalRows(): number {
   const { stdout } = useStdout();
+  const terminalStdout = stdout as NodeJS.WriteStream;
   const [terminalRows, setTerminalRows] = useState(
-    stdout.rows ?? DEFAULT_TERMINAL_ROWS,
+    terminalStdout.rows ?? DEFAULT_TERMINAL_ROWS,
   );
 
   useEffect(() => {
     const updateTerminalRows = () => {
-      setTerminalRows(stdout.rows ?? DEFAULT_TERMINAL_ROWS);
+      setTerminalRows(terminalStdout.rows ?? DEFAULT_TERMINAL_ROWS);
     };
 
-    stdout.on("resize", updateTerminalRows);
+    terminalStdout.on("resize", updateTerminalRows);
 
     return () => {
-      stdout.off("resize", updateTerminalRows);
+      terminalStdout.off("resize", updateTerminalRows);
     };
-  }, [stdout]);
+  }, [terminalStdout]);
 
   return terminalRows;
 }
