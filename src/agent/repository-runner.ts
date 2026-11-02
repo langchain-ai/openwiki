@@ -13,7 +13,11 @@ import {
   type ToolCallChunk,
 } from "@langchain/core/messages";
 import { DynamicStructuredTool } from "@langchain/core/tools";
-import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
+import {
+  createDeepAgent,
+  createFilesystemMiddleware,
+  type DeepAgent,
+} from "deepagents";
 import { createMiddleware } from "langchain";
 import { z } from "zod";
 import { resolveTraceThreadId } from "../config/constants.js";
@@ -842,6 +846,9 @@ function emitGeneratingProgress(
  *
  * Checks HTTP 429 status fields, common provider error codes, and message
  * text, following `cause` chains so wrapped SDK errors are recognized too.
+ * AWS SDK errors (Bedrock) carry the status in `$metadata.httpStatusCode`, or
+ * only the `ThrottlingException` name when the throttle arrives mid-stream,
+ * and their token-quota message ("Too many tokens") matches no rate-limit text.
  *
  * @param error - Unknown error thrown by a worker's agent stream.
  * @returns Whether the failure was a rate limit rather than a page problem.
@@ -853,6 +860,13 @@ export function isRateLimitError(error: unknown): boolean {
     seen.add(candidate);
     const status = candidate.status ?? candidate.statusCode;
     if (status === 429 || candidate.code === 429) return true;
+    if (candidate.name === "ThrottlingException") return true;
+    if (
+      isRecord(candidate.$metadata) &&
+      candidate.$metadata.httpStatusCode === 429
+    ) {
+      return true;
+    }
     if (
       typeof candidate.code === "string" &&
       /rate.?limit/iu.test(candidate.code)
@@ -1072,7 +1086,7 @@ function emitDeferredPageWarning(
  * @param page - Canonical page owned by a page worker, tagged onto its events.
  */
 async function streamWorkerTools(
-  agent: ReturnType<typeof createDeepAgent>,
+  agent: DeepAgent,
   messages: Array<{ role: "user"; content: string }>,
   traceThreadId: string,
   onEvent?: (event: OpenWikiRunEvent) => void,

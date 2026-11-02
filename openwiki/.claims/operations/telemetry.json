@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f5aa7a867ad265ec588bcbd3fd502a68c86f7baf02675910e1fc68a714d6fda6",
+  "pageVersion": "sha256:7947d844bd5077e6727b4aae5be838da393d0fb7e10b10f83f8c891970b187fb",
   "claims": [
     {
       "id": "claim_da05ca1b44a042d9ab9a5935194059af",
@@ -137,7 +137,7 @@
       "statement": "withRunTelemetry threads a mutable RunTelemetryContext through the run: the agent publishes the resolved provider onto it the instant resolution succeeds and publishes a noop outcome for an update short-circuit; a clean return defaults to success and a throw records failure with describeErrorForTelemetry diagnostics.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L248-L255",
+          "resource": "repo://src/agent/index.ts#L253-L260",
           "version": "repo-lines-v1:sha256:dad168ab58b0857d13b7d105990e16ee8465dae24c6225995bdc8657173a28d5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1OTVmNGVlNWZmNjNkNTA5NTA0MTlkYzM0NDE0NTEzODUxZGM5NzM2ZmQxN2E0ZjdiZmE5MzBiMjYxYjZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcwYjhiNmE3NTE1Njg4ZGIzZDAxZDk4M2RmZGY2ZDQzYjkzMDUwNzJlYmYwYTg2MmIyNzBlNjk0ZTI5NDc1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWYxOGJhNDE5M2EyODNiZDM3ZWVkYTQ4Mzk5NjhlZTMzODViOWJmZTIwNDYxYWRmNTk4NmU2MGJmMzI0MmQ1ZCJ9"
         },
         {
@@ -418,7 +418,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.1",
-    "at": "2026-09-30T08:10:27.967Z"
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-07T08:10:39.081Z"
   }
 }

@@ -42,7 +42,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Grounded Claims
@@ -150,6 +153,30 @@ the content did not actually change.
 Because versions are content-derived, a version mismatch is exactly a content
 change. Resolution returns `null` when a file or range no longer exists, which is
 distinct from a version that merely changed.
+
+```mermaid
+flowchart TD
+    A["resolve repo:// path with priorVersion"] --> B{"whole-file or range?"}
+    B -- "whole-file" --> C["hash entire file"]
+    C --> D["return repo-file-v1:sha256"]
+    B -- "line range" --> E{"prior version parseable?"}
+    E -- "no" --> F["use URI line hint as span"]
+    E -- "yes" --> G["try content hash at hinted span"]
+    G --> H{"exact content match?"}
+    H -- "yes, unique" --> I["return prior version unchanged"]
+    H -- "no or ambiguous" --> J["relocate by first and last line hashes"]
+    J --> K{"unique anchor match?"}
+    K -- "yes" --> L["return prior version at relocated span"]
+    K -- "no" --> M["relocate between surrounding context hashes"]
+    M --> N{"unique span?"}
+    N -- "yes" --> O["new span, new version"]
+    N -- "no" --> P["return null unresolved"]
+    F --> O
+```
+
+Line-range evidence resolution and relocation. The resolver prefers an exact
+content-hash match at the hinted span, then relocation by selected-line hashes,
+then relocation by surrounding context hashes; ambiguity resolves to `null`.
 
 ## Staleness and unresolved detection
 
@@ -296,6 +323,23 @@ incorrectly persisted page cannot silently advance:
 The whole-run proof waits until every page job is complete (see below); the
 per-page proof lets `submit_page` fail fast and request a retry before the queue
 moves on.
+
+### Worker failure recovery: snapshot, restore, and skip
+
+Before a bounded page worker starts model-owned work, `captureRepositoryPageSnapshot`
+records the page's pre-run Markdown **and** its Claims sidecar together. On
+failure the snapshot is replayed by `restoreRepositoryPage`, which writes the
+Markdown back through the backend and restores the sidecar through the store —
+writing the captured `PageClaims` when one existed, or deleting the sidecar when
+the page had none — so a failed attempt cannot leave Markdown and Claims out of
+sync.
+
+When a page is finally given up on, `skipRepositoryPage` runs that restore under
+the run mutation lock, then rebuilds the entire `ClaimsRuntime` from disk so the
+shared session reflects the rolled-back sidecar, marks the job `skipped`, and
+records an `interrupted` update. Because the runtime is rebuilt from durable
+sidecars, a concurrent worker's already-durable completion cannot be lost, and
+the skipped page's pre-run Claim state is the state later exempted at finish.
 
 ### Finishing a run: skipped pages and the whole-run proof
 

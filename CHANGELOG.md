@@ -1,5 +1,19 @@
 # openwiki
 
+## 0.7.2
+
+### Patch Changes
+
+- [#1003](https://github.com/langchain-ai/openwiki/pull/1003) [`d1c7fc7`](https://github.com/langchain-ai/openwiki/commit/d1c7fc75a6a906da258cd94dbcb1602f98516480) Thanks [@ilaigold](https://github.com/ilaigold)! - fix: allow jsdom 30 as an optional peer
+
+- [#1011](https://github.com/langchain-ai/openwiki/pull/1011) [`b9471dc`](https://github.com/langchain-ai/openwiki/commit/b9471dce755381066f5d76a79835840b68779e11) Thanks [@xpeng5278-web](https://github.com/xpeng5278-web)! - fix: treat bedrock throttling as a rate limit for page workers
+
+- [#1001](https://github.com/langchain-ai/openwiki/pull/1001) [`7b419a8`](https://github.com/langchain-ai/openwiki/commit/7b419a89dc93e49d5a79d967a61832bed1f23618) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: give symbol-only headings a readable section anchor so `openwiki_search` refs to them can be opened with `openwiki_read`
+
+- [#1002](https://github.com/langchain-ai/openwiki/pull/1002) [`5e4e152`](https://github.com/langchain-ai/openwiki/commit/5e4e1525827af620e8408dcf3b3103d61362c390) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: let hosts that share a skill directory co-own the installation
+
+- [#1008](https://github.com/langchain-ai/openwiki/pull/1008) [`c6a84fe`](https://github.com/langchain-ai/openwiki/commit/c6a84fe0ea50b3502d7912295b4bb479846571a8) Thanks [@xpeng5278-web](https://github.com/xpeng5278-web)! - fix: keep wiki pages intact when a translation hits the output-token limit
+
 ## 0.7.1
 
 ### Patch Changes

@@ -111,6 +111,12 @@ export const ReadInput = z
       .describe(
         "Linked wiki ID from the selected search result; omit for the current repository.",
       ),
+    includeProvenance: z
+      .boolean()
+      .optional()
+      .describe(
+        "Include recorded frontmatter sources and Claim evidence resources with their stored versions. This locates provenance; it does not assert that evidence is current or verified.",
+      ),
   })
   .strict();
 
@@ -177,6 +183,7 @@ export function createRetrievalTools(): ProtocolTool[] {
       description: [
         "Read one or more complete Markdown sections selected from openwiki_search refs.",
         "Pass the result's wiki ID, page, and heading anchors exactly; omit wiki for an unlinked or current repository result.",
+        "Set includeProvenance to also return the page's recorded frontmatter sources and Claim evidence resources with their stored versions; provenance does not assert freshness or verification.",
         "No model call or generation run is required.",
       ].join(" "),
       schema: ReadInput,

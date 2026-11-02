@@ -44,7 +44,10 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.6.1", at: "2026-10-02T08:09:47.640Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # Architecture Overview
@@ -98,10 +101,12 @@ flowchart TD
   Slot1 --> Snapshot["snapshot pending page and Claims"]
   Slot2 --> Snapshot
   Snapshot --> PageWorker["fresh page worker"]
-  PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot, marks skipped, lowers live limit on rate limit"]
+  PageWorker -->|"submit_page"| Lifecycle
+  PageWorker -->|"fails or exits without submit"| Retry["restoreRepositoryPage resets to snapshot"]
+  Retry -->|"attempt under PAGE_WORKER_ATTEMPT_LIMIT"| PageWorker
+  Retry -->|"attempt budget exhausted"| Skip["skipRepositoryPage restores snapshot, marks skipped, lowers live limit on rate limit"]
   Skip --> Pool
   PageWorker -->|"inspect_claims on demand"| Lifecycle
-  PageWorker -->|"submit_page sparse Claim decisions"| Lifecycle
   Pool -->|"all drained (quickstart held back to last)"| Finalize["finishRepositoryRun restores skipped pages and finalizes"]
   Finalize -->|"source drift at finish"| Report["runner reports drift, returns sourceChanged=true"]
   Report --> LaterUpdate["next --update resumes and invalidates the plan"]
@@ -136,7 +141,9 @@ sequenceDiagram
     Driver->>Run: submit_page (sparse Claim decisions)
     Run->>Queue: persist Markdown + Claims + page-manifest (durable boundary)
     alt worker fails / no submit
-      Driver->>Run: skipRepositoryPage
+      Driver->>Run: restoreRepositoryPage (reset to snapshot)
+      Run->>Queue: retry up to PAGE_WORKER_ATTEMPT_LIMIT
+      Driver->>Run: skipRepositoryPage (attempt budget exhausted)
       Run->>Queue: restore snapshot, mark skipped
     end
   end
@@ -242,12 +249,18 @@ page in LangSmith. Detail lives in [Agent runtime](agent-runtime.md).
 
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
-If the worker fails or exits without submitting, `skipRepositoryPage` restores
-the page and Claims from that snapshot, marks the job `skipped`, and the run
-continues with the next page rather than aborting; the page is reconsidered on a
-later update. `runPendingPageAgents` collects every skipped-page snapshot and
-passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
-after finalization, finalizes Claims with those pages excluded, and persists
+`runPageAgent` runs a fresh bounded worker per attempt and retries a worker that
+exits without submitting up to `PAGE_WORKER_ATTEMPT_LIMIT` (2) times: a failed
+attempt is reset to the pre-run snapshot with `restoreRepositoryPage` before the
+retry, and only after the attempt budget is exhausted (or a provider rate-limit
+error short-circuits the retry) does `skipRepositoryPage` restore the snapshot
+under the run mutation lock, mark the job `skipped`, and let the run continue
+with the next page rather than aborting; the page is reconsidered on a later
+update. A fatal submission failure (the store refusing the page) is not retried
+and is rethrown so the run stops rather than looping on an unfixable error.
+`runPendingPageAgents` collects every skipped-page snapshot and passes them to
+`finishRepositoryRun`, which restores the skipped pages' Markdown after
+finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
 Page restore and the planned/abandoned-page deletions at finish tolerate a
 human-readable "not found" backend error instead of aborting the run, so a

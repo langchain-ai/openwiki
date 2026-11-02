@@ -30,7 +30,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+verified:
+  - by: openwiki/0.7.1
+    at: 2026-10-07T08:10:39.081Z
 ---
 
 # CLI Commands and Flags
@@ -155,9 +158,13 @@ instance, the panel additionally includes the error `name`, a sanitized
 The stack is sanitized via `sanitizeDiagnosticText` — which redacts the live
 values of secret-bearing environment variables and bearer-token / known provider
 key patterns such as `sk-or-v1-…` — and truncated to 2,000 characters with a
-trailing `...` so a long trace cannot flood the terminal. Debug mode also widens
-the walk to nested `cause`/`error`/`response` objects and other allowlisted
-fields; the final list is deduped by `label:value`.
+trailing `...` so a long trace cannot flood the terminal. Debug mode also walks
+the `cause` chain to its innermost error and reports it as `rootCause` (its
+sanitized message plus allowlisted fields), so a generic wrapper like
+"Connection error." is accompanied by the actual cause beneath it — DNS, a
+refused connection, TLS — rather than the same message repeated at every level;
+the same walk extends to nested `error`/`response` objects and other allowlisted
+fields. The final list is deduped by `label:value`.
 
 Interactive chat with no message still requires a TTY: `resolveStartupCommand`
 converts such a run into an error telling the user to pass a message or use

@@ -102,7 +102,7 @@ Host-specific locations and notes:
 - Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`.
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
 - GitHub Copilot CLI uses `~/.copilot/skills` and `~/.copilot/mcp-config.json` at user scope; `.github/skills` and `.github/mcp.json` at the project.
-- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
+- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill, four read-only retrieval tools, and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
 
 On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
 
@@ -258,7 +258,7 @@ You can also use OpenWiki's own [Deep Agents](https://github.com/langchain-ai/de
 openwiki --init
 ```
 
-The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [thirteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
+The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [fourteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
 
 To initialize the wiki in another repository-relative directory, use `--wiki-dir`:
 
@@ -485,13 +485,14 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 These settings apply when running OpenWiki directly. Coding-agent integrations use the host's authenticated model session.
 
-OpenWiki supports thirteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
+OpenWiki supports fourteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
 
 | Provider                                                     | Credential                              |
 | ------------------------------------------------------------ | --------------------------------------- |
 | **OpenAI** _(default)_                                       | `OPENAI_API_KEY`                        |
 | **OpenAI (ChatGPT login)**                                   | Browser sign-in, uses your ChatGPT plan |
 | **Anthropic**                                                | `ANTHROPIC_API_KEY`                     |
+| **IBM Bob**                                                  | `BOB_API_KEY`                           |
 | **Gemini** (AI Studio)                                       | `GEMINI_API_KEY`                        |
 | **Gemini Enterprise** (Vertex AI)                            | Google ADC, keyless                     |
 | **AWS Bedrock**                                              | IAM credentials                         |

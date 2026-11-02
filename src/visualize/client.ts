@@ -1,4 +1,4 @@
-import type { WikiGraph, WikiNode } from "./graph.js";
+import type { WikiGraph, WikiNode } from "./graph-types.js";
 import {
   colorsForTypes,
   escapeHtml,
