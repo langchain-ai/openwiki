@@ -8,6 +8,7 @@ import {
   createRepositorySourceSnapshot,
   createRunContext,
   getRepositoryChangedPaths,
+  isReadableGitCommit,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
   writeLastUpdateMetadata,
@@ -898,7 +899,8 @@ async function getRepositoryPageUpdateWindows(
         ignore,
         baseline || undefined,
       ),
-      fullReview: baseline.length === 0,
+      fullReview:
+        baseline.length === 0 || !(await isReadableGitCommit(root, baseline)),
     });
   }
   return windows;
@@ -924,6 +926,9 @@ async function fastForwardUnchangedRepositoryPageCoverage(
   for (const page of [...pages].sort(compareCodeUnits)) {
     const entry = manifest.pages[page];
     if (!entry?.gitHead || entry.gitHead === source.gitHead) continue;
+    // An unreadable baseline (shallow clone, rewritten history) hides which
+    // paths changed, so the page keeps its checkpoint and gets reviewed.
+    if (!(await isReadableGitCommit(root, entry.gitHead))) continue;
 
     const changedPaths = await getRepositoryChangedPaths(
       root,
