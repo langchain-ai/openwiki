@@ -1,0 +1,29 @@
+src/cli/components/run-view.tsx
+  s_1a66138ba2593b::t_b5b8c57c75cb49 480,482,487,490,493,495
+package.json
+  s_1a66138ba2593b::t_b5b8c57c75cb49 101,126
+src/setup/credentials/use-init-setup.ts
+  s_1a66138ba2593b::t_b5b8c57c75cb49 304-306
+test/cli/components/flush.ts
+  s_1a66138ba2593b::t_b5b8c57c75cb49 3,11
+test/cli/components/chat.test.tsx
+  s_1a66138ba2593b::t_b5b8c57c75cb49 274-276
+pnpm-lock.yaml
+  s_1a66138ba2593b::t_50251290bfd218 155-156,159,3157-3161,4534,4537,4539-4540,4545-4546,4550,4554,4558,4562,4564,4567,4576,4578,4580,4583-4584,4587-4588,4594,4596-4597,4604-4605,4609,4614,4616,6454,6456,6486,6488-6491,6493,6497-6498
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "72488e28b69f79f9d8f87f281bb2c37161036d53",
+  "prompts": {},
+  "sessions": {
+    "s_1a66138ba2593b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19a6a-4db8-7672-9ea4-05bdafbbcbbe",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Colin Francis <colin.francis@langchain.dev>"
+    }
+  }
+}
