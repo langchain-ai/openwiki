@@ -11,7 +11,11 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
-import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
+import {
+  createDeepAgent,
+  createFilesystemMiddleware,
+  type DeepAgent,
+} from "deepagents";
 import { createOpenWikiConnectorTools } from "../connectors/tools.js";
 import {
   DEBUG_ENV_KEYS,
@@ -409,7 +413,7 @@ export type OpenWikiAgentOptions = {
  */
 export async function createOpenWikiAgent(
   options: OpenWikiAgentOptions,
-): Promise<ReturnType<typeof createDeepAgent>> {
+): Promise<DeepAgent> {
   if (!path.isAbsolute(options.cwd)) {
     throw new Error("OpenWiki agent cwd must be an absolute path.");
   }
@@ -467,7 +471,7 @@ type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
 
 function createOpenWikiAgentGraph(
   options: OpenWikiAgentGraphOptions,
-): ReturnType<typeof createDeepAgent> {
+): DeepAgent {
   const wikiBackend = new OpenWikiLocalShellBackend({
     docsOnly: options.command !== "chat",
     openWikiIgnore: options.openWikiIgnore,
@@ -1211,6 +1215,12 @@ export function createModel(
       apiKey: getProviderApiKey(provider),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
       ...(maxTokens !== undefined ? { maxTokens } : {}),
+      // The Anthropic SDK rejects non-streaming requests whose max_tokens
+      // implies more than 10 minutes (above ~21,333 tokens) before sending
+      // them, which caps OPENWIKI_MAX_OUTPUT_TOKENS well below the models'
+      // real output limits (issue #1046). Streaming has no such guard, and
+      // ChatAnthropic still returns one aggregated message from `.invoke()`.
+      streaming: true,
       ...retryOptions,
     });
   }
@@ -1576,6 +1586,9 @@ function createGeminiEnterpriseModel(
               }),
           ),
         ...(maxTokens !== undefined ? { maxTokens } : {}),
+        // Same non-streaming max_tokens guard as the direct Anthropic provider
+        // (AnthropicVertex shares the SDK's Messages resource); see #1046.
+        streaming: true,
         ...retryOptions,
       });
     }

@@ -9,6 +9,11 @@ import type {
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
 
+// Workers see one virtual filesystem; without this, weaker models search only
+// /openwiki/ and cite repository files they never read.
+const REPOSITORY_LAYOUT = `Repository files are at the filesystem root (for example /src/agent/index.ts);
+the wiki lives under /openwiki/. Search and read source outside /openwiki/.`;
+
 /**
  * Builds the bounded planner prompt from the complete active run context.
  *
@@ -68,6 +73,10 @@ the source tree. Use hierarchical paths for meaningful groups such as
 /openwiki/operations/, /openwiki/integrations/, and /openwiki/testing/ when the
 repository has enough coverage to warrant them. Do not emit a flat dump of
 unrelated top-level pages. Include /openwiki/quickstart.md for init.
+
+${REPOSITORY_LAYOUT}
+Every page path is a Markdown file such as
+/openwiki/architecture/agent-runtime.md, never a directory.
 
 Explore before submitting the plan. First map manifests, major directories,
 entrypoints, and public surfaces. Then trace representative end-to-end control
@@ -159,6 +168,8 @@ description: <one or two sentence retrieval-oriented summary>
 tags: [<stable English tag>, ...]
 ---
 Do not author generated, verified, sources, timestamp, or OpenWiki control fields; OpenWiki owns those. On update preserve unknown producer-defined frontmatter fields unless they are factually wrong.
+
+${REPOSITORY_LAYOUT}
 
 Research deeply enough to explain the important responsibilities, entrypoints,
 mechanisms/control flow, relationships, state/lifecycle, invariants/failures,
