@@ -12,6 +12,7 @@ import { createOpenWikiIndexMiddleware } from "../../src/agent/okf-middleware.ts
 import { OPENWIKI_VERSION } from "../../src/version.ts";
 import { parseFrontmatterFields } from "../../src/okf/frontmatter.ts";
 import { ENGLISH_INDEX_LABELS } from "../../src/okf/index-labels.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 import {
   migrateWikiToOkf,
   synchronizeWikiIndexes,
@@ -570,6 +571,46 @@ describe("createOpenWikiIndexMiddleware afterAgent", () => {
     expect(page).toContain("generated:");
     // The index pass also ran over the same tree.
     expect(index).toContain("- [Quickstart](quickstart.md) - Start here.");
+  });
+
+  test("runs every deterministic pass below the configured wiki root", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-index-"));
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      wikiPaths,
+    });
+    await backend.write(
+      "/docs/quickstart.md",
+      `${document("Quickstart", "Start here.")}\n${BROKEN_MERMAID}\nSee [missing](./missing.md).\n`,
+    );
+    const middleware = createOpenWikiIndexMiddleware(
+      backend,
+      "repository",
+      ENGLISH_INDEX_LABELS,
+      "Reference",
+      "2026-08-20T00:00:00.000Z",
+      undefined,
+      wikiPaths,
+    );
+
+    await runBeforeAgent(middleware);
+    await runAfterAgent(middleware);
+
+    const page = await readFile(
+      path.join(rootDir, "docs/quickstart.md"),
+      "utf8",
+    );
+    const index = await readFile(path.join(rootDir, "docs/index.md"), "utf8");
+    expect(page).toContain("openwiki: mermaid parse failed");
+    expect(page).toContain("openwiki: broken internal link");
+    expect(index).toContain("Quickstart");
+    await expect(
+      readFile(path.join(rootDir, "openwiki/index.md"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   test("stamps broken internal links without failing the run", async () => {

@@ -10,6 +10,8 @@ import {
   ValidationException,
 } from "@aws-sdk/client-bedrock-runtime";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { RepositoryWikiLocation } from "../../src/repository-wiki/config.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 type HarnessPage = {
   id: string;
@@ -29,6 +31,8 @@ type HarnessPlan = {
 
 type HarnessRun = {
   root: string;
+  location: RepositoryWikiLocation;
+  wikiPaths: RepositoryWikiPaths;
   state: {
     phase: "planning" | "generating";
     mode: "update";
@@ -75,6 +79,20 @@ type HarnessPlanInput = {
 };
 
 const HARNESS_RUN_ID = vi.hoisted(() => "00000000-0000-4000-8000-000000000001");
+
+/**
+ * Resolves one repository runner harness wiki location.
+ *
+ * @param directory - Repository-relative wiki directory.
+ * @returns Option-sourced location below the fixed harness repository.
+ */
+function createHarnessWikiLocation(directory: string): RepositoryWikiLocation {
+  return {
+    directory,
+    root: `/repo/${directory}`,
+    source: "option",
+  };
+}
 
 const harness = vi.hoisted(() => ({
   agentOptions: [] as CapturedAgentOptions[],
@@ -343,7 +361,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     job.status = "skipped";
     return Promise.resolve();
   },
-  beginRepositoryRun() {
+  beginRepositoryRun(options: { wikiLocation: RepositoryWikiLocation }) {
     harness.beginCalls += 1;
     if (harness.noop) {
       return Promise.resolve({
@@ -360,6 +378,8 @@ vi.mock("../../src/generation/repository-run.js", () => ({
     if (!harness.currentRun) {
       harness.currentRun = {
         root: "/repo",
+        location: options.wikiLocation,
+        wikiPaths: new RepositoryWikiPaths(options.wikiLocation.directory),
         state: {
           phase: "planning",
           mode: "update",
@@ -564,12 +584,16 @@ import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
  * @returns Complete ordered event stream emitted by the runner.
  */
 async function runHarness(
-  options: { pageConcurrency?: number } = {},
+  options: { pageConcurrency?: number; wikiDirectory?: string } = {},
 ): Promise<OpenWikiRunEvent[]> {
   const events: OpenWikiRunEvent[] = [];
+  const wikiLocation = createHarnessWikiLocation(
+    options.wikiDirectory ?? "openwiki",
+  );
   await runNativeRepositoryGeneration({
     root: "/repo",
     mode: "update",
+    wikiLocation,
     modelId: "test-model",
     model: {} as never,
     planningContext: "User and connector context",
@@ -710,6 +734,28 @@ describe("runNativeRepositoryGeneration", () => {
     expect(events.some((event) => event.type === "text")).toBe(false);
     expect(events).toContainEqual(
       expect.objectContaining({ type: "tool_start", name: "write_file" }),
+    );
+  });
+
+  test("threads a configured wiki directory through planner and page workers", async () => {
+    harness.planPaths = ["/docs/quickstart.md", "/docs/architecture.md"];
+
+    await runHarness({ wikiDirectory: "docs" });
+
+    expect(harness.currentRun?.location).toEqual(
+      createHarnessWikiLocation("docs"),
+    );
+    expect(String(harness.agentOptions[0]?.systemPrompt)).toContain(
+      "below /docs/",
+    );
+    expect(String(harness.agentOptions[0]?.systemPrompt)).not.toContain(
+      "/openwiki/",
+    );
+    expect(String(harness.agentOptions[1]?.systemPrompt)).toContain(
+      "You own exactly /docs/quickstart.md",
+    );
+    expect(String(harness.agentOptions[2]?.systemPrompt)).toContain(
+      "You own exactly /docs/architecture.md",
     );
   });
 
@@ -990,6 +1036,8 @@ describe("runNativeRepositoryGeneration", () => {
     harness.resumed = true;
     harness.currentRun = {
       root: "/repo",
+      location: createHarnessWikiLocation("openwiki"),
+      wikiPaths: new RepositoryWikiPaths("openwiki"),
       state: {
         phase: "generating",
         mode: "update",

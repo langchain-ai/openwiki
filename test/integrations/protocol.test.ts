@@ -19,12 +19,14 @@ describe("OpenWiki host protocol", () => {
       BeginInput.parse({
         root: " /tmp/repository ",
         mode: "update",
+        wikiDirectory: " docs/wiki ",
         language: " fr ",
         force: true,
       }),
     ).toEqual({
       root: "/tmp/repository",
       mode: "update",
+      wikiDirectory: "docs/wiki",
       language: "fr",
       force: true,
     });

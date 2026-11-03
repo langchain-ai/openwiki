@@ -6,6 +6,7 @@ import {
   createUserPrompt,
 } from "../../src/agent/prompt.ts";
 import type { RunContext } from "../../src/agent/types.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 /**
  * A RunContext with every optional field absent, so a test can opt fields in one
@@ -100,6 +101,31 @@ describe("createSystemPrompt filesystem path guidance", () => {
         expect(prompt).toContain("/openwiki");
       });
     }
+
+    test("renders the configured repository wiki paths", () => {
+      const wikiPaths = new RepositoryWikiPaths("docs");
+      const system = createSystemPrompt(
+        "chat",
+        "repository",
+        undefined,
+        undefined,
+        wikiPaths,
+      );
+      const user = createUserPrompt(
+        "chat",
+        emptyContext(),
+        "Inspect the wiki",
+        "repository",
+        "/repo",
+        wikiPaths,
+      );
+
+      expect(system).toContain("/docs/quickstart.md");
+      expect(system).toContain("/docs/INSTRUCTIONS.md");
+      expect(system).not.toContain("/openwiki/");
+      expect(user).toContain("lives under /docs");
+      expect(user).not.toContain("lives under /openwiki");
+    });
   });
 
   describe("local-wiki mode", () => {

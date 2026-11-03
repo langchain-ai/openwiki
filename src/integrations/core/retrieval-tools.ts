@@ -29,7 +29,7 @@ const CanonicalString = z.string().trim().min(1);
 export const SearchInput = z
   .object({
     root: CanonicalString.describe(
-      "Absolute Git repository root containing openwiki/.",
+      "Absolute Git repository root containing a configured OpenWiki.",
     ),
     query: CanonicalString.max(WIKI_RETRIEVAL_LIMITS.queryCharacters).describe(
       "Repository question, behavior, or concept to find in the wiki.",
@@ -64,7 +64,7 @@ export const SearchInput = z
 export const ListWorkspacesInput = z
   .object({
     root: CanonicalString.describe(
-      "Absolute Git repository root containing openwiki/.",
+      "Absolute Git repository root containing a configured OpenWiki.",
     ),
     wiki: CanonicalString.max(WIKI_RETRIEVAL_LIMITS.wikiIdCharacters)
       .optional()
@@ -80,7 +80,7 @@ export const ListWorkspacesInput = z
 export const ListWikisInput = z
   .object({
     root: CanonicalString.describe(
-      "Absolute Git repository root containing openwiki/.",
+      "Absolute Git repository root containing a configured OpenWiki.",
     ),
     workspace: CanonicalString.max(
       WIKI_RETRIEVAL_LIMITS.workspaceReferenceCharacters,
@@ -96,10 +96,10 @@ export const ListWikisInput = z
 export const ReadInput = z
   .object({
     root: CanonicalString.describe(
-      "Absolute Git repository root containing openwiki/.",
+      "Absolute Git repository root containing a configured OpenWiki.",
     ),
     page: CanonicalString.max(WIKI_RETRIEVAL_LIMITS.pageCharacters).describe(
-      'Wiki page from a search ref, e.g. "openwiki/architecture/jobs.md".',
+      "Repository-relative wiki page returned by openwiki_search.",
     ),
     sections: z
       .array(CanonicalString.max(WIKI_RETRIEVAL_LIMITS.sectionAnchorCharacters))

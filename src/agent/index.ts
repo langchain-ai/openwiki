@@ -34,6 +34,14 @@ import {
 } from "../config/openwiki-home.js";
 import { requireResolvedLanguage } from "../platform/language.js";
 import {
+  resolveRepositoryWikiLocation,
+  type RepositoryWikiLocation,
+} from "../repository-wiki/config.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
+import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
 } from "../okf/index-labels.js";
@@ -172,6 +180,14 @@ export async function runOpenWikiAgent(
   const outputMode = options.outputMode ?? "local-wiki";
   const runtimeCwd = options.outputMode ? cwd : openWikiLocalWikiDir;
   const runTimestamp = new Date().toISOString();
+  const wikiLocation =
+    outputMode === "repository"
+      ? (options.wikiLocation ??
+        (await resolveRepositoryWikiLocation(runtimeCwd)))
+      : undefined;
+  const wikiPaths = new RepositoryWikiPaths(
+    wikiLocation?.directory ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  );
 
   emitDebug(options, `command=${command}`);
   emitDebug(options, `cwd=${runtimeCwd}`);
@@ -215,6 +231,7 @@ export async function runOpenWikiAgent(
           runNativeRepositoryGeneration({
             root: runtimeCwd,
             mode: command,
+            wikiLocation: requireRepositoryWikiLocation(wikiLocation),
             language: options.language,
             force: Boolean(options.userMessage?.trim()),
             planningContext: options.userMessage,
@@ -275,6 +292,7 @@ export async function runOpenWikiAgent(
       config.streamIdleTimeout,
       openWikiIgnore,
       runTimestamp,
+      wikiPaths,
     );
   } catch (error) {
     // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
@@ -399,6 +417,10 @@ export type OpenWikiAgentOptions = {
   model: BaseChatModel;
   onEvent?: (event: OpenWikiRunEvent) => void;
   outputMode: OpenWikiOutputMode;
+  /**
+   * Prepared repository wiki location for repository chat.
+   */
+  wikiLocation?: RepositoryWikiLocation;
 };
 
 /**
@@ -429,10 +451,19 @@ export async function createOpenWikiAgent(
     options.outputMode === "repository"
       ? await OpenWikiIgnore.load(options.cwd)
       : new OpenWikiIgnore([]);
+  const wikiLocation =
+    options.outputMode === "repository"
+      ? (options.wikiLocation ??
+        (await resolveRepositoryWikiLocation(options.cwd)))
+      : undefined;
+  const wikiPaths = new RepositoryWikiPaths(
+    wikiLocation?.directory ?? DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  );
   const context = await createRunContext(
     options.cwd,
     options.outputMode,
     options.language,
+    wikiPaths,
   );
   const checkpointer = await createCheckpointer(
     resolveCheckpointTarget(options.command),
@@ -444,6 +475,7 @@ export async function createOpenWikiAgent(
     context,
     openWikiIgnore,
     runTimestamp: new Date().toISOString(),
+    wikiPaths,
   });
 }
 
@@ -467,6 +499,11 @@ type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
    * Single provenance time shared by generated and verified events.
    */
   runTimestamp: string;
+
+  /**
+   * Actual repository wiki path policy for backend and prompt behavior.
+   */
+  wikiPaths: RepositoryWikiPaths;
 };
 
 function createOpenWikiAgentGraph(
@@ -480,6 +517,7 @@ function createOpenWikiAgentGraph(
     rootDir: options.cwd,
     timeout: 120,
     virtualMode: true,
+    wikiPaths: options.wikiPaths,
   });
   const backend = createAgentBackend(wikiBackend);
   // An update inherits the wiki's persisted language unless --language requests a
@@ -561,6 +599,8 @@ function createOpenWikiAgentGraph(
               indexLabels,
               conceptType,
               options.runTimestamp,
+              undefined,
+              options.wikiPaths,
             ),
           ]),
     ],
@@ -572,6 +612,7 @@ function createOpenWikiAgentGraph(
       options.outputMode,
       options.context.language,
       options.openWikiIgnore,
+      options.wikiPaths,
     ),
   });
 }
@@ -587,11 +628,12 @@ async function runOpenWikiAgentCore(
   streamIdleTimeout: number | undefined,
   openWikiIgnore: OpenWikiIgnore,
   runTimestamp: string,
+  wikiPaths: RepositoryWikiPaths,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await inStage(
     "build",
-    () => createRunContext(cwd, outputMode, options.language),
+    () => createRunContext(cwd, outputMode, options.language, wikiPaths),
     { errorClass: "build_error", errorDetail: "run_context" },
   );
   emitDebug(options, "context=created");
@@ -600,7 +642,7 @@ async function runOpenWikiAgentCore(
       ? null
       : await inStage(
           "build",
-          () => createOpenWikiContentSnapshot(cwd, outputMode),
+          () => createOpenWikiContentSnapshot(cwd, outputMode, wikiPaths),
           { errorClass: "build_error", errorDetail: "snapshot" },
         );
   emitDebug(options, "openwiki.snapshot=created");
@@ -646,6 +688,7 @@ async function runOpenWikiAgentCore(
         context,
         openWikiIgnore,
         runTimestamp,
+        wikiPaths,
       }),
     { errorClass: "build_error", errorDetail: "agent" },
   );
@@ -655,7 +698,13 @@ async function runOpenWikiAgentCore(
     messages: [
       {
         role: "user",
-        content: createRunUserMessage(command, cwd, context, options),
+        content: createRunUserMessage(
+          command,
+          cwd,
+          context,
+          options,
+          wikiPaths,
+        ),
       },
     ],
   };
@@ -699,6 +748,7 @@ async function runOpenWikiAgentCore(
     outputMode,
     snapshotBefore: openWikiSnapshotBefore ?? undefined,
     language: context.language,
+    wikiPaths,
   });
 
   let unhandledChunkCount = 0;
@@ -738,6 +788,7 @@ async function runOpenWikiAgentCore(
         openWikiSnapshotBefore,
         "interrupted",
         context.language,
+        wikiPaths,
       );
       emitDebug(
         options,
@@ -784,6 +835,7 @@ async function runOpenWikiAgentCore(
         openWikiSnapshotBefore,
         "complete",
         context.language,
+        wikiPaths,
       );
     });
   } catch (error) {
@@ -796,6 +848,7 @@ async function runOpenWikiAgentCore(
         openWikiSnapshotBefore,
         "interrupted",
         context.language,
+        wikiPaths,
       );
     } catch {
       emitDebug(options, "metadata=writeFailed");
@@ -834,6 +887,7 @@ function createRunUserMessage(
   cwd: string,
   context: Awaited<ReturnType<typeof createRunContext>>,
   options: OpenWikiRunOptions,
+  wikiPaths: RepositoryWikiPaths,
 ): string {
   if (options.isFollowup === true && options.userMessage?.trim()) {
     return options.userMessage.trim();
@@ -845,7 +899,23 @@ function createRunUserMessage(
     options.userMessage ?? null,
     options.outputMode ?? "local-wiki",
     cwd,
+    wikiPaths,
   );
+}
+
+/**
+ * Narrows a repository-only location after output-mode resolution.
+ *
+ * @param location - Location resolved for repository mode.
+ * @returns The required repository wiki location.
+ */
+function requireRepositoryWikiLocation(
+  location: RepositoryWikiLocation | undefined,
+): RepositoryWikiLocation {
+  if (!location) {
+    throw new Error("Repository execution requires a resolved wiki location.");
+  }
+  return location;
 }
 
 const checkpointPath = path.join(openWikiEnvDir, "openwiki.sqlite");

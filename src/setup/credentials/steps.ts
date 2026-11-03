@@ -71,9 +71,18 @@ import type { OpenWikiRunMode } from "../../cli/commands.js";
 import type { LangSmithRegion } from "../../connectors/sources/langsmith/setup.js";
 import type { ConnectorId } from "../../connectors/types.js";
 
+/**
+ * Determines whether the selected run mode still requires interactive setup.
+ *
+ * @param modelIdOverride - Model selected directly by the startup command.
+ * @param mode - Personal or repository execution mode.
+ * @param requestedWikiDirectory - Explicit repository wiki selection.
+ * @returns Whether setup must run before the requested command.
+ */
 export function needsCredentialSetup(
   modelIdOverride: string | null = null,
   mode: OpenWikiRunMode = "personal",
+  requestedWikiDirectory?: string | null,
 ): boolean {
   const provider = resolveConfiguredProvider();
 
@@ -93,7 +102,10 @@ export function needsCredentialSetup(
   }
 
   return mode === "code"
-    ? !isRepositoryCodeOnboardingCompleteSync(getDefaultCodeRepoRootPath())
+    ? !isRepositoryCodeOnboardingCompleteSync(
+        getDefaultCodeRepoRootPath(),
+        requestedWikiDirectory,
+      )
     : !isOpenWikiOnboardingCompleteSync();
 }
 

@@ -4,10 +4,29 @@ import path from "node:path";
 import { z } from "zod";
 import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
-import { PAGE_MANIFEST_PATH } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+  resolveRepositoryWikiRoot,
+} from "../repository-wiki/paths.js";
 import { RepositoryRunError } from "./errors.js";
 
+/**
+ * Basename of the committed page-correctness manifest.
+ */
+export const REPOSITORY_PAGE_MANIFEST_BASENAME = ".page-manifest.json";
+
+/**
+ * Backward-compatible path policy for unconfigured repository wikis.
+ */
+const DEFAULT_PAGE_MANIFEST_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
+
+/**
+ * Current on-disk repository page-manifest schema version.
+ */
 export const REPOSITORY_PAGE_MANIFEST_SCHEMA_VERSION = 1 as const;
 
 /**
@@ -68,8 +87,19 @@ export interface RepositoryPageManifest {
   pages: Record<string, RepositoryPageManifestEntry>;
 }
 
+/**
+ * Runtime validator for a source-input fingerprint.
+ */
 const SourceFingerprintSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/u);
+
+/**
+ * Runtime validator for an exact generated-page content hash.
+ */
 const PageVersionSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/u);
+
+/**
+ * Runtime validator for one durable page-coverage entry.
+ */
 const ManifestEntrySchema = z
   .object({
     gitHead: z.string().min(1).optional(),
@@ -79,6 +109,10 @@ const ManifestEntrySchema = z
     completedRunId: z.string().uuid().optional(),
   })
   .strict();
+
+/**
+ * Runtime validator for the complete committed page manifest.
+ */
 const ManifestSchema = z
   .object({
     schemaVersion: z.literal(REPOSITORY_PAGE_MANIFEST_SCHEMA_VERSION),
@@ -99,27 +133,36 @@ export function createEmptyRepositoryPageManifest(): RepositoryPageManifest {
  * Resolves the committed page-manifest path below a repository root.
  *
  * @param root - Absolute repository root.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Absolute manifest path.
  */
-export function repositoryPageManifestPath(root: string): string {
-  return path.join(root, PAGE_MANIFEST_PATH);
+export function repositoryPageManifestPath(
+  root: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
+): string {
+  return path.join(
+    resolveRepositoryWikiRoot(root, wikiPaths.directory),
+    REPOSITORY_PAGE_MANIFEST_BASENAME,
+  );
 }
 
 /**
  * Loads and validates the committed page manifest.
  *
  * @param root - Absolute repository root.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Valid manifest, or an empty manifest when no file exists.
  * @throws RepositoryRunError when persisted state is malformed.
  */
 export async function readRepositoryPageManifest(
   root: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<RepositoryPageManifest> {
-  const file = repositoryPageManifestPath(root);
+  const file = repositoryPageManifestPath(root, wikiPaths);
   try {
     const parsed: unknown = JSON.parse(await readFile(file, "utf8"));
     const manifest = ManifestSchema.parse(parsed);
-    assertCanonicalManifestPages(manifest);
+    assertCanonicalManifestPages(manifest, wikiPaths);
     return manifest;
   } catch (error) {
     if (isFileNotFoundError(error)) {
@@ -141,11 +184,13 @@ export async function readRepositoryPageManifest(
  *
  * @param root - Absolute repository root.
  * @param manifest - Complete manifest state to validate and persist.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @throws RepositoryRunError when a page path is not canonical and factual.
  */
 export async function writeRepositoryPageManifest(
   root: string,
   manifest: RepositoryPageManifest,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<void> {
   const ordered: RepositoryPageManifest = {
     schemaVersion: 1,
@@ -156,9 +201,9 @@ export async function writeRepositoryPageManifest(
     ),
   };
   ManifestSchema.parse(ordered);
-  assertCanonicalManifestPages(ordered);
+  assertCanonicalManifestPages(ordered, wikiPaths);
 
-  const file = repositoryPageManifestPath(root);
+  const file = repositoryPageManifestPath(root, wikiPaths);
   await mkdir(path.dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
   try {
@@ -180,6 +225,7 @@ export async function writeRepositoryPageManifest(
  * @param source - Exact repository source checkpoint verified by the page.
  * @param completedBy - Producer that authored the completed page.
  * @param completedRunId - Durable run that completed the page.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns The durable manifest entry written for the page.
  * @throws RepositoryRunError when the page and Claims sidecar disagree.
  */
@@ -189,18 +235,20 @@ export async function recordRepositoryPageCompletion(
   source: RepositorySourceCheckpoint,
   completedBy?: string,
   completedRunId?: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<RepositoryPageManifestEntry> {
-  const canonicalPage = normalizeWikiPagePath(page);
+  const canonicalPage = normalizeWikiPagePath(page, wikiPaths);
   const entry = await buildManifestEntry(
     root,
     canonicalPage,
     source,
     completedBy,
     completedRunId,
+    wikiPaths,
   );
-  const manifest = await readRepositoryPageManifest(root);
+  const manifest = await readRepositoryPageManifest(root, wikiPaths);
   manifest.pages[canonicalPage] = entry;
-  await writeRepositoryPageManifest(root, manifest);
+  await writeRepositoryPageManifest(root, manifest, wikiPaths);
   return entry;
 }
 
@@ -213,22 +261,27 @@ export async function recordRepositoryPageCompletion(
  * @param root - Absolute repository root.
  * @param pages - Current factual pages eligible for migration.
  * @param gitHead - Last fully successful repository Git HEAD.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  */
 export async function seedRepositoryPageManifest(
   root: string,
   pages: readonly string[],
   gitHead: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<void> {
-  const manifest = await readRepositoryPageManifest(root);
+  const manifest = await readRepositoryPageManifest(root, wikiPaths);
   let changed = false;
   for (const page of pages) {
-    const canonicalPage = normalizeWikiPagePath(page);
+    const canonicalPage = normalizeWikiPagePath(page, wikiPaths);
     if (manifest.pages[canonicalPage]) continue;
     try {
       manifest.pages[canonicalPage] = await buildManifestEntry(
         root,
         canonicalPage,
         { gitHead },
+        undefined,
+        undefined,
+        wikiPaths,
       );
       changed = true;
     } catch (error) {
@@ -236,7 +289,7 @@ export async function seedRepositoryPageManifest(
       // Missing coverage deliberately routes this legacy page to full review.
     }
   }
-  if (changed) await writeRepositoryPageManifest(root, manifest);
+  if (changed) await writeRepositoryPageManifest(root, manifest, wikiPaths);
 }
 
 /**
@@ -247,6 +300,7 @@ export async function seedRepositoryPageManifest(
  * @param source - Source checkpoint proven by successful whole-run finish.
  * @param preservePages - Restored pages whose exact prior coverage is retained.
  * @param preserveSourcePages - Pages that retain their prior source checkpoint.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  */
 export async function replaceRepositoryPageManifest(
   root: string,
@@ -254,11 +308,12 @@ export async function replaceRepositoryPageManifest(
   source: RepositorySourceCheckpoint,
   preservePages: ReadonlySet<string> = new Set(),
   preserveSourcePages: ReadonlySet<string> = new Set(),
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<void> {
   const next = createEmptyRepositoryPageManifest();
-  const previous = await readRepositoryPageManifest(root);
+  const previous = await readRepositoryPageManifest(root, wikiPaths);
   for (const page of pages) {
-    const canonicalPage = normalizeWikiPagePath(page);
+    const canonicalPage = normalizeWikiPagePath(page, wikiPaths);
     if (preservePages.has(canonicalPage)) {
       const previousEntry = previous.pages[canonicalPage];
       if (previousEntry) next.pages[canonicalPage] = previousEntry;
@@ -284,6 +339,7 @@ export async function replaceRepositoryPageManifest(
           },
           previousEntry.completedBy,
           previousEntry.completedRunId,
+          wikiPaths,
         );
         next.pages[canonicalPage] =
           refreshedEntry.pageVersion === previousEntry.pageVersion
@@ -300,6 +356,9 @@ export async function replaceRepositoryPageManifest(
           root,
           canonicalPage,
           source,
+          undefined,
+          undefined,
+          wikiPaths,
         );
       } catch (error) {
         if (error instanceof RepositoryRunError) continue;
@@ -313,9 +372,10 @@ export async function replaceRepositoryPageManifest(
       source,
       previous.pages[canonicalPage]?.completedBy,
       previous.pages[canonicalPage]?.completedRunId,
+      wikiPaths,
     );
   }
-  await writeRepositoryPageManifest(root, next);
+  await writeRepositoryPageManifest(root, next, wikiPaths);
 }
 
 /**
@@ -327,15 +387,22 @@ export async function replaceRepositoryPageManifest(
  * @param root - Absolute repository root.
  * @param page - Canonical factual page path.
  * @param source - Exact active-run source checkpoint.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Whether the page is durable and current for the checkpoint.
  */
 export async function isRepositoryPageCompletionCurrent(
   root: string,
   page: string,
   source: RepositorySourceCheckpoint,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<boolean> {
   return (
-    (await getCurrentRepositoryPageCompletion(root, page, source)) !== null
+    (await getCurrentRepositoryPageCompletion(
+      root,
+      page,
+      source,
+      wikiPaths,
+    )) !== null
   );
 }
 
@@ -345,17 +412,21 @@ export async function isRepositoryPageCompletionCurrent(
  * @param root - Absolute repository root.
  * @param page - Canonical factual page path.
  * @param source - Exact active-run source checkpoint.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Matching verified manifest entry, or `null` when coverage is stale.
  */
 export async function getCurrentRepositoryPageCompletion(
   root: string,
   page: string,
   source: RepositorySourceCheckpoint,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<RepositoryPageManifestEntry | null> {
   if (!source.sourceFingerprint) return null;
 
-  const canonicalPage = normalizeWikiPagePath(page);
-  const entry = (await readRepositoryPageManifest(root)).pages[canonicalPage];
+  const canonicalPage = normalizeWikiPagePath(page, wikiPaths);
+  const entry = (await readRepositoryPageManifest(root, wikiPaths)).pages[
+    canonicalPage
+  ];
   if (!entry || entry.sourceFingerprint !== source.sourceFingerprint) {
     return null;
   }
@@ -363,7 +434,7 @@ export async function getCurrentRepositoryPageCompletion(
     return null;
   }
   try {
-    const store = new ClaimsStore(root);
+    const store = new ClaimsStore(root, wikiPaths);
     const sidecar = await store.loadPage(canonicalPage);
     const current =
       sidecar?.verification !== undefined &&
@@ -383,6 +454,7 @@ export async function getCurrentRepositoryPageCompletion(
  * @param source - Source checkpoint covered by the page.
  * @param completedBy - Producer that authored the completed page.
  * @param completedRunId - Durable run that completed the page.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @returns Valid entry bound to the current Markdown bytes.
  * @throws RepositoryRunError when the page is not durably verified.
  */
@@ -392,9 +464,10 @@ async function buildManifestEntry(
   source: RepositorySourceCheckpoint,
   completedBy?: string,
   completedRunId?: string,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_PAGE_MANIFEST_WIKI_PATHS,
 ): Promise<RepositoryPageManifestEntry> {
-  const canonicalPage = normalizeWikiPagePath(page);
-  const store = new ClaimsStore(root);
+  const canonicalPage = normalizeWikiPagePath(page, wikiPaths);
+  const store = new ClaimsStore(root, wikiPaths);
   let persisted: Awaited<ReturnType<ClaimsStore["loadPage"]>>;
   let pageVersion: string;
   try {
@@ -438,13 +511,17 @@ function throwPageCoverageError(page: string): never {
  * Rejects manifest keys that are not canonical factual page paths.
  *
  * @param manifest - Parsed or caller-provided manifest to inspect.
+ * @param wikiPaths - Canonical physical repository wiki path policy.
  * @throws RepositoryRunError when any page key is invalid or non-canonical.
  */
-function assertCanonicalManifestPages(manifest: RepositoryPageManifest): void {
+function assertCanonicalManifestPages(
+  manifest: RepositoryPageManifest,
+  wikiPaths: RepositoryWikiPaths,
+): void {
   for (const page of Object.keys(manifest.pages)) {
     let canonicalPage: string;
     try {
-      canonicalPage = normalizeWikiPagePath(page);
+      canonicalPage = normalizeWikiPagePath(page, wikiPaths);
     } catch (error) {
       throw new RepositoryRunError(
         "invalid_state",

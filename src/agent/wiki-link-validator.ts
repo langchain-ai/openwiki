@@ -1,6 +1,17 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../repository-wiki/paths.js";
 import type { OpenWikiOutputMode } from "./types.js";
+
+/**
+ * Unchanged repository wiki policy used by compatibility callers.
+ */
+const DEFAULT_LINK_VALIDATOR_WIKI_PATHS = new RepositoryWikiPaths(
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+);
 
 /**
  * Reserved or control files that never carry agent-authored concept links.
@@ -101,12 +112,18 @@ export interface WikiLinkReport {
  * Each broken link is preceded by an HTML comment so a later update run can
  * find it inline and repair the href. Existing stamps are cleared first, so a
  * fixed link leaves no residual comment.
+ *
+ * @param backend - Active generated-wiki filesystem.
+ * @param outputMode - Current wiki target.
+ * @param wikiPaths - Actual repository wiki path policy.
+ * @returns Link validation counts and rewritten page paths.
  */
 export async function validateWikiInternalLinks(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  wikiPaths: RepositoryWikiPaths = DEFAULT_LINK_VALIDATOR_WIKI_PATHS,
 ): Promise<WikiLinkReport> {
-  const wikiRoot = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const wikiRoot = outputMode === "local-wiki" ? "/" : wikiPaths.canonicalRoot;
   const report: WikiLinkReport = {
     filesScanned: 0,
     linksChecked: 0,
@@ -223,7 +240,7 @@ export function stampBrokenLinks(
  * doc, source file, etc.), which renders correctly on GitHub. A link is broken
  * only when its target genuinely does not exist.
  *
- * In `repository` mode, a root-absolute path (e.g. `/openwiki/foo.md`) is
+ * In `repository` mode, a root-absolute path below the configured wiki root is
  * flagged outright, before existence is even checked: it happens to resolve
  * against this validator's repo-rooted backend, but no real consumer reads it
  * that way. A coding agent reading the page relative to its own directory,
@@ -527,9 +544,8 @@ function decodeAnchor(anchor: string): string {
  * other repo files, so containment is enforced at the repo root instead.
  * `path.posix.normalize` clamps any leading `..` at `/`, so a normalized
  * absolute path can never climb above the repo root that the backend's virtual
- * filesystem maps (e.g. `/openwiki/a/../../../etc` normalizes to `/etc`, still
- * under `/`). The explicit absolute-path check below makes that containment a
- * hard guarantee rather than an implicit one.
+ * filesystem maps. The explicit absolute-path check below makes that
+ * containment a hard guarantee rather than an implicit one.
  */
 function resolveRepoLinkPath(
   sourcePath: string,

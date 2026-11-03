@@ -111,6 +111,12 @@ export type OpenWikiRunOptions = {
   modelId?: string | null;
   onEvent?: (event: OpenWikiRunEvent) => void;
   outputMode?: OpenWikiOutputMode;
+  /**
+   * Prepared repository wiki location shared by native repository execution.
+   *
+   * @default resolved from repository configuration at the run boundary
+   */
+  wikiLocation?: RepositoryWikiLocation;
   threadId?: string;
   userMessage?: string | null;
   telemetryFile?: string;
@@ -132,3 +138,4 @@ export type RunContext = {
   language?: string;
   wikiGoal?: string;
 };
+import type { RepositoryWikiLocation } from "../repository-wiki/config.js";

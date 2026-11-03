@@ -14,6 +14,7 @@ import type {
   EvidenceResolver,
   ResolvedEvidence,
 } from "../../../../src/claims/core/types.ts";
+import { RepositoryWikiPaths } from "../../../../src/repository-wiki/paths.ts";
 
 const PAGE_VERSION = `sha256:${"a".repeat(64)}`;
 const VERIFICATION = {
@@ -112,6 +113,33 @@ describe("ClaimSession", () => {
     claims[0].statement = "mutated";
     expect(session.inspectClaims("/openwiki/page.md")[0]?.statement).toBe(
       "The feature is enabled.",
+    );
+  });
+
+  test("keys persisted and issue state by the configured actual path", () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const page = "/docs/page.md";
+    const session = new ClaimSession({
+      wikiPaths,
+      resolver: createResolver(new Map()),
+      persisted: new Map([[page, persisted([CLAIM])]]),
+      issues: [
+        {
+          page,
+          kind: "stale",
+          claimId: CLAIM.id,
+          resources: ["memory://feature"],
+        },
+      ],
+      orphanPages: [],
+    });
+
+    expect(session.inspectClaims(page)[0]?.issue).toEqual({
+      kind: "stale",
+      resources: ["memory://feature"],
+    });
+    expect(() => session.inspectClaims("/openwiki/page.md")).toThrow(
+      "below /docs",
     );
   });
 

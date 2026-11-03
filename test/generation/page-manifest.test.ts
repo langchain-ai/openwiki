@@ -44,6 +44,7 @@ import {
   writeRepositoryPageManifest,
   type RepositoryPageManifest,
 } from "../../src/generation/page-manifest.ts";
+import { RepositoryWikiPaths } from "../../src/repository-wiki/paths.ts";
 
 const SOURCE_FINGERPRINT = `sha256:${"a".repeat(64)}`;
 const OTHER_SOURCE_FINGERPRINT = `sha256:${"b".repeat(64)}`;
@@ -222,6 +223,51 @@ describe("repository page-manifest persistence", () => {
 });
 
 describe("repository page completion", () => {
+  test("persists custom-root coverage with actual page identities", async () => {
+    const wikiPaths = new RepositoryWikiPaths("docs");
+    const page = "/docs/page.md";
+    const file = path.join(root, toRepositoryPagePath(page, wikiPaths));
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, "# Page\n", "utf8");
+    const store = new ClaimsStore(root, wikiPaths);
+    const pageVersion = await store.hashPage(page);
+    await store.writePage(page, {
+      schemaVersion: 1,
+      pageVersion,
+      claims: [],
+      verification: VERIFICATION,
+    });
+
+    await recordRepositoryPageCompletion(
+      root,
+      page,
+      {
+        gitHead: GIT_HEAD,
+        sourceFingerprint: SOURCE_FINGERPRINT,
+      },
+      undefined,
+      undefined,
+      wikiPaths,
+    );
+
+    await expect(readRepositoryPageManifest(root, wikiPaths)).resolves.toEqual({
+      schemaVersion: 1,
+      pages: {
+        [page]: {
+          gitHead: GIT_HEAD,
+          sourceFingerprint: SOURCE_FINGERPRINT,
+          pageVersion,
+        },
+      },
+    });
+    expect(repositoryPageManifestPath(root, wikiPaths)).toBe(
+      path.join(root, "docs", ".page-manifest.json"),
+    );
+    await expect(readRepositoryPageManifest(root)).resolves.toEqual(
+      createEmptyRepositoryPageManifest(),
+    );
+  });
+
   test("refuses to advance an unverified or mismatched Claims page", async () => {
     const page = "/openwiki/page.md";
     await writeClaimsPage(page, "# Page\n", false);

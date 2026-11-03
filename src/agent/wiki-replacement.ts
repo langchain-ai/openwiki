@@ -1,8 +1,13 @@
 import { cp, lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
+import type { RepositoryWikiLocation } from "../repository-wiki/config.js";
+import { inspectRepositoryWikiOwnership } from "../repository-wiki/ownership.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  resolveRepositoryWikiRoot,
+} from "../repository-wiki/paths.js";
 
 const REPOSITORY_INSTRUCTIONS = "INSTRUCTIONS.md";
 type ReplacementSignal = "SIGINT" | "SIGTERM";
@@ -15,10 +20,14 @@ const SIGNAL_EXIT_CODES: Readonly<Record<ReplacementSignal, number>> = {
  * Recoverable replacement of one existing repository wiki.
  */
 export interface RepositoryWikiReplacement {
-  /** Discards the private backup after a successful init. */
+  /**
+   * Discards the private backup after a successful init.
+   */
   commit(): Promise<void>;
 
-  /** Restores the exact pre-init wiki after a failed init. */
+  /**
+   * Restores the exact pre-init wiki after a failed init.
+   */
   rollback(): Promise<void>;
 }
 
@@ -26,44 +35,60 @@ export interface RepositoryWikiReplacement {
  * Replaces an existing repository wiki with a blank generation target.
  *
  * `INSTRUCTIONS.md` is user-owned control metadata, so it is copied into the
- * blank target. Everything else below `openwiki/` is generated state and is
- * removed before the init agent sees the repository. A private temporary copy
- * remains available until the run either commits or rolls back.
+ * blank target. Everything else below the selected wiki root is generated
+ * state and is removed before the init agent sees the repository. A private
+ * temporary copy remains available until the run either commits or rolls back.
  *
  * SIGINT and SIGTERM restore the backup before exiting. This keeps an operator
  * cancellation from leaving the repository with a partial replacement wiki.
  *
- * A first init with no `openwiki/` directory keeps the existing partial-run
- * recovery behavior and therefore returns a no-op transaction.
+ * A first init with no wiki directory keeps the existing partial-run recovery
+ * behavior and therefore returns a no-op transaction.
  *
  * @param rootDir - Absolute repository root.
+ * @param location - Resolved physical wiki location selected for this run.
  * @returns Transaction controlling the pre-init backup.
  */
 export async function beginRepositoryWikiReplacement(
   rootDir: string,
+  location?: RepositoryWikiLocation,
 ): Promise<RepositoryWikiReplacement> {
   if (!path.isAbsolute(rootDir)) {
     throw new Error("Repository wiki replacement requires an absolute root.");
   }
 
   const repositoryRoot = path.resolve(rootDir);
-  const wikiDir = path.join(repositoryRoot, OPEN_WIKI_DIR);
-  const wikiStat = await lstat(wikiDir).catch((error: unknown) => {
-    if (isFileNotFoundError(error)) return null;
-    throw error;
-  });
+  const selected = location ?? defaultRepositoryWikiLocation(repositoryRoot);
+  const expectedRoot = resolveRepositoryWikiRoot(
+    repositoryRoot,
+    selected.directory,
+  );
+  if (path.resolve(selected.root) !== expectedRoot) {
+    throw new Error("Repository wiki replacement location is inconsistent.");
+  }
 
-  if (wikiStat === null) {
+  const ownership = await inspectRepositoryWikiOwnership(
+    repositoryRoot,
+    selected.directory,
+  );
+
+  if (ownership.status === "absent") {
     return createNoopReplacement();
   }
-  if (!wikiStat.isDirectory() || wikiStat.isSymbolicLink()) {
+  if (ownership.status === "unsafe") {
     throw new Error(
-      `Refusing to replace ${OPEN_WIKI_DIR}: expected a real directory below the repository root.`,
+      `Refusing to replace ${selected.directory}: ${ownership.reason}.`,
+    );
+  }
+  if (ownership.status === "unmanaged") {
+    throw new Error(
+      `Refusing to replace ${selected.directory}: it contains ${ownership.entryCount} unmanaged entries.`,
     );
   }
 
+  const wikiDir = selected.root;
   const backupParent = await mkdtemp(path.join(tmpdir(), "openwiki-init-"));
-  const backupDir = path.join(backupParent, OPEN_WIKI_DIR);
+  const backupDir = path.join(backupParent, "wiki");
   let finished = false;
   let finishing: Promise<void> | undefined;
   let initialization: Promise<void> = Promise.resolve();
@@ -168,7 +193,7 @@ export async function beginRepositoryWikiReplacement(
     if (instructionsStat) {
       if (!instructionsStat.isFile() || instructionsStat.isSymbolicLink()) {
         throw new Error(
-          `Refusing to preserve ${OPEN_WIKI_DIR}/${REPOSITORY_INSTRUCTIONS}: expected a regular file.`,
+          `Refusing to preserve ${selected.directory}/${REPOSITORY_INSTRUCTIONS}: expected a regular file.`,
         );
       }
       await cp(instructions, path.join(wikiDir, REPOSITORY_INSTRUCTIONS), {
@@ -195,7 +220,25 @@ export async function beginRepositoryWikiReplacement(
   return replacement;
 }
 
-/** Returns an idempotent transaction for a first init with no prior wiki. */
+/**
+ * Resolves the unchanged default location for compatibility callers.
+ */
+function defaultRepositoryWikiLocation(
+  repositoryRoot: string,
+): RepositoryWikiLocation {
+  return {
+    directory: DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+    root: resolveRepositoryWikiRoot(
+      repositoryRoot,
+      DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+    ),
+    source: "default",
+  };
+}
+
+/**
+ * Returns an idempotent transaction for a first init with no prior wiki.
+ */
 function createNoopReplacement(): RepositoryWikiReplacement {
   return {
     commit: () => Promise.resolve(),

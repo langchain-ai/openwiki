@@ -39,15 +39,22 @@ export interface WikiMermaidReport {
  * ones in place.
  *
  * Walks the wiki through the backend virtual filesystem so writes stay inside
- * the docs-only boundary and both output modes work (`local-wiki` rooted at `/`,
- * `code` rooted at `/openwiki`). Files with no failing fences are left byte-for-
- * byte unchanged, so this creates no diff noise.
+ * the docs-only boundary and both output modes work. Repository mode uses its
+ * configured wiki root, while `local-wiki` is rooted at `/`. Files with no
+ * failing fences are left byte-for-byte unchanged, so this creates no diff
+ * noise.
+ *
+ * @param backend - Active generated-wiki filesystem.
+ * @param outputMode - Current wiki target.
+ * @param repositoryWikiRoot - Canonical root used in repository mode.
+ * @returns Mermaid validation and repair counts.
  */
 export async function validateWikiMermaid(
   backend: BackendProtocolV2,
   outputMode: OpenWikiOutputMode,
+  repositoryWikiRoot = "/openwiki",
 ): Promise<WikiMermaidReport> {
-  const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+  const root = outputMode === "local-wiki" ? "/" : repositoryWikiRoot;
   const report: WikiMermaidReport = {
     filesScanned: 0,
     fencesChecked: 0,

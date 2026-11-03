@@ -9,6 +9,10 @@ import {
 import { applyClaimOperations, cloneClaims } from "../../core/mutations.js";
 import { cacheEvidenceResolver } from "../../core/resolver-cache.js";
 import type { Claim, EvidenceResolver } from "../../core/types.js";
+import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+} from "../../../repository-wiki/paths.js";
 import { normalizeWikiPagePath } from "./paths.js";
 import { ClaimsStore } from "./store.js";
 import {
@@ -27,6 +31,11 @@ import {
  * Injectable dependencies and persisted state for one Claims session.
  */
 export interface ClaimSessionOptions {
+  /**
+   * Canonical path policy for the physical repository wiki.
+   */
+  wikiPaths?: RepositoryWikiPaths;
+
   /**
    * Deterministic repository evidence resolver.
    */
@@ -100,12 +109,17 @@ interface WorkingPageState {
  */
 export class ClaimSession {
   /**
+   * Canonical path policy shared by every page in this session.
+   */
+  private readonly wikiPaths: RepositoryWikiPaths;
+
+  /**
    * Deterministic repository evidence resolver.
    */
   private readonly resolver: EvidenceResolver;
 
   /**
-   * Working page state keyed by canonical virtual path.
+   * Working page state keyed by canonical actual path.
    */
   private readonly pages = new Map<string, WorkingPageState>();
 
@@ -130,16 +144,23 @@ export class ClaimSession {
    * @param options - Resolver, persisted claims, lazy issues, and orphan pages.
    */
   constructor(options: ClaimSessionOptions) {
+    this.wikiPaths =
+      options.wikiPaths ??
+      new RepositoryWikiPaths(DEFAULT_REPOSITORY_WIKI_DIRECTORY);
     this.resolver = options.resolver;
     this.orphanPages = [
-      ...new Set(options.orphanPages.map(normalizeWikiPagePath)),
+      ...new Set(
+        options.orphanPages.map((page) =>
+          normalizeWikiPagePath(page, this.wikiPaths),
+        ),
+      ),
     ].sort((left, right) => left.localeCompare(right));
     this.createClaimId =
       options.createClaimId ??
       (() => `claim_${randomUUID().replaceAll("-", "")}`);
 
     for (const [pageInput, persisted] of options.persisted) {
-      const page = normalizeWikiPagePath(pageInput);
+      const page = normalizeWikiPagePath(pageInput, this.wikiPaths);
       if (this.pages.has(page)) {
         throw new ClaimSessionError(`Duplicate persisted claim page: ${page}`);
       }
@@ -157,7 +178,10 @@ export class ClaimSession {
         dirty: false,
         deleted: false,
         issues: options.issues
-          .filter((issue) => normalizeWikiPagePath(issue.page) === page)
+          .filter(
+            (issue) =>
+              normalizeWikiPagePath(issue.page, this.wikiPaths) === page,
+          )
           .map(cloneGroundingIssue),
       });
     }
@@ -173,7 +197,7 @@ export class ClaimSession {
    * @returns Canonical page and compact per-operation results.
    */
   async resolveClaims(input: ResolveClaimsInput): Promise<ResolveClaimsResult> {
-    const page = normalizeWikiPagePath(input.page);
+    const page = normalizeWikiPagePath(input.page, this.wikiPaths);
     const state = this.getOrCreatePage(page);
     const previousMutation = state.pendingMutation;
     let releaseMutation = (): void => undefined;
@@ -220,11 +244,11 @@ export class ClaimSession {
   /**
    * Returns compact claim state without creating a write obligation.
    *
-   * @param pageInput - Virtual generated-page path.
+   * @param pageInput - Canonical actual generated-page path.
    * @returns Complete cloned model-facing claims without opaque evidence versions.
    */
   inspectClaims(pageInput: string): InspectedClaim[] {
-    const page = normalizeWikiPagePath(pageInput);
+    const page = normalizeWikiPagePath(pageInput, this.wikiPaths);
     const state = this.getOrCreatePage(page);
     if (state.deleted) {
       return [];
@@ -278,10 +302,10 @@ export class ClaimSession {
   /**
    * Records a successful Markdown deletion so its sidecar follows automatically.
    *
-   * @param pageInput - Virtual generated-page path confirmed by the backend.
+   * @param pageInput - Canonical actual page path confirmed by the backend.
    */
   async recordDeletion(pageInput: string): Promise<void> {
-    const page = normalizeWikiPagePath(pageInput);
+    const page = normalizeWikiPagePath(pageInput, this.wikiPaths);
     const state = this.getOrCreatePage(page);
     await state.pendingMutation;
     this.replaceClaimOwnership(page, state.claims, []);
@@ -439,7 +463,7 @@ export class ClaimSession {
     for (const pageInput of [...new Set(pages)].sort((left, right) =>
       left.localeCompare(right),
     )) {
-      const page = normalizeWikiPagePath(pageInput);
+      const page = normalizeWikiPagePath(pageInput, this.wikiPaths);
       const state = this.pages.get(page);
       if (!state || !state.persisted || state.deleted || state.dirty) continue;
       try {

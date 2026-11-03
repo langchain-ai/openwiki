@@ -477,7 +477,7 @@ function ExplorationMap({
 
 function useTerminalRows(): number {
   const { stdout } = useStdout();
-  const terminalStdout = stdout as NodeJS.WriteStream;
+  const terminalStdout = stdout;
   const [terminalRows, setTerminalRows] = useState(
     terminalStdout.rows ?? DEFAULT_TERMINAL_ROWS,
   );

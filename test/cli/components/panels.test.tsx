@@ -33,6 +33,7 @@ describe("DryRunView", () => {
         modelId="opus"
         shouldStart
         userMessage="seed the wiki"
+        wikiDirectory="docs"
       />,
     );
     const frame = plain(lastFrame());
@@ -42,6 +43,8 @@ describe("DryRunView", () => {
     expect(frame).toContain("would start run");
     expect(frame).toContain("not invoked");
     expect(frame).toContain("seed the wiki");
+    expect(frame).toContain("Wiki directory");
+    expect(frame).toContain("docs");
   });
 
   test("shows the chat path and omits the message row when absent", () => {
@@ -51,6 +54,7 @@ describe("DryRunView", () => {
         modelId={null}
         shouldStart={false}
         userMessage={null}
+        wikiDirectory={null}
       />,
     );
     const frame = plain(lastFrame());

@@ -253,6 +253,60 @@ describe("parseCommand — mode after flags", () => {
 });
 
 describe("parseCommand — init/update", () => {
+  test("--wiki-dir selects and normalizes a custom repository wiki", () => {
+    expect(parseCommand(["--init", "--wiki-dir", "docs\\wiki"])).toMatchObject({
+      kind: "run",
+      command: "init",
+      mode: "code",
+      wikiDirectory: "docs/wiki",
+    });
+    expect(parseCommand(["--update", "--wiki-dir=wiki"])).toMatchObject({
+      kind: "run",
+      command: "update",
+      wikiDirectory: "wiki",
+    });
+  });
+
+  test("wiki directory is unset when no option is supplied", () => {
+    expect(parseCommand(["--init"])).toMatchObject({
+      kind: "run",
+      wikiDirectory: null,
+    });
+  });
+
+  test("--wiki-dir requires one safe repository-relative value", () => {
+    expect(parseCommand(["--init", "--wiki-dir"])).toMatchObject({
+      kind: "error",
+      message: "--wiki-dir requires a repository-relative directory.",
+    });
+    expect(parseCommand(["--init", "--wiki-dir="])).toMatchObject({
+      kind: "error",
+      message: "--wiki-dir requires a repository-relative directory.",
+    });
+    expect(parseCommand(["--init", "--wiki-dir", "../docs"])).toMatchObject({
+      kind: "error",
+    });
+    expect(
+      parseCommand(["--init", "--wiki-dir", "docs", "--wiki-dir", "wiki"]),
+    ).toMatchObject({
+      kind: "error",
+      message: "--wiki-dir may only be specified once.",
+    });
+  });
+
+  test("--wiki-dir is limited to code-mode init and update", () => {
+    expect(parseCommand(["--wiki-dir", "docs"])).toMatchObject({
+      kind: "error",
+      message: "--wiki-dir requires --init or --update.",
+    });
+    expect(
+      parseCommand(["personal", "--init", "--wiki-dir", "docs"]),
+    ).toMatchObject({
+      kind: "error",
+      message: "--wiki-dir is only supported for repository code mode.",
+    });
+  });
+
   test("--language passes the selected locale to an init run", () => {
     expect(parseCommand(["--init", "--language", "zh-CN"])).toMatchObject({
       kind: "run",

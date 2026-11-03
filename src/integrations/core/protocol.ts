@@ -38,6 +38,12 @@ export interface BeginRequest {
   mode: HostRunMode;
 
   /**
+   * Optional repository-relative wiki directory explicitly requested by the
+   * user for initialization or configuration recovery.
+   */
+  wikiDirectory?: string;
+
+  /**
    * Optional requested documentation language, as a BCP-47 code (for example
    * `ko`, `zh-CN`, `pt-BR`) rather than an English language name. An
    * unrecognized value fails the call with `invalid_input` and starts no run,
@@ -69,6 +75,9 @@ export const BeginInput: z.ZodType<BeginRequest> = z
   .object({
     root: CanonicalString,
     mode: z.enum(["init", "update"]),
+    wikiDirectory: CanonicalString.describe(
+      'Repository-relative wiki directory, e.g. "docs".',
+    ).optional(),
     language: CanonicalString.describe(
       'BCP-47 code, e.g. "ko" (not "Korean").',
     ).optional(),

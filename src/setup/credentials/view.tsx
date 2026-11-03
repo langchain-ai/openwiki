@@ -59,6 +59,7 @@ import {
   SetupPanel,
   SetupStep,
 } from "./components.js";
+import { DEFAULT_REPOSITORY_WIKI_DIRECTORY } from "../../repository-wiki/paths.js";
 
 /**
  * Props for {@link InitSetupView}: the full snapshot of wizard state, props,
@@ -72,16 +73,24 @@ export interface InitSetupViewProps {
    */
   allowModeSelection: boolean;
 
-  /** The step currently in focus, or null while the wizard is still seeding. */
+  /**
+   * The step currently in focus, or null while the wizard is still seeding.
+   */
   step: PromptStep | null;
 
-  /** The run mode being configured (code vs personal). */
+  /**
+   * The run mode being configured (code vs personal).
+   */
   selectedMode: OpenWikiRunMode;
 
-  /** The provider selected for this run. */
+  /**
+   * The provider selected for this run.
+   */
   provider: OpenWikiProvider;
 
-  /** True once the user confirms a provider this session. */
+  /**
+   * True once the user confirms a provider this session.
+   */
   providerConfirmed: boolean;
 
   /**
@@ -94,22 +103,34 @@ export interface InitSetupViewProps {
    */
   authModeSelectionIndex: number;
 
-  /** API key entered this session, or null when none was typed. */
+  /**
+   * API key entered this session, or null when none was typed.
+   */
   apiKey: string | null;
 
-  /** OAuth tokens obtained this session, or null when none were obtained. */
+  /**
+   * OAuth tokens obtained this session, or null when none were obtained.
+   */
   oauthTokens: CodexTokens | null;
 
-  /** Secret key entered this session, or null when none was typed. */
+  /**
+   * Secret key entered this session, or null when none was typed.
+   */
   secretKey: string | null;
 
-  /** GCP project entered this session, or null when none was typed. */
+  /**
+   * GCP project entered this session, or null when none was typed.
+   */
   gcpProject: string | null;
 
-  /** GCP location entered this session, or null when none was typed. */
+  /**
+   * GCP location entered this session, or null when none was typed.
+   */
   gcpLocation: string | null;
 
-  /** Base URL entered this session, or null when none was typed. */
+  /**
+   * Base URL entered this session, or null when none was typed.
+   */
   baseUrl: string | null;
 
   /**
@@ -117,130 +138,219 @@ export interface InitSetupViewProps {
    */
   entraScope: string | null;
 
-  /** Region entered this session, or null when none was typed. */
+  /**
+   * Region entered this session, or null when none was typed.
+   */
   region: string | null;
 
-  /** Model ID chosen this session, or null when none was chosen. */
+  /**
+   * Model ID chosen this session, or null when none was chosen.
+   */
   modelId: string | null;
 
-  /** Model ID forced by the caller (`--model`), or null when not overridden. */
+  /**
+   * Model ID forced by the caller (`--model`), or null when not overridden.
+   */
   modelIdOverride: string | null;
 
-  /** Reasoning effort selected this session, or null when not collected. */
+  /**
+   * Reasoning effort selected this session, or null when not collected.
+   */
   reasoningEffort?: string | null;
 
-  /** LangSmith key entered this session, or null when none was typed. */
+  /**
+   * LangSmith key entered this session, or null when none was typed.
+   */
   langSmithKey: string | null;
 
-  /** The onboarding config as the wizard has edited it so far. */
+  /**
+   * The onboarding config as the wizard has edited it so far.
+   */
   onboardingConfig: OpenWikiOnboardingConfig;
 
-  /** True once the OAuth login URL was copied to the clipboard. */
+  /**
+   * True once the OAuth login URL was copied to the clipboard.
+   */
   copied: boolean;
 
-  /** The shared single-line input buffer for the active prompt. */
+  /**
+   * The shared single-line input buffer for the active prompt.
+   */
   input: string;
 
-  /** True while the OAuth browser sign-in is in progress. */
+  /**
+   * True while the OAuth browser sign-in is in progress.
+   */
   isLoggingIn: boolean;
 
-  /** The OAuth login URL to display, or null before one is issued. */
+  /**
+   * The OAuth login URL to display, or null before one is issued.
+   */
   loginUrl: string | null;
 
-  /** Dedicated buffer for the code-repo-path field. */
+  /**
+   * Dedicated buffer for the code-repo-path field.
+   */
   codeRepoPathInput: string;
 
-  /** The resolved code-repo root path shown on the confirm step. */
+  /**
+   * The resolved code-repo root path shown on the confirm step.
+   */
   codeRepoRoot: string;
 
-  /** State of the external CLI credential probe/login. */
+  /**
+   * Repository-relative directory selected for the code wiki.
+   */
+  codeWikiDirectory?: string;
+
+  /**
+   * State of the external CLI credential probe/login.
+   */
   externalCliAuth: ExternalCliAuthState;
 
-  /** Selection cursor for the code-repo confirm menu. */
+  /**
+   * Selection cursor for the code-repo confirm menu.
+   */
   codeRepoSelectionIndex: number;
 
-  /** Active field cursor for the segmented cron input. */
+  /**
+   * Active field cursor for the segmented cron input.
+   */
   cronFieldSelectionIndex: number;
 
-  /** Selection cursor for the cron mode menu. */
+  /**
+   * Selection cursor for the cron mode menu.
+   */
   cronModeSelectionIndex: number;
 
-  /** Selection cursor for the final menu. */
+  /**
+   * Selection cursor for the final menu.
+   */
   finalSelectionIndex: number;
 
-  /** True while the user is entering a custom model ID. */
+  /**
+   * True while the user is entering a custom model ID.
+   */
   isCustomModelInput: boolean;
 
-  /** The LangSmith workspace currently being added or edited, or null. */
+  /**
+   * The LangSmith workspace currently being added or edited, or null.
+   */
   langsmithDraft: LangsmithWorkspaceDraft | null;
 
-  /** Selection cursor for the LangSmith region menu. */
+  /**
+   * Selection cursor for the LangSmith region menu.
+   */
   langsmithRegionSelectionIndex: number;
 
-  /** Selection cursor for the LangSmith workspaces menu. */
+  /**
+   * Selection cursor for the LangSmith workspaces menu.
+   */
   langsmithWorkspaceSelectionIndex: number;
 
-  /** LangSmith workspaces as the wizard has edited them. */
+  /**
+   * LangSmith workspaces as the wizard has edited them.
+   */
   langsmithWorkspaces: LangsmithWorkspaceDraft[];
 
-  /** Selection cursor for the model menu. */
+  /**
+   * Selection cursor for the model menu.
+   */
   modelSelectionIndex: number;
 
-  /** Selection cursor for the reasoning effort menu. */
+  /**
+   * Selection cursor for the reasoning effort menu.
+   */
   reasoningEffortSelectionIndex?: number;
 
-  /** Selection cursor for the power-mode menu. */
+  /**
+   * Selection cursor for the power-mode menu.
+   */
   powerModeSelectionIndex: number;
 
-  /** Selection cursor for the provider menu. */
+  /**
+   * Selection cursor for the provider menu.
+   */
   providerSelectionIndex: number;
 
-  /** Selection cursor for the run-mode menu. */
+  /**
+   * Selection cursor for the run-mode menu.
+   */
   runModeSelectionIndex: number;
 
-  /** Cursor for the current source secret input field. */
+  /**
+   * Cursor for the current source secret input field.
+   */
   secretInputIndex: number;
 
-  /** Selection cursor for the source-confirm-continue menu. */
+  /**
+   * Selection cursor for the source-confirm-continue menu.
+   */
   sourceContinueSelectionIndex: number;
 
-  /** Selection cursor for the source description menu. */
+  /**
+   * Selection cursor for the source description menu.
+   */
   sourceDescriptionSelectionIndex: number;
 
-  /** Selection cursor for the source menu. */
+  /**
+   * Selection cursor for the source menu.
+   */
   sourceSelectionIndex: number;
 
-  /** State of the in-progress source setup (secret values, auth, warnings). */
+  /**
+   * State of the in-progress source setup (secret values, auth, warnings).
+   */
   sourceState: SourceSetupState;
 
-  /** Selection cursor for the onboarding template menu. */
+  /**
+   * Selection cursor for the onboarding template menu.
+   */
   templateSelectionIndex: number;
 
-  /** Transient status notice to surface, or null when none. */
+  /**
+   * Transient status notice to surface, or null when none.
+   */
   notice: string | null;
 
-  /** Transient error to surface, or null when none. */
+  /**
+   * Transient error to surface, or null when none.
+   */
   error: string | null;
 
-  /** True while the wizard is writing the setup to disk. */
+  /**
+   * True while the wizard is writing the setup to disk.
+   */
   isSaving: boolean;
 
-  /** True while waiting for the browser authorization callback. */
+  /**
+   * True while waiting for the browser authorization callback.
+   */
   isAuthRunning: boolean;
 
-  /** The active source options for the current mode/template. */
+  /**
+   * The active source options for the current mode/template.
+   */
   activeSourceOptions: readonly SourceSetupOption[];
 
-  /** The source option currently selected in the source sub-flow. */
+  /**
+   * The source option currently selected in the source sub-flow.
+   */
   selectedSource: SourceSetupOption;
 
-  /** The suggested cron expression for the current onboarding config. */
+  /**
+   * The suggested cron expression for the current onboarding config.
+   */
   suggestedCronExpression: string;
 
-  /** The human-readable description of the suggested cron expression. */
+  /**
+   * The human-readable description of the suggested cron expression.
+   */
   suggestedCronDescription: string;
 
-  /** The computed display width for single-line inputs. */
+  /**
+   * The computed display width for single-line inputs.
+   */
   inputDisplayWidth: number;
 
   /**
@@ -283,6 +393,7 @@ export function InitSetupView({
   loginUrl,
   codeRepoPathInput,
   codeRepoRoot,
+  codeWikiDirectory = DEFAULT_REPOSITORY_WIKI_DIRECTORY,
   externalCliAuth,
   codeRepoSelectionIndex,
   cronFieldSelectionIndex,
@@ -384,7 +495,11 @@ export function InitSetupView({
             detail={getRunModeName(selectedMode)}
           />
           {selectedMode === "code" ? (
-            <SetupStep label="Wiki scope" state="done" detail="openwiki/" />
+            <SetupStep
+              label="Wiki scope"
+              state="done"
+              detail={`${codeWikiDirectory}/`}
+            />
           ) : null}
         </Box>
       </Box>
@@ -656,6 +771,7 @@ export function InitSetupView({
               authMode={authMode}
               authModeSelectionIndex={authModeSelectionIndex}
               codeRepoRoot={codeRepoRoot}
+              codeWikiDirectory={codeWikiDirectory}
               externalCliAuth={externalCliAuth}
               codeRepoSelectionIndex={codeRepoSelectionIndex}
               cronFieldSelectionIndex={cronFieldSelectionIndex}

@@ -64,6 +64,7 @@ interface DryRunViewProps {
   modelId: string | null;
   shouldStart: boolean;
   userMessage: string | null;
+  wikiDirectory: string | null;
 }
 
 /**
@@ -75,6 +76,7 @@ export function DryRunView({
   modelId,
   shouldStart,
   userMessage,
+  wikiDirectory,
 }: DryRunViewProps) {
   return (
     <Box flexDirection="column">
@@ -86,6 +88,13 @@ export function DryRunView({
           value={`openwiki ${command}`}
         />
         <StatusLine tone="muted" label="Mode" value={command} />
+        {wikiDirectory ? (
+          <StatusLine
+            tone="muted"
+            label="Wiki directory"
+            value={wikiDirectory}
+          />
+        ) : null}
         <StatusLine
           tone="muted"
           label="Credentials"

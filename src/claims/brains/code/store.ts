@@ -12,6 +12,11 @@ import {
 import path from "node:path";
 import { z } from "zod";
 import {
+  DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+  RepositoryWikiPaths,
+  resolveRepositoryWikiRoot,
+} from "../../../repository-wiki/paths.js";
+import {
   ClaimsPageMissingError,
   ClaimsPersistenceError,
   ClaimsPersistenceSecurityError,
@@ -88,6 +93,11 @@ export class ClaimsStore {
   private readonly rootDir: string;
 
   /**
+   * Canonical path policy for this store's physical repository wiki.
+   */
+  private readonly wikiPaths: RepositoryWikiPaths;
+
+  /**
    * Lazily resolved physical repository root.
    *
    * @default undefined until the first filesystem operation.
@@ -104,7 +114,15 @@ export class ClaimsStore {
    */
   private readonly claimsDir: string;
 
-  constructor(rootDir: string) {
+  /**
+   * Creates Claims persistence beneath one configured repository wiki.
+   */
+  constructor(
+    rootDir: string,
+    wikiPaths: RepositoryWikiPaths = new RepositoryWikiPaths(
+      DEFAULT_REPOSITORY_WIKI_DIRECTORY,
+    ),
+  ) {
     if (!path.isAbsolute(rootDir)) {
       throw new ClaimsPersistenceError(
         "Claims store root must be an absolute path.",
@@ -112,14 +130,15 @@ export class ClaimsStore {
     }
 
     this.rootDir = path.resolve(rootDir);
-    this.wikiDir = path.join(this.rootDir, "openwiki");
+    this.wikiPaths = wikiPaths;
+    this.wikiDir = resolveRepositoryWikiRoot(this.rootDir, wikiPaths.directory);
     this.claimsDir = path.join(this.wikiDir, CLAIMS_DIRECTORY);
   }
 
   /**
    * Discovers generated Markdown pages that own factual claim state.
    *
-   * @returns Stable-order virtual page paths.
+   * @returns Stable-order canonical actual page paths.
    */
   async discoverPages(): Promise<string[]> {
     const wikiDir = await this.resolveExistingDirectory(this.wikiDir);
@@ -128,15 +147,18 @@ export class ClaimsStore {
     }
     const files = await collectRegularFiles(wikiDir, false);
     return files
-      .map((file) => `/openwiki/${file.replace(/\\/gu, "/")}`)
-      .filter(isGroundedWikiPage)
+      .map(
+        (file) =>
+          `${this.wikiPaths.canonicalRoot}/${file.replace(/\\/gu, "/")}`,
+      )
+      .filter((page) => isGroundedWikiPage(page, this.wikiPaths))
       .sort((left, right) => left.localeCompare(right));
   }
 
   /**
    * Discovers persisted sidecars, including orphans.
    *
-   * @returns Stable-order virtual page paths represented by sidecars.
+   * @returns Stable-order canonical actual page paths represented by sidecars.
    */
   async discoverSidecarPages(): Promise<string[]> {
     const claimsDir = await this.resolveExistingDirectory(this.claimsDir);
@@ -148,16 +170,16 @@ export class ClaimsStore {
       .filter((file) => file.endsWith(".json"))
       .map(
         (file) =>
-          `/openwiki/${file.replace(/\\/gu, "/").replace(/\.json$/u, ".md")}`,
+          `${this.wikiPaths.canonicalRoot}/${file.replace(/\\/gu, "/").replace(/\.json$/u, ".md")}`,
       )
-      .filter(isGroundedWikiPage)
+      .filter((page) => isGroundedWikiPage(page, this.wikiPaths))
       .sort((left, right) => left.localeCompare(right));
   }
 
   /**
    * Loads and validates one page sidecar.
    *
-   * @param page - Virtual generated-page path.
+   * @param page - Canonical actual generated-page path.
    * @returns Valid persisted state, or `null` when no sidecar exists.
    */
   async loadPage(page: string): Promise<PageClaims | null> {
@@ -196,7 +218,7 @@ export class ClaimsStore {
   /**
    * Loads sidecars for generated pages without creating missing state.
    *
-   * @param pages - Virtual generated-page paths.
+   * @param pages - Canonical actual generated-page paths.
    * @returns Page-to-sidecar map containing only existing sidecars.
    */
   async loadPages(pages: readonly string[]): Promise<Map<string, PageClaims>> {
@@ -204,7 +226,7 @@ export class ClaimsStore {
     for (const page of pages) {
       const persisted = await this.loadPage(page);
       if (persisted) {
-        result.set(normalizeWikiPagePath(page), persisted);
+        result.set(normalizeWikiPagePath(page, this.wikiPaths), persisted);
       }
     }
     return result;
@@ -213,15 +235,18 @@ export class ClaimsStore {
   /**
    * Hashes the current generated Markdown for synchronization checks.
    *
-   * @param page - Virtual generated-page path.
+   * @param page - Canonical actual generated-page path.
    * @returns Algorithm-prefixed page version.
    */
   async hashPage(page: string): Promise<string> {
-    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const pagePath = path.join(
+      this.rootDir,
+      toRepositoryPagePath(page, this.wikiPaths),
+    );
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
       throw new ClaimsPageMissingError(
-        `Unable to hash ${normalizeWikiPagePath(page)}: file does not exist`,
+        `Unable to hash ${normalizeWikiPagePath(page, this.wikiPaths)}: file does not exist`,
       );
     }
     try {
@@ -229,7 +254,7 @@ export class ClaimsStore {
       return `sha256:${createHash("sha256").update(content).digest("hex")}`;
     } catch (error) {
       throw new ClaimsPersistenceError(
-        `Unable to hash ${normalizeWikiPagePath(page)}: ${toErrorMessage(error)}`,
+        `Unable to hash ${normalizeWikiPagePath(page, this.wikiPaths)}: ${toErrorMessage(error)}`,
       );
     }
   }
@@ -237,12 +262,15 @@ export class ClaimsStore {
   /**
    * Reads one generated Markdown page through the Claims path-containment gate.
    *
-   * @param page - Virtual generated-page path.
+   * @param page - Canonical actual generated-page path.
    * @returns Exact UTF-8 Markdown bytes as text.
    */
   async readMarkdown(page: string): Promise<string> {
-    const normalizedPage = normalizeWikiPagePath(page);
-    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const normalizedPage = normalizeWikiPagePath(page, this.wikiPaths);
+    const pagePath = path.join(
+      this.rootDir,
+      toRepositoryPagePath(page, this.wikiPaths),
+    );
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
       throw new ClaimsPageMissingError(
@@ -264,12 +292,15 @@ export class ClaimsStore {
    * preserves its permissions and prevents path aliases from redirecting the
    * projection outside the repository.
    *
-   * @param page - Virtual generated-page path.
+   * @param page - Canonical actual generated-page path.
    * @param content - Complete replacement Markdown.
    */
   async writeMarkdown(page: string, content: string): Promise<void> {
-    const normalizedPage = normalizeWikiPagePath(page);
-    const pagePath = path.join(this.rootDir, toRepositoryPagePath(page));
+    const normalizedPage = normalizeWikiPagePath(page, this.wikiPaths);
+    const pagePath = path.join(
+      this.rootDir,
+      toRepositoryPagePath(page, this.wikiPaths),
+    );
     const physicalPage = await this.resolveExistingRegularFile(pagePath);
     if (!physicalPage) {
       throw new ClaimsPageMissingError(
@@ -288,11 +319,11 @@ export class ClaimsStore {
   /**
    * Atomically persists one synchronized page sidecar.
    *
-   * @param page - Virtual generated-page path.
+   * @param page - Canonical actual generated-page path.
    * @param pageClaims - Complete synchronized page state.
    */
   async writePage(page: string, pageClaims: PageClaims): Promise<void> {
-    const normalizedPage = normalizeWikiPagePath(page);
+    const normalizedPage = normalizeWikiPagePath(page, this.wikiPaths);
     const validated = validatePageClaims(
       pageClaims,
       `claims for ${normalizedPage}`,
@@ -328,7 +359,7 @@ export class ClaimsStore {
   /**
    * Deletes one page sidecar after successful page deletion or orphan cleanup.
    *
-   * @param page - Virtual page represented by the sidecar.
+   * @param page - Canonical actual page represented by the sidecar.
    */
   async deletePage(page: string): Promise<void> {
     const sidecar = this.sidecarPath(page);
@@ -342,7 +373,7 @@ export class ClaimsStore {
       await rm(path.join(directory, path.basename(sidecar)), { force: true });
     } catch (error) {
       throw new ClaimsPersistenceError(
-        `Unable to remove claims for ${normalizeWikiPagePath(page)}: ${toErrorMessage(error)}`,
+        `Unable to remove claims for ${normalizeWikiPagePath(page, this.wikiPaths)}: ${toErrorMessage(error)}`,
       );
     }
   }
@@ -350,11 +381,14 @@ export class ClaimsStore {
   /**
    * Resolves a page's absolute sidecar path.
    *
-   * @param page - Virtual generated-page path.
+   * @param page - Canonical actual generated-page path.
    * @returns Absolute contained sidecar path.
    */
   private sidecarPath(page: string): string {
-    return path.join(this.claimsDir, toClaimsSidecarRelativePath(page));
+    return path.join(
+      this.claimsDir,
+      toClaimsSidecarRelativePath(page, this.wikiPaths),
+    );
   }
 
   /**
