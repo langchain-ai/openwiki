@@ -1,4 +1,4 @@
-import type { WikiGraph } from "./graph.js";
+import type { WikiGraph } from "./graph-types.js";
 
 /**
  * The minimal node shape the search/type filter needs. Both the raw wiki nodes

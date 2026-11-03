@@ -16,6 +16,8 @@ sources:
     resource: repo://src/visualize/client-lib.ts
   - id: openwiki-source-610ff51ff8da46ab065496a5
     resource: repo://src/visualize/client.ts
+  - id: openwiki-source-37e0e714b8257069ec052301
+    resource: repo://src/visualize/graph-types.ts
   - id: openwiki-source-d92f623adbf6b31c3542d58d
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-b0d5ccee7e5f7532bd8ed3f5
@@ -36,10 +38,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-11-01T08:05:43.330Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Interactive Visualizer
@@ -247,12 +249,21 @@ and subscribes to `/events`.
 The pure, DOM-independent helpers used by the client — `escapeHtml`,
 `colorsForTypes`, `nodeRadius`, `signature`, `matchesFilter`, `normalize`,
 `stripFrontmatter`, `hexA`, and `shouldShowNodeLabel` (with its
-`NodeLabelContext` interface) — live in `src/visualize/client-lib.ts` so they can
-be unit-tested directly without a browser. `shouldShowNodeLabel` decides whether
-a node label should be painted on the canvas based on interaction context: when
-nothing is selected, only the hovered node's label shows; when a node is
-selected, the selected node plus its immediate neighbours show labels; unrelated
-nodes never show labels.
+`NodeLabelContext` interface) — live in `src/visualize/client-lib.ts`, a pure,
+DOM-independent module so they can be unit-tested directly without a browser
+and reused by a React 19-compatible CLI renderer without pulling in Node
+filesystem APIs. `shouldShowNodeLabel` decides whether a node label should be
+painted on the canvas based on interaction context: when nothing is selected,
+only the hovered node's label shows; when a node is selected, the selected node
+plus its immediate neighbours show labels; unrelated nodes never show labels.
+
+The shared browser/Node graph data model lives in
+`src/visualize/graph-types.ts` and defines `WikiMeta`, `WikiNode`, `WikiEdge`,
+and `WikiGraph` plus the client `FilterableNode` and `PALETTE`. It has no
+runtime dependencies and is imported by both `client-lib.ts` (for the browser
+side) and `graph.ts` (the Node loader that reads files off disk), so the two
+sides share one typed shape without the browser bundle dragging in Node's
+`fs`/`path` loader.
 
 ## Static export
 
@@ -279,10 +290,14 @@ Markdown and rendering in its shipped typeface.
 ## Build pipeline and assets
 
 The client TypeScript is compiled separately from the server code. The `build`
-script in `package.json` runs `tsc -p tsconfig.json`, then `tsc -p
+script in `package.json` runs `node ./node_modules/typescript7/bin/tsc -p
+tsconfig.json`, then `node ./node_modules/typescript7/bin/tsc -p
 tsconfig.client.json` (which compiles `client.ts` and its imported `client-lib.ts`
-with DOM libs enabled), and finally `node scripts/copy-visualize-assets.cjs`. That
-last step exists because `styles.css` is a hand-authored asset TypeScript does not
+with DOM libs enabled), and finally `node scripts/copy-visualize-assets.cjs`. Both
+`tsc` invocations go through the locally pinned `typescript7` package rather than
+the project's default `typescript`, so the build uses an exact toolchain the rest
+of the repo does not have to depend on. That last step exists because `styles.css`
+is a hand-authored asset TypeScript does not
 emit: the copy script explicitly copies `src/visualize/styles.css` into
 `dist/visualize/styles.css` and fails the build if the source is missing, the
 `dist/visualize` directory does not exist (a sign the build did not run first), or

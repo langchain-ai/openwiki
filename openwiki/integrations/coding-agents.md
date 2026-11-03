@@ -58,10 +58,10 @@ sources:
     resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
@@ -253,6 +253,45 @@ description with the MCP SDK and executes it through `executeTool`. The server
 is invoked by the CLI's `openwiki mcp --host <id>` command, which looks up the
 host's registry entry to supply the correct provenance actor.
 
+```mermaid
+sequenceDiagram
+    participant CLI as openwiki mcp --host id
+    participant Stdio as runOpenWikiMcp
+    participant SM as HostSessionManager
+    participant Srv as createOpenWikiMcpServer
+    participant SDK as McpServer
+    CLI->>Stdio: runOpenWikiMcp(host, producerActor?)
+    Stdio->>SM: HostSessionManager.create(host, producerActor)
+    SM-->>Stdio: manager (validated id)
+    Stdio->>Srv: createOpenWikiMcpServer(manager)
+    Srv->>SDK: new McpServer(name, version, instructions=INSTRUCTIONS)
+    loop each ProtocolTool from manager.tools()
+        Srv->>SDK: registerTool(name, description, inputSchema, executeTool)
+    end
+    Srv-->>Stdio: server
+    Stdio->>SDK: connect(new StdioServerTransport())
+    Note over SDK: INSTRUCTIONS + tool schemas advertised at init
+    loop tool calls
+        SDK->>Srv: executeTool(tool, input)
+        Srv->>SM: tool.handle(input) via provider.tools()
+        SM-->>Srv: result OR HostIntegrationError
+        alt HostIntegrationError
+            Srv-->>SDK: toolError(code: message)
+        else unexpected throw
+            Srv-->>SDK: toolError("OpenWiki MCP operation failed.")
+        else success
+            Srv-->>SDK: content + structuredContent
+        end
+    end
+```
+
+MCP server construction and tool registration. `HostSessionManager.tools()`
+supplies the ordered ten-tool set (four retrieval via `createRetrievalTools()`
+then six lifecycle), and the server advertises the `INSTRUCTIONS` guidance
+(embedding `CLAIMS_RECONCILIATION_GUIDANCE`) plus each tool's schema at
+initialization; `executeTool` bounds transport-visible errors to
+`HostIntegrationError` codes or a generic failure string.
+
 ## Installation: host config and the skill bundle
 
 Installing an integration writes two managed artifacts into a host's chosen
@@ -317,18 +356,24 @@ OpenWiki as a Pi package extension declared in `package.json` under the `pi`
 key, which points the host at `dist/integrations/pi/openwiki.js` and the shared
 `integrations/openwiki` skill bundle. The extension
 (`src/integrations/pi/openwiki.ts`) is a thin in-process bridge: it registers
-the six generation lifecycle tools (no retrieval tools) with Pi's tool API,
-lazily spawns one stdio MCP client transport that runs
-`node dist/cli/cli.js mcp --host pi`, and forwards each tool call to the MCP
-server, surfacing `isError` results as thrown errors. The bridge is a singleton
-per Pi session — `bridge()` caches one `StdioClientTransport`/`Client` pair and
-resets it on transport close or a call failure; `session_shutdown` closes the
-bridge. Because `--host pi` is not in `HOST_TARGETS`, `getHostTarget("pi")`
-returns `undefined` and the MCP command falls back to `producerActor: "pi"`,
-so Pi-authored pages are stamped with the `pi` producer actor. The CLI accepts
-any `[a-z0-9-]{1,64}` host id for `openwiki mcp --host`, which is how the
-non-registered `pi` host reaches the same `HostSessionManager` lifecycle as the
-nine installed targets.
+all ten tools — the four read-only retrieval tools plus the six generation
+lifecycle tools — with Pi's tool API, lazily spawns one stdio MCP client
+transport using `process.execPath` to run the CLI at
+`dist/cli/cli.js mcp --host pi`, and forwards each tool call to the MCP server,
+surfacing `isError` results as thrown errors. Because a Pi host may be an
+Electron or Bun-compiled executable whose `process.execPath` is not a plain
+Node binary, `bridgeEnvironment()` re-exports `ELECTRON_RUN_AS_NODE` or
+`BUN_BE_BUN` (Bun >= 1.2.16) so the child runs the CLI script rather than the
+host application; without it the child starts the host app and exits, which
+the host reports as `MCP error -32000: Connection closed`. The bridge is a
+singleton per Pi session — `bridge()` caches one
+`StdioClientTransport`/`Client` pair and resets it on transport close or a call
+failure; `session_shutdown` closes the bridge. Because `--host pi` is not in
+`HOST_TARGETS`, `getHostTarget("pi")` returns `undefined` and the MCP command
+falls back to `producerActor: "pi"`, so Pi-authored pages are stamped with the
+`pi` producer actor. The CLI accepts any `[a-z0-9-]{1,64}` host id for
+`openwiki mcp --host`, which is how the non-registered `pi` host reaches the
+same `HostSessionManager` lifecycle as the nine installed targets.
 
 ### Config adapters
 
@@ -378,6 +423,47 @@ skill to a cleanup backup, and prunes now-empty skill parent directories.
 `status` reports `installed` only when both the skill and the config entry are
 intact, `modified` when either is partially present, and `unsupported` when the
 requested scope does not exist for the host.
+
+```mermaid
+sequenceDiagram
+    participant CLI as integrations install
+    participant I as HostIntegrationInstaller
+    participant Ctx as resolveInstallContext
+    participant Cfg as Config Adapter
+    CLI->>I: install(target, scope, root, force?)
+    I->>Ctx: resolveInstallContext(target, scope, root)
+    Ctx-->>I: skillDirectory + mcpConfig
+    I->>I: inspectInstallation + inventorySkill(canonical)
+    alt modified and not force
+        I-->>CLI: conflict
+    else already current
+        I->>Cfg: installManagedConfig
+        Cfg-->>I: changed?
+        I-->>CLI: unchanged OR installed
+    else fresh install/upgrade
+        I->>I: cp bundle to staging sibling
+        I->>I: inventorySkill(staging) == canonical?
+        I->>I: writeReceipt(staging)
+        I->>Cfg: snapshotTextFile(config)
+        I->>Cfg: installManagedConfig
+        opt prior skill exists
+            I->>I: move prior skill aside (rollback OR forced backup)
+        end
+        I->>I: move staging into skillDirectory
+        alt commit fails
+            I->>I: rollbackInstall (restore config + prior skill, remove staging)
+            I-->>CLI: AggregateError on incomplete rollback
+        end
+        I->>I: cleanupPriorSkill (remove rollback OR keep forced backup)
+        I-->>CLI: installed (paths, backup?)
+    end
+```
+
+The install transaction. The installer stages the skill into a private sibling,
+verifies the staged copy, writes the receipt, then commits by mutating the
+config and atomically moving the staged skill into place; any pre-commit
+failure rolls both back, and an incomplete rollback surfaces as an
+`AggregateError`.
 
 ## User-level vs project scope
 

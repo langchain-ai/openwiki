@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:010302356be3bb752f10256ea65d5decf220ffc648eb521cb577fa0f4c75eb86",
+  "pageVersion": "sha256:7d35e2fd4bb6dba8f519a2d929f61061c26d7ef379d8f4e854046016b250f8a3",
   "claims": [
     {
       "id": "claim_b7c92dfb63db42c6ab9db3a60115cec9",
@@ -113,8 +113,8 @@
       "statement": "The docs-only write boundary refuses writes outside openwiki/ during repository init/update runs but is relaxed in local-wiki mode, where writes are always allowed.",
       "evidence": [
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L577-L599",
-          "version": "repo-lines-v1:sha256:d4d5dee1a013dee66812128826564986be035574261dc47d35af6b17e15b89ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NzcyZTYwMzAxOGU5NzRiM2M1ZjlmYTcwYTBlNGE5Mjc3OWE2YmRiODA2MDk0ODNkZjQzZjkzY2NiMTQzMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZWRhM2Q3NjNjZmQzYTgxNWVhOTY2ZTEzYmI3NjcwZWE3MTY2YTZmZTJmNGYzODI2MDU4OWJhZGNhNDc5MDcifQ"
+          "resource": "repo://src/agent/docs-only-backend.ts#L578-L600",
+          "version": "repo-lines-v1:sha256:5fb0475c5bfb5d1481ded316f5e8b1b95ef4cc250b20cc2c184163090c903c27:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NzcyZTYwMzAxOGU5NzRiM2M1ZjlmYTcwYTBlNGE5Mjc3OWE2YmRiODA2MDk0ODNkZjQzZjkzY2NiMTQzMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExZWRhM2Q3NjNjZmQzYTgxNWVhOTY2ZTEzYmI3NjcwZWE3MTY2YTZmZTJmNGYzODI2MDU4OWJhZGNhNDc5MDcifQ"
         }
       ]
     },
@@ -123,11 +123,11 @@
       "statement": "Grounded Claims state is implementation-owned only in repository output mode: generic reads/writes/edits/deletes and discovery into Claims state paths are refused via getClaimsOwnershipError/isClaimsPath, and shell execute commands referencing Claims state are rejected; isClaimsPath returns false unless outputMode is repository, so the boundary does not apply in personal mode.",
       "evidence": [
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L557-L564",
+          "resource": "repo://src/agent/docs-only-backend.ts#L558-L565",
           "version": "repo-lines-v1:sha256:5aa130a76dbeeffee4b633fc08b295301cce80822a4a67dbd4e2606416995a5a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzY3NGZiYmFlYWU4Nzc1OTIxYWI3NmU0NDc5MDViNWVkYTI4YTI5YmY3ZmU5NDYyNTA1YzNmZjNhYjgxNTlhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYzYTUwNjMzMGIwZTU0MGJmMzVkNjBkYzZmNmU1M2ZkMGQ2YTRmOWU0Yzc0YjI5MjQ0ZDRjMzJmY2MxOTFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVkMjY3MDYxNzc0MGFmNDYzODZjNjc5MjA5OGI0YTBkNTkxMDdjODQ1YmMxYTdlMTFiMmYzZmZiZWFkODliMiJ9"
         },
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L622-L638",
+          "resource": "repo://src/agent/docs-only-backend.ts#L623-L639",
           "version": "repo-lines-v1:sha256:76185d27e103f6e1c60ef0f559c7285ec843246c049017f7edd2a797fdbfc6a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MTQ1NjNhOTk0MzEzNTE1ZWI2NjUyMmJhN2RlMjkxZjI0YmY2NTk2MTc2MzAzN2Y2M2U3OWI0OGU5YzI2M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDVkZDM5MTAyNzI5NDhiNTExMGVmM2I5Njc0ZTJmMTQ4YThmZjU1ZWIyZWM2YmZhYmUyZjliMGM1ZjFhMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYjE1ZTk0ZGU0MDlmMjRhOThmNDJhODVjODZmNGZiNGEwNGM0OGE3OGQ3OTkwYTc2OWE5YzIxYmI1YjAyM2MifQ"
         }
       ]
@@ -145,8 +145,8 @@
           "version": "repo-lines-v1:sha256:e13d9d162d87bc31ea8dec645413e562351f5bf8d0724aca4dadc9d72759f933:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMDNiN2MzNWQwNzMwNTNkODZlZjRlZTc1Y2E2MDBlYTY1OTQ5YTJlNjJlMTQ2ZTE2N2NmYjdhZTJmZGE1OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTI1YzJiMTg0OWJhZTcwNjVjZDM2Y2Y5NzYwZWVjOGMyODY0N2NlMDc3MmU1NTU3NWY3OWU3NDdiY2I2NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzNzA5OThjZDY1MTU1YWYxMmVjMjQzNjI0Nzc2NjE4ODBiOWI2NDFkNTI2MDE0NmQ3OTU0NzVjMzRkY2FhMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxOGEwYTljMjcyYzJlMzBjODNmMTQzYTA1ODc0NjA5ODdhNGY5Y2Q2N2YxNmRiM2QwZGE2YzU5YzEyOWRmN2EifQ"
         },
         {
-          "resource": "repo://src/integrations/mcp/server.ts#L11-L47",
-          "version": "repo-lines-v1:sha256:a787ed6f3b9c3e8d03f22737a1bd087a6b854cc96dea66d5a3b7be7ed3eb6787:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MDU1Y2RmNzg0MDQyYjNlMDhlYmVlMzI4NTI1YjYzODUwYTcwOWVhMWU2Y2I1YzlmYTIyMzJmZGZhZTM2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZDYwOTI1MzgyZDA0YzVkYTc4M2UzZDVhMTMxMTIyYWZkMGIxNmJiMjUxZmRjYTY2YjQ2MGU1MWNmOTdiYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTJlOGIwMzNjMzE5NzNkYjg1ZDcwNDkwNWE0YzU1NzgxN2ZlNjZlMzcwZjJlY2I0YTk1ZGUxNmVlMGY0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1MzQxZGYyNTUzMmYzNDFjZWYzNGNiMzQ4ZTA1MmQ2MDYwNzM2YTQzZGRiY2QxMmU3MDVjZjcxZmU5NzcwODAifQ"
+          "resource": "repo://src/integrations/mcp/server.ts#L11-L49",
+          "version": "repo-lines-v1:sha256:179ec555117fdbc831e069657b82a2c70c7c67ef2a0e8a9888de8caba06ca827:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MDU1Y2RmNzg0MDQyYjNlMDhlYmVlMzI4NTI1YjYzODUwYTcwOWVhMWU2Y2I1YzlmYTIyMzJmZGZhZTM2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZDYwOTI1MzgyZDA0YzVkYTc4M2UzZDVhMTMxMTIyYWZkMGIxNmJiMjUxZmRjYTY2YjQ2MGU1MWNmOTdiYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTJlOGIwMzNjMzE5NzNkYjg1ZDcwNDkwNWE0YzU1NzgxN2ZlNjZlMzcwZjJlY2I0YTk1ZGUxNmVlMGY0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1MzQxZGYyNTUzMmYzNDFjZWYzNGNiMzQ4ZTA1MmQ2MDYwNzM2YTQzZGRiY2QxMmU3MDVjZjcxZmU5NzcwODAifQ"
         }
       ]
     },
@@ -247,11 +247,11 @@
       "statement": "Inside runOpenWikiAgent, outputMode defaults to local-wiki when not supplied; repository init/update is routed to the native page-job generation runner instead of the conversational agent, and .openwikiignore is loaded from the runtime cwd only in repository mode (personal mode uses an empty ruleset).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L168-L189",
+          "resource": "repo://src/agent/index.ts#L172-L193",
           "version": "repo-lines-v1:sha256:0505957d1077443915aa311edd0c65ff020591fef15c4ddd2457e0b4f4aa63a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZWQ3NWU0MTU0OWI5NGUwYmEwYjdlNjdkY2VhNDBhMzg2MDMzNWZiNTM3NDZhMmQyMzAwMWI3NDNlYzA4YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MTA0YWI0MzIwYTQyZGU4YmExNDQ3NjY0OTBhNTgyYzdkODZkODdkOTU4YzRhOWJmMDI4OTk3ZjFkNGU0NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MGRiMmEyNGIyNjJjMGVkYjAxMmZiNWIwYjYwMWZjNjA4YzUxYmQ5Njg0OTNhNjg1YjNkMjgwM2UzYTA5NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MzFiNzk0NDdjNTNkMGM5NWQzMzQ5MDViZWZkOWRmOTEzOTNlYmYzZGZiZTFmNGI5N2ZlNGM4MzkwNTM3OGQifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L242-L245",
+          "resource": "repo://src/agent/index.ts#L246-L249",
           "version": "repo-lines-v1:sha256:da4bdc7af236e3f5a32e6ae43589d0f0ff8ed0e882f773ef02c2b85f60bd8db0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg2YjRiYmYyMDM2YzMzZTQ3MGIzOGMwOWNkZjk4NTljOWM0ZGQzZWM3NTBhMGQwNTdjNDZlOWQwMzkxMDMwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q1NDFlMjM2ZGQxMDVkNDhlOWViNDEzMmU3ZDAwMWQ3YWMzNzdlODgxYWMwNTcyZTZmNGQ0OTNiYzJjZWYyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDJkODhjNmJkYjE1ODhkMGEwYzM4Y2I3MWVmMjlmNDlkNzVhYzQxNzFiZTQzZWE4NzY0ZDk4MDI5YTk4ZWFjOSJ9"
         }
       ]
@@ -261,7 +261,7 @@
       "statement": "createOpenWikiAgent refuses repository init/update commands, directing them to runOpenWikiAgent and the page-job runner instead of the low-level agent factory.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L417-L421",
+          "resource": "repo://src/agent/index.ts#L421-L425",
           "version": "repo-lines-v1:sha256:ba5513f0965236838b576bafbf8fca5016e56508a17d3c3f6c481e13189e5f8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTVkZjEzNWZkNjMwMGI2N2JmZDYyYzM5OGM4OWExNTA4NmFjNzhjNDY2MjI3ODVmZjA2MjQwNTlhYTAwZWNlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTVhZGM3NDFmZTFmM2I0YjU0NGFkMjliOWFmNDU3NGFlNDEyYWY2MWJjZjEzMjIxYTBkZjBkYjc0Njc5Y2I4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjgzZTM1MzBkOTc1YTUwYmZhYjNjOWNjMGUyODBlNmJhMjcxYjMwMDZkM2MzNWMwNmU0ZDc0ZTgxZDI2ZWI2MCJ9"
         }
       ]
@@ -271,18 +271,18 @@
       "statement": "In personal (local-wiki) mode, OpenWikiLocalShellBackend.execute denies every shell command at the backend level with a distinct 'Shell execution is disabled in personal mode' message, enforced because personal agents consume untrusted connector content and must not reach the host shell even via delegated or stale tool calls; the conversational agent graph additionally restricts personal runs to a filesystem-only tool middleware.",
       "evidence": [
         {
-          "resource": "repo://src/agent/docs-only-backend.ts#L544-L555",
+          "resource": "repo://src/agent/docs-only-backend.ts#L545-L556",
           "version": "repo-lines-v1:sha256:aaec0804e24ea471b67af97d3ce06eb81339eecbb167fb93350cc5ace8c23867:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MjU0NmIxNGFkNjhhZjY1OTQ4ZmZmODQ4YTRkZDhjZmQyZTgzY2U0OWZkZmI1ZTRjYTUwMmQ2NTMyZTJhNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODMyN2IyOTA0YzczNjc5YWY1ZDdiMTBhYjM5MWI4MWViNzM0ZjUyN2IzY2YyZjhhOTY5MjIyYTUwNDk4OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMzM5OWU5MzdjOGIzZmVlNzYwZmM4YTQ1ZjMxNDRiZDAxNTI3NTRhMmNmNGI0MGI1Y2JiZjA5Y2Q3NTE1YmEifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L506-L521",
+          "resource": "repo://src/agent/index.ts#L510-L525",
           "version": "repo-lines-v1:sha256:cc45291bfdfb12b90418f0cea2fc2406f737ec15a606b517a27ec45267bee5a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhYjk5YzA4MGU1ZTI2MGIyYjYxYjE3YzExM2QxY2FhMjRmZDYwZTg5YWNjOTU4OGE2ZWYwZGE1OTU5ZWUxZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZDQ1YTc5YjVhZjlkNDUzZWEwOGIyNDI1NjU4YTE4N2IwOTcwMTMyNzgyOWFkZmVmNzQzYmQwNjIwYzA1MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MTRjMmI4NzRkNWEzMzg1MThjYjY1ODgyM2Q3Mzk1ZWQ5OTIyZWJjMzM3ZmYyYmNjNjliMmJmMDc1YTkyN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxOWFjZmRiN2UwNTQ0YTU3ZjBhYTUxZjI5OGY3YzE4NWQ5MjhlMzk1OTQyN2Y3MDFhYmFjZjI1YWQ5YTEzMTkifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-07T08:10:39.081Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }

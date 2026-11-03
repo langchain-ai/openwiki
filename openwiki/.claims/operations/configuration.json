@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:460207380d8051dc407f5b43f9399be6b7ed8d59027da4316179f74a386c66a3",
+  "pageVersion": "sha256:11f6648403423865b43334caefc35e1bf55c17bb349812b098c2cc00734bd0b8",
   "claims": [
     {
       "id": "claim_f6ee1be411cc44af8ce963e1af7842d1",
@@ -333,11 +333,11 @@
       "statement": "REASONING_CAPABILITIES declares three transports: responses-reasoning (openai and openai-chatgpt GPT-5.6 models, and openai-compatible when the Responses-API opt-in is set) sent as the Responses reasoning.effort payload; chat-completions-reasoning-effort (NVIDIA NIM nemotron-3-super-120b-a12b, and openai-compatible when reasoning effort is opted in but Responses API is not used) sent as the reasoning_effort kwarg; and gemini-thinking-level (gemini-3.6-flash) sent as the Gemini thinkingLevel option. The agent model constructor applies the chosen transport via responsesReasoningOptions, chatCompletionsReasoningOptions, or geminiThinkingLevelOptions respectively.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1154-L1174",
+          "resource": "repo://src/agent/index.ts#L1158-L1178",
           "version": "repo-lines-v1:sha256:141977e380330a58da68100d6291e16f520bfe560744647fc1fa808cbc71570e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0Y2U5OGNjYWFhMzZjYjJkOTAzNTg5Njk0YWY4ZTlkZjhjMGE0NjVmMWE2YTcyMWI1YzY4ZTA2OTIxODc2MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNjhhNGM4ZWEwMmM5OTdkYTcxMjIwMWFiOGVhMjA4YzMxNDQ3MDQ5ZDYyMjgwZTBhYmYyNjEzYTdiYjkxYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzYzA0YzBhNzc4NGJmOGY4ZWI3NmM1MjkyOTQ2MTNlN2NmN2Q3MGI3ZWY3NTEzMTYxYWY2NDdlNWUwNTIxNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0YTU2MmEzZTcxMDJkMzU3MGU1ZmI2YTBjNTE2MGY5NDg5OGJhOTA0ZDQwM2Y4NjE0NTI5NzMxNTg5NDRlZDYifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1326-L1327",
+          "resource": "repo://src/agent/index.ts#L1336-L1337",
           "version": "repo-lines-v1:sha256:59d1c856a38e1fc32ec40b560bcd3e00133d900208abdc744a8072ed9b7e016e:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDU2YzIxNzQzOGI0NmExYjA4NWY5N2Y5YTNhNTEzM2UxZjljOWIwY2QxYzNmYTJjOWFmODRkY2RhODZhNDA5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q1MDE2OWNmYzc2NDViMGNlNmJiMTI4M2EwYTRkYTFhMTZkM2FhY2VjOGJhYzhmZDBlN2VlMmViNGE4OTJkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODViNGU5MDNiOWQxNTUxNjM4MTlmZjMwYjRmNWUyOTVjZDE4M2Q4ZjBiOWQ3MDhjZWQ5YWUwZmMyN2M3N2Q1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjNhMTAzNzJmNmE1NTA1ZWNlM2Q0YjY0NzFiNDY3ZmIwZjU1ZmEwNmQxNGI0OTk1YmQ0ODg5YzgwYjI2MjA5MiJ9"
         },
         {
@@ -413,7 +413,7 @@
       "statement": "OPENWIKI_PAGE_CONCURRENCY sets how many repository page workers may run at once, accepting an integer from 1 to MAX_PAGE_CONCURRENCY (8) and defaulting to DEFAULT_PAGE_CONCURRENCY (1) when unset; the agent resolves it via resolvePageConcurrency and feeds it to resolveProviderRetryAttempts so the retry default can adapt to concurrency.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L360-L364",
+          "resource": "repo://src/agent/index.ts#L364-L368",
           "version": "repo-lines-v1:sha256:6b856540b52df58e77e68c3b8087e59a5da7d37880f6d460a01aa9659130d50f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgzZWMxNDkwYzliYjg4M2U1OTI4YWI0ZmQwZGUzZDc4NzI1MzRlOWZjZDYyODAwZWJlYWM1ZDZjYmRiNjg5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcyZTM5NjlkNmI4ODJkYTY0MDlkOWU3YTY0M2I0NDE5M2UyYTM2MDM5MjdjYmNkMjVmY2ZhY2NjNzk5ODFiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQ4ZGFkMjVhZWJhZmYyYTE1NzZlYzYyNTExZmMwZDZiODE1NWE5Mzg4Yzk5MDAyNDhlOGMzMjE3MmFjMWY4NSJ9"
         },
         {
@@ -481,7 +481,7 @@
           "version": "repo-lines-v1:sha256:55321f4cf421ad25a87af63680ae52b724a50802137a30260472aa69d258312d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhN2YwZDZiNTA1ZTVjMWQzNWVjNGY2ZjM1YzQ1MjM1YWEyOWMyZGJjMDA4Y2ExNWJiNGVhYTA1YzQxZmNhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNzJjZmFhYzQzNjgyMTE5MWJkMWViMDI1NTc1NDEzYmQyODI1ODcxMjBjZDYyNjI1YmFkYWYyNzE5ODZhN2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1YmYwZDM4NzE1ODQ3ZGMwNDdiNzRkNzAyMDI4YjY1NDZlYWMwZTRjZmQ1ZjEwNGI4MzM5YmMzY2M0ZDAxNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYTJhNTI3MGViMTU2ZGI5ZTNjM2IxOTQyNzJlN2EzNTYwZmQ2MmZmMmQxYjlkNDBmODQzZDJkMGE4NWRkMzgifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1313-L1316",
+          "resource": "repo://src/agent/index.ts#L1323-L1326",
           "version": "repo-lines-v1:sha256:8ed85d7b87402a4d15b91c375d527e042d8673a8f848fa3bf7170deb2e3f069d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODI3ZWI0MTUzMWJlYTFkMGQyMTQyOWJmZjQ3ZmZmYjkzNDRhN2RiMjVlNGViM2UxZjkxMzdmMTY5MzMzODU1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTVmMGFmMWViYTM5ZTA1ZjllOWUzN2JjNzA5NmU0N2ZiYzkzZDk3MjRmN2NiYmE1MTQwZWNjZTkwOGZmNjhlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWUxMmI2MTE4OTQzZTMwYzAwNjgzM2U3ODE2MzBhNTNiMzJmNDE3ZWY1Zjk3OTVjM2YxMmYzMzA4MDI0YzVkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGFlZTBjMzg1YjU1OTY2NDhkN2M0ZDIxM2MzMDA0NGIzMjlkYWU1NDBiOTZiNjI4NWQ5MTQwMTYwY2RmZjJlOSJ9"
         }
       ]
@@ -509,7 +509,7 @@
       "statement": "providerUsesEntraId returns true only for the openai-compatible provider in entra-id mode, and providerRequiresApiKey returns false for it; createModel sets the ChatOpenAI apiKey to the Entra token callback when providerUsesEntraId is true, otherwise to the provider's static key, so a stale OPENAI_COMPATIBLE_API_KEY is ignored in Entra mode while the Responses-API and streaming toggles still apply on top of Entra auth.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1313-L1322",
+          "resource": "repo://src/agent/index.ts#L1323-L1332",
           "version": "repo-lines-v1:sha256:f38f00a89670e4d9dab06869ab59ce887dcb23253a6ca0b4c2f645665acda9b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyN2ViNDE1MzFiZWExZDBkMjE0MjliZmY0N2ZmZmI5MzQ0YTdkYjI1ZTRlYjNlMWY5MTM3ZjE2OTMzMzg1NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYmFlMDVkZTM2NjJhMjgzNmE1NGEyZDNiZjI5ODc5NDlkYzk4ODAwNmI3NzM0N2NkYmM4MWVkYzM4YTU0ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ZjZkYTVjYTAzZTQ4MjhiOThkMzNmNDI1Y2UyMTNiOTk4YjgyM2RlYmE3MjI4N2I1NGQ0ZDY4NTZkNDY4NDEifQ"
         },
         {
@@ -534,7 +534,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-07T08:10:39.081Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }
