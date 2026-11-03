@@ -2,6 +2,7 @@ export const OPEN_WIKI_DIR = "openwiki";
 export const PAGE_MANIFEST_PATH = `${OPEN_WIKI_DIR}/.page-manifest.json`;
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 
+export const ATLASCLOUD_API_KEY_ENV_KEY = "ATLASCLOUD_API_KEY";
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
 export const BOB_API_KEY_ENV_KEY = "BOB_API_KEY";
@@ -77,6 +78,7 @@ export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
   "OPENWIKI_STREAM_IDLE_TIMEOUT";
 const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
+export const ATLASCLOUD_BASE_URL = "https://api.atlascloud.ai/v1";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
@@ -136,6 +138,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "atlascloud"
   | "baseten"
   | "bedrock"
   | "bob"
@@ -285,6 +288,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "bedrock",
   "fireworks",
   "baseten",
+  "atlascloud",
   "nebius",
   "nvidia",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
@@ -356,6 +360,16 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         id: "accounts/fireworks/models/kimi-k2p7-code",
         label: "Kimi K2.7 Code",
       },
+    ],
+  },
+  atlascloud: {
+    apiKeyEnvKey: ATLASCLOUD_API_KEY_ENV_KEY,
+    baseURL: ATLASCLOUD_BASE_URL,
+    label: "Atlas Cloud",
+    modelOptions: [
+      { id: "deepseek-ai/deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+      { id: "deepseek-ai/deepseek-v3.2", label: "DeepSeek V3.2" },
+      { id: "qwen/qwen3.7-plus", label: "Qwen3.7 Plus" },
     ],
   },
   nebius: {
@@ -987,20 +1001,22 @@ export function resolveConfiguredProvider(
               ? "baseten"
               : env[FIREWORKS_API_KEY_ENV_KEY]
                 ? "fireworks"
-                : env[NEBIUS_API_KEY_ENV_KEY]
-                  ? "nebius"
-                  : env[NVIDIA_API_KEY_ENV_KEY]
-                    ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                : env[ATLASCLOUD_API_KEY_ENV_KEY]
+                  ? "atlascloud"
+                  : env[NEBIUS_API_KEY_ENV_KEY]
+                    ? "nebius"
+                    : env[NVIDIA_API_KEY_ENV_KEY]
+                      ? "nvidia"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 
