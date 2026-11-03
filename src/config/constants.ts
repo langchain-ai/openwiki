@@ -12,6 +12,7 @@ export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
+export const RUNCRATE_API_KEY_ENV_KEY = "RUNCRATE_API_KEY";
 export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
@@ -78,6 +79,7 @@ export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
   "OPENWIKI_STREAM_IDLE_TIMEOUT";
 const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
+export const RUNCRATE_BASE_URL = "https://api.runcrate.ai/v1";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
 export const OPENWIKI_REASONING_EFFORT_ENV_KEY = "OPENWIKI_REASONING_EFFORT";
@@ -148,7 +150,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "runcrate";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -287,6 +290,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "baseten",
   "nebius",
   "nvidia",
+  "runcrate",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -454,6 +458,17 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
+    ],
+  },
+  runcrate: {
+    apiKeyEnvKey: RUNCRATE_API_KEY_ENV_KEY,
+    baseURL: RUNCRATE_BASE_URL,
+    label: "Runcrate",
+    modelOptions: [
+      { id: "deepseek-ai/DeepSeek-V4.1-Flash", label: "DeepSeek V4.1 Flash" },
+      { id: "zai-org/GLM-5.3", label: "GLM-5.3" },
+      { id: "Qwen/Qwen3.8-Flash", label: "Qwen3.8 Flash" },
+      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
     ],
   },
 };
@@ -991,16 +1006,18 @@ export function resolveConfiguredProvider(
                   ? "nebius"
                   : env[NVIDIA_API_KEY_ENV_KEY]
                     ? "nvidia"
-                    : hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                        ) ||
-                        hasNonEmptyEnvValue(
-                          env,
-                          BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                        )
-                      ? "bedrock"
-                      : DEFAULT_PROVIDER)
+                    : env[RUNCRATE_API_KEY_ENV_KEY]
+                      ? "runcrate"
+                      : hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                          ) ||
+                          hasNonEmptyEnvValue(
+                            env,
+                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                          )
+                        ? "bedrock"
+                        : DEFAULT_PROVIDER)
   );
 }
 

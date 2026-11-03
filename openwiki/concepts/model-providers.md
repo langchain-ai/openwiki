@@ -84,6 +84,7 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `baseten`                      | Baseten                       | api-key       | `BASETEN_API_KEY`                           | `https://inference.baseten.co/v1` / `BASETEN_BASE_URL`         |
 | `nebius`                       | Nebius Token Factory          | api-key       | `NEBIUS_API_KEY`                            | `https://api.tokenfactory.nebius.com/v1/`                      |
 | `nvidia`                       | NVIDIA NIM                    | api-key       | `NVIDIA_API_KEY`                            | `https://integrate.api.nvidia.com/v1` / `NVIDIA_BASE_URL`      |
+| `runcrate`                     | Runcrate                      | api-key       | `RUNCRATE_API_KEY`                          | `https://api.runcrate.ai/v1`                                   |
 
 `SELECTABLE_OPENWIKI_PROVIDERS` fixes the order these providers appear in the
 setup wizard. The `bob` provider is the only one that sets `fixedModel`

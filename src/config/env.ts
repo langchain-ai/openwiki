@@ -79,6 +79,7 @@ import {
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeout,
   type OpenWikiProvider,
+  RUNCRATE_API_KEY_ENV_KEY,
 } from "./constants.js";
 import { isReasoningEffort } from "./reasoning.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
@@ -118,6 +119,7 @@ export const MANAGED_ENV_KEYS = [
   NEBIUS_API_KEY_ENV_KEY,
   NVIDIA_API_KEY_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
+  RUNCRATE_API_KEY_ENV_KEY,
   OPENAI_API_KEY_ENV_KEY,
   OPENAI_BASE_URL_ENV_KEY,
   OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
