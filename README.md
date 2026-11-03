@@ -250,7 +250,7 @@ You can also use OpenWiki's own [Deep Agents](https://github.com/langchain-ai/de
 openwiki --init
 ```
 
-The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [fourteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
+The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [fifteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
 
 Update an existing wiki from repository changes since its last successful run and any stale Claims:
 
@@ -461,7 +461,7 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 These settings apply when running OpenWiki directly. Coding-agent integrations use the host's authenticated model session.
 
-OpenWiki supports fourteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
+OpenWiki supports fifteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
 
 | Provider                                                     | Credential                              |
 | ------------------------------------------------------------ | --------------------------------------- |
