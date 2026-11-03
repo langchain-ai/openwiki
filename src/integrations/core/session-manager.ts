@@ -227,7 +227,7 @@ export class HostSessionManager {
       {
         name: "openwiki_begin",
         description:
-          "Start or resume OpenWiki repository generation. Returns status=noop for a clean update, otherwise the durable planning/generation run state. Long lists are capped, with exact changedPathCount and claimIssueCount totals: when changedPathsTruncated is true, list the rest with `git diff --name-only <baseGitHead>` and `git ls-files --others --exclude-standard`; claimIssuePages names every page with a Claims issue. An unrecognized `language` fails the call with invalid_input instead of starting a run.",
+          "Start or resume OpenWiki repository generation. Returns status=noop for a clean update, otherwise the durable planning/generation run state. Long lists are capped, with exact changedPathCount and claimIssueCount totals: when a changedPathsTruncated flag is true, find the rest with `git diff --name-only <baseGitHead>..HEAD` (not on a fullReview window), `git diff --name-only HEAD` and `git ls-files --others --exclude-standard`, leaving out openwiki/ and .openwikiignore paths; claimIssuePages names every page with a Claims issue. An unrecognized `language` fails the call with invalid_input instead of starting a run.",
         schema: BeginInput,
         handle: async (input) => this.begin(BeginInput.parse(input)),
       },

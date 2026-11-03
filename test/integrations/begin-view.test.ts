@@ -103,6 +103,30 @@ describe("toHostActiveBeginView", () => {
     }
   });
 
+  test("holds the path limit with more update windows than paths allowed", () => {
+    const window = {
+      baseGitHead: "abc",
+      pages: ["/openwiki/quickstart.md"],
+      changedPaths: paths(1),
+      fullReview: false,
+    };
+
+    const view = toHostActiveBeginView(
+      activeView({
+        pageUpdateWindows: Array.from(
+          { length: HOST_BEGIN_PATH_LIMIT + 1 },
+          () => window,
+        ),
+      }),
+    );
+
+    expect(view.pageUpdateWindows[0]).toMatchObject({
+      changedPaths: [],
+      changedPathCount: 1,
+      changedPathsTruncated: true,
+    });
+  });
+
   test("leaves lists at the limits complete", () => {
     const issues = claimIssues(HOST_BEGIN_CLAIM_ISSUE_LIMIT, 3);
     const changedPaths = paths(HOST_BEGIN_PATH_LIMIT);

@@ -32,12 +32,14 @@ Resolve the absolute Git top-level and call openwiki_begin before authoring.
 If begin returns status=noop, report that no update is required and stop.
 If the active run is in planning, inspect the repository with the host's native
 repository tools. The begin result caps long lists and keeps exact totals in
-changedPathCount and claimIssueCount. When changedPathsTruncated is true, list
-the rest with git diff --name-only <baseGitHead> and git ls-files --others
---exclude-standard. claimIssuePages names every page with a Claims issue;
-OpenWiki adds those pages to the plan and openwiki_next_page returns their
-Claims. Then call openwiki_submit_plan with final canonical page paths and
-page-relevant global instructions.
+changedPathCount and claimIssueCount. When a changedPathsTruncated flag is true,
+find the rest with git diff --name-only <baseGitHead>..HEAD (not on a fullReview
+window), git diff --name-only HEAD and git ls-files --others --exclude-standard,
+leaving out openwiki/ and .openwikiignore paths. claimIssuePages names every
+page with a Claims issue; OpenWiki adds those pages to the plan and
+openwiki_next_page lists the Claims that need attention. Then call
+openwiki_submit_plan with final canonical page paths and page-relevant global
+instructions.
 Then repeatedly call openwiki_next_page. For each pending job, research exactly
 that page's topic, write exactly that generated Markdown page with native host
 tools, and call openwiki_submit_page with only its sparse Claim decisions.

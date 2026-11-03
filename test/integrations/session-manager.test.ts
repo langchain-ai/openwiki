@@ -177,12 +177,16 @@ function gitChangedPaths(
   root: string,
   baseGitHead: string | undefined,
 ): string[] {
-  return execFileSync(
-    "git",
-    ["-C", root, "diff", "--name-only", baseGitHead ?? ""],
-    { encoding: "utf8" },
-  )
-    .split("\n")
+  const listed = [
+    ["diff", "--name-only", `${baseGitHead}..HEAD`],
+    ["diff", "--name-only", "HEAD"],
+    ["ls-files", "--others", "--exclude-standard"],
+  ].flatMap((args) =>
+    execFileSync("git", ["-C", root, ...args], { encoding: "utf8" }).split(
+      "\n",
+    ),
+  );
+  return [...new Set(listed)]
     .filter((file) => file && !file.startsWith("openwiki/"))
     .sort();
 }
@@ -550,6 +554,11 @@ describe("HostSessionManager", () => {
   test("bounds begin path lists above the limit and keeps exact totals", async () => {
     const drifted = HOST_BEGIN_PATH_LIMIT + 50;
     const root = await createDriftedRepository(drifted);
+    await writeFile(
+      path.join(root, "src/untracked.ts"),
+      "export {};\n",
+      "utf8",
+    );
 
     const view = (await createManager().begin({
       root,

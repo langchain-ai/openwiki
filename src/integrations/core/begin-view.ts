@@ -84,9 +84,8 @@ export interface HostActiveBeginView extends Omit<
 export function toHostActiveBeginView(
   view: ActiveBeginView,
 ): HostActiveBeginView {
-  const windowPathLimit = Math.max(
-    1,
-    Math.floor(HOST_BEGIN_PATH_LIMIT / view.pageUpdateWindows.length),
+  const windowPathLimit = Math.floor(
+    HOST_BEGIN_PATH_LIMIT / view.pageUpdateWindows.length,
   );
   return {
     ...view,
