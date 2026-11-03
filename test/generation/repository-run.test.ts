@@ -1113,6 +1113,30 @@ describe("beginRepositoryRun", () => {
       );
     });
 
+    test("lists merged commits without the merge commit itself", async () => {
+      const root = await createRepository();
+      const branch = await git(root, ["branch", "--show-current"]);
+      await git(root, ["checkout", "--quiet", "-b", "side"]);
+      await commitChange(root, "src/side.ts", "feat: side change");
+      await git(root, ["checkout", "--quiet", branch]);
+      await commitChange(root, "src/main.ts", "feat: main change");
+      await git(root, [
+        "merge",
+        "--quiet",
+        "--no-ff",
+        "-m",
+        "merge side",
+        "side",
+      ]);
+
+      const [window] = await beginWindows(root);
+
+      expect(window?.commits.map(({ subject }) => subject).sort()).toEqual([
+        "feat: main change",
+        "feat: side change",
+      ]);
+    });
+
     test("caps the commit count, subject, body and total size", async () => {
       const root = await createRepository();
       for (let index = 0; index < 25; index += 1) {
