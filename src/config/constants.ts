@@ -369,12 +369,12 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     label: "Mistral",
     // Mistral serves chat completions with tool calling on an OpenAI-compatible
     // surface, so it shares the ChatOpenAI branch with Fireworks and NVIDIA.
-    // IDs are the current dated releases from docs.mistral.ai/models; Mistral
-    // also exposes rolling "*-latest" aliases that can be pasted directly.
+    // IDs are the active releases from docs.mistral.ai/models (Medium 3.5 and
+    // Large 3 were deprecated on 2026-10-31); Mistral also exposes rolling
+    // "*-latest" aliases that can be pasted directly as custom model IDs.
     modelOptions: [
       { id: "mistral-small-2603", label: "Mistral Small 4" },
-      { id: "mistral-medium-3-5", label: "Mistral Medium 3.5" },
-      { id: "mistral-large-2512", label: "Mistral Large 3" },
+      { id: "mistral-large-4", label: "Mistral Large 4" },
       { id: "codestral-2508", label: "Codestral" },
     ],
   },
