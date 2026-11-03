@@ -433,6 +433,26 @@ During an ingestion run, deterministic connector tools write raw data and manife
 
 Connector secrets are referenced by env var name and stored in `~/.openwiki/.env`; connector config files never contain raw secret values.
 
+As a `custom-mcp` example, this `~/.openwiki/connectors/custom-mcp/config.json` adds web search through Keenable's public MCP endpoint, with no API key. Its `search_web_pages` and `fetch_page_content` tools are annotated read-only, so `openwiki_call_mcp_tool` can call them as well. For higher rate limits, set `KEENABLE_API_KEY` in `~/.openwiki/.env` and add `"X-API-Key": "${KEENABLE_API_KEY}"` to `headers`.
+
+```json
+{
+  "enabled": true,
+  "transport": {
+    "type": "http",
+    "url": "https://api.keenable.ai/mcp-public",
+    "headers": { "X-Keenable-Title": "OpenWiki" }
+  },
+  "readOnlyOperations": [
+    {
+      "type": "tool",
+      "name": "search_web_pages",
+      "args": { "query": "LangChain OpenWiki release notes" }
+    }
+  ]
+}
+```
+
 **Slack OAuth tunnel.** `openwiki ngrok start` starts an ngrok tunnel with a random HTTPS forwarding URL, reads ngrok's local inspection API, appends `/callback`, and saves `OPENWIKI_HTTPS_OAUTH_REDIRECT_URI` automatically. Register the printed callback URL in Slack. With a fixed domain, run `openwiki ngrok start https://<your-ngrok-domain>`.
 
 </details>
