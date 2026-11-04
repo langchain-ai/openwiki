@@ -387,6 +387,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
           {
             pages: [],
             changedPaths: [...harness.changedPaths],
+            commits: [],
             fullReview: true,
           },
         ],
