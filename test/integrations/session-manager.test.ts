@@ -7,6 +7,10 @@ import type {
   ActiveBeginView,
   NextRepositoryPageResult,
 } from "../../src/generation/repository-run.ts";
+import {
+  HOST_BEGIN_PATH_LIMIT,
+  type HostActiveBeginView,
+} from "../../src/integrations/core/begin-view.ts";
 import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
 
 const RUN_TIMESTAMP = "2026-08-24T12:00:00.000Z";
@@ -138,6 +142,84 @@ async function completePlannedInit(
   await expect(manager.finish({ runId: view.runId })).resolves.toEqual({
     status: "complete",
   });
+}
+
+/**
+ * Commits all pending changes in a fixture repository.
+ *
+ * @param root - Absolute temporary repository root.
+ * @param message - Commit message.
+ */
+function commitAll(root: string, message: string): void {
+  execFileSync("git", ["-C", root, "add", "--all"]);
+  execFileSync("git", [
+    "-C",
+    root,
+    "-c",
+    "user.name=OpenWiki Test",
+    "-c",
+    "user.email=openwiki@example.test",
+    "commit",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
+
+/**
+ * Lists paths changed since a baseline the way a host recovers them.
+ *
+ * @param root - Absolute temporary repository root.
+ * @param baseGitHead - Window baseline reported by begin.
+ * @returns Sorted changed paths outside the generated wiki, from native Git.
+ */
+function gitChangedPaths(
+  root: string,
+  baseGitHead: string | undefined,
+): string[] {
+  const listed = [
+    ["diff", "--name-only", `${baseGitHead}..HEAD`],
+    ["diff", "--name-only", "HEAD"],
+    ["ls-files", "--others", "--exclude-standard"],
+  ].flatMap((args) =>
+    execFileSync("git", ["-C", root, ...args], { encoding: "utf8" }).split(
+      "\n",
+    ),
+  );
+  return [...new Set(listed)]
+    .filter((file) => file && !file.startsWith("openwiki/"))
+    .sort();
+}
+
+/**
+ * Creates a repository with a finished wiki and committed source drift.
+ *
+ * @param driftedFiles - Number of source files added after the wiki baseline.
+ * @returns Absolute temporary repository root.
+ */
+async function createDriftedRepository(driftedFiles: number): Promise<string> {
+  const root = await createRepository();
+  const initializer = createManager();
+  const initialized = await beginPlannedInit(initializer, root);
+  await completePlannedInit(
+    initializer,
+    root,
+    initialized.view,
+    initialized.page,
+  );
+  commitAll(root, "generated wiki");
+  await mkdir(path.join(root, "src"), { recursive: true });
+  await Promise.all(
+    Array.from({ length: driftedFiles }, (_, index) =>
+      writeFile(
+        path.join(root, `src/file-${index}.ts`),
+        "export {};\n",
+        "utf8",
+      ),
+    ),
+  );
+  commitAll(root, "drift");
+  return root;
 }
 
 afterEach(async () => {
@@ -467,5 +549,91 @@ describe("HostSessionManager", () => {
     await expect(
       manager.nextPage({ runId: active.runId }),
     ).rejects.toMatchObject({ code: "invalid_state" });
+  });
+
+  test("bounds begin path lists above the limit and keeps exact totals", async () => {
+    const drifted = HOST_BEGIN_PATH_LIMIT + 50;
+    const root = await createDriftedRepository(drifted);
+    await writeFile(
+      path.join(root, "src/untracked.ts"),
+      "export {};\n",
+      "utf8",
+    );
+
+    const view = (await createManager().begin({
+      root,
+      mode: "update",
+    })) as HostActiveBeginView;
+
+    const recovered = gitChangedPaths(
+      root,
+      view.pageUpdateWindows[0]?.baseGitHead,
+    );
+    expect(recovered.length).toBeGreaterThanOrEqual(drifted);
+    expect(view.changedPathCount).toBe(recovered.length);
+    expect(view.changedPaths).toEqual(
+      recovered.slice(0, HOST_BEGIN_PATH_LIMIT),
+    );
+    expect(view.changedPathsTruncated).toBe(true);
+    expect(view.changedPaths).toHaveLength(HOST_BEGIN_PATH_LIMIT);
+    expect(view.pageUpdateWindows).toHaveLength(1);
+    const [window] = view.pageUpdateWindows;
+    expect(window).toMatchObject({
+      pages: ["/openwiki/quickstart.md"],
+      changedPathCount: recovered.length,
+      changedPathsTruncated: true,
+      fullReview: false,
+    });
+    expect(window?.baseGitHead).toMatch(/^[0-9a-f]{40}$/u);
+    expect(window?.changedPaths).toHaveLength(HOST_BEGIN_PATH_LIMIT);
+    expect(view).toMatchObject({ status: "active", mode: "update" });
+  });
+
+  test("keeps every begin path at or below the limit", async () => {
+    const root = await createDriftedRepository(HOST_BEGIN_PATH_LIMIT - 10);
+
+    const view = (await createManager().begin({
+      root,
+      mode: "update",
+    })) as HostActiveBeginView;
+
+    expect(view.changedPathsTruncated).toBe(false);
+    const recovered = gitChangedPaths(
+      root,
+      view.pageUpdateWindows[0]?.baseGitHead,
+    );
+    expect(recovered.length).toBeLessThanOrEqual(HOST_BEGIN_PATH_LIMIT);
+    expect(recovered.length).toBeGreaterThan(HOST_BEGIN_PATH_LIMIT - 10);
+    expect(view.changedPaths).toEqual(recovered);
+    expect(view.changedPathCount).toBe(recovered.length);
+    expect(view.pageUpdateWindows[0]).toMatchObject({
+      changedPathCount: recovered.length,
+      changedPathsTruncated: false,
+    });
+    expect(view.pageUpdateWindows[0]?.changedPaths).toEqual(view.changedPaths);
+  });
+
+  test("accepts a plan submitted after a truncated begin", async () => {
+    const root = await createDriftedRepository(HOST_BEGIN_PATH_LIMIT + 50);
+    const manager = createManager();
+    const view = (await manager.begin({
+      root,
+      mode: "update",
+    })) as HostActiveBeginView;
+    expect(view.changedPathsTruncated).toBe(true);
+
+    await expect(
+      manager.submitPlan({
+        runId: view.runId,
+        pages: [
+          {
+            path: "/openwiki/quickstart.md",
+            title: "Quickstart",
+            purpose: "Orient repository readers.",
+            seedPaths: ["README.md"],
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({ totalPages: 1 });
   });
 });
