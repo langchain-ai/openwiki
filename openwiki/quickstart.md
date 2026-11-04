@@ -36,10 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
   - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # OpenWiki Quickstart
@@ -59,8 +59,9 @@ OpenWiki is published as the `openwiki` npm package (v0.7.3), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
-documentation agent driven by one of fourteen model providers, wrapped by a CLI
-that can run interactively (an Ink TUI) or one-shot (print mode).
+documentation agent driven by one of fifteen model providers (including
+Mistral alongside the other API-key providers), wrapped by a CLI that can run
+interactively (an Ink TUI) or one-shot (print mode).
 
 The CLI has two operating modes:
 

@@ -74,6 +74,8 @@ sources:
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-3c86ca0bb7fbb79f2be66a2b
@@ -102,6 +104,8 @@ sources:
     resource: repo://src/mermaid/validate.ts
   - id: openwiki-source-54432f9303757678a104d85f
     resource: repo://src/okf/frontmatter.ts
+  - id: openwiki-source-04a008dbe4969919f7141a55
+    resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-2f1e489d53c52a0582582659
     resource: repo://src/platform/fs-errors.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
@@ -122,10 +126,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
   - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # Source Map
@@ -165,20 +169,25 @@ before anything else.
   `resolveOpenAICompatibleAuthMode` is `entra-id`, wiring
   `createEntraTokenProvider` (from `agent/entra-auth.ts`) as the OpenAI SDK
   API-key callback so a long-running model uses refreshed Entra tokens without
-  reconstruction.
+  reconstruction. `createModel`'s `mistral` branch requires
+  `MISTRAL_API_KEY` and forbids a non-empty `OPENAI_CUSTOM_HEADERS` (the
+  Mistral endpoint is OpenAI-compatible, so it shares the `ChatOpenAI`
+  configuration).
 - **`src/config/constants.ts`** is the single large registry of stable strings:
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
   Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the IBM Bob
-  keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the `openai-compatible`
+  keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the Mistral keys
+  (`MISTRAL_API_KEY_ENV_KEY`, `MISTRAL_BASE_URL_ENV_KEY`), the `openai-compatible`
   keys — including the `OPENAI_COMPATIBLE_AUTH_ENV_KEY` (`api-key`/`entra-id`)
   mode selector, the `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY` scope and its
   `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` Azure Cognitive Services default, the
   `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
   `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` gates — and the
   connector OAuth keys) and the `OpenWikiProvider` union (which includes the
-  `bob` and `gemini-enterprise` providers). It also owns the output-token
+  `bob` and `gemini-enterprise` providers). `resolveConfiguredProvider` now
+  infers the `mistral` provider from a set `MISTRAL_API_KEY_ENV_KEY` value. It also owns the output-token
   ceilings: `resolveConfiguredMaxOutputTokens` picks the right provider-specific
   setting (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
   `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls back to
@@ -509,13 +518,18 @@ the reasoning capability from `config/reasoning.ts`.
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
 registry (path constants, provider env keys — including the IBM Bob
-`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the `bob` and `gemini-enterprise`
-providers in the `OpenWikiProvider` union, and the `openai-compatible`
+`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the Mistral
+`MISTRAL_API_KEY_ENV_KEY`/`MISTRAL_BASE_URL_ENV_KEY`, the `bob` and
+`gemini-enterprise` providers in the `OpenWikiProvider` union, and the
+`openai-compatible`
 streaming/responses-API gates plus `OPENAI_COMPATIBLE_AUTH_ENV_KEY` (the
 `api-key`/`entra-id` mode selector), `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`
 and its `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` Azure Cognitive Services
 default, `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`, and
-`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults), and
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults),
+and `resolveConfiguredProvider` infers the active provider from the first set
+provider credential (including the `mistral` provider from a set
+`MISTRAL_API_KEY_ENV_KEY`); and
 also owns the output-token resolution helpers
 (`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
 `BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`,
@@ -539,6 +553,7 @@ workers into one thread). `env.ts`
 loads and saves the OpenWiki `.env` and
 is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
 including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
+`MISTRAL_API_KEY_ENV_KEY`, `MISTRAL_BASE_URL_ENV_KEY`,
 `OPENAI_COMPATIBLE_AUTH_ENV_KEY`, `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`,
 `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`,
 `OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY`,
@@ -563,7 +578,9 @@ time (`runOperation`, which rejects a concurrent operation with `invalid_state` 
 maps `RepositoryRunError` codes into stable `HostIntegrationError`s at the
 boundary). Its `begin`, `submitPlan`, `nextPage`, `inspectPageClaims`,
 `submitPage`, and `finish` methods delegate to the `generation/repository-run.ts`
-lifecycle, while `tools()` returns the read-only retrieval tools first followed by
+lifecycle — `begin` bounds the active begin view for a host transport via
+`toHostActiveBeginView` (from `integrations/core/begin-view.ts`) — while
+`tools()` returns the read-only retrieval tools first followed by
 the six OpenWiki lifecycle tools (`openwiki_begin`, `openwiki_submit_plan`,
 `openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`,
 `openwiki_finish`) for an MCP transport to expose. The lifecycle tool descriptions
@@ -586,13 +603,23 @@ lowercase/digit/hyphen pattern). The retrieval tools themselves are built by
 read-only tool definitions and delegates each handler to `retrieval/wiki.ts` and
 `linking/wiki-workspaces.ts` via `resolveRepositoryRoot`; `runRetrieval` maps
 expected `WikiRetrievalError`/`WikiWorkspaceError`/`ClaimsError` failures into
-bounded `HostIntegrationError`s. `src/integrations/mcp/server.ts` exposes OpenWiki
+bounded `HostIntegrationError`s. `src/integrations/core/begin-view.ts` owns
+the host begin-view bounds (`HOST_BEGIN_PATH_LIMIT`, `HOST_BEGIN_CLAIM_ISSUE_LIMIT`)
+and `toHostActiveBeginView`, which caps the `changedPaths` and `pageUpdateWindows`
+path lists (preserving exact `changedPathCount`/`changedPathsTruncated` and
+`claimIssueCount`/`claimIssuesTruncated`/`claimIssuePages` totals) so an MCP
+begin result stays inside a model context while the host recovers the omitted
+paths from its own Git. `src/integrations/mcp/server.ts` exposes OpenWiki
 over MCP: `createOpenWikiMcpServer` registers each transport-neutral tool with an
 `McpServer` and bounds transport-visible errors (mapping `HostIntegrationError` to
 a safe MCP error, swallowing unknown exceptions), advertising an `INSTRUCTIONS`
 preamble (L11–L49) that incorporates `CLAIMS_RECONCILIATION_GUIDANCE` from
 `claims/guidance.ts` so the host model follows the same sparse-reconciliation
-standard as the native page-worker prompt (stdio transport in `stdio.ts`).
+standard as the native page-worker prompt, and carries the begin-view recovery
+guidance — when a `changedPathsTruncated`/`claimIssuesTruncated` flag is true,
+the host is told to find the rest with `git diff --name-only` (against the base
+head and `HEAD`, plus `git ls-files --others --exclude-standard`) — capped by
+`changedPathCount` and `claimIssueCount` (stdio transport in `stdio.ts`).
 
 `src/integrations/install/` is the host-integration install layer that
 installs, upgrades, inspects, and removes the OpenWiki skill bundle and MCP
@@ -658,8 +685,11 @@ maps each (class, detail, stage) triple to the owner responsible for the fix.
 ### platform — OS and filesystem primitives
 
 Owns cross-platform helpers shared by other subsystems: `fs-errors.ts`
-(`isFileNotFoundError`), `diagnostics.ts` (secret redaction), `language.ts`
-(language resolution), `windows-acl.ts`, and `utils.ts`.
+(`isFileNotFoundError`), `diagnostics.ts` (secret redaction —
+`sanitizeDiagnosticText` redacts the exact value of every set credential key,
+including `MISTRAL_API_KEY`, before any error/header/response text reaches the
+user or a log), `language.ts` (language resolution), `windows-acl.ts`, and
+`utils.ts`.
 
 ### mermaid — diagram validation for generated pages
 

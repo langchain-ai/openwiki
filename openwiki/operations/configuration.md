@@ -40,10 +40,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
   - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # Configuration and Environment
@@ -99,8 +99,10 @@ other OpenAI-compatible settings (`OPENAI_COMPATIBLE_STREAM_MESSAGES`,
 `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`, and the streaming/Responses-API
 toggles) in the managed list, and the newer `OPENWIKI_PAGE_CONCURRENCY` and
 `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` keys are also present. The Bob keys
-(`BOB_API_KEY`, `BOB_BASE_URL`) and Copilot keys (`COPILOT_API_KEY`,
-`COPILOT_BASE_URL`) are managed too. LangChain project/tracing settings
+(`BOB_API_KEY`, `BOB_BASE_URL`), Copilot keys (`COPILOT_API_KEY`,
+`COPILOT_BASE_URL`), and Mistral keys (`MISTRAL_API_KEY`, `MISTRAL_BASE_URL`)
+are managed too, so they appear in the credential diagnostics panel and are
+written to `~/.openwiki/.env` like every other provider pair. LangChain project/tracing settings
 (`LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`) are managed but are not
 credentials, so they are excluded from the diagnostics panel via
 `NON_CREDENTIAL_ENV_KEYS`.
@@ -196,8 +198,8 @@ unescaped output is ever re-scanned.
 model. When `OPENWIKI_PROVIDER` is unset, `resolveConfiguredProvider` infers the
 provider from whichever credential is present, checking API keys in a fixed order
 (`OPENAI_API_KEY`, then OpenAI-compatible, OpenRouter, Anthropic, Baseten,
-Fireworks, Nebius, NVIDIA, then Bedrock access/secret keys) and falling back to
-`DEFAULT_PROVIDER` (`openai`). Each provider declares its own credential env
+Fireworks, Nebius, NVIDIA, Mistral, then Bedrock access/secret keys) and falling
+back to `DEFAULT_PROVIDER` (`openai`). Each provider declares its own credential env
 variables and optional base-URL override in `PROVIDER_CONFIGS`; see
 [Model providers](../concepts/model-providers.md) for the full registry.
 
@@ -372,7 +374,7 @@ for those models even though it is valid for OpenAI GPT-5.6.
 path, "process.env over <file>" when both are set, or `unset` — and a
 masked preview. Non-secret settings (provider, model, token limits, page concurrency, retry
 attempts, base URLs, region, Google project/location, OpenRouter provider-only filter, the
-Entra auth mode and scope, and the boolean toggles, including
+Entra auth mode and scope, the Mistral base URL, and the boolean toggles, including
 `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
@@ -382,7 +384,7 @@ Diagnostics surface per-key warnings through a dedicated validator per key:
 invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
 effort, invalid retry attempts, invalid page concurrency, invalid stream idle
-timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks,
+timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks, Mistral,
 NVIDIA, OpenAI, and the OpenAI-compatible base URL each validated through
 `getProviderBaseUrlWarnings`), credential
 whitespace/newline/quote issues, and a warning that the Bedrock stream watchdog
@@ -408,7 +410,7 @@ or written to a log: every error message, header value, or provider response bod
 that could contain a credential must pass through it first. It redacts (1) the
 exact values of secrets currently set in the environment — iterated over a fixed
 list of credential env keys (provider API keys, AWS/Bedrock credentials, the
-OpenAI-compatible key, `LANGSMITH_API_KEY`, and Azure client
+OpenAI-compatible key, `LANGSMITH_API_KEY`, the Mistral key, and Azure client
 secret/certificate-password keys), replacing each with `[REDACTED:<KEY>]` — and
 (2) anything matching known key/token shapes — OpenAI and OpenRouter `sk-…`
 keys, `Bearer …` headers, LangSmith `ls…` tokens, and the
