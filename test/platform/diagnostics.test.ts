@@ -1,5 +1,27 @@
-import { describe, expect, test } from "vitest";
-import { isAuthError } from "../../src/platform/diagnostics.ts";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import {
+  isAuthError,
+  sanitizeDiagnosticText,
+} from "../../src/platform/diagnostics.ts";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("Azure identity diagnostic redaction", () => {
+  test.each(["AZURE_CLIENT_SECRET", "AZURE_CLIENT_CERTIFICATE_PASSWORD"])(
+    "redacts the exact value of %s",
+    (key) => {
+      const secret = `fixture-${key.toLowerCase()}-value`;
+      vi.stubEnv(key, secret);
+
+      const result = sanitizeDiagnosticText(`credential failed: ${secret}`);
+
+      expect(result).not.toContain(secret);
+      expect(result).toContain(`[REDACTED:${key}]`);
+    },
+  );
+});
 
 describe("isAuthError", () => {
   test("classifies 401/403 status codes (number or string) as auth errors", () => {

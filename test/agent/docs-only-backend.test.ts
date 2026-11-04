@@ -97,21 +97,63 @@ describe("OpenWikiLocalShellBackend", () => {
     ).resolves.toBe("updated");
   });
 
-  test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
-    const backend = new OpenWikiLocalShellBackend({
-      docsOnly: false,
-      rootDir,
-      virtualMode: true,
-    });
+  test.each([undefined, "repository"] as const)(
+    "confines chat mutations to docs with outputMode %s",
+    async (outputMode) => {
+      const rootDir = await mkdtemp(
+        path.join(os.tmpdir(), "openwiki-backend-"),
+      );
+      await mkdir(path.join(rootDir, "src"));
+      const sourcePath = path.join(rootDir, "src/example.ts");
+      const original = "export const example = 1;\n";
+      await writeFile(sourcePath, original);
+      const backend = new OpenWikiLocalShellBackend({
+        docsOnly: false,
+        outputMode,
+        rootDir,
+        virtualMode: true,
+        writableWikiPages: ["/openwiki/page.md"],
+      });
 
-    await expect(backend.write("/notes.md", "ok")).resolves.toEqual(
-      expect.objectContaining({ path: "/notes.md" }),
-    );
-    await expect(
-      readFile(path.join(rootDir, "notes.md"), "utf8"),
-    ).resolves.toBe("ok");
-  });
+      for (const source of ["/src/example.ts", "/openwiki/../src/example.ts"]) {
+        const write = await backend.write(source, "bad");
+        expect(write.error).toContain(`Refused path: ${source}`);
+        const edit = await backend.edit(source, "example", "injected");
+        expect(edit.error).toContain(`Refused path: ${source}`);
+        const deletion = await backend.delete(source);
+        expect(deletion.error).toContain(`Refused path: ${source}`);
+        await expect(readFile(sourcePath, "utf8")).resolves.toBe(original);
+      }
+      const newSource = await backend.write("/src/injected.ts", "bad");
+      expect(newSource.error).toContain("Refused path: /src/injected.ts");
+      await expect(
+        readFile(path.join(rootDir, "src/injected.ts"), "utf8"),
+      ).rejects.toThrow();
+      await expect(
+        backend.uploadFiles([
+          ["/src/example.ts", new TextEncoder().encode("bad")],
+        ]),
+      ).resolves.toEqual([
+        expect.objectContaining({ error: "permission_denied" }),
+      ]);
+      await expect(readFile(sourcePath, "utf8")).resolves.toBe(original);
+      const read = await backend.read("/src/example.ts");
+      expect(read.error).toBeUndefined();
+      expect(read.content).toContain("export const example = 1;");
+
+      const unassigned = await backend.write("/openwiki/other.md", "bad");
+      expect(unassigned.error).toContain("may not modify");
+      const write = await backend.write("/openwiki/page.md", "before");
+      expect(write.error).toBeUndefined();
+      const edit = await backend.edit("/openwiki/page.md", "before", "after");
+      expect(edit.error).toBeUndefined();
+      await expect(
+        readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+      ).resolves.toBe("after");
+      const deletion = await backend.delete("/openwiki/page.md");
+      expect(deletion.error).toBeUndefined();
+    },
+  );
 
   test("handles file-backed Git worktree metadata without crashing glob", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
@@ -204,6 +246,54 @@ describe("OpenWikiLocalShellBackend", () => {
     );
     expect(mixedCaseInspection.exitCode).toBe(1);
     expect(mixedCaseInspection.output).toContain("Claims state");
+  });
+
+  test("rejects arbitrary host shell commands without ignore rules", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const arbitraryCommand = await backend.execute("echo host-shell-access");
+    expect(arbitraryCommand.exitCode).toBe(1);
+    expect(arbitraryCommand.output).toContain("restricted");
+
+    const chainedCommand = await backend.execute(
+      "pwd && echo host-shell-access",
+    );
+    expect(chainedCommand.exitCode).toBe(1);
+
+    const allowed = await backend.execute("pwd");
+    expect(allowed.exitCode).toBe(0);
+    expect(allowed.output).toContain(rootDir);
+  });
+
+  test("confines repository chat shell execution without ignore rules", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: false,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    for (const command of [
+      "ls -la /",
+      "cat /etc/passwd",
+      "pwd && cat /etc/passwd",
+      "git\nrev-parse HEAD",
+      "git rev-parse HEAD; cat /etc/passwd",
+    ]) {
+      const result = await backend.execute(command);
+      expect(result.exitCode, command).toBe(1);
+      expect(result.output, command).toContain("restricted");
+    }
+
+    const allowed = await backend.execute("pwd");
+    expect(allowed.exitCode).toBe(0);
+    expect(allowed.output).toContain(rootDir);
   });
 
   test("does not reserve personal-brain .claims paths", async () => {
@@ -305,5 +395,72 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(
       readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
     ).resolves.toBe("must not become a second file");
+  });
+
+  test("applies concurrent operations on one page in call order across backends", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "openwiki"));
+    const original = Array.from(
+      { length: 200 },
+      (_, index) =>
+        `- item ${index}: the long explanation of thing ${index}.\n`,
+    ).join("");
+    await writeFile(path.join(rootDir, "openwiki/page.md"), original, "utf8");
+    // A page worker and the code-owned lifecycle each build their own backend.
+    const worker = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+      writableWikiPages: ["/openwiki/page.md"],
+    });
+    const lifecycle = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    // LangChain runs every tool call of one model turn concurrently.
+    const [first, second, read] = await Promise.all([
+      worker.edit(
+        "/openwiki/page.md",
+        "- item 3: the long explanation of thing 3.",
+        "- item 3: short.",
+      ),
+      worker.edit(
+        "/openwiki/page.md",
+        "- item 150: the long explanation of thing 150.",
+        "- item 150: short.",
+      ),
+      lifecycle.readRaw("/openwiki/page.md"),
+    ]);
+
+    const expected = original
+      .replace("- item 3: the long explanation of thing 3.", "- item 3: short.")
+      .replace(
+        "- item 150: the long explanation of thing 150.",
+        "- item 150: short.",
+      );
+    expect(first.error).toBeUndefined();
+    expect(second.error).toBeUndefined();
+    await expect(
+      readFile(path.join(rootDir, "openwiki/page.md"), "utf8"),
+    ).resolves.toBe(expected);
+    expect(read.data?.content).toBe(expected);
+  });
+
+  test("releases a page after an operation on it throws", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    await expect(backend.readRaw("/openwiki/new.md")).rejects.toThrow();
+    await expect(backend.write("/openwiki/new.md", "ok")).resolves.toEqual(
+      expect.objectContaining({ path: "/openwiki/new.md" }),
+    );
   });
 });

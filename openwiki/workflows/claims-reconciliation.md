@@ -14,6 +14,8 @@ tags:
     repository,
   ]
 sources:
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
     resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -36,6 +38,8 @@ sources:
     resource: repo://src/claims/evidence/repository/resolver.ts
   - id: openwiki-source-638173446de4138fa3a622a8
     resource: repo://src/claims/guidance.ts
+  - id: openwiki-source-d80f123259efa4712b198b63
+    resource: repo://src/cli/startup.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-674d6e5badef7368ab04f064
@@ -48,10 +52,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Claims Reconciliation on Update
@@ -82,9 +86,29 @@ observed when the Claim was established. Persisted sidecars validate both fields
 as canonical non-empty strings, and each page sidecar also stores a
 `pageVersion` hash of the Markdown it grounds.
 
-The version token is deliberately opaque: reconciliation compares tokens for
-equality but never interprets them. When source changes, the resolver returns a
-different token for the same resource, which is how staleness is detected.
+The version token is deliberately opaque to _reconciliation_: preflight and the
+durability proofs compare tokens for equality but never interpret them. The
+resolver, however, does interpret line-range versions it owns. Two evidence
+shapes carry different version algorithms:
+
+- A **whole-file** resource versions as a SHA-256 of the complete file content
+  (`repo-file-v1:sha256:…`), so any edit to the file changes the token.
+- A **line-range** resource (`repo://path#Lx-Ly`) versions as a content hash
+  plus resolver-owned relocation metadata (`repo-lines-v1:sha256:…:<base64>`).
+  The metadata records the selected line count, hashes of the first and last
+  selected lines, and up to three lines of preceding and following context.
+  When the cited block moved but is unchanged, `locateUnchangedLineRange`
+  re-finds it by content hash and context anchors and returns the **same**
+  version — so the Claim stays current and produces no stale issue. When the
+  block's content changed, `locateChangedLineRange` relocates it between its
+  unchanged exterior anchors and returns a **new** version (stale). When the
+  anchors are ambiguous or the block cannot be safely relocated, the resolver
+  returns `null` (unresolved). This is what keeps claim evidence line references
+  in sync when cited blocks move.
+
+So staleness is detected precisely when the resolver returns a _different_
+token for the same resource — which for a moved-but-unchanged range it does
+not.
 
 ## Preflight: checking persisted evidence before any work
 
@@ -142,6 +166,15 @@ primary subtag, when the working tree has meaningful changes, or when committed
 changes since the last update touch source outside `openwiki/` and outside the
 `openWikiIgnore` boundary. Changes that only touch generated wiki state or
 ignored paths do not count as meaningful.
+
+No-op detection is only consulted when there is **no explicit user request**.
+`shouldCheckUpdateNoop` is true only when the run carries no `userMessage`, and
+the native driver sets `force` from `Boolean(options.userMessage?.trim())`,
+passing the message as `planningContext`. A user-driven update therefore always
+bypasses the no-op gate and reaches planning; the no-op is a property of an
+untended, diff-driven update. When the driver does consult the no-op, an
+explicit `--force`/user request has already made `force !== true` false, so the
+whole gate is skipped.
 
 Because the CLI and `begin` reject unrecognized languages at the entry point,
 `getUpdateNoopStatus` only ever receives a resolved-or-absent language. It still
@@ -207,6 +240,23 @@ moved. A stale or unresolved marker is thus treated as a requirement to recheck
 current source, not as an instruction to retract the affected Claim
 automatically.
 
+### Update scoping to explicit requests
+
+The planner is not a broad wiki refresher. When the run carries an explicit
+user request, the planner prompt adds a **hard scoped-update mandate**: if the
+planning context names files or OpenWiki pages, or otherwise limits the
+requested documentation scope, the planner schedules only directly requested
+pages/files and genuinely affected cross-references or navigation, preserving
+unrelated page framing and the existing information architecture. It must not
+refresh `/openwiki/quickstart.md` merely because a scoped update touches other
+pages — only when the user explicitly requests it or the page map,
+navigation, or task-routing links actually change. The same `force` flag that
+bypasses no-op detection gates this mandate (it is injected only when the
+planning context is non-empty), so an explicit request both prevents the skip
+and constrains the plan. Required Claim-issue and rewrite jobs are still
+injected around whatever the planner schedules, but the planner's own scope is
+bounded by the request.
+
 ## The page-worker assignment: what the worker is told
 
 Each page job is dispatched through `nextRepositoryPage`, which finds the first
@@ -256,6 +306,18 @@ After applying them through the session it persists the page's dirty Claim state
 via `finalize` and proves durability with `assertPageClaimsDurable` before the
 job is recorded complete and the queue advances; any failure in that block is
 wrapped in a `RepositoryRunError` with `invalid_input`.
+
+The `submit_page` tool surfaces those `invalid_input` rejections as
+**retryable** rather than fatal. When `submitRepositoryPage` throws an
+`invalid_input` `RepositoryRunError`, the runner converts it into an error-status
+`ToolMessage` (via `createSubmissionRejection`) with the error code, message,
+and a concrete next-step instruction to correct the page or sparse decisions and
+call `submit_page` again — keeping the worker loop active so the model can
+repair and resubmit. Any other error (a `not_found`/`invalid_state` failure, or
+a non-`RepositoryRunError` thrown by the store itself) sets a fatal flag and is
+re-thrown: a store-level refusal would fail the same way on a second attempt, so
+the worker is not retried and the run stops. A `submit_page` that already
+succeeded throws if the model calls it again.
 
 The per-page `finalize` call excludes the pages still owned by **other pending
 jobs** (`otherPendingPages`). A concurrent worker may be mid-edit on those
@@ -432,6 +494,61 @@ This ordering matters because `assertRepositoryClaimsDurable` discovers current
 pages from the working tree: by restoring skipped-page Markdown first, the
 durability proof does not mistake a skipped page's absent Markdown for a
 missing page and fail the run.
+
+### Detecting partial persistence
+
+Both durability proofs compare the session's authoritative projection against
+what was actually written to disk; a mismatch means persistence was partial and
+the run must be retried rather than recording a false success. The per-page gate
+is `assertPageClaimsDurable`, invoked at `submit_page` for the page just
+submitted and at `finish` for every page the session still owns. For one page it:
+
+- loads the persisted sidecar and fails fast (`invalid_state`) if none exists —
+  the Claims were "not durably persisted";
+- re-hashes the current Markdown and rejects a `pageVersion` mismatch — the
+  sidecar must ground the exact bytes on disk;
+- requires a `verification` record on the sidecar, then confirms that
+  verification was projected into the page frontmatter: the Markdown's `verified`
+  field must contain an event whose `by` and `at` match the sidecar's
+  `verification`, otherwise the Claim set was "not durably projected";
+- runs the **session-projection comparison**: `inspectClaims(page)` is the
+  authoritative complete Claim set. An id index of the persisted claims is built,
+  and a count mismatch fails immediately. Each session Claim must have a
+  persisted claim with the same id, an identical statement, and an evidence
+  resource set that matches as an order-independent set via `sameResourceSet`
+  (resources are deduplicated and sorted by UTF-16 code-unit order; only resource
+  identity is compared, never opaque version tokens). Any missing id, changed
+  statement, or divergent resource set throws `invalid_state` reporting the page
+  was "only partially persisted."
+
+`assertRepositoryClaimsDurable` is the whole-run gate. It discovers current
+pages and sidecar pages from the working tree and rejects any sidecar whose
+Markdown page no longer exists (an orphan sidecar). It then iterates every page
+in the session's `getEvidenceResourcesByPage()` projection — the authoritative
+set of pages the run still claims — skipping `excludedPages` and any page whose
+session Claim count is zero. Every remaining page must still exist on disk and
+pass `assertPageClaimsDurable`.
+
+```mermaid
+flowchart TD
+  A["assertPageClaimsDurable(page)"] --> B{"sidecar persisted?"}
+  B -->|"no"| X1["invalid_state: not durably persisted"]
+  B -->|"yes"| C{"pageVersion == hashPage(page)?"}
+  C -->|"no"| X2["invalid_state: bytes mismatch"]
+  C -->|"yes"| D{"verification record?"}
+  D -->|"no"| X3["invalid_state: not verified"]
+  D -->|"yes"| E{"verification projected into frontmatter?"}
+  E -->|"no"| X4["invalid_state: not durably projected"]
+  E -->|"yes"| F["inspectClaims(page) = authoritative set"]
+  F --> G{"persisted count == session count?"}
+  G -->|"no"| X5["invalid_state: partially persisted"]
+  G -->|"yes"| H["per Claim: same id, same statement, sameResourceSet(evidence)"]
+  H --> I{"all match?"}
+  I -->|"no"| X5
+  I -->|"yes"| OK["page durable"]
+```
+
+How `assertPageClaimsDurable` proves one page's Claims, page version, and verification are durable, detecting partial persistence by diffing the session projection against the persisted sidecar.
 
 `finalize` accepts an `excludedPages` set (empty by default) and skips every
 page it names across all of its work, so callers can exclude pages whose

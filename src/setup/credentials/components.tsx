@@ -3,6 +3,7 @@ import { Box, Text } from "ink";
 import { openWikiEnvDisplayPath } from "../../config/openwiki-home.js";
 import {
   DEFAULT_PROVIDER,
+  DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE,
   DEFAULT_VERTEX_LOCATION,
   getDefaultModelId,
   getProviderApiKeyEnvKey,
@@ -13,7 +14,9 @@ import {
   getProviderRegionEnvKey,
   getProviderRegionEnvKeys,
   getProviderSecretKeyEnvKey,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
+  type OpenAICompatibleAuthMode,
   type OpenWikiProvider,
   resolveProviderRegion,
   SELECTABLE_OPENWIKI_PROVIDERS,
@@ -57,6 +60,7 @@ import {
   FINAL_OPTIONS,
   LANGSMITH_REGION_OPTIONS,
   ONBOARDING_TEMPLATES,
+  OPENAI_COMPATIBLE_AUTH_OPTIONS,
   POWER_MODE_OPTIONS,
   RUN_MODE_OPTIONS,
   SOURCE_CONTINUE_OPTIONS,
@@ -72,6 +76,8 @@ import type {
 } from "./types.js";
 
 export function Prompt({
+  authMode,
+  authModeSelectionIndex,
   codeRepoPathInput,
   codeRepoRoot,
   codeRepoSelectionIndex,
@@ -107,6 +113,8 @@ export function Prompt({
   suggestedCronExpression,
   templateSelectionIndex,
 }: {
+  authMode: OpenAICompatibleAuthMode;
+  authModeSelectionIndex: number;
   codeRepoPathInput: string;
   codeRepoRoot: string;
   codeRepoSelectionIndex: number;
@@ -178,6 +186,25 @@ export function Prompt({
             ) : null}
           </Text>
         ))}
+        <Text color="gray">Use up/down arrows, then press Enter.</Text>
+      </Box>
+    );
+  }
+
+  if (step === "auth-mode") {
+    return (
+      <Box flexDirection="column">
+        <Text>Choose how the OpenAI-compatible gateway authenticates.</Text>
+        {OPENAI_COMPATIBLE_AUTH_OPTIONS.map((option, index) => (
+          <Text key={option.id}>
+            <SelectionMarker isSelected={index === authModeSelectionIndex} />{" "}
+            {option.label}
+          </Text>
+        ))}
+        <Text color="gray">
+          Entra ID uses Azure Identity on each request. OpenWiki never asks for
+          or saves an access token.
+        </Text>
         <Text color="gray">Use up/down arrows, then press Enter.</Text>
       </Box>
     );
@@ -269,8 +296,27 @@ export function Prompt({
           <Text color="yellow">{input}</Text>
         </Text>
         <Text color="gray">
-          For example an OpenAI-compatible gateway endpoint (such as a LiteLLM
-          gateway). Press Enter to save it.
+          {authMode === "entra-id" && provider === "openai-compatible"
+            ? "Entra ID requires an HTTPS API root without embedded credentials."
+            : "For example an OpenAI-compatible gateway endpoint (such as a LiteLLM gateway)."}{" "}
+          Press Enter to save it.
+        </Text>
+      </Box>
+    );
+  }
+
+  if (step === "entra-scope") {
+    return (
+      <Box flexDirection="column">
+        <Text>Enter the Entra token scope accepted by your gateway.</Text>
+        <Text>
+          <Text color="gray">$</Text> {OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY}={" "}
+          <Text color="yellow">{input}</Text>
+        </Text>
+        <Text color="gray">
+          Use the scope your gateway expects. The default is{" "}
+          {DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE}. Azure Identity must be
+          configured separately; it is checked on the first request.
         </Text>
       </Box>
     );

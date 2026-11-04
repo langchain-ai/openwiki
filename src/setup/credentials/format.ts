@@ -4,6 +4,7 @@ import {
   getProviderApiKeyEnvKey,
   getProviderSecretKeyEnvKey,
   providerUsesAwsSdkCredentials,
+  providerUsesEntraId,
   providerUsesOAuth,
   AWS_ACCESS_KEY_ID_ENV_KEY,
   AWS_SECRET_ACCESS_KEY_ENV_KEY,
@@ -13,6 +14,7 @@ import {
   BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
   OPENAI_CHATGPT_EMAIL_ENV_KEY,
   OPENAI_CHATGPT_PLAN_ENV_KEY,
+  type OpenAICompatibleAuthMode,
   type OpenWikiProvider,
 } from "../../config/constants.js";
 import { openWikiEnvPath } from "../../config/env.js";
@@ -48,7 +50,16 @@ export function getAwsCredentialRepairMessage(
 export function getCredentialSetupDetail(
   provider: OpenWikiProvider,
   tokens: CodexTokens | null = null,
+  authMode?: OpenAICompatibleAuthMode,
 ): string {
+  if (
+    provider === "openai-compatible" &&
+    (authMode ?? (providerUsesEntraId(provider) ? "entra-id" : "api-key")) ===
+      "entra-id"
+  ) {
+    return "Microsoft Entra ID via Azure Identity (checked on first request)";
+  }
+
   if (providerUsesOAuth(provider)) {
     if (!isCredentialConfigured(provider) && !tokens) {
       return "sign in with your ChatGPT account";

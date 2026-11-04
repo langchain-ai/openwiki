@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:786ed79b000142fe7256a204d8a33afb44444dd5d383e10ed97647137478d844",
+  "pageVersion": "sha256:960879a9d1c07deee72a96d32c09b9174cdc272e39b62497d264907779ea22b9",
   "claims": [
     {
       "id": "claim_94f228e67cb14c1a96bd6c1ca3df4c63",
@@ -186,19 +186,23 @@
     },
     {
       "id": "claim_2bfdef5f64ce4b8aa8b83217ce5c4617",
-      "statement": "LEDGER CLI is exposed via pnpm scripts eval:ledger (end-to-end), eval:ledger:reevaluate (re-judge a saved run without invoking OpenWiki), and eval:ledger:typecheck, with flags --benchmark, --results, --system-model, --evaluator-model, and --verbose; unknown flags and missing values are hard errors.",
+      "statement": "LEDGER CLI is exposed via pnpm scripts eval:ledger (`tsx evals/ledger/run.ts`, end-to-end), eval:ledger:reevaluate (`tsx evals/ledger/reevaluate.ts`, re-judge a saved run without invoking OpenWiki), and eval:ledger:typecheck (`node ./node_modules/typescript7/bin/tsc --noEmit -p evals/ledger/tsconfig.json`), with flags --benchmark, --results, --system-model, --evaluator-model, and --verbose; unknown flags and missing values are hard errors.",
       "evidence": [
         {
-          "resource": "repo://evals/ledger/README.md#L197-L224",
-          "version": "repo-lines-v1:sha256:3cbfd0f130c26595a396be407ff386a5a4fb93cfd955de0b81eafeb74dbcc131:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzllYjg1OWFiZDBmNTI3MTZiZmFjM2U2OWE5YTExNWRhMTc4ZmE3YjZiNWQxMDc3MTkxZmU2MTBjNDk5NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MTlhOTljMTFhMmRlODVkYjZjMzFkNDcyNWVjZmFhZWM3NmE4ZjYzOWE2NTNlM2MyZjk1OWEzMmZmNGNjYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZDliMjljYTg2M2MwOTMwODBiMzNiZTlmNTA0ZDVjYTgxOWY3NjgxYmVlNTk5NjMwYzI4NTZiYzgzYjRjOTAifQ"
+          "resource": "repo://evals/ledger/reevaluate.ts#L28-L33",
+          "version": "repo-lines-v1:sha256:6d42c20fb8611549338a09158e6c4dae5e2e099482d22deb67cd9cfeb5b21b30:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE4NDQ2NTU5OGRlMjhlNTdlNWYyYWE2M2FhODZjNjBkNWUxZmZlMWNkMDMwNjdkOWExMTljNjNlMGJiYjA5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJhOGIzMzBhOWFjZmM3MzU3NTFhZjQ2ZDdmMzk3ZDZlOTYwNTBjYWYxZmE4NzNlZTEwM2Q4MmNhMmIxZWUyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTU2NWRiMGNmZTE5N2NlN2U5OWJiMDQ2NjdiMzBjNzNjMjY5YTg4NzNhOTZmMzIzMzUzZjA5MDhmY2MzYWRjMCJ9"
+        },
+        {
+          "resource": "repo://evals/ledger/run.ts#L33-L35",
+          "version": "repo-lines-v1:sha256:664b1142ee0e5b4a1dc1caae335890955897a450f7e47edf7d3cefc29aee40cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBiZjkyZGRiYjE0OTFhOWQ1YWI4OTgzMjRjNTgzZmM5ZTQ0NGYwMDRhZmVkZDJjMjk2ZWYwOTIyZTY5ZmI0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzliZTgyYjA1NjY4NjU4N2Q0YzY2MzcyODg4YmM0ZWQzNGU3NjcxMmY5N2JkNTFjNTVlNGJlOTAyYWIzZDM4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODIwMjBkZmRkOWIwMjY2YWJiZmQwYWQzOWEzYjU1MDJhNDIwZDg2MDQzMDIzODlkMWEyNTE4MTE1ZThjYTU4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTI3YTNlMzM2MTU0M2YzZDM4ZTYwYWRkODljMDEzNGNlNTk1M2E3YmM0ZTdjOGNjYTJjNmU5OWRkNGRmZWU3MyJ9"
         },
         {
           "resource": "repo://evals/ledger/run/args.ts#L41-L99",
           "version": "repo-lines-v1:sha256:cbefcc484b067fb8055446a7851f5b9e87bb2018318281b98cfdeb69ebafa098:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YWMxOWMzM2M1ZjUxNDc3MDFhYjQ4YzE4M2QwNjg1OWU0ODlkMDQyMTE5Mzc4MWU3MjdkNzJlYTcwODIyMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNGZhOTRmZjQ3OTU2ZDNhZmMxMDdlMWU4MDY5NDI0Zjg1ZDM0Mzg2NWE0YTI0ZmQ0NjE2YmNiN2M1OTU1YjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZGZmZGRhZjI3NzE5YmViNTJhYzcyNTQ2MjYzZmNhNGM4MWUzNzIzOWIzMmJiMGFiYTliNDE3ZGY5MzA3OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://package.json#L44-L46",
-          "version": "repo-lines-v1:sha256:f6e85f50fd57bdfb8c9721119b8200d11c04af8887dda86022388afd0a7fff9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYjI0ZjY2MmIyMmM3NDYxZjg5MTgxOTkzNTUwM2Q5NjczMGUxYjM2OWU2ZWJlYTA1ZTcwNzBmOWI4MTgwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
+          "resource": "repo://package.json#L53-L55",
+          "version": "repo-lines-v1:sha256:52e92d29a84d56a837f38f77732db762444a9c055170cd11d567da7a99966dce:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIzMmJlY2Q4YmM4MTE0ZTY1YjNiN2U3YjliMDk3NTRlZDJiMGQ4MmUzNmM3ZDY2ZTk4YTdkNmE4NmY0YWRkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTBkNmNiMzZjNWQ2YWVkMzU3NTNiMWYwMjA3NGY0ZTM4N2JkMGRhZDQ2NzBjZDBlY2ZmNGQ1NjBkZmIxNDE5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJiNDlkNTE5ODhkM2Y5MGJlZGM0MTQ3Yzg0YTYzMjRkMTY1ZGYwY2FlM2Y4ODUxODk1NDlhZjE2YzVkY2NjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGRmMThhZGViZjA3NzYxMWNkOThhMjhhOWYzYjMzMjQ4ODIzODczNDlhMDNmYmViYjM1YWI4Y2I0MDhhZWIzMSJ9"
         }
       ]
     },
@@ -298,7 +302,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.1",
-    "at": "2026-09-14T08:10:27.832Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }

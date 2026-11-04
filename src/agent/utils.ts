@@ -5,15 +5,7 @@ import {
   type BigIntStats,
   type Dirent,
 } from "node:fs";
-import {
-  lstat,
-  mkdir,
-  open,
-  readdir,
-  readFile,
-  readlink,
-  writeFile,
-} from "node:fs/promises";
+import { lstat, open, readdir, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
@@ -21,6 +13,7 @@ import {
   PAGE_MANIFEST_PATH,
   UPDATE_METADATA_PATH,
 } from "../config/constants.js";
+import { writeTextAtomic } from "../integrations/install/atomic-file.js";
 import {
   isExpectedSnapshotRaceError,
   isFileNotFoundError,
@@ -230,12 +223,7 @@ export async function writeLastUpdateMetadata(
     ...(language ? { language } : {}),
   };
 
-  await mkdir(path.dirname(metadataFile), { recursive: true });
-  await writeFile(
-    metadataFile,
-    `${JSON.stringify(metadata, null, 2)}\n`,
-    "utf8",
-  );
+  await writeTextAtomic(metadataFile, `${JSON.stringify(metadata, null, 2)}\n`);
 }
 
 /**
@@ -848,10 +836,29 @@ async function readSnapshotFile(filePath: string): Promise<Buffer | null> {
   }
 }
 
-async function getGitHead(cwd: string): Promise<string | undefined> {
-  const head = await runGit(cwd, ["rev-parse", "HEAD"]);
+/**
+ * Matches a full SHA-1 (40) or SHA-256 (64) Git object id.
+ */
+const GIT_OBJECT_ID_PATTERN = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u;
 
-  return head.length > 0 ? head : undefined;
+/**
+ * Returns the current commit id, or undefined when HEAD does not name a commit
+ * (for example a repository with no commits yet) or Git cannot be read.
+ */
+async function getGitHead(cwd: string): Promise<string | undefined> {
+  // `runGit` merges stderr into its result, so a failed lookup would surface
+  // git's error text as the "commit id". `--verify --quiet` prints nothing and
+  // exits non-zero when HEAD is unborn; the id check rejects anything else.
+  const [head] = await runGitLines(cwd, [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "HEAD",
+  ]);
+
+  return head !== undefined && GIT_OBJECT_ID_PATTERN.test(head)
+    ? head
+    : undefined;
 }
 
 /**
@@ -898,6 +905,36 @@ function isUpdateMetadataStatusLine(line: string): boolean {
       normalizedPath === metadataPath ||
       normalizedPath.endsWith(` -> ${metadataPath}`),
   );
+}
+
+/**
+ * Returns whether a recorded baseline names a commit this clone can read.
+ *
+ * A shallow clone or rewritten history can leave a page's recorded baseline
+ * missing, and a missing baseline makes its changed paths unknowable. Callers
+ * that make lifecycle decisions from changed paths must check this first,
+ * because `getRepositoryChangedPaths` treats unreadable history as "no paths".
+ *
+ * @param cwd - Repository root.
+ * @param gitHead - Recorded baseline commit id.
+ * @returns True only for a full commit id whose commit object is present.
+ */
+export async function isReadableGitCommit(
+  cwd: string,
+  gitHead: string,
+): Promise<boolean> {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(gitHead)) return false;
+
+  try {
+    await execFileAsync(
+      "git",
+      ["--no-pager", "cat-file", "-e", `${gitHead}^{commit}`],
+      { cwd, maxBuffer: 1024 * 1024 },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

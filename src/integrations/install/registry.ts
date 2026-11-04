@@ -14,7 +14,7 @@ export const HOST_TARGETS = {
     producerActor: "bob",
     user: {
       skillDirectory: ".agents/skills/openwiki",
-      mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+      mcpConfig: { kind: "json", relativePath: ".bob/settings/mcp.json" },
     },
     project: {
       skillDirectory: ".agents/skills/openwiki",
@@ -138,6 +138,21 @@ export const HOST_TARGETS = {
       mcpConfig: { kind: "json", relativePath: ".agents/mcp_config.json" },
     },
     documentationUrl: "https://antigravity.google/docs/mcp?tab=cli",
+  },
+  copilot: {
+    id: "copilot",
+    displayName: "GitHub Copilot CLI",
+    producerActor: "copilot",
+    user: {
+      skillDirectory: ".copilot/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".copilot/mcp-config.json" },
+    },
+    project: {
+      skillDirectory: ".github/skills/openwiki",
+      mcpConfig: { kind: "json", relativePath: ".github/mcp.json" },
+    },
+    documentationUrl:
+      "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers",
   },
 } as const satisfies Record<HostTargetId, HostTarget>;
 

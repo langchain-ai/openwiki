@@ -113,6 +113,44 @@ describe("getErrorDiagnostics", () => {
     );
   });
 
+  test("extracts the innermost cause of a wrapped connection error", () => {
+    // A failed provider request: middleware wrappers, the SDK's
+    // "Connection error.", undici's "fetch failed", then the system error.
+    const networkError = Object.assign(
+      new Error("getaddrinfo ENOTFOUND api.example.invalid"),
+      { code: "ENOTFOUND" },
+    );
+    const error = new Error("Connection error.", {
+      cause: new Error("Connection error.", {
+        cause: new Error("Connection error.", {
+          cause: new TypeError("fetch failed", { cause: networkError }),
+        }),
+      }),
+    });
+
+    expect(
+      toLookup(getErrorDiagnostics(error))["rootCause.message"],
+    ).toBeUndefined();
+
+    process.env[DEBUG] = "1";
+    const lookup = toLookup(getErrorDiagnostics(error));
+
+    expect(lookup["rootCause.message"]).toBe(
+      "getaddrinfo ENOTFOUND api.example.invalid",
+    );
+    expect(lookup["rootCause.code"]).toBe("ENOTFOUND");
+  });
+
+  test("redacts the root cause message and stops on a cause cycle", () => {
+    process.env[DEBUG] = "1";
+    const error = new Error("outer");
+    error.cause = new Error("key sk-or-v1-supersecret", { cause: error });
+
+    expect(toLookup(getErrorDiagnostics(error))["rootCause.message"]).toBe(
+      "key [REDACTED:OPENROUTER_API_KEY]",
+    );
+  });
+
   test("extracts nested response fields under a dotted prefix", () => {
     process.env[DEBUG] = "1";
     const lookup = toLookup(

@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
-import type { RunContext } from "../agent/types.js";
+import type { OpenWikiRunEvent, RunContext } from "../agent/types.js";
 import type { UpdateNoopStatus } from "../agent/utils.js";
 import {
   createOpenWikiContentSnapshot,
   createRepositorySourceSnapshot,
   createRunContext,
   getRepositoryChangedPaths,
+  isReadableGitCommit,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
   writeLastUpdateMetadata,
@@ -17,6 +18,7 @@ import {
   finalizeWikiArtifacts,
   prepareWikiForAuthoring,
   serializePreparedWikiState,
+  type WikiFinalizerOperationRunner,
 } from "../agent/wiki-finalizer.js";
 import { beginRepositoryWikiReplacement } from "../agent/wiki-replacement.js";
 import {
@@ -39,6 +41,7 @@ import {
   resolveConceptTypeLabel,
   resolveIndexLabels,
 } from "../okf/index-labels.js";
+import type { WikiFrontmatterReport } from "../okf/index-sync.js";
 import {
   getPrimaryLanguageSubtag,
   requireResolvedLanguage,
@@ -896,7 +899,8 @@ async function getRepositoryPageUpdateWindows(
         ignore,
         baseline || undefined,
       ),
-      fullReview: baseline.length === 0,
+      fullReview:
+        baseline.length === 0 || !(await isReadableGitCommit(root, baseline)),
     });
   }
   return windows;
@@ -922,6 +926,9 @@ async function fastForwardUnchangedRepositoryPageCoverage(
   for (const page of [...pages].sort(compareCodeUnits)) {
     const entry = manifest.pages[page];
     if (!entry?.gitHead || entry.gitHead === source.gitHead) continue;
+    // An unreadable baseline (shallow clone, rewritten history) hides which
+    // paths changed, so the page keeps its checkpoint and gets reviewed.
+    if (!(await isReadableGitCommit(root, entry.gitHead))) continue;
 
     const changedPaths = await getRepositoryChangedPaths(
       root,
@@ -1157,6 +1164,26 @@ export async function captureRepositoryPageSnapshot(
 }
 
 /**
+ * Rolls one page's Markdown and Claims back to what its pre-run snapshot
+ * captured, leaving the pending checkpoint and run metadata untouched. Used to
+ * reset a page between worker attempts; `skipRepositoryPage` reuses it when the
+ * page is finally given up on.
+ */
+export async function restoreRepositoryPage(
+  run: ActiveRepositoryRun,
+  snapshot: RepositoryPageSnapshot,
+): Promise<void> {
+  await restoreRepositoryPageMarkdown(run, snapshot);
+
+  const store = new ClaimsStore(run.root);
+  if (snapshot.claims) {
+    await store.writePage(snapshot.path, snapshot.claims);
+  } else {
+    await store.deletePage(snapshot.path);
+  }
+}
+
+/**
  * Rolls a failed page worker back without advancing its pending checkpoint.
  *
  * The restore, Claims runtime rebuild, and checkpoint write run under the run
@@ -1185,14 +1212,7 @@ export async function skipRepositoryPage(
       );
     }
 
-    await restoreRepositoryPageMarkdown(run, snapshot);
-
-    const store = new ClaimsStore(run.root);
-    if (snapshot.claims) {
-      await store.writePage(snapshot.path, snapshot.claims);
-    } else {
-      await store.deletePage(snapshot.path);
-    }
+    await restoreRepositoryPage(run, snapshot);
 
     const claimsRuntime = await prepareClaimsRuntime(
       run.state.mode,
@@ -1599,6 +1619,7 @@ export async function finishRepositoryRun(
   run: ActiveRepositoryRun,
   options: {
     skippedPageSnapshots?: readonly RepositoryPageSnapshot[];
+    onEvent?: (event: OpenWikiRunEvent) => void;
   } = {},
 ): Promise<{ status: "complete"; sourceChanged?: true }> {
   const plan = run.state.plan;
@@ -1645,6 +1666,24 @@ export async function finishRepositoryRun(
   await applyPlannedDeletions(run, plan.deletePages);
   await reconcileDeletedClaimPages(run);
 
+  // Captures the deterministic index-sync pass's frontmatter signals so they
+  // can be surfaced to the operator below, without changing what
+  // `finalizeWikiArtifacts` itself returns.
+  let frontmatterReport: WikiFrontmatterReport = {
+    generatedPages: [],
+    missingDescriptionPages: [],
+  };
+  const captureFrontmatterReport: WikiFinalizerOperationRunner = (
+    operation,
+    task,
+  ) => {
+    if (operation !== "index_sync") return task();
+    return task().then((result) => {
+      frontmatterReport = result as WikiFrontmatterReport;
+      return result;
+    });
+  };
+
   await finalizeWikiArtifacts({
     backend: run.backend,
     outputMode: "repository",
@@ -1655,6 +1694,7 @@ export async function finishRepositoryRun(
     producerActor: run.state.actor.producerActor,
     producerActorsByPage,
     claimSources: run.claimsRuntime.session.getEvidenceResourcesByPage(),
+    runOperation: captureFrontmatterReport,
   });
 
   for (const snapshot of snapshots) {
@@ -1712,9 +1752,40 @@ export async function finishRepositoryRun(
   // Delete this LAST. If anything above fails, begin() can reconstruct and retry.
   await removeRepositoryRunState(run.root);
 
+  emitFrontmatterReportEvent(frontmatterReport, options.onEvent);
+
   return sourceChanged
     ? { status: "complete", sourceChanged: true }
     : { status: "complete" };
+}
+
+/**
+ * Surfaces which pages this run left with code-derived frontmatter or no
+ * description, via the same operator-visible text-event channel already used
+ * for other non-fatal run advisories (see the source-changed notice emitted
+ * by `runNativeRepositoryGeneration` after this function returns). Neither
+ * signal changes what this run persisted; it only reports it.
+ */
+function emitFrontmatterReportEvent(
+  report: WikiFrontmatterReport,
+  onEvent?: (event: OpenWikiRunEvent) => void,
+): void {
+  if (!onEvent) return;
+
+  const lines: string[] = [];
+  if (report.generatedPages.length > 0) {
+    lines.push(
+      `${report.generatedPages.length} OpenWiki page(s) still carry code-derived frontmatter (openwiki_generated: true) and await enrichment on a later run: ${report.generatedPages.join(", ")}`,
+    );
+  }
+  if (report.missingDescriptionPages.length > 0) {
+    lines.push(
+      `${report.missingDescriptionPages.length} OpenWiki page(s) have no description yet, so their index link shows none: ${report.missingDescriptionPages.join(", ")}`,
+    );
+  }
+  if (lines.length === 0) return;
+
+  onEvent({ type: "text", source: "main", text: `${lines.join("\n")}\n` });
 }
 
 /**

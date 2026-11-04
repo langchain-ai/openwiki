@@ -6,6 +6,8 @@ import {
   getProviderProjectEnvKey,
   getProviderRegionEnvKey,
   getProviderSecretKeyEnvKey,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
@@ -34,7 +36,9 @@ export function buildCredentialEnvUpdates(
 ): Record<string, string> {
   const {
     nextApiKey,
+    nextAuthMode = null,
     nextBaseUrl,
+    nextEntraScope = null,
     nextGcpLocation,
     nextGcpProject,
     nextLangSmithKey,
@@ -52,7 +56,14 @@ export function buildCredentialEnvUpdates(
     updates[OPENWIKI_PROVIDER_ENV_KEY] = nextProvider;
   }
 
-  if (nextApiKey !== null) {
+  if (nextProvider === "openai-compatible" && nextAuthMode !== null) {
+    updates[OPENAI_COMPATIBLE_AUTH_ENV_KEY] = nextAuthMode;
+    if (nextAuthMode === "entra-id" && nextEntraScope !== null) {
+      updates[OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY] = nextEntraScope;
+    }
+  }
+
+  if (nextApiKey !== null && nextAuthMode !== "entra-id") {
     const apiKeyEnvKey = getProviderApiKeyEnvKey(nextProvider);
 
     if (apiKeyEnvKey) {

@@ -13,8 +13,12 @@ tags:
     observability,
   ]
 sources:
+  - id: openwiki-source-fcb06f91f699f462b4d84a90
+    resource: repo://src/agent/crash-guard.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
+  - id: openwiki-source-5f52dc71fb07ef4892914c46
+    resource: repo://src/cli/app/app.tsx
   - id: openwiki-source-5c43e3fe562cf274dd6a5564
     resource: repo://src/cli/cli.tsx
   - id: openwiki-source-3fc16f0371ced4d94330f06c
@@ -53,10 +57,10 @@ sources:
     resource: repo://test/telemetry/telemetry.test.ts
   - id: openwiki-source-9ba5e33980ba1f452c6884d4
     resource: repo://test/telemetry/with-run-telemetry.test.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T08:08:01.897Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-29T08:08:01.897Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Telemetry and Diagnostics
@@ -74,7 +78,8 @@ The module surface is re-exported from `src/telemetry/index.ts`; the important
 pieces are the gates (`gates.ts`), the install id (`install-id.ts`), the run
 wrapper (`with-run-telemetry.ts`), the run-fact bridge (`record-run-safe.ts`),
 the event builder and sender (`senders.ts`, `client.ts`), and the error
-taxonomy (`errors.ts`, `taxonomy.ts`).
+taxonomy (`errors.ts`, `taxonomy.ts`). A last-resort second recording path lives
+outside the module, in the agent crash guard (`src/agent/crash-guard.ts`).
 
 ## Opt-out and gating
 
@@ -117,14 +122,17 @@ single-sourced as `FIRST_RUN_NOTICE_BODY`, `FIRST_RUN_NOTICE_OPT_OUT`, and
 `FIRST_RUN_NOTICE_VERIFY` in `config.ts` — as an Ink box in the interactive TUI
 or plain framed text on stderr for print mode.
 
-## The single run-telemetry boundary
+## The run-telemetry boundary
 
-`withRunTelemetry` is the **sole place** an `openwiki_run` event is recorded. It
-wraps the whole `setup -> connectors -> agent` sequence a caller performs (see
-`cli/runners.ts` and `ingestion/ingestion.ts`), so a throw anywhere in that
-sequence — repo setup, connector pull, agent prologue, or the agent itself — is
-recorded exactly once, closing the pre-agent coverage holes where a throw
-previously reached no telemetry.
+`withRunTelemetry` is the **primary boundary** that records an `openwiki_run`
+event for the normal run lifecycle. It wraps the whole
+`setup -> connectors -> agent` sequence a caller performs (see
+`cli/runners.ts`, `cli/app/app.tsx`, and `ingestion/ingestion.ts`), so a throw
+anywhere in that sequence — repo setup, connector pull, agent prologue, or the
+agent itself — is recorded exactly once, closing the pre-agent coverage holes
+where a throw previously reached no telemetry. The agent crash guard is the
+**last-resort second path**, used only when a rejection escapes every `catch`
+(see [Crash guard](#crash-guard)).
 
 It threads a mutable `RunTelemetryContext` through the run. The agent publishes
 the resolved `provider` onto it the instant provider resolution succeeds (so a
@@ -159,8 +167,9 @@ sequenceDiagram
     Send-->>Send: gate, build event, capture, tee
 ```
 
-Caption: one run flows through the single telemetry boundary; a failure is
-classified and recorded once, then rethrown to the caller.
+Caption: one run flows through the run-telemetry boundary; a failure is
+classified and recorded once, then rethrown to the caller. A rejection that
+escapes this boundary is caught by the crash guard instead.
 
 `recordRunSafe` is the bridge between the run lifecycle and telemetry. It
 **drops chat** (interactive, would emit one event per turn) so only `init` and
@@ -168,6 +177,31 @@ classified and recorded once, then rethrown to the caller.
 attaches the setup fields (`mode`, `provider`, `configuredConnectors` from the
 connector registry) **on init only** — the configuration moment — omitting them
 on updates. Like `recordRun`, it never throws.
+
+## Crash guard
+
+The crash guard (`src/agent/crash-guard.ts`, installed once at CLI startup by
+`installCrashGuard`) is the last-resort recording path for a rejection that
+escapes every `catch` — for example a subagent error surfacing on the
+microtask queue. It is the only place that records an `openwiki_run` event
+*outside* `withRunTelemetry`, so it is why `withRunTelemetry` is the primary
+boundary rather than the sole one.
+
+OpenWiki runs one run per process, so a single module-level `activeRun` slot is
+sufficient. The agent registers the in-flight run (`registerActiveRun`) for
+exactly the stream-consumption window and clears it in a `finally`
+(`clearActiveRun`); a clean run leaves no stale record for a later crash to
+misattribute. `handleFatal` claims that slot **synchronously, before any
+`await`**, so a burst of escaped rejections landing together on the microtask
+queue collapses to one record rather than hundreds. When a run is claimed it
+best-effort records the crash as a `failure` by calling `recordRunSafe` directly
+with the same `describeErrorForTelemetry` diagnostics used in the primary
+boundary (so a residual crash is classified and fingerprinted identically),
+best-effort stamps the run `interrupted` so the next scheduled update retries
+instead of no-opping against a half-written wiki, writes the raw error to the
+user's stderr (a local UX path that never enters telemetry), and exits
+non-zero. Every side effect is wrapped and swallowed independently; a failure
+in telemetry never blocks the stamp or the exit.
 
 ## Building and sending the event
 
@@ -265,12 +299,37 @@ the family, and it is the **anonymity spine**. `normalizeErrorDetail` validates
 each observed detail against `taxonomy.ts`'s hardcoded per-family allowlist
 (`FIXED_ERROR_DETAILS`) and drops anything off-list to `undefined` rather than
 emitting it raw. Two families (`connector_error`, `tool_error`) carry a registry
-id validated at the tag site instead of a fixed word. For the residual
-`agent_error` bucket the detail is instead the **innermost error's own name**
-(`innermostErrorName`), gated by `isSafeErrorIdentifier` — a bare identifier of
-at most 64 chars matching a strict pattern — so a `.name` or `constructor.name`
-carrying a path, URL, space, or user value is rejected and the envelope stays
-closed.
+id validated at the tag site instead of a fixed word — they are deliberately
+absent from `FIXED_ERROR_DETAILS` and are the `OPEN_DETAIL_CLASSES`, trusted
+as a non-empty string because their throw site already validated the id against
+the known connector/tool set. For the residual `agent_error` bucket the detail
+is instead the **innermost error's own name** (`innermostErrorName`), gated by
+`isSafeErrorIdentifier` — a bare identifier of at most 64 chars matching a strict
+pattern (`SAFE_ERROR_IDENTIFIER`) — so a `.name` or `constructor.name` carrying
+a path, URL, space, or user value is rejected and the envelope stays closed.
+
+The closed set of detail values, exactly as implemented, is:
+
+| Family | Allowed `errorDetail` values |
+| --- | --- |
+| `config_error` | `missing_credentials`, `missing_base_url`, `missing_secret_key`, `missing_region`, `invalid_model` |
+| `filesystem_error` | `not_found`, `permission`, `no_space` |
+| `provider_error` | `auth`, `rate_limit`, `overloaded`, `server_error`, `timeout`, `quota_exceeded`, `content_filter` |
+| `network_error` | `dns`, `refused`, `reset`, `unreachable` |
+| `build_error` | `run_context`, `snapshot`, `model`, `agent`, `stream_open` |
+| `okf_error` | `migrate`, `provenance_snapshot`, `mermaid`, `index_sync`, `link_validation`, `claims_sources`, `generated_provenance` |
+| `checkpointer_error` | `create`, `persist`, `chmod` |
+| `output_error` | `json_parse`, `schema` |
+| `context_limit_error` | _(none — the family is the whole signal)_ |
+| `agent_error` | _(none — residual bucket; the innermost error name gated by `isSafeErrorIdentifier`)_ |
+| `aborted` | _(none — the run was cancelled)_ |
+| `connector_error` | _(registry id — the connector id, validated at the tag site, not a fixed word)_ |
+| `tool_error` | _(registry id — the tool name, validated at the tag site, not a fixed word)_ |
+
+Families with an empty detail split and the two registry-id families never pass a
+fixed-word check; the former always yield `undefined`, the connector/tool ids are
+returned as-is, and the residual `agent_error` name passes only the identifier
+gate.
 
 **Owner (whose fix it is).** `deriveOwner` is the single source of owner truth,
 mapping (class, detail, stage) to `environment`, `provider`, `openwiki`,

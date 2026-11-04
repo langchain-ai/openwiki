@@ -96,6 +96,8 @@ describe("repository worker prompts", () => {
     );
     expect(prompt).toContain("src/auth.ts");
     expect(prompt).toContain("Baseline abc123");
+    expect(prompt).toContain("Repository files are at the filesystem root");
+    expect(prompt).toContain("never a directory");
     expect(prompt).toContain("/openwiki/auth.md");
     expect(prompt).toContain("inside its own committed update window");
     expect(prompt).toContain("claim_auth (stale)");
@@ -107,6 +109,44 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("focused tests and neighboring");
     expect(prompt).toContain("submit_plan directly.");
     expect(prompt).not.toContain("force flag");
+  });
+
+  test("adds a scoped update mandate for update planning context", () => {
+    const prompt = createRepositoryPlannerPrompt(
+      planningView(),
+      "User: document only src/auth.ts and /openwiki/auth.md.",
+    );
+
+    expect(prompt).toContain("hard scoped update mandate");
+    expect(prompt).toMatch(/Preserve unrelated page\s+framing\/theme/u);
+    expect(prompt).toMatch(
+      /Schedule only directly requested\s+pages\/files and genuinely affected cross-references or navigation/u,
+    );
+    expect(prompt).toMatch(
+      /Do not refresh\s+\/openwiki\/quickstart\.md merely because a scoped update touches other pages/u,
+    );
+    expect(prompt).toMatch(
+      /include it when the user explicitly requests it or when the page map, navigation,\s+or task-routing links actually change/u,
+    );
+  });
+
+  test("does not add scoped update mandate for init or missing planning context", () => {
+    const initPrompt = createRepositoryPlannerPrompt(
+      planningView({
+        mode: "init",
+        pageUpdateWindows: [],
+        claimIssues: [],
+      }),
+      "User: document only src/auth.ts.",
+    );
+    const updateWithoutContextPrompt =
+      createRepositoryPlannerPrompt(planningView());
+
+    expect(initPrompt).toContain("User and connector planning context");
+    expect(initPrompt).not.toContain("hard scoped update mandate");
+    expect(updateWithoutContextPrompt).not.toContain(
+      "hard scoped update mandate",
+    );
   });
 
   test("renders unknown baselines as explicit full-review windows", () => {
@@ -140,6 +180,12 @@ describe("repository worker prompts", () => {
     expect(prompt).toContain("repo://src/auth.ts");
     expect(prompt).toContain("currently owns 7 Claim(s)");
     expect(prompt).toContain("Write only /openwiki/auth.md");
+    expect(prompt).toContain("Repository files are at the filesystem root");
+    expect(prompt).toContain("use hrefs relative to this");
+    expect(prompt).toContain("not Markdown link destinations");
+    expect(prompt).toContain(
+      "[Model Providers](../concepts/model-providers.md)",
+    );
     expect(prompt).toContain("only the sparse Claim decisions");
     expect(prompt).toContain("inspect_claims");
     expect(prompt).toContain("retained automatically");

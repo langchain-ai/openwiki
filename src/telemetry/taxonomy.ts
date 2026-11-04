@@ -40,7 +40,15 @@ const FIXED_ERROR_DETAILS: Readonly<
   ],
   network_error: ["dns", "refused", "reset", "unreachable"],
   build_error: ["run_context", "snapshot", "model", "agent", "stream_open"],
-  okf_error: ["migrate", "index_sync", "mermaid"],
+  okf_error: [
+    "migrate",
+    "provenance_snapshot",
+    "mermaid",
+    "index_sync",
+    "link_validation",
+    "claims_sources",
+    "generated_provenance",
+  ],
   checkpointer_error: ["create", "persist", "chmod"],
   output_error: ["json_parse", "schema"],
   // No detail split: the family is the whole signal.

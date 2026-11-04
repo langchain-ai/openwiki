@@ -105,6 +105,92 @@ afterEach(async () => {
 });
 
 describe("wiki workspaces", () => {
+  test("stable workspace IDs take precedence over another workspace's renamed display name", async () => {
+    const directory = await createTemporaryRoot("openwiki-workspace-identity-");
+    const storage = await createStorage();
+    const shared = await createWikiRepository(directory, "shared");
+    const payments = await createWikiRepository(directory, "payments");
+    const analytics = await createWikiRepository(directory, "analytics");
+    const original = await saveWikiWorkspaces(
+      [
+        { name: "Payments", roots: [shared, payments] },
+        { name: "Analytics", roots: [shared, analytics] },
+      ],
+      storage,
+    );
+    await saveWikiWorkspaces(
+      workspaceDrafts(original).map((draft) => ({
+        ...draft,
+        name: draft.id === "payments" ? "Zed" : "Payments",
+      })),
+      storage,
+    );
+
+    const listed = await listWorkspaceWikis(shared, "payments", storage);
+    expect(listed.workspace.id).toBe("payments");
+    expect(listed.wikis.map((wiki) => wiki.id)).toEqual(["payments", "shared"]);
+    await expect(
+      listWorkspaceWikis(shared, " zEd ", storage),
+    ).resolves.toMatchObject({ workspace: { id: "payments", name: "Zed" } });
+
+    const scope = await resolveWikiSearchScope(shared, " PAYMENTS ", storage);
+    expect(scope.status).toBe("ready");
+    if (scope.status !== "ready") throw new Error("Expected a resolved scope.");
+    expect(scope.workspace?.id).toBe("payments");
+    expect(scope.wikis.map((wiki) => wiki.id)).toEqual(["payments", "shared"]);
+
+    await expect(
+      setActiveWikiWorkspace(shared, "payments", storage),
+    ).resolves.toMatchObject({ id: "payments" });
+    await expect(
+      resolveWikiSearchScope(shared, undefined, storage),
+    ).resolves.toMatchObject({ workspace: { id: "payments" } });
+  });
+
+  test("an inaccessible workspace ID does not fall back to an accessible display name", async () => {
+    const directory = await createTemporaryRoot(
+      "openwiki-workspace-membership-",
+    );
+    const storage = await createStorage();
+    const current = await createWikiRepository(directory, "current");
+    const accessible = await createWikiRepository(directory, "accessible");
+    const privateFirst = await createWikiRepository(directory, "private-first");
+    const privateSecond = await createWikiRepository(
+      directory,
+      "private-second",
+    );
+    const original = await saveWikiWorkspaces(
+      [
+        { name: "Payments", roots: [privateFirst, privateSecond] },
+        { name: "Analytics", roots: [current, accessible] },
+      ],
+      storage,
+    );
+    const renamed = await saveWikiWorkspaces(
+      workspaceDrafts(original).map((draft) => ({
+        ...draft,
+        name: draft.id === "payments" ? "Zed" : "Payments",
+      })),
+      storage,
+    );
+
+    await expect(
+      listWorkspaceWikis(current, "payments", storage),
+    ).rejects.toThrow("Unknown workspace for this repository");
+    await expect(
+      resolveWikiSearchScope(current, "payments", storage),
+    ).rejects.toThrow("Unknown workspace for this repository");
+    await expect(
+      setActiveWikiWorkspace(current, "payments", storage),
+    ).rejects.toThrow("Unknown workspace for this repository");
+    await expect(readWikiWorkspaceRegistry(storage)).resolves.toEqual(renamed);
+    await expect(
+      listWorkspaceWikis(current, "analytics", storage),
+    ).resolves.toMatchObject({
+      workspace: { id: "analytics", name: "Payments" },
+    });
+  });
+
   test("streams repositories and resolves partial finder paths", async () => {
     const directory = await createTemporaryRoot("openwiki-discovery-");
     const control = await createWikiRepository(directory, "control-plane");

@@ -169,6 +169,29 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toContain("verified:\n  - by: human:reviewer");
     expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
   });
+
+  test("leaves a fully authored page missing only description untouched", () => {
+    // Regression guard: `description` is intentionally never fabricated (it
+    // is optional and left for an agent to author), so it must never become a
+    // validation issue either. If it did, `repairOkfFrontmatter` could never
+    // re-validate the repaired result and would fall through to
+    // `rebuildMinimalConcept`, which discards `tags`/`sources`/`verified`/
+    // `status` - the page's link to its Claims evidence - on every run.
+    const content =
+      '---\ntype: Guide\ntitle: "Deploying the worker"\ntags:\n  - infra\nsources:\n  - id: repo-readme\n    resource: repo://README.md\nverified:\n  - by: human:reviewer\n    at: "2026-08-20T12:00:00.000Z"\nstatus: stable\n---\n\n# Deploying the worker\n';
+
+    expect(validateOkfFrontmatter(content)).toEqual({ valid: true });
+
+    const result = normalizeConceptContent(content, PATH);
+
+    expect(result.changed).toBe(false);
+    expect(result.content).toBe(content);
+    expect(result.content).toContain("tags:\n  - infra");
+    expect(result.content).toContain("sources:\n  - id: repo-readme");
+    expect(result.content).toContain("verified:\n  - by: human:reviewer");
+    expect(result.content).toContain("status: stable");
+    expect(validateOkfFrontmatter(result.content)).toEqual({ valid: true });
+  });
 });
 
 describe("repairOkfFrontmatter", () => {
@@ -265,6 +288,22 @@ describe("repairOkfFrontmatter", () => {
     expect(repaired.content).toContain("# Page\n\nBody.\n");
     expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
   });
+
+  test("repairs a compact tag list without collapsing the page", () => {
+    const repaired = repairOkfFrontmatter(
+      "---\ntype: Guide\ntitle: My Guide\ntags:\n- docs\n- 7\ncustom: keep\n---\n\n# Page\n\nBody.\n",
+      PATH,
+    );
+
+    expect(parseFrontmatterFields(repaired.content)).toMatchObject({
+      type: "Guide",
+      title: "My Guide",
+      custom: "keep",
+      tags: ["docs"],
+    });
+    expect(repaired.content).not.toContain("openwiki_generated");
+    expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
+  });
 });
 
 describe("setOkfSources", () => {
@@ -305,6 +344,34 @@ describe("setOkfSources", () => {
       "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n",
     );
   });
+
+  test("replaces a compact source list written at the key's own column", () => {
+    const original =
+      "---\ntype: Guide\ntitle: My Guide\nsources:\n- id: mine\n  resource: repo://README.md\ncustom: keep\n---\n\n# Page\n";
+    const replaced = setOkfSources(original, [
+      { id: "mine", resource: "repo://README.md" },
+      { id: "openwiki-source-one", resource: "repo://src/page.ts" },
+    ]);
+
+    expect(replaced).not.toContain("repo://README.md\n- id:");
+    expect(replaced.match(/repo:\/\/README\.md/gu)).toHaveLength(1);
+    expect(parseFrontmatterFields(replaced)).toMatchObject({
+      type: "Guide",
+      title: "My Guide",
+      custom: "keep",
+    });
+    expect(parseFrontmatterFields(replaced)?.sources).toHaveLength(2);
+    expect(validateOkfFrontmatter(replaced)).toEqual({ valid: true });
+  });
+
+  test("removes a compact source list without leaving orphaned items", () => {
+    const original =
+      "---\ntype: Reference\nsources:\n- id: old\n  resource: repo://old.ts\ntitle: Page\n---\n\n# Page\n";
+
+    expect(setOkfSources(original, [])).toBe(
+      "---\ntype: Reference\ntitle: Page\n---\n\n# Page\n",
+    );
+  });
 });
 
 describe("setOkfVerified", () => {
@@ -323,6 +390,21 @@ describe("setOkfVerified", () => {
       { by: "openwiki/0.3.3", at: "2026-08-20T12:00:00.000Z" },
     ]);
     expect(setOkfVerified(result, [])).not.toContain("verified:");
+  });
+
+  test("replaces a compact event list written at the key's own column", () => {
+    const original =
+      '---\ntype: Reference\nverified:\n- by: human:old\n  at: "2026-08-19T00:00:00.000Z"\ntitle: Page\n---\n\n# Page\n';
+    const result = setOkfVerified(original, [
+      { by: "human:reviewer", at: "2026-08-20T11:00:00.000Z" },
+    ]);
+
+    expect(result).not.toContain("human:old");
+    expect(result).toContain("title: Page");
+    expect(parseFrontmatterFields(result)?.verified).toEqual([
+      { by: "human:reviewer", at: "2026-08-20T11:00:00.000Z" },
+    ]);
+    expect(validateOkfFrontmatter(result)).toEqual({ valid: true });
   });
 });
 
@@ -479,6 +561,24 @@ describe("removeFrontmatterField", () => {
         "openwiki_translation_pending",
       ),
     ).toBe("# Page\n");
+  });
+
+  test("removes a compact list without leaving orphaned items", () => {
+    expect(
+      removeFrontmatterField(
+        "---\ntype: Reference\ntags:\n- docs\n- api\ntitle: Page\n---\n\n# Page\n",
+        "tags",
+      ),
+    ).toBe("---\ntype: Reference\ntitle: Page\n---\n\n# Page\n");
+  });
+
+  test("keeps a sibling field whose name starts with a dash", () => {
+    const original =
+      "---\ntype: Reference\ntags:\n- docs\n-dashed: keep\ntitle: Page\n---\n\n# Page\n";
+
+    expect(removeFrontmatterField(original, "tags")).toBe(
+      "---\ntype: Reference\n-dashed: keep\ntitle: Page\n---\n\n# Page\n",
+    );
   });
 });
 

@@ -44,10 +44,12 @@ sources:
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+  - id: openwiki-source-c194ba7f94bf86a83012a7b4
+    resource: repo://src/integrations/install/registry.ts
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Architecture Overview
@@ -73,11 +75,11 @@ selects the personal brain. See [Two modes](../concepts/two-modes.md).
 **Driver** decides which model and tools do the authoring. In _native_
 generation, OpenWiki resolves a configured provider, builds its own chat model,
 and runs its own DeepAgents workers. In _host-driven_ generation, a coding agent
-(Codex, Claude Code, OpenCode, Cursor, IBM Bob / Bob Shell, Kiro, Oh My Pi, or
-Antigravity) uses its own authenticated model and native repository tools, while
-OpenWiki exposes the durable page-job lifecycle over MCP and owns validation
-and finalization. Host-driven runs currently support only repository code wikis,
-not personal brains.
+(Codex, Claude Code, OpenCode, Cursor, IBM Bob, Kiro, Oh My Pi, Antigravity
+CLI, or GitHub Copilot CLI) uses its own authenticated model and native
+repository tools, while OpenWiki exposes the durable page-job lifecycle over
+MCP and owns validation and finalization. Host-driven runs currently support
+only repository code wikis, not personal brains.
 
 ```mermaid
 flowchart TD
@@ -101,10 +103,12 @@ flowchart TD
   Slot1 --> Snapshot["snapshot pending page and Claims"]
   Slot2 --> Snapshot
   Snapshot --> PageWorker["fresh page worker"]
-  PageWorker -->|"fails or exits without submit"| Skip["skipRepositoryPage restores snapshot, marks skipped, lowers live limit on rate limit"]
+  PageWorker -->|"submit_page"| Lifecycle
+  PageWorker -->|"fails or exits without submit"| Retry["restoreRepositoryPage resets to snapshot"]
+  Retry -->|"attempt under PAGE_WORKER_ATTEMPT_LIMIT"| PageWorker
+  Retry -->|"attempt budget exhausted"| Skip["skipRepositoryPage restores snapshot, marks skipped, lowers live limit on rate limit"]
   Skip --> Pool
   PageWorker -->|"inspect_claims on demand"| Lifecycle
-  PageWorker -->|"submit_page sparse Claim decisions"| Lifecycle
   Pool -->|"all drained (quickstart held back to last)"| Finalize["finishRepositoryRun restores skipped pages and finalizes"]
   Finalize -->|"source drift at finish"| Report["runner reports drift, returns sourceChanged=true"]
   Report --> LaterUpdate["next --update resumes and invalidates the plan"]
@@ -139,7 +143,9 @@ sequenceDiagram
     Driver->>Run: submit_page (sparse Claim decisions)
     Run->>Queue: persist Markdown + Claims + page-manifest (durable boundary)
     alt worker fails / no submit
-      Driver->>Run: skipRepositoryPage
+      Driver->>Run: restoreRepositoryPage (reset to snapshot)
+      Run->>Queue: retry up to PAGE_WORKER_ATTEMPT_LIMIT
+      Driver->>Run: skipRepositoryPage (attempt budget exhausted)
       Run->>Queue: restore snapshot, mark skipped
     end
   end
@@ -235,14 +241,28 @@ the run never finalizes with pending jobs. If a worker fails on a provider
 rate limit, the live pool size is lowered by one (never below 1) and a notice
 is emitted; other skip causes keep the pool size.
 
+**Tracing.** Every planner and page worker in one repository run shares a single
+LangSmith thread id from `resolveTraceThreadId(runId)` — the durable `runId` by
+default, overridable via `OPENWIKI_TRACE_THREAD_ID` — passed as
+`configurable.thread_id` to each agent stream. The agents are also named
+(`PLANNER_AGENT_NAME`, `"planning agent"`; `workerAgentName(page)`,
+`"worker agent: <page>"`) so the run groups as one planner plus one worker per
+page in LangSmith. Detail lives in [Agent runtime](agent-runtime.md).
+
 The lifecycle is resumable and self-correcting. Before a page worker runs, its
 pending page and Claims sidecar are snapshotted (`captureRepositoryPageSnapshot`).
-If the worker fails or exits without submitting, `skipRepositoryPage` restores
-the page and Claims from that snapshot, marks the job `skipped`, and the run
-continues with the next page rather than aborting; the page is reconsidered on a
-later update. `runPendingPageAgents` collects every skipped-page snapshot and
-passes them to `finishRepositoryRun`, which restores the skipped pages' Markdown
-after finalization, finalizes Claims with those pages excluded, and persists
+`runPageAgent` runs a fresh bounded worker per attempt and retries a worker that
+exits without submitting up to `PAGE_WORKER_ATTEMPT_LIMIT` (2) times: a failed
+attempt is reset to the pre-run snapshot with `restoreRepositoryPage` before the
+retry, and only after the attempt budget is exhausted (or a provider rate-limit
+error short-circuits the retry) does `skipRepositoryPage` restore the snapshot
+under the run mutation lock, mark the job `skipped`, and let the run continue
+with the next page rather than aborting; the page is reconsidered on a later
+update. A fatal submission failure (the store refusing the page) is not retried
+and is rethrown so the run stops rather than looping on an unfixable error.
+`runPendingPageAgents` collects every skipped-page snapshot and passes them to
+`finishRepositoryRun`, which restores the skipped pages' Markdown after
+finalization, finalizes Claims with those pages excluded, and persists
 `interrupted` update metadata so the run is honestly recorded as partial.
 Page restore and the planned/abandoned-page deletions at finish tolerate a
 human-readable "not found" backend error instead of aborting the run, so a

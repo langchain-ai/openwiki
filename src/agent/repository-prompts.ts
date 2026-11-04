@@ -9,6 +9,11 @@ import type {
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
 
+// Workers see one virtual filesystem; without this, weaker models search only
+// /openwiki/ and cite repository files they never read.
+const REPOSITORY_LAYOUT = `Repository files are at the filesystem root (for example /src/agent/index.ts);
+the wiki lives under /openwiki/. Search and read source outside /openwiki/.`;
+
 /**
  * Builds the bounded planner prompt from the complete active run context.
  *
@@ -40,6 +45,20 @@ ${formatIssues(view.claimIssues)}`
     ? `\nUser and connector planning context:\n${planningContext}\n`
     : "";
 
+  const scopedUpdateContext =
+    view.mode === "update" && planningContext?.trim()
+      ? `
+When the user planning context names files or OpenWiki pages, says to document
+only specific files, or otherwise limits the requested documentation scope,
+treat that as a hard scoped update mandate. Preserve unrelated page
+framing/theme and the existing information architecture; do not use a narrow
+request as permission for a broad wiki refresh. Schedule only directly requested
+pages/files and genuinely affected cross-references or navigation. Do not refresh
+/openwiki/quickstart.md merely because a scoped update touches other pages;
+include it when the user explicitly requests it or when the page map, navigation,
+or task-routing links actually change.`
+      : "";
+
   return `You are planning an OpenWiki code wiki for this repository.
 
 Your only output action is submit_plan. Do not write documentation, do not
@@ -54,6 +73,10 @@ the source tree. Use hierarchical paths for meaningful groups such as
 /openwiki/operations/, /openwiki/integrations/, and /openwiki/testing/ when the
 repository has enough coverage to warrant them. Do not emit a flat dump of
 unrelated top-level pages. Include /openwiki/quickstart.md for init.
+
+${REPOSITORY_LAYOUT}
+Every page path is a Markdown file such as
+/openwiki/architecture/agent-runtime.md, never a directory.
 
 Explore before submitting the plan. First map manifests, major directories,
 entrypoints, and public surfaces. Then trace representative end-to-end control
@@ -78,7 +101,7 @@ An update with no required page edits and no deletions may submit pages: [].
 For every page provide a concise purpose and useful seedPaths. seedPaths are
 starting points, not research boundaries. Copy only relevant global constraints
 from the user/connector context into that page's instructions array; do not copy
-unrelated context into every job.${semanticContext}${updateContext}
+unrelated context into every job.${semanticContext}${scopedUpdateContext}${updateContext}
 
 ${view.wikiGoal ? `Repository OpenWiki instructions:\n${view.wikiGoal}\n` : ""}`;
 }
@@ -130,6 +153,12 @@ Page-specific global instructions:\n${formatList(job.instructions)}
 
 ${job.mode === "update" ? "Read the current page first. Preserve accurate unaffected content; change only what current repository evidence requires.\n" : ""}
 Write wiki prose and human-readable frontmatter values in ${language}. Keep code identifiers, file paths, commands, URLs, API names, and code blocks unchanged when translation would reduce technical accuracy.
+For Markdown links to wiki pages or repository files, use hrefs relative to this
+page's directory. Paths such as /openwiki/quickstart.md are virtual filesystem
+tool paths, not Markdown link destinations; never write root-absolute internal
+hrefs. For example, from /openwiki/architecture/agent-runtime.md, link to
+/openwiki/concepts/model-providers.md as
+[Model Providers](../concepts/model-providers.md).
 
 The page MUST begin with valid OKF concept frontmatter:
 ---
@@ -139,6 +168,8 @@ description: <one or two sentence retrieval-oriented summary>
 tags: [<stable English tag>, ...]
 ---
 Do not author generated, verified, sources, timestamp, or OpenWiki control fields; OpenWiki owns those. On update preserve unknown producer-defined frontmatter fields unless they are factually wrong.
+
+${REPOSITORY_LAYOUT}
 
 Research deeply enough to explain the important responsibilities, entrypoints,
 mechanisms/control flow, relationships, state/lifecycle, invariants/failures,

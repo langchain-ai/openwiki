@@ -15,6 +15,29 @@ afterEach(() => {
 });
 
 describe("Tsubasa", () => {
+  test("keeps upstream provider priority when a Tsubasa key is also set", () => {
+    expect(
+      resolveConfiguredProvider({
+        MISTRAL_API_KEY: "test-mistral-key",
+        TSUBASA_API_KEY: "test-tsubasa-key",
+      }),
+    ).toBe("mistral");
+    expect(
+      resolveConfiguredProvider({
+        BEDROCK_AWS_ACCESS_KEY_ID: "test-access-key",
+        BEDROCK_AWS_SECRET_ACCESS_KEY: "test-secret-key",
+        TSUBASA_API_KEY: "test-tsubasa-key",
+      }),
+    ).toBe("bedrock");
+    expect(
+      resolveConfiguredProvider({
+        OPENWIKI_PROVIDER: "tsubasa",
+        MISTRAL_API_KEY: "test-mistral-key",
+        TSUBASA_API_KEY: "test-tsubasa-key",
+      }),
+    ).toBe("tsubasa");
+  });
+
   test("offers both aliases and resolves its managed credential", () => {
     expect(SELECTABLE_OPENWIKI_PROVIDERS).toContain("tsubasa");
     expect(getDefaultModelId("tsubasa")).toBe("tsubasa-fast");

@@ -14,6 +14,7 @@ import {
   getProviderSecretKeyEnvKey,
   AWS_ACCESS_KEY_ID_ENV_KEY,
   AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
   AWS_SECRET_ACCESS_KEY_ENV_KEY,
   AWS_SESSION_TOKEN_ENV_KEY,
 } from "../../../src/config/constants.ts";
@@ -43,6 +44,7 @@ const MANAGED_KEYS = [
   AWS_SECRET_ACCESS_KEY_ENV_KEY,
   AWS_SESSION_TOKEN_ENV_KEY,
   AWS_BEARER_TOKEN_BEDROCK_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
 ].filter((key): key is string => key !== undefined);
 
 let snapshot: Record<string, string | undefined>;
@@ -172,6 +174,14 @@ describe("getAwsCredentialRepairMessage", () => {
 });
 
 describe("getCredentialSetupDetail", () => {
+  test("describes delegated Entra auth and deferred validation", () => {
+    set(OPENAI_COMPATIBLE_AUTH_ENV_KEY, "entra-id");
+
+    expect(getCredentialSetupDetail("openai-compatible")).toBe(
+      "Microsoft Entra ID via Azure Identity (checked on first request)",
+    );
+  });
+
   test("tells an api-key provider to save its key when none is present", () => {
     const apiKey = getProviderApiKeyEnvKey("openai");
     if (!apiKey) throw new Error("openai must define an api key env var");

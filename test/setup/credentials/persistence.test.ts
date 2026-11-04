@@ -63,6 +63,46 @@ describe("buildCredentialEnvUpdates", () => {
     expect(openai).not.toHaveProperty("ANTHROPIC_API_KEY");
   });
 
+  test("persists Entra configuration without persisting a stale API key", () => {
+    const updates = buildCredentialEnvUpdates(
+      makeOptions({
+        nextProvider: "openai-compatible",
+        nextAuthMode: "entra-id",
+        nextApiKey: "stale-key",
+        nextBaseUrl: "https://gateway.example/openai/v1",
+        nextEntraScope: "api://gateway/.default",
+        nextModelId: "gateway-model",
+      }),
+      makeEnv({ OPENWIKI_PROVIDER: "openai-compatible" }),
+    );
+
+    expect(updates).toMatchObject({
+      OPENAI_COMPATIBLE_AUTH: "entra-id",
+      OPENAI_COMPATIBLE_BASE_URL: "https://gateway.example/openai/v1",
+      OPENAI_COMPATIBLE_ENTRA_SCOPE: "api://gateway/.default",
+      OPENWIKI_MODEL_ID: "gateway-model",
+    });
+    expect(updates).not.toHaveProperty("OPENAI_COMPATIBLE_API_KEY");
+  });
+
+  test("switching back to API-key mode persists the mode and key", () => {
+    const updates = buildCredentialEnvUpdates(
+      makeOptions({
+        nextProvider: "openai-compatible",
+        nextAuthMode: "api-key",
+        nextApiKey: "new-key",
+      }),
+      makeEnv({
+        OPENWIKI_PROVIDER: "openai-compatible",
+        OPENAI_COMPATIBLE_AUTH: "entra-id",
+      }),
+    );
+
+    expect(updates.OPENAI_COMPATIBLE_AUTH).toBe("api-key");
+    expect(updates.OPENAI_COMPATIBLE_API_KEY).toBe("new-key");
+    expect(updates).not.toHaveProperty("OPENAI_COMPATIBLE_ENTRA_SCOPE");
+  });
+
   test("maps bedrock secret key and region onto their provider env keys", () => {
     const updates = buildCredentialEnvUpdates(
       makeOptions({

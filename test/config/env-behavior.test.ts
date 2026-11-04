@@ -18,6 +18,8 @@ import {
   NVIDIA_BASE_URL_ENV_KEY,
   OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
@@ -64,6 +66,8 @@ const KEYS_UNDER_TEST = [
   FIREWORKS_BASE_URL_ENV_KEY,
   NVIDIA_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
@@ -430,6 +434,24 @@ describe("getSavedEnvValue", () => {
 });
 
 describe("getCredentialDiagnostics", () => {
+  test("shows auth mode and scope as readable configuration", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENAI_COMPATIBLE_AUTH_ENV_KEY]: "entra-id",
+      [OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY]: "api://gateway/.default",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    expect(
+      diagnostics.find((entry) => entry.key === OPENAI_COMPATIBLE_AUTH_ENV_KEY)
+        ?.preview,
+    ).toBe('"entra-id"');
+    expect(
+      diagnostics.find(
+        (entry) => entry.key === OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
+      )?.preview,
+    ).toBe('"api://gateway/.default"');
+  });
+
   test("includes the provider and each credential key in display order", async () => {
     const diagnostics = await env.getCredentialDiagnostics();
     const keys = diagnostics.map((entry) => entry.key);

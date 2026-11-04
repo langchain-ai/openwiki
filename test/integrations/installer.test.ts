@@ -392,7 +392,7 @@ describe("host integration registry", () => {
         producerActor: "bob",
         user: {
           skillDirectory: ".agents/skills/openwiki",
-          mcpConfig: { kind: "json", relativePath: ".bob/mcp.json" },
+          mcpConfig: { kind: "json", relativePath: ".bob/settings/mcp.json" },
         },
         project: {
           skillDirectory: ".agents/skills/openwiki",
@@ -500,6 +500,20 @@ describe("host integration registry", () => {
           },
         },
       },
+      copilot: {
+        producerActor: "copilot",
+        user: {
+          skillDirectory: ".copilot/skills/openwiki",
+          mcpConfig: {
+            kind: "json",
+            relativePath: ".copilot/mcp-config.json",
+          },
+        },
+        project: {
+          skillDirectory: ".github/skills/openwiki",
+          mcpConfig: { kind: "json", relativePath: ".github/mcp.json" },
+        },
+      },
     });
     expect(getHostTarget("codex")).toBe(HOST_TARGETS.codex);
     expect(getHostTarget("unsupported")).toBeUndefined();
@@ -512,6 +526,7 @@ describe("host integration registry", () => {
       "kiro",
       "omp",
       "antigravity",
+      "copilot",
     ]);
     expect(HOST_TARGETS.bob.user.skillDirectory).toBe(
       HOST_TARGETS.codex.user.skillDirectory,
@@ -968,6 +983,129 @@ describe("host integration scope ownership", () => {
       installer.status(target, projectOptions(projectRoot)),
     ).resolves.toBe("installed");
     await access(skillPath(projectRoot, target, "project"));
+  });
+});
+
+describe("shared skill directories", () => {
+  /**
+   * Reads the parsed receipt from one installed skill directory.
+   *
+   * @param directory - Installed skill directory.
+   * @returns Parsed receipt object.
+   */
+  async function readReceipt(
+    directory: string,
+  ): Promise<Record<string, unknown>> {
+    const receipt: unknown = JSON.parse(
+      await readFile(path.join(directory, RECEIPT_FILE), "utf8"),
+    );
+    if (!isRecord(receipt)) throw new Error("Expected a receipt object.");
+    return receipt;
+  }
+
+  test("hosts sharing a skill directory install and uninstall independently", async () => {
+    const home = await createDirectory();
+    const codex = HOST_TARGETS.codex;
+    const bob = HOST_TARGETS.bob;
+    const skill = skillPath(home, codex, "user");
+    expect(skillPath(home, bob, "user")).toBe(skill);
+    const installer = new HostIntegrationInstaller();
+
+    await installer.install(codex, userOptions(home));
+    await expect(installer.status(bob, userOptions(home))).resolves.toBe(
+      "not-installed",
+    );
+    expect(Object.keys(await readReceipt(skill)).sort()).toEqual([
+      "files",
+      "mcpServerCommand",
+      "package",
+      "target",
+      "version",
+    ]);
+
+    await installer.install(bob, userOptions(home));
+    await expect(installer.status(codex, userOptions(home))).resolves.toBe(
+      "installed",
+    );
+    await expect(installer.status(bob, userOptions(home))).resolves.toBe(
+      "installed",
+    );
+    expect(await readReceipt(skill)).toMatchObject({
+      owners: {
+        codex: defaultMcpServerCommand("codex"),
+        bob: defaultMcpServerCommand("bob"),
+      },
+    });
+
+    await installer.uninstall(codex, userOptions(home));
+    await expect(installer.status(codex, userOptions(home))).resolves.toBe(
+      "not-installed",
+    );
+    await expect(installer.status(bob, userOptions(home))).resolves.toBe(
+      "installed",
+    );
+    expect(await readReceipt(skill)).toMatchObject({ target: "bob" });
+
+    await installer.uninstall(bob, userOptions(home));
+    await expect(access(skill)).rejects.toThrow();
+  });
+
+  test("project-scope Antigravity and Codex share one skill", async () => {
+    const root = await createProject();
+    const antigravity = HOST_TARGETS.antigravity;
+    const codex = HOST_TARGETS.codex;
+    expect(skillPath(root, antigravity)).toBe(skillPath(root, codex));
+    const installer = new HostIntegrationInstaller();
+
+    await installer.install(antigravity, projectOptions(root));
+    await installer.install(codex, projectOptions(root));
+
+    await expect(
+      installer.status(antigravity, projectOptions(root)),
+    ).resolves.toBe("installed");
+    await expect(installer.status(codex, projectOptions(root))).resolves.toBe(
+      "installed",
+    );
+  });
+
+  test("uninstalls a host whose ownership an earlier forced install replaced", async () => {
+    const home = await createDirectory();
+    const codex = HOST_TARGETS.codex;
+    const bob = HOST_TARGETS.bob;
+    const skill = skillPath(home, codex, "user");
+    const installer = new HostIntegrationInstaller();
+    await installer.install(codex, userOptions(home));
+    await installer.install(bob, userOptions(home));
+
+    // Older releases left a Bob-only receipt behind after `install bob --force`.
+    const receipt = await readReceipt(skill);
+    await writeFile(
+      path.join(skill, RECEIPT_FILE),
+      `${JSON.stringify(
+        {
+          package: "openwiki",
+          version: receipt.version,
+          target: "bob",
+          mcpServerCommand: defaultMcpServerCommand("bob"),
+          files: receipt.files,
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    await expect(installer.status(codex, userOptions(home))).resolves.toBe(
+      "modified",
+    );
+
+    await installer.uninstall(codex, userOptions(home));
+
+    await expect(installer.status(codex, userOptions(home))).resolves.toBe(
+      "not-installed",
+    );
+    await expect(installer.status(bob, userOptions(home))).resolves.toBe(
+      "installed",
+    );
   });
 });
 

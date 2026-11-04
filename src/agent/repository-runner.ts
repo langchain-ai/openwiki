@@ -13,9 +13,14 @@ import {
   type ToolCallChunk,
 } from "@langchain/core/messages";
 import { DynamicStructuredTool } from "@langchain/core/tools";
-import { createDeepAgent, createFilesystemMiddleware } from "deepagents";
-import { createMiddleware } from "langchain";
+import {
+  createDeepAgent,
+  createFilesystemMiddleware,
+  type DeepAgent,
+} from "deepagents";
+import { createMiddleware, toolCallLimitMiddleware } from "langchain";
 import { z } from "zod";
+import { resolveTraceThreadId } from "../config/constants.js";
 import { RepositoryRunError } from "../generation/errors.js";
 import {
   beginRepositoryRun,
@@ -23,6 +28,7 @@ import {
   finishRepositoryRun,
   inspectRepositoryPageClaims,
   nextRepositoryPage,
+  restoreRepositoryPage,
   skipRepositoryPage,
   submitRepositoryPage,
   submitRepositoryPlan,
@@ -109,6 +115,19 @@ const NO_DELEGATION_MIDDLEWARE = createMiddleware({
     return coerceRepositoryWorkerModelResponse(response);
   },
 });
+
+// A rejected submission is returned to the model for correction. Weaker models
+// can resubmit the same rejected payload hundreds of times, so cap completion
+// calls per worker: the planner fails, and a page worker is skipped.
+const MAX_SUBMISSIONS_PER_WORKER = 5;
+
+function submissionLimit(toolName: "submit_plan" | "submit_page") {
+  return toolCallLimitMiddleware({
+    toolName,
+    runLimit: MAX_SUBMISSIONS_PER_WORKER,
+    exitBehavior: "error",
+  });
+}
 
 type PendingPageJob = Extract<
   NextRepositoryPageResult,
@@ -219,11 +238,11 @@ function toToolCallChunk(rawToolCall: Record<string, unknown>): ToolCallChunk {
 }
 
 /**
- * Converts a correctable submission rejection into a failed tool result.
+ * Converts a bounded submission rejection into a failed tool result.
  *
  * @param toolName - Completion tool that rejected the model payload.
- * @param error - Validated repository input error returned by the lifecycle.
- * @param retry - Concrete correction instruction shown to the worker.
+ * @param error - Repository lifecycle error returned to the worker.
+ * @param retry - Concrete next-step instruction shown to the worker.
  * @param toolCallId - LangChain identifier for the active tool call.
  * @returns Error-status tool message that keeps the worker loop active.
  */
@@ -381,7 +400,10 @@ export async function runNativeRepositoryGeneration(
     pageCount: run.state.plan?.pages.length,
   });
 
-  const result = await finishRepositoryRun(run, { skippedPageSnapshots });
+  const result = await finishRepositoryRun(run, {
+    skippedPageSnapshots,
+    onEvent: options.onEvent,
+  });
   if (result.sourceChanged) {
     options.onEvent?.({
       type: "text",
@@ -468,6 +490,20 @@ async function runPlanningAgent(
               ?.id,
           );
         }
+        if (
+          error instanceof RepositoryRunError &&
+          error.code === "invalid_state" &&
+          submitted &&
+          run.state.plan
+        ) {
+          return createSubmissionRejection(
+            "submit_plan",
+            error,
+            "A plan is already installed. Stop planning and do not call submit_plan again.",
+            (config as { toolCall?: { id?: string } } | undefined)?.toolCall
+              ?.id,
+          );
+        }
         throw error;
       }
     },
@@ -475,6 +511,7 @@ async function runPlanningAgent(
 
   const backend = createAgentBackend(wikiBackend);
   const agent = createDeepAgent({
+    name: PLANNER_AGENT_NAME,
     model,
     tools: [submitPlanTool],
     backend,
@@ -484,6 +521,7 @@ async function runPlanningAgent(
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         tools: PLANNER_FILESYSTEM_TOOLS,
       }),
+      submissionLimit("submit_plan"),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
@@ -495,12 +533,26 @@ async function runPlanningAgent(
   await streamWorkerTools(
     agent,
     [{ role: "user", content: "Plan this repository wiki now." }],
+    resolveTraceThreadId(run.state.runId),
     onEvent,
   );
 
   if (!submitted || !run.state.plan) {
     throw new Error("Repository planning worker exited without submit_plan.");
   }
+}
+
+/** The planner's trace name in LangSmith (otherwise the graph default, "LangGraph"). */
+export const PLANNER_AGENT_NAME = "planning agent";
+
+/**
+ * A page worker's trace name in LangSmith: the page it owns, so a run's thread
+ * reads as one planner and one worker per page.
+ *
+ * @param page - Canonical page path, such as `/openwiki/coverage/forms/ho-3.md`.
+ */
+export function workerAgentName(page: string): string {
+  return `worker agent: ${page.replace(/^\/openwiki\//u, "").replace(/\.md$/u, "")}`;
 }
 
 const QUICKSTART_PAGE_PATH = "/openwiki/quickstart.md";
@@ -778,6 +830,9 @@ function emitGeneratingProgress(
  *
  * Checks HTTP 429 status fields, common provider error codes, and message
  * text, following `cause` chains so wrapped SDK errors are recognized too.
+ * AWS SDK errors (Bedrock) carry the status in `$metadata.httpStatusCode`, or
+ * only the `ThrottlingException` name when the throttle arrives mid-stream,
+ * and their token-quota message ("Too many tokens") matches no rate-limit text.
  *
  * @param error - Unknown error thrown by a worker's agent stream.
  * @returns Whether the failure was a rate limit rather than a page problem.
@@ -789,6 +844,13 @@ export function isRateLimitError(error: unknown): boolean {
     seen.add(candidate);
     const status = candidate.status ?? candidate.statusCode;
     if (status === 429 || candidate.code === 429) return true;
+    if (candidate.name === "ThrottlingException") return true;
+    if (
+      isRecord(candidate.$metadata) &&
+      candidate.$metadata.httpStatusCode === 429
+    ) {
+      return true;
+    }
     if (
       typeof candidate.code === "string" &&
       /rate.?limit/iu.test(candidate.code)
@@ -806,12 +868,16 @@ export function isRateLimitError(error: unknown): boolean {
   return false;
 }
 
+/** Worker attempts per pending page before it is given up on. */
+const PAGE_WORKER_ATTEMPT_LIMIT = 2;
+
 /**
- * Runs one shell-free worker bounded to its assigned page and Claim submission.
+ * Runs one page job with a fresh bounded worker per attempt, retrying a worker
+ * that exits without submitting once before the page is skipped.
  *
  * @param run - Active durable repository run.
  * @param job - Pending page job owned by this worker.
- * @param model - Initialized model used only for this worker.
+ * @param model - Initialized model reused across attempts.
  * @param onEvent - Optional bounded worker event consumer.
  * @returns Whether the page was submitted, or the snapshot restored on skip.
  */
@@ -822,6 +888,56 @@ async function runPageAgent(
   onEvent?: (event: OpenWikiRunEvent) => void,
 ): Promise<PageAgentOutcome> {
   const snapshot = await captureRepositoryPageSnapshot(run, job.id);
+  let skipped: PageAgentOutcome = { status: "skipped", snapshot };
+
+  for (let attempt = 1; attempt <= PAGE_WORKER_ATTEMPT_LIMIT; attempt += 1) {
+    const outcome = await runPageWorkerAttempt(
+      run,
+      job,
+      snapshot,
+      model,
+      onEvent,
+    );
+    if (outcome.status === "submitted") return outcome;
+    skipped = outcome;
+
+    // A rate limit means the provider is asking for less traffic, so it is
+    // surfaced to the pool immediately instead of being retried at once.
+    if (
+      attempt >= PAGE_WORKER_ATTEMPT_LIMIT ||
+      isRateLimitError(outcome.error)
+    ) {
+      break;
+    }
+
+    // A worker that exits without submitting never banked its page edits, so
+    // reset the page and its Claims to the pre-run snapshot before the retry.
+    // Both attempts then start from the same state.
+    await restoreRepositoryPage(run, snapshot);
+  }
+
+  await skipRepositoryPage(run, snapshot);
+  emitDeferredPageWarning(job.path, onEvent);
+  return skipped;
+}
+
+/**
+ * Runs one bounded worker attempt for the current page job.
+ *
+ * @param run - Active durable repository run.
+ * @param job - Pending page job owned by this worker.
+ * @param snapshot - Page state captured before the first attempt.
+ * @param model - Initialized model used only for this attempt.
+ * @param onEvent - Optional bounded worker event consumer.
+ * @returns Whether this attempt submitted the page, or its skip outcome.
+ */
+async function runPageWorkerAttempt(
+  run: ActiveRepositoryRun,
+  job: PendingPageJob,
+  snapshot: RepositoryPageSnapshot,
+  model: BaseChatModel,
+  onEvent?: (event: OpenWikiRunEvent) => void,
+): Promise<PageAgentOutcome> {
   const ignore = await OpenWikiIgnore.load(run.root);
   const wikiBackend = new OpenWikiLocalShellBackend({
     docsOnly: true,
@@ -881,6 +997,7 @@ async function runPageAgent(
 
   const backend = createAgentBackend(wikiBackend);
   const agent = createDeepAgent({
+    name: workerAgentName(job.path),
     model,
     tools: [inspectClaimsTool, submitPageTool],
     backend,
@@ -890,6 +1007,7 @@ async function runPageAgent(
         permissions: AGENT_FILESYSTEM_PERMISSIONS,
         tools: PAGE_FILESYSTEM_TOOLS,
       }),
+      submissionLimit("submit_page"),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
@@ -911,21 +1029,20 @@ async function runPageAgent(
           content: "Research and document the assigned page, then submit it.",
         },
       ],
+      resolveTraceThreadId(run.state.runId),
       onEvent,
       job.path,
     );
   } catch (error) {
     if (submitted) return { status: "submitted" };
+    // A fatal submission failure is not retried: the store itself is refusing,
+    // so a second attempt would fail the same way and the run should stop.
     if (fatalSubmissionFailure) throw error;
-    await skipRepositoryPage(run, snapshot);
-    emitDeferredPageWarning(job.path, onEvent);
     return { status: "skipped", snapshot, error };
   }
 
   if (submitted) return { status: "submitted" };
 
-  await skipRepositoryPage(run, snapshot);
-  emitDeferredPageWarning(job.path, onEvent);
   return { status: "skipped", snapshot };
 }
 
@@ -945,18 +1062,27 @@ function emitDeferredPageWarning(
  *
  * @param agent - Fresh planner or page agent.
  * @param messages - Single worker instruction message.
+ * @param traceThreadId - LangSmith thread shared by every worker of this run.
  * @param onEvent - Optional CLI event consumer.
  * @param page - Canonical page owned by a page worker, tagged onto its events.
  */
 async function streamWorkerTools(
-  agent: ReturnType<typeof createDeepAgent>,
+  agent: DeepAgent,
   messages: Array<{ role: "user"; content: string }>,
+  traceThreadId: string,
   onEvent?: (event: OpenWikiRunEvent) => void,
   page?: string,
 ): Promise<void> {
+  // LangGraph copies `configurable.thread_id` into every run's metadata, which
+  // is what LangSmith groups a thread by. Safe to share across concurrent
+  // workers only because they have no checkpointer.
   const stream = await agent.stream(
     { messages },
-    { streamMode: ["tools"], subgraphs: true },
+    {
+      streamMode: ["tools"],
+      subgraphs: true,
+      configurable: { thread_id: traceThreadId },
+    },
   );
 
   for await (const chunk of stream) {

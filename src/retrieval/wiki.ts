@@ -93,6 +93,11 @@ const INVALID_WIKI_PAGE_MESSAGE =
   "Page must be a non-structural Markdown path below openwiki/.";
 
 /**
+ * Readable anchor for the heading whose GitHub slug is empty, such as `## 🚀`.
+ */
+const SYMBOL_ONLY_HEADING_ANCHOR = "section";
+
+/**
  * Search controls shared by direct callers and the MCP adapter.
  */
 export interface WikiSearchRequest {
@@ -207,6 +212,73 @@ export interface WikiReadRequest {
    * Omitted to read the repository where retrieval began.
    */
   wiki?: string;
+
+  /**
+   * Whether to include the page's recorded provenance.
+   *
+   * @default false
+   */
+  includeProvenance?: boolean;
+}
+
+/**
+ * One recorded OKF source entry exposed alongside a page read.
+ */
+export interface WikiProvenanceSource {
+  /**
+   * Optional author-supplied source identifier.
+   */
+  id?: string;
+
+  /**
+   * Source resource recorded in page frontmatter.
+   */
+  resource: string;
+}
+
+/**
+ * One recorded evidence resource and version owned by a page Claim.
+ */
+export interface WikiProvenanceEvidence {
+  /**
+   * Stable resolver-owned source identity.
+   */
+  resource: string;
+
+  /**
+   * Opaque resolver-owned version observed when the Claim was established.
+   */
+  version: string;
+}
+
+/**
+ * One page Claim reduced to its stable identity and recorded evidence.
+ */
+export interface WikiProvenanceClaim {
+  /**
+   * Stable OpenWiki-generated claim identifier.
+   */
+  id: string;
+
+  /**
+   * Recorded evidence references for this Claim.
+   */
+  evidence: WikiProvenanceEvidence[];
+}
+
+/**
+ * Recorded page-level provenance without a freshness or verification claim.
+ */
+export interface WikiProvenance {
+  /**
+   * Existing OKF frontmatter sources in authored order.
+   */
+  sources: WikiProvenanceSource[];
+
+  /**
+   * Claims persisted for this page with their recorded evidence versions.
+   */
+  claims: WikiProvenanceClaim[];
 }
 
 /**
@@ -237,6 +309,13 @@ export interface WikiReadResponse {
    * Complete selected sections in the caller's requested order.
    */
   sections: WikiReadSection[];
+
+  /**
+   * Recorded page-level provenance when explicitly requested.
+   *
+   * Omitted by default so an ordinary section read stays compact.
+   */
+  provenance?: WikiProvenance;
 
   /**
    * Linked wiki identity that supplied the page.
@@ -286,9 +365,14 @@ interface SearchUnit {
   heading: string;
 
   /**
-   * Searchable introduction and section Markdown.
+   * Searchable Markdown contained in this section.
    */
   prose: string;
+
+  /**
+   * Introduction units match their own prose, not repeated page metadata.
+   */
+  introductionOnly: boolean;
 
   /**
    * Searchable page path, tags, and source resources.
@@ -339,11 +423,6 @@ interface SearchPageContext {
    * Normalized repository source paths used for ranking boosts.
    */
   sourcePaths: string[];
-
-  /**
-   * Introductory prose inherited by each section.
-   */
-  introduction: string;
 
   /**
    * Normalized query terms used to choose the compact excerpt.
@@ -543,11 +622,11 @@ async function rankSearchUnits(
     units.forEach((unit, index) =>
       insert.run(
         index + 1,
-        normalizeSearchText(unit.title),
-        normalizeSearchText(unit.description),
+        unit.introductionOnly ? "" : normalizeSearchText(unit.title),
+        unit.introductionOnly ? "" : normalizeSearchText(unit.description),
         normalizeSearchText(unit.heading),
         normalizeSearchText(unit.prose),
-        normalizeSearchText(unit.identifiers),
+        unit.introductionOnly ? "" : normalizeSearchText(unit.identifiers),
       ),
     );
 
@@ -651,9 +730,8 @@ export async function readWikiSections(
 
   const normalizedPage = normalizeRetrievableWikiPage(request.page);
   const requested = request.sections.map(normalizeSectionAnchor);
-  const markdown = await new ClaimsStore(selectedWiki.root).readMarkdown(
-    normalizedPage,
-  );
+  const store = new ClaimsStore(selectedWiki.root);
+  const markdown = await store.readMarkdown(normalizedPage);
   const body = markdownBody(markdown);
   const tokens = marked.lexer(body);
   const available = new Map(
@@ -673,8 +751,47 @@ export async function readWikiSections(
       content: available.get(section) as string,
     })),
   };
+  if (request.includeProvenance) {
+    response.provenance = await readPageProvenance(
+      store,
+      normalizedPage,
+      markdown,
+    );
+  }
   if (request.wiki !== undefined) response.wiki = selectedWiki.id;
   return response;
+}
+
+/**
+ * Reads recorded page provenance without resolving or re-verifying evidence.
+ *
+ * The returned source strings and Claim evidence versions describe what the
+ * page and its persisted sidecar recorded. They do not assert that the
+ * referenced repository bytes still exist or match, nor that a Claim was
+ * semantically verified.
+ *
+ * @param store - Claims store for the selected repository wiki.
+ * @param page - Canonical virtual page path below `/openwiki`.
+ * @param markdown - Complete page Markdown already read through the store.
+ * @returns Existing frontmatter sources and persisted Claim evidence.
+ */
+async function readPageProvenance(
+  store: ClaimsStore,
+  page: string,
+  markdown: string,
+): Promise<WikiProvenance> {
+  const fields = parseFrontmatterFields(markdown) ?? {};
+  const persisted = await store.loadPage(page);
+  return {
+    sources: provenanceSources(fields),
+    claims: (persisted?.claims ?? []).map(({ id, evidence }) => ({
+      id,
+      evidence: evidence.map(({ resource, version }) => ({
+        resource,
+        version,
+      })),
+    })),
+  };
 }
 
 /**
@@ -694,7 +811,7 @@ function wikiIdentity(wiki: WikiSearchIdentity): WikiSearchIdentity {
  * @param page - Canonical virtual page path.
  * @param terms - Normalized query terms used for excerpt selection.
  * @param wiki - Identity of the repository wiki supplying the page.
- * @returns Searchable H2 sections, or a page-level H1 fallback.
+ * @returns Searchable introduction and H2 sections, or a page-level H1 fallback.
  */
 function searchUnits(
   markdown: string,
@@ -722,8 +839,12 @@ function searchUnits(
       ),
   );
   const firstH1 = headings.find(({ depth }) => depth === 1);
-  const introduction = tokens
-    .slice(0, firstLevelTwoIndex(tokens))
+  const pageTokens = firstH1 ? marked.lexer(firstH1.raw) : [];
+  const introductionTokens = pageTokens.slice(
+    0,
+    firstLevelTwoIndex(pageTokens),
+  );
+  const introduction = introductionTokens
     .filter((token) => token.type !== "heading")
     .map((token) => token.raw)
     .join("");
@@ -734,12 +855,20 @@ function searchUnits(
     description,
     identifiers: [relativePage, ...tags, ...sourcePaths].join(" "),
     sourcePaths,
-    introduction,
     terms,
   };
 
   if (sections.length) {
-    return sections.map((section) => createSearchUnit(section, context, wiki));
+    const units = sections.map((section) =>
+      createSearchUnit(section, context, wiki),
+    );
+    if (firstH1 && introduction.trim()) {
+      units.unshift({
+        ...createSearchUnit({ ...firstH1, raw: introduction }, context, wiki),
+        introductionOnly: true,
+      });
+    }
+    return units;
   }
   if (firstH1) {
     return [createSearchUnit({ ...firstH1, raw: body }, context, wiki)];
@@ -751,7 +880,7 @@ function searchUnits(
  * Creates one searchable unit from a parsed heading and page-level context.
  *
  * @param section - Parsed heading section.
- * @param context - Metadata and introductory prose shared by the page.
+ * @param context - Metadata shared by the page.
  * @param wiki - Identity of the repository wiki supplying the section.
  * @returns Searchable section representation.
  */
@@ -765,7 +894,8 @@ function createSearchUnit(
     title: context.title,
     description: context.description,
     heading: section.depth === 1 ? "" : section.heading,
-    prose: `${context.introduction}\n${section.raw}`,
+    prose: section.raw,
+    introductionOnly: false,
     identifiers: context.identifiers,
     sourcePaths: context.sourcePaths,
     excerpt: relevantExcerpt(section.raw, context.terms),
@@ -781,19 +911,41 @@ function createSearchUnit(
  */
 function headingSections(tokens: Token[]): ParsedHeadingSection[] {
   const headings: LocatedHeading[] = [];
-  const slugs = new Map<string, number>();
+  // GitHub's slugger advances a numeric suffix only until the *candidate* anchor is
+  // free, so a heading whose own slug was already taken by an earlier generated
+  // suffix keeps probing instead of reusing that anchor. Multiplicity matters because
+  // both readWikiSections and searchWiki key sections by anchor: a repeated anchor
+  // silently drops one section from the lookup map and hands the surviving search
+  // reference the wrong section's body.
+  const suffixes = new Map<string, number>();
+  const taken = new Set<string>();
   for (const [index, token] of tokens.entries()) {
     if (token.type !== "heading") continue;
     const heading = token as Tokens.Heading;
     const base = headingSlug(heading);
-    const count = slugs.get(base) ?? 0;
-    slugs.set(base, count + 1);
+    let anchor = base;
+    let suffix = suffixes.get(base) ?? 0;
+    while (taken.has(anchor)) {
+      suffix += 1;
+      anchor = `${base}-${suffix}`;
+    }
+    suffixes.set(base, suffix);
+    taken.add(anchor);
     headings.push({
-      anchor: count ? `${base}-${count}` : base,
+      anchor,
       depth: heading.depth,
       heading: heading.text,
       index,
     });
+  }
+  // A symbol-only heading slugs to "", which read rejects; alias it without displacing any GitHub anchor.
+  const unaddressable = headings.find(({ anchor }) => !anchor);
+  if (unaddressable) {
+    let fallback = SYMBOL_ONLY_HEADING_ANCHOR;
+    for (let suffix = 1; taken.has(fallback); suffix += 1) {
+      fallback = `${SYMBOL_ONLY_HEADING_ANCHOR}-${suffix}`;
+    }
+    unaddressable.anchor = fallback;
   }
   return headings.map((heading) => {
     let end = heading.index + 1;
@@ -1035,13 +1187,18 @@ function normalizeSectionAnchor(value: string): string {
 /**
  * Produces the GitHub-compatible base anchor for one Markdown heading.
  *
+ * Combining marks stay in the anchor, as they do on GitHub, so vowel signs in
+ * scripts such as Devanagari or Thai and decomposed accents survive. Emoji
+ * variation selectors are still dropped so emoji-only headings keep their
+ * readable fallback anchors.
+ *
  * @param heading - Parsed Markdown heading.
  * @returns Lowercase anchor before duplicate suffixing.
  */
 function headingSlug(heading: Tokens.Heading): string {
   return inlineHeadingText(heading.tokens)
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}_\s-]/gu, "")
+    .replace(/[^\p{L}\p{M}\p{N}_\s-]|\p{Variation_Selector}/gu, "")
     .replace(/ /gu, "-");
 }
 
@@ -1074,6 +1231,26 @@ function inlineHeadingText(tokens: readonly Token[]): string {
  */
 function markdownBody(markdown: string): string {
   return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, "").trim();
+}
+
+/**
+ * Extracts all recorded OKF source entries for public provenance.
+ *
+ * @param fields - Parsed frontmatter fields.
+ * @returns Bounded source identities and resources in authored order.
+ */
+function provenanceSources(
+  fields: Record<string, unknown>,
+): WikiProvenanceSource[] {
+  if (!Array.isArray(fields.sources)) return [];
+  return fields.sources.flatMap((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+    const entry = value as Record<string, unknown>;
+    const resource = stringField(entry.resource);
+    if (!resource) return [];
+    const id = stringField(entry.id);
+    return [{ ...(id ? { id } : {}), resource }];
+  });
 }
 
 /**

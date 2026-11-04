@@ -1,5 +1,131 @@
 # openwiki
 
+## 0.7.3
+
+### Patch Changes
+
+- [#1047](https://github.com/langchain-ai/openwiki/pull/1047) [`0c41be9`](https://github.com/langchain-ai/openwiki/commit/0c41be96948c6952f1606768eeb2451ca5bb3b0c) Thanks [@naveecode](https://github.com/naveecode)! - fix: stream Anthropic (direct and Vertex) requests so `OPENWIKI_MAX_OUTPUT_TOKENS` can go above ~21,333 tokens without the Anthropic SDK rejecting them as "Streaming is required for operations that may take longer than 10 minutes"
+
+- [#1075](https://github.com/langchain-ai/openwiki/pull/1075) [`e0627a6`](https://github.com/langchain-ai/openwiki/commit/e0627a6f8fdffdcaa1215ff91332cd5fcbaffb74) Thanks [@jrodeiro5](https://github.com/jrodeiro5)! - Stop a repository worker after five plan or page submissions instead of letting it resubmit a rejected payload until the recursion limit. A page worker that hits the cap is skipped and reconsidered on the next update.
+
+- [#1065](https://github.com/langchain-ai/openwiki/pull/1065) [`6b30dea`](https://github.com/langchain-ai/openwiki/commit/6b30dea8ba72573db3914bf3b48a976cc7efc305) Thanks [@jkennedyvz](https://github.com/jkennedyvz)! - Enforce the docs-only write boundary for repository chat, preventing source-file mutations while preserving targeted reads.
+
+- [#1044](https://github.com/langchain-ai/openwiki/pull/1044) [`d3b953e`](https://github.com/langchain-ai/openwiki/commit/d3b953e6ed14fcc90e2cc4eec2396bce7970f69b) Thanks [@naveecode](https://github.com/naveecode)! - fix: do not record git error text as `gitHead` in a repository with no commits
+
+- [#1079](https://github.com/langchain-ai/openwiki/pull/1079) [`e08af96`](https://github.com/langchain-ai/openwiki/commit/e08af964ec8f253a70113e3c6227f8b91e3d115a) Thanks [@xpeng5278-web](https://github.com/xpeng5278-web)! - Do not retry a connector fetch after the caller's AbortSignal cancels it.
+
+- [#1072](https://github.com/langchain-ai/openwiki/pull/1072) [`d4a4b26`](https://github.com/langchain-ai/openwiki/commit/d4a4b264cd7e6177f8957b81f6483c94a089d998) Thanks [@RaphaelFakhri](https://github.com/RaphaelFakhri)! - Keep combining marks in wiki search and read section anchors, so headings in scripts such as Devanagari or Thai, and headings with decomposed accents, get the same anchors as on GitHub.
+
+- [#1062](https://github.com/langchain-ai/openwiki/pull/1062) [`efb2f7e`](https://github.com/langchain-ai/openwiki/commit/efb2f7e4fa7c6d54083b2b335c22936ed167b83c) Thanks [@SU-AN-coder](https://github.com/SU-AN-coder)! - fix(pi): start the MCP bridge as Node or Bun under a compiled host
+
+- [#1054](https://github.com/langchain-ai/openwiki/pull/1054) [`653f671`](https://github.com/langchain-ai/openwiki/commit/653f67173a28944b94ead061113f29579b7c7764) Thanks [@anzal1](https://github.com/anzal1)! - fix: pin langsmith to ^0.9.0 so `npm install -g openwiki` no longer prints an ERESOLVE peer-dependency warning
+
+- [#1056](https://github.com/langchain-ai/openwiki/pull/1056) [`47cb6a6`](https://github.com/langchain-ai/openwiki/commit/47cb6a6103dd2cbae76282e2d1b601c48da1fe3e) Thanks [@MTG-Thomas](https://github.com/MTG-Thomas)! - Expose wiki search, section reads, and linked workspace discovery in Pi alongside the existing generation tools, honoring the configured OpenWiki directory.
+
+- [#1080](https://github.com/langchain-ai/openwiki/pull/1080) [`7d0691c`](https://github.com/langchain-ai/openwiki/commit/7d0691cacb49e7170e76f7cebf09ec5ac8df625e) Thanks [@Macedopy](https://github.com/Macedopy)! - fix: expose recorded page provenance in openwiki_read
+
+- [#1086](https://github.com/langchain-ai/openwiki/pull/1086) [`7bb583d`](https://github.com/langchain-ai/openwiki/commit/7bb583d664f2d1c2484fa44b9d591f6103ca8166) Thanks [@dependabot](https://github.com/apps/dependabot)! - Update runtime dependencies to address security vulnerabilities in DOMPurify, Azure authentication, request parsing, HTTP transport, and schema validation.
+
+- [#1045](https://github.com/langchain-ai/openwiki/pull/1045) [`9dc215f`](https://github.com/langchain-ai/openwiki/commit/9dc215fca6ec738ad257fe30271d424a4c3714fb) Thanks [@naveecode](https://github.com/naveecode)! - fix: keep a page's update checkpoint and require a full review when its baseline commit is missing (for example in a shallow clone)
+
+- [#990](https://github.com/langchain-ai/openwiki/pull/990) [`6c14bff`](https://github.com/langchain-ai/openwiki/commit/6c14bff27830034bfd70c15bde46825d7686ec60) Thanks [@dependabot](https://github.com/apps/dependabot)! - Use a React 19-compatible CLI renderer and keep browser graph types independent of the Node.js graph loader.
+
+- [#1063](https://github.com/langchain-ai/openwiki/pull/1063) [`5c39cbe`](https://github.com/langchain-ai/openwiki/commit/5c39cbe8b3294009d2c2ce97f9e53aaa314159f9) Thanks [@MTG-Thomas](https://github.com/MTG-Thomas)! - Avoid claiming that scheduled maintenance is active in generated agent guidance. Direct readers to the repository's configured maintenance process and completed runs, including when wiki updates are managed externally.
+
+- [#1052](https://github.com/langchain-ai/openwiki/pull/1052) [`216e602`](https://github.com/langchain-ai/openwiki/commit/216e6025b764fd7d0f3898db75324dd9c53c145f) Thanks [@rahul05ranjan](https://github.com/rahul05ranjan)! - Fix visualize rendering when frontmatter is terminated by end-of-file instead of a closing delimiter.
+
+- [#1070](https://github.com/langchain-ai/openwiki/pull/1070) [`a3a8584`](https://github.com/langchain-ai/openwiki/commit/a3a8584829266447e5355e3a35ea0275938419f2) Thanks [@jipeng6036-del](https://github.com/jipeng6036-del)! - Fix in-page links to pages with non-ASCII filenames in `openwiki visualize`, which opened a 404 instead of navigating in the reader.
+
+- [#1050](https://github.com/langchain-ai/openwiki/pull/1050) [`21c20af`](https://github.com/langchain-ai/openwiki/commit/21c20afa93df8cc909442cc5315f6d914afe8926) Thanks [@naveecode](https://github.com/naveecode)! - fix: parse CRLF front matter correctly in the visualizer and preserve an empty body when the closing delimiter is at EOF
+
+- [#1076](https://github.com/langchain-ai/openwiki/pull/1076) [`bd2956d`](https://github.com/langchain-ai/openwiki/commit/bd2956d89cb0319f1dbf517c0df774f0f8fc5536) Thanks [@jrodeiro5](https://github.com/jrodeiro5)! - Tell repository workers that source files are at the filesystem root and the wiki is under `/openwiki/`, and that plan page paths are Markdown files.
+
+## 0.7.2
+
+### Patch Changes
+
+- [#1003](https://github.com/langchain-ai/openwiki/pull/1003) [`d1c7fc7`](https://github.com/langchain-ai/openwiki/commit/d1c7fc75a6a906da258cd94dbcb1602f98516480) Thanks [@ilaigold](https://github.com/ilaigold)! - fix: allow jsdom 30 as an optional peer
+
+- [#1011](https://github.com/langchain-ai/openwiki/pull/1011) [`b9471dc`](https://github.com/langchain-ai/openwiki/commit/b9471dce755381066f5d76a79835840b68779e11) Thanks [@xpeng5278-web](https://github.com/xpeng5278-web)! - fix: treat bedrock throttling as a rate limit for page workers
+
+- [#1001](https://github.com/langchain-ai/openwiki/pull/1001) [`7b419a8`](https://github.com/langchain-ai/openwiki/commit/7b419a89dc93e49d5a79d967a61832bed1f23618) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: give symbol-only headings a readable section anchor so `openwiki_search` refs to them can be opened with `openwiki_read`
+
+- [#1002](https://github.com/langchain-ai/openwiki/pull/1002) [`5e4e152`](https://github.com/langchain-ai/openwiki/commit/5e4e1525827af620e8408dcf3b3103d61362c390) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: let hosts that share a skill directory co-own the installation
+
+- [#1008](https://github.com/langchain-ai/openwiki/pull/1008) [`c6a84fe`](https://github.com/langchain-ai/openwiki/commit/c6a84fe0ea50b3502d7912295b4bb479846571a8) Thanks [@xpeng5278-web](https://github.com/xpeng5278-web)! - fix: keep wiki pages intact when a translation hits the output-token limit
+
+## 0.7.1
+
+### Patch Changes
+
+- [#986](https://github.com/langchain-ai/openwiki/pull/986) [`dcf2cc5`](https://github.com/langchain-ai/openwiki/commit/dcf2cc528d57af5f440c12b81eb0c725c8bcde96) Thanks [@drakeo338](https://github.com/drakeo338)! - fix: accept github line anchors on markdown link targets
+
+- [#974](https://github.com/langchain-ai/openwiki/pull/974) [`d9d7d99`](https://github.com/langchain-ai/openwiki/commit/d9d7d99bba0a98d1aeb6799c5de3cbe38d13e287) Thanks [@xiehuanyi](https://github.com/xiehuanyi)! - fix: strip complete terminal escape sequences
+
+- [#929](https://github.com/langchain-ai/openwiki/pull/929) [`d316820`](https://github.com/langchain-ai/openwiki/commit/d3168204fdf1addb3468f9f737545e44dc94e3a1) Thanks [@c020627](https://github.com/c020627)! - fix: keep every duplicate wiki heading reachable when one already owns the suffix
+
+- [#969](https://github.com/langchain-ai/openwiki/pull/969) [`7b24808`](https://github.com/langchain-ai/openwiki/commit/7b248086701f587e57a7190801e890b38fcd8118) Thanks [@Yi-111-a](https://github.com/Yi-111-a)! - fix: treat compact sequence items as front-matter continuations
+
+- [#980](https://github.com/langchain-ai/openwiki/pull/980) [`0ff41ef`](https://github.com/langchain-ai/openwiki/commit/0ff41eff81d48804345a755abb3aefa2c4c0c0ce) Thanks [@Zhuoxi2000](https://github.com/Zhuoxi2000)! - fix: stamp anchors with malformed percent escapes instead of throwing
+
+- [#958](https://github.com/langchain-ai/openwiki/pull/958) [`fd7ff2a`](https://github.com/langchain-ai/openwiki/commit/fd7ff2aee45076d4386155f13ae7198ffd8fc3ee) Thanks [@breken-ai](https://github.com/breken-ai)! - fix: insert prompt values literally instead of as replacement patterns
+
+- [#913](https://github.com/langchain-ai/openwiki/pull/913) [`1853fbf`](https://github.com/langchain-ai/openwiki/commit/1853fbfbef85aba7786849e3f9db4a7450dabacf) Thanks [@sloemo01](https://github.com/sloemo01)! - fix: retry a page worker once before skipping its page
+
+- [#981](https://github.com/langchain-ai/openwiki/pull/981) [`0b1e992`](https://github.com/langchain-ai/openwiki/commit/0b1e992a37c68f1c54006b4da15ea09e1786152c) Thanks [@tollenceld](https://github.com/tollenceld)! - fix: preserve optional tool parameters for openai-compatible models
+
+- [#865](https://github.com/langchain-ai/openwiki/pull/865) [`8330d7c`](https://github.com/langchain-ai/openwiki/commit/8330d7c6caeac1e67b9f8e3bcda4a4ac4e049b88) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: scope update planning to explicit requests
+
+- [#979](https://github.com/langchain-ai/openwiki/pull/979) [`bedcdec`](https://github.com/langchain-ai/openwiki/commit/bedcdec54f17d60d1c9f2452002da08833231417) Thanks [@SammyTourani](https://github.com/SammyTourani)! - fix: serialize concurrent file operations on the same wiki page
+
+- [#957](https://github.com/langchain-ai/openwiki/pull/957) [`16b0aaf`](https://github.com/langchain-ai/openwiki/commit/16b0aafc517253a1a48b5e2363b7bccbb1c3bf11) Thanks [@breken-ai](https://github.com/breken-ai)! - fix: ignore link syntax inside code when validating wiki links
+
+- [#955](https://github.com/langchain-ai/openwiki/pull/955) [`277806a`](https://github.com/langchain-ai/openwiki/commit/277806a834c34ff098ff0dc1552a2bf2f7686b77) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: prioritize stable workspace ids over display names
+
+- [#989](https://github.com/langchain-ai/openwiki/pull/989) [`bc383a4`](https://github.com/langchain-ai/openwiki/commit/bc383a4845784714e1622867570fa24ac1ad4eff) Thanks [@colifran](https://github.com/colifran)! - fix: update vulnerable dependencies
+
+## 0.7.0
+
+### Minor Changes
+
+- [#966](https://github.com/langchain-ai/openwiki/pull/966) [`0f2060f`](https://github.com/langchain-ai/openwiki/commit/0f2060fe884a3a7bb7cc880c8c4f066267771483) Thanks [@waseem-k-08](https://github.com/waseem-k-08)! - Add a GitHub Copilot CLI integration: `openwiki integrations install copilot`.
+
+- [#975](https://github.com/langchain-ai/openwiki/pull/975) [`c5d7a6d`](https://github.com/langchain-ai/openwiki/commit/c5d7a6d8856e0fce3b471d7509b3fea2a0985edf) Thanks [@colifran](https://github.com/colifran)! - feat: add entra auth configuration and token provider
+
+### Patch Changes
+
+- [#972](https://github.com/langchain-ai/openwiki/pull/972) [`1d09d95`](https://github.com/langchain-ai/openwiki/commit/1d09d9526254dea6be83cbae090dc8db9f70ea30) Thanks [@eugeneliu-86](https://github.com/eugeneliu-86)! - feat: group a repository run's planner and page workers into one LangSmith thread, named "planning agent" and "worker agent: <page>"
+
+## 0.6.1
+
+### Patch Changes
+
+- [#938](https://github.com/langchain-ai/openwiki/pull/938) [`efe6f0f`](https://github.com/langchain-ai/openwiki/commit/efe6f0f62f0ecc1a019aad0d1d2c73f149362ff8) Thanks [@SammyTourani](https://github.com/SammyTourani)! - fix: `--debug` now shows the innermost cause of a failed run, such as the network error behind "Connection error."
+
+- [#937](https://github.com/langchain-ai/openwiki/pull/937) [`261022d`](https://github.com/langchain-ai/openwiki/commit/261022d2db0216a6956df7ff070f380dbf7f2bc2) Thanks [@ind1go](https://github.com/ind1go)! - Correct MCP generation for IBM Bob.
+
+- [#840](https://github.com/langchain-ai/openwiki/pull/840) [`d64ac87`](https://github.com/langchain-ai/openwiki/commit/d64ac8789a41058c66fb456cf3475f77cdcd1168) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - Fix `.last-update.json` being written non-atomically, which could leave it truncated/corrupted under a failed or concurrent write and silently discard the crash guard's interrupted-status signal.
+
+- [#901](https://github.com/langchain-ai/openwiki/pull/901) [`7495044`](https://github.com/langchain-ai/openwiki/commit/74950440f61eb2bf572234aa28226037aa71bd1c) Thanks [@mbbernstein](https://github.com/mbbernstein)! - fix: flag root-absolute internal wiki links instead of silently accepting them
+
+- [#936](https://github.com/langchain-ai/openwiki/pull/936) [`b3b5ea4`](https://github.com/langchain-ai/openwiki/commit/b3b5ea4359074d164abbd3d4101cb4138c195187) Thanks [@ousamabenyounes](https://github.com/ousamabenyounes)! - Keep repository claim evidence line references in sync when cited blocks move.
+
+- [#902](https://github.com/langchain-ai/openwiki/pull/902) [`3e4ae0c`](https://github.com/langchain-ai/openwiki/commit/3e4ae0ce87d0f9dab10f4d480877c4931a2f4162) Thanks [@mbbernstein](https://github.com/mbbernstein)! - fix: report pages with code-derived frontmatter or no description after index sync
+
+- [#897](https://github.com/langchain-ai/openwiki/pull/897) [`d8ebf56`](https://github.com/langchain-ai/openwiki/commit/d8ebf561f1504cfd068197c8b53ffecfd9a83363) Thanks [@tuandinh0801](https://github.com/tuandinh0801)! - feat: ship openwiki as a native pi package
+
+- [#933](https://github.com/langchain-ai/openwiki/pull/933) [`fbe642d`](https://github.com/langchain-ai/openwiki/commit/fbe642dc01beb6db577de4a9b0072a0fec2866c2) Thanks [@lnhsingh](https://github.com/lnhsingh)! - feat: stop code mode from creating CLAUDE.md
+
+- [#926](https://github.com/langchain-ai/openwiki/pull/926) [`d7a5266`](https://github.com/langchain-ai/openwiki/commit/d7a5266045ffcc551ce5ce6d541b320defc878fe) Thanks [@c020627](https://github.com/c020627)! - fix: keep every OKF wiki operation in `error_detail` instead of dropping four of them
+
+- [#866](https://github.com/langchain-ai/openwiki/pull/866) [`da9a6ae`](https://github.com/langchain-ai/openwiki/commit/da9a6ae1cd4a78f0445923c470429721379573b7) Thanks [@HwangJohn](https://github.com/HwangJohn)! - fix: normalize malformed OpenRouter success responses
+
+- [#906](https://github.com/langchain-ai/openwiki/pull/906) [`7706ef8`](https://github.com/langchain-ai/openwiki/commit/7706ef8e32a8d7d2c4d70458f1e68407bccbd927) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - Keep repository generation running when a planner submits a different plan after one is already installed.
+
+- [#952](https://github.com/langchain-ai/openwiki/pull/952) [`f0ee52b`](https://github.com/langchain-ai/openwiki/commit/f0ee52b20ac522d181a0fdde4ac26273b5ca8d96) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - fix: return readable references for wiki introductions
+
+- [#888](https://github.com/langchain-ai/openwiki/pull/888) [`865e9f6`](https://github.com/langchain-ai/openwiki/commit/865e9f645162378defb97b6774baedff72531869) Thanks [@Yashwanth-Kumar-Kotla](https://github.com/Yashwanth-Kumar-Kotla)! - Prevent agents from running arbitrary host shell commands and direct repository inspection through OpenWiki's constrained filesystem tools.
+
 ## 0.6.0
 
 ### Minor Changes

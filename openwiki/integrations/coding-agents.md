@@ -1,19 +1,19 @@
 ---
 type: integration guide
-title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
-description: How OpenWiki runs inside a host coding agent through the six-operation MCP page-job protocol, how install writes host config and the shared skill bundle, and the divided ownership between host research and OpenWiki finalization.
-tags: [integrations, mcp, coding-agents, installation, page-job, host]
+title: Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
+description: How OpenWiki runs inside a host coding agent through the ten-tool MCP page-job protocol, how install writes host config and the shared skill bundle, the Pi package extension, the AGENTS.md/CLAUDE.md managed markers, and the divided ownership between host research and OpenWiki finalization.
+tags: [integrations, mcp, coding-agents, installation, page-job, host, copilot]
 sources:
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
-  - id: openwiki-source-d55cae2851a4bac00040906e
-    resource: repo://docs/pi-integration-notes.md
   - id: openwiki-source-77c4fabfc00b27b92aa6311c
     resource: repo://integrations/openwiki/agents/bob.yaml
   - id: openwiki-source-da19cf14a1041f6d06ffc9a5
     resource: repo://integrations/openwiki/agents/openai.yaml
   - id: openwiki-source-438fff4d79b8ab99f5c88c73
     resource: repo://integrations/openwiki/SKILL.md
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
   - id: openwiki-source-638173446de4138fa3a622a8
     resource: repo://src/claims/guidance.ts
   - id: openwiki-source-ada18c62d92003b613355e30
@@ -22,6 +22,8 @@ sources:
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
+  - id: openwiki-source-85064d6a188fa56bcc282f11
+    resource: repo://src/ingestion/code-mode.ts
   - id: openwiki-source-5c32d5425e61a6c32d810844
     resource: repo://src/integrations/core/errors.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
@@ -52,19 +54,21 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-6f06cc988142430d18f2233e
     resource: repo://src/integrations/mcp/stdio.ts
+  - id: openwiki-source-4072ea10a7d7d1352adfe32c
+    resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
-# Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity)
+# Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
 
 OpenWiki can run _inside_ a host coding agent (IBM Bob, Codex, Claude Code,
-OpenCode, Cursor, Kiro, Oh My Pi, or Antigravity CLI) instead of as a standalone
-process. The host agent supplies the model, native repository tools, and Markdown
+OpenCode, Cursor, Kiro, Oh My Pi, Antigravity CLI, or GitHub Copilot CLI)
+instead of as a standalone process. The host agent supplies the model, native repository tools, and Markdown
 authoring; OpenWiki supplies a deterministic, resumable **page-job lifecycle** over
 the Model Context Protocol (MCP). The two sides communicate through four read-only retrieval tools plus six
 generation lifecycle tools (ten in all), and installation wires a local stdio
@@ -73,10 +77,10 @@ MCP server plus a shared skill bundle into each host's own configuration.
 This page documents the protocol operations, the divided ownership of research
 versus finalization, repository-root resolution, install/uninstall mechanics, and
 the scope model. For the internal generation engine these tools drive, see
-[Repository generation workflow](/openwiki/workflows/repository-generation.md)
-and [Architecture overview](/openwiki/architecture/overview.md). For the
+[Repository generation workflow](../workflows/repository-generation.md)
+and [Architecture overview](../architecture/overview.md). For the
 `openwiki mcp` and `openwiki integrations` commands, see the
-[CLI reference](/openwiki/operations/cli-reference.md).
+[CLI reference](../operations/cli-reference.md).
 
 > Note: This is the **host integration** path. It is unrelated to the
 > `write-connector` skill, which adds a new _source connector_ for ingesting
@@ -249,6 +253,45 @@ description with the MCP SDK and executes it through `executeTool`. The server
 is invoked by the CLI's `openwiki mcp --host <id>` command, which looks up the
 host's registry entry to supply the correct provenance actor.
 
+```mermaid
+sequenceDiagram
+    participant CLI as openwiki mcp --host id
+    participant Stdio as runOpenWikiMcp
+    participant SM as HostSessionManager
+    participant Srv as createOpenWikiMcpServer
+    participant SDK as McpServer
+    CLI->>Stdio: runOpenWikiMcp(host, producerActor?)
+    Stdio->>SM: HostSessionManager.create(host, producerActor)
+    SM-->>Stdio: manager (validated id)
+    Stdio->>Srv: createOpenWikiMcpServer(manager)
+    Srv->>SDK: new McpServer(name, version, instructions=INSTRUCTIONS)
+    loop each ProtocolTool from manager.tools()
+        Srv->>SDK: registerTool(name, description, inputSchema, executeTool)
+    end
+    Srv-->>Stdio: server
+    Stdio->>SDK: connect(new StdioServerTransport())
+    Note over SDK: INSTRUCTIONS + tool schemas advertised at init
+    loop tool calls
+        SDK->>Srv: executeTool(tool, input)
+        Srv->>SM: tool.handle(input) via provider.tools()
+        SM-->>Srv: result OR HostIntegrationError
+        alt HostIntegrationError
+            Srv-->>SDK: toolError(code: message)
+        else unexpected throw
+            Srv-->>SDK: toolError("OpenWiki MCP operation failed.")
+        else success
+            Srv-->>SDK: content + structuredContent
+        end
+    end
+```
+
+MCP server construction and tool registration. `HostSessionManager.tools()`
+supplies the ordered ten-tool set (four retrieval via `createRetrievalTools()`
+then six lifecycle), and the server advertises the `INSTRUCTIONS` guidance
+(embedding `CLAIMS_RECONCILIATION_GUIDANCE`) plus each tool's schema at
+initialization; `executeTool` bounds transport-visible errors to
+`HostIntegrationError` codes or a generic failure string.
+
 ## Installation: host config and the skill bundle
 
 Installing an integration writes two managed artifacts into a host's chosen
@@ -262,10 +305,10 @@ bundle) and a **managed MCP server entry** in the host's config file. The
 registry of supported hosts. Each entry declares its display name, provenance
 actor, per-scope skill directory and MCP config, and a documentation URL:
 
-- **IBM Bob** — `.bob/mcp.json` (`json`) at both user and project scope, skill
-  under `.agents/skills/openwiki` at both scopes; `producerActor` `bob`. IBM Bob
-  additionally ships an agent manifest at
-  `integrations/openwiki/agents/bob.yaml` (`display_name`, `short_description`,
+- **IBM Bob** — user config at `.bob/settings/mcp.json` and project at
+  `.bob/mcp.json` (`json`); skill under `.agents/skills/openwiki` at
+  both scopes; `producerActor` `bob`. IBM Bob additionally ships an agent manifest
+  at `integrations/openwiki/agents/bob.yaml` (`display_name`, `short_description`,
   `default_prompt`) consumed by the Bob host to surface the OpenWiki agent.
 - **Codex** — `.codex/config.toml` (`codex-toml`), skill under
   `.agents/skills/openwiki`, at both user and project scope; `producerActor`
@@ -288,16 +331,49 @@ actor, per-scope skill directory and MCP config, and a documentation URL:
   User-scope installation targets Oh My Pi's default profile only — named
   profiles and `PI_CODING_AGENT_DIR` overrides use another agent directory, so
   install with `--project` when that is the intended repository-local
-  configuration. The `omp` target is distinct from upstream Pi
-  (`earendil-works/pi`); this integration adds no upstream Pi target, generated
-  extension, or other Pi-specific artifact.
+  configuration. The `omp` install target is distinct from upstream Pi
+  (`@earendil-works/pi-coding-agent`): upstream Pi is not a `HOST_TARGETS`
+  entry and is not installed by the integration CLI — it consumes the
+  separate Pi package extension described below.
 - **Antigravity CLI** — user config `.gemini/config/mcp_config.json` (`json`)
   with skill under `.gemini/antigravity-cli/skills/openwiki`; project scope uses
   `.agents/mcp_config.json` with skill under `.agents/skills/openwiki`;
   `producerActor` `antigravity`.
+- **GitHub Copilot CLI** — user config `.copilot/mcp-config.json` (`json`) with
+  skill under `.copilot/skills/openwiki`; project scope uses `.github/mcp.json`
+  with skill under `.github/skills/openwiki`; `producerActor` `copilot`. The
+  user/project skill paths diverge because GitHub Copilot CLI keeps global
+  skills under `~/.copilot/skills` but per-repository skills under `.github/skills`.
 
 `defaultMcpServerCommand(target)` produces the published invocation
 `openwiki mcp --host <target>`, which is what installed configs launch.
+
+### The Pi package extension
+
+Upstream Pi (`@earendil-works/pi-coding-agent`) is **not** a `HOST_TARGETS`
+entry and is not installed by `openwiki integrations install`. It consumes
+OpenWiki as a Pi package extension declared in `package.json` under the `pi`
+key, which points the host at `dist/integrations/pi/openwiki.js` and the shared
+`integrations/openwiki` skill bundle. The extension
+(`src/integrations/pi/openwiki.ts`) is a thin in-process bridge: it registers
+all ten tools — the four read-only retrieval tools plus the six generation
+lifecycle tools — with Pi's tool API, lazily spawns one stdio MCP client
+transport using `process.execPath` to run the CLI at
+`dist/cli/cli.js mcp --host pi`, and forwards each tool call to the MCP server,
+surfacing `isError` results as thrown errors. Because a Pi host may be an
+Electron or Bun-compiled executable whose `process.execPath` is not a plain
+Node binary, `bridgeEnvironment()` re-exports `ELECTRON_RUN_AS_NODE` or
+`BUN_BE_BUN` (Bun >= 1.2.16) so the child runs the CLI script rather than the
+host application; without it the child starts the host app and exits, which
+the host reports as `MCP error -32000: Connection closed`. The bridge is a
+singleton per Pi session — `bridge()` caches one
+`StdioClientTransport`/`Client` pair and resets it on transport close or a call
+failure; `session_shutdown` closes the bridge. Because `--host pi` is not in
+`HOST_TARGETS`, `getHostTarget("pi")` returns `undefined` and the MCP command
+falls back to `producerActor: "pi"`, so Pi-authored pages are stamped with the
+`pi` producer actor. The CLI accepts any `[a-z0-9-]{1,64}` host id for
+`openwiki mcp --host`, which is how the non-registered `pi` host reaches the
+same `HostSessionManager` lifecycle as the nine installed targets.
 
 ### Config adapters
 
@@ -348,10 +424,51 @@ skill to a cleanup backup, and prunes now-empty skill parent directories.
 intact, `modified` when either is partially present, and `unsupported` when the
 requested scope does not exist for the host.
 
+```mermaid
+sequenceDiagram
+    participant CLI as integrations install
+    participant I as HostIntegrationInstaller
+    participant Ctx as resolveInstallContext
+    participant Cfg as Config Adapter
+    CLI->>I: install(target, scope, root, force?)
+    I->>Ctx: resolveInstallContext(target, scope, root)
+    Ctx-->>I: skillDirectory + mcpConfig
+    I->>I: inspectInstallation + inventorySkill(canonical)
+    alt modified and not force
+        I-->>CLI: conflict
+    else already current
+        I->>Cfg: installManagedConfig
+        Cfg-->>I: changed?
+        I-->>CLI: unchanged OR installed
+    else fresh install/upgrade
+        I->>I: cp bundle to staging sibling
+        I->>I: inventorySkill(staging) == canonical?
+        I->>I: writeReceipt(staging)
+        I->>Cfg: snapshotTextFile(config)
+        I->>Cfg: installManagedConfig
+        opt prior skill exists
+            I->>I: move prior skill aside (rollback OR forced backup)
+        end
+        I->>I: move staging into skillDirectory
+        alt commit fails
+            I->>I: rollbackInstall (restore config + prior skill, remove staging)
+            I-->>CLI: AggregateError on incomplete rollback
+        end
+        I->>I: cleanupPriorSkill (remove rollback OR keep forced backup)
+        I-->>CLI: installed (paths, backup?)
+    end
+```
+
+The install transaction. The installer stages the skill into a private sibling,
+verifies the staged copy, writes the receipt, then commits by mutating the
+config and atomically moving the staged skill into place; any pre-commit
+failure rolls both back, and an incomplete rollback surfaces as an
+`AggregateError`.
+
 ## User-level vs project scope
 
 Every host supports **project** scope; user scope is optional (`user` may be
-`null` in the registry, though all eight current hosts support both). For
+`null` in the registry, though all nine current hosts support both). For
 **project** scope the installer resolves the root through the same
 `resolveRepositoryRoot` used by runs, so a project install always lands at the
 Git worktree root; for **user** scope it anchors at the home directory. When a
@@ -363,7 +480,35 @@ skill under `~/.agents` and the MCP entry under `~/.bob`, Codex writes under
 `~/.agents` and `~/.codex`, Claude Code under `~/.claude`, OpenCode under
 `~/.config/opencode` (OpenCode's global configuration directory on every
 supported platform), Cursor under `~/.cursor`, Kiro under `~/.kiro`, Oh My Pi
-under `~/.omp/agent` (default profile), and Antigravity CLI under `~/.gemini`.
+under `~/.omp/agent` (default profile), Antigravity CLI under `~/.gemini`, and
+GitHub Copilot CLI under `~/.copilot`.
+
+## AGENTS.md / CLAUDE.md managed markers
+
+Separate from per-host installation, OpenWiki's code-mode ingestion keeps the
+repository's root agent-instruction files pointed at the generated wiki. When
+`openwiki code` runs, `writeCodeModeAgentSnippets` refreshes two files in place
+— `AGENTS.md` (created when missing) and `CLAUDE.md` (refreshed only when it
+already exists, because Claude Code reads `AGENTS.md` only when no `CLAUDE.md`
+shadows it). Each file carries a managed block delimited by the markers
+`<!-- OPENWIKI:START -->` and `<!-- OPENWIKI:END -->`.
+
+The `AGENTS.md` block holds the full just-in-time retrieval guidance (prefer
+`openwiki_search`/`openwiki_read` over eager loading, treat source as
+authoritative). The `CLAUDE.md` block is intentionally minimal — a single
+`@AGENTS.md` import — because Claude Code expands its own `@path` syntax but
+not Markdown links, so a link would leave the block inert. When `CLAUDE.md` is a
+filesystem link to `AGENTS.md` (a common convention), the import would
+self-reference, so the block carries the full `AGENTS.md` snippet instead.
+
+`prepareCodeModeAgentSnippet` validates markers before writing either file so
+setup fails atomically rather than half-refreshing a sibling: it accepts either
+no markers (appends a fresh block) or exactly one ordered `START`/`END` pair
+(replaces the block in place). Malformed or duplicated markers abort with an
+error and leave the file unchanged. Legacy pre-marker (0.0.x) `## OpenWiki`
+sections are detected by their heading plus the exact released template
+sentence and removed before marker validation, so an old bare section never
+sits beside a fresh managed block.
 
 ## Contributing a new host
 
@@ -373,10 +518,10 @@ lifecycle tools — add the id to `HostTargetId`, add the entry to `HOST_TARGETS
 reuse an existing config adapter when possible (add a focused one only for a
 genuinely different format), and add focused registry/install/status/uninstall/config-conflict tests.
 The full procedure, including the local dogfooding command
-`pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity>`, lives in
+`pnpm integrations:dev <bob|codex|claude|opencode|cursor|kiro|omp|antigravity|copilot>`, lives in
 `CONTRIBUTING.md` §"Adding a coding-agent integration". `pnpm integrations:dev`
 builds OpenWiki, refreshes the host skill, and records absolute paths to the
-current Node executable and `dist/cli/cli.js`; all eight current hosts install at
+current Node executable and `dist/cli/cli.js`; all nine current hosts install at
 user scope, and later source changes only require `pnpm build` unless the bundled
 skill itself changes.
 

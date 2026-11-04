@@ -44,6 +44,29 @@ describe("stripHtmlTags", () => {
 });
 
 describe("stripTerminalControlSequences", () => {
+  test.each(["\u001b(B", "\u001b)0", "\u001b#8", "\u001b$)C"])(
+    "removes the whole escape sequence %j, including its final byte",
+    (sequence) => {
+      expect(stripTerminalControlSequences(`before${sequence}after`)).toBe(
+        "beforeafter",
+      );
+    },
+  );
+
+  test("removes adjacent charset switches without changing the text between them", () => {
+    expect(stripTerminalControlSequences("\u001b(0line\u001b(B\n\ttext")).toBe(
+      "line\n\ttext",
+    );
+  });
+
+  test("handles truncated escape intermediates without consuming the next control", () => {
+    expect(stripTerminalControlSequences("safe\u001b$(")).toBe("safe");
+    expect(stripTerminalControlSequences("safe\u001b(\nnext")).toBe(
+      "safe\nnext",
+    );
+    expect(stripTerminalControlSequences("a\u001b(\u001b[2Jb")).toBe("ab");
+  });
+
   test("removes OSC clipboard and hyperlink sequences", () => {
     const value =
       "before\u001b]52;c;SGVsbG8=\u0007middle\u001b]8;;https://evil.example\u0007link\u001b]8;;\u0007after";

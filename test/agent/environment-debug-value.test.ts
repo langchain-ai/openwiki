@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { formatEnvironmentDebugValue } from "../../src/agent/index.ts";
 import {
+  OPENAI_COMPATIBLE_AUTH_ENV_KEY,
+  OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../../src/config/constants.ts";
@@ -12,6 +14,18 @@ import {
 // URL's credentials/query/fragment are stripped.
 
 describe("formatEnvironmentDebugValue – non-secret classification", () => {
+  test("prints Entra auth mode and scope as non-secret configuration", () => {
+    expect(
+      formatEnvironmentDebugValue(OPENAI_COMPATIBLE_AUTH_ENV_KEY, "entra-id"),
+    ).toBe('set(value="entra-id")');
+    expect(
+      formatEnvironmentDebugValue(
+        OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
+        "api://gateway/.default",
+      ),
+    ).toBe('set(value="api://gateway/.default")');
+  });
+
   test("reports an unset variable rather than printing undefined", () => {
     expect(formatEnvironmentDebugValue("ANY_KEY", undefined)).toBe("unset");
   });

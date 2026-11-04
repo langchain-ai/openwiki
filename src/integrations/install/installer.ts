@@ -219,7 +219,11 @@ export class HostIntegrationInstaller {
           "The staged OpenWiki skill does not match the canonical bundle.",
         );
       }
-      await writeReceipt(staging, target.id, copied.files, mcpServerCommand);
+      await writeReceipt(
+        staging,
+        { ...inspection.receipt?.owners, [target.id]: mcpServerCommand },
+        copied.files,
+      );
     } catch (error) {
       await this.operations.removeDirectory(staging).catch(() => undefined);
       throw error;
@@ -229,7 +233,7 @@ export class HostIntegrationInstaller {
       target,
       context,
       staging,
-      inspection.status !== "not-installed",
+      inspection.status !== "not-installed" || inspection.receipt !== undefined,
       Boolean(options.force),
       mcpServerCommand,
       replaceMcpServerCommand,
@@ -283,6 +287,9 @@ export class HostIntegrationInstaller {
     if (!hasSkill && !hasConfig) {
       return resultFor(target, context, false);
     }
+    const remainingOwners = hasSkill
+      ? ownersWithout(inspection.receipt, target)
+      : undefined;
 
     const configSnapshot = hasConfig
       ? await snapshotTextFile(context.mcpConfig)
@@ -302,7 +309,14 @@ export class HostIntegrationInstaller {
           mcpServerCommand,
         );
       }
-      if (hasSkill) {
+      if (remainingOwners && inspection.receipt) {
+        await writeReceipt(
+          context.skillDirectory,
+          remainingOwners,
+          inspection.receipt.files,
+          inspection.receipt.version,
+        );
+      } else if (hasSkill) {
         await this.operations.move(context.skillDirectory, cleanupBackup);
       }
     } catch (error) {
@@ -321,7 +335,7 @@ export class HostIntegrationInstaller {
     }
 
     let backupPath: string | undefined;
-    if (hasSkill) {
+    if (hasSkill && !remainingOwners) {
       try {
         await this.operations.removeDirectory(cleanupBackup);
       } catch {
@@ -641,7 +655,24 @@ function installedMcpServerCommand(
   target: HostTarget,
   receipt: SkillReceipt | undefined,
 ): HostMcpServerCommand {
-  return receipt?.mcpServerCommand ?? defaultMcpServerCommand(target.id);
+  return receipt?.owners[target.id] ?? defaultMcpServerCommand(target.id);
+}
+
+/**
+ * Lists the hosts that still own a shared skill once one host leaves it.
+ *
+ * @param receipt - Validated receipt of the installed skill.
+ * @param target - Host being uninstalled.
+ * @returns Remaining owners, or `undefined` when the skill has no other owner.
+ */
+function ownersWithout(
+  receipt: SkillReceipt | undefined,
+  target: HostTarget,
+): SkillReceipt["owners"] | undefined {
+  const remaining = Object.entries(receipt?.owners ?? {}).filter(
+    ([owner]) => owner !== target.id,
+  );
+  return remaining.length > 0 ? Object.fromEntries(remaining) : undefined;
 }
 
 /**

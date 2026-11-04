@@ -1,0 +1,5 @@
+# No patched braces release exists yet for this stack-exhaustion DoS. OpenWiki
+# rejects excessive brace nesting before agent glob patterns reach braces and
+# retains a RangeError fallback in src/agent/agent-backend.ts. Remove this
+# exception and the temporary boundary workaround once a fixed version exists.
+CVE-2026-93687

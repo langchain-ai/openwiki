@@ -26,10 +26,10 @@ sources:
     resource: repo://test/ingestion/ingestion-run.test.ts
   - id: openwiki-source-578c3bdefeb989094f3d457f
     resource: repo://test/ingestion/ingestion.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Personal Mode Ingestion
@@ -40,15 +40,15 @@ configured source instances, deterministically pulls each source's recent data
 (or defers discovery to the agent), and then runs one OpenWiki agent _update_
 per source instance to merge new findings into canonical local-wiki pages.
 
-Unlike [code mode](/openwiki/concepts/two-modes.md) — which documents a codebase
+Unlike [code mode](../concepts/two-modes.md) — which documents a codebase
 and emits repository-grounded Claims — personal-mode ingestion writes to the
 local wiki (`outputMode: "local-wiki"`) and **does not turn connector-derived
 facts into grounded Claims**. Connector data is treated as untrusted evidence
 and synthesized under confidence labels (confirmed, source-backed, contested,
 watchlist, saved-context), not as verifiable repository-anchored propositions.
-See [connectors](/openwiki/integrations/connectors.md),
-[onboarding](/openwiki/workflows/onboarding.md), and
-[CI scheduling](/openwiki/operations/ci-scheduling.md) for related surfaces.
+See [connectors](../integrations/connectors.md),
+[onboarding](./onboarding.md), and
+[CI scheduling](../operations/ci-scheduling.md) for related surfaces.
 
 ## Entrypoint and orchestration
 

@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-25T08:09:49.344Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -22,6 +22,8 @@ sources:
     resource: repo://src/agent/crash-guard.ts
   - id: openwiki-source-12c17ed8ca9c89ec61f28df7
     resource: repo://src/agent/docs-only-backend.ts
+  - id: openwiki-source-049f71d42424ecd8987d5e9f
+    resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
     resource: repo://src/agent/index.ts
   - id: openwiki-source-6fd9c8ed42336141de43b3c2
@@ -48,9 +50,11 @@ sources:
     resource: repo://src/model-availability.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
+  - id: openwiki-source-6e76d6023798412a72871e94
+    resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -59,7 +63,7 @@ OpenWiki drives documentation generation through a [DeepAgents](https://github.c
 
 `runOpenWikiAgent` is the top-level entrypoint for a run. It loads persisted environment, resolves the run configuration, builds the model and agent, opens the graph stream, and consumes it while a run record is registered with the crash guard.
 
-For provider setup and credentials see [Model Providers](/openwiki/concepts/model-providers.md) and [Configuration](/openwiki/operations/configuration.md); for the repository init/update flow that bypasses the shared agent graph see [Repository Generation](/openwiki/workflows/repository-generation.md).
+For provider setup and credentials see [Model Providers](../concepts/model-providers.md) and [Configuration](../operations/configuration.md); for the repository init/update flow that bypasses the shared agent graph see [Repository Generation](../workflows/repository-generation.md).
 
 ## Two execution paths
 
@@ -99,15 +103,44 @@ After model resolution, `resolveRunConfig` resolves four provider-neutral operat
 
 Each branch constructs a purpose-built client:
 
-- **Anthropic** builds `ChatAnthropic`, applying a modern-Claude default output-token limit (raised above LangChain's 4,096 fallback only for known Claude 4/5 families) unless an explicit provider-neutral limit is set.
+- **Anthropic** builds `ChatAnthropic`, applying a modern-Claude default output-token limit (raised to `DEFAULT_ANTHROPIC_MAX_OUTPUT_TOKENS` = 16,384, above LangChain's 4,096 fallback, only for known Claude 4/5 families matching `claude-(haiku|sonnet|opus)-(4|5)`) unless an explicit provider-neutral limit is set. Streaming is forced because the Anthropic SDK rejects non-streaming requests whose `max_tokens` implies more than ~10 minutes.
 - **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns; when `gemini-3.6-flash` declares a reasoning capability, the resolved effort is passed as `ChatGoogle`'s `thinkingLevel` option.
 - **Gemini Enterprise (Vertex)** delegates to `createGeminiEnterpriseModel`, which picks the client from the model family: Claude via the Anthropic Vertex SDK, partner/open-weight models over Vertex's OpenAI-compatible MaaS surface, and Gemini/Gemma over native `generateContent`. Auth is uniform ADC + project + region; only the transport differs.
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
 - **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
 - **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
-- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires.
-- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
+- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the dedicated `bob` branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires. Bob also forces the streaming HTTP transport, because long generations (such as planning a large repository) can outlast the Bob endpoint's non-streaming response timeout.
+- **OpenAI, Copilot, and all OpenAI-compatible gateways** (`openai`, `copilot`, `baseten`, `fireworks`, `nebius`, `nvidia`, `openai-compatible`) fall through to a final shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, threads the resolved reasoning config, and forces the streaming HTTP transport (`streaming: true`, spread rather than assigned so an absent flag does not turn into `disableStreaming`) for providers whose `providerUsesStreaming` returns true — Copilot unconditionally, Bob via its own branch, and `openai-compatible` when `OPENWIKI_OPENAI_COMPATIBLE_STREAMING` opts in. The branch selects its credential by branching on `providerUsesEntraId(provider)`: when the `openai-compatible` provider is configured for Entra ID auth (`OPENAI_COMPATIBLE_AUTH=entra-id`), the `apiKey` field is set to the async token callback returned by `createEntraTokenProvider`; otherwise it falls back to the provider's static API key from `getProviderApiKey`. When an `openai-compatible` endpoint is *not* using the Responses API, the branch installs a `createOpenAiCompatibleFetch` wrapper that detects chat-completions requests and normalizes a singly-nested text-content array some gateways emit into the flat form the OpenAI SDK expects, so a worker's first message to such an endpoint is not rejected.
+
+```mermaid
+flowchart TD
+  Start["createModel provider modelId"] --> Reason["resolveReasoningConfig by transport"]
+  Reason --> PGem{"provider"}
+  PGem -->|gemini| Gemini["ChatGoogle platformType gai thinkingLevel"]
+  PGem -->|gemini-enterprise| Vertex["createGeminiEnterpriseModel by surface"]
+  PGem -->|anthropic| Anthropic["ChatAnthropic maxTokens"]
+  PGem -->|openai-chatgpt| Codex["ChatOpenAI useResponsesApi zdrEnabled streaming fetch"]
+  PGem -->|openrouter| OpenRouter["ChatOpenRouter provider allowlist"]
+  PGem -->|bedrock| Bedrock["ChatBedrockConverse region maxTokens idleTimeout"]
+  PGem -->|bob| Bob["ChatOpenAI placeholder key createBobFetch streaming"]
+  PGem -->|other| Fall["shared ChatOpenAI fallthrough"]
+  Fall --> Entra{"providerUsesEntraId"}
+  Entra -->|yes| Token["apiKey = createEntraTokenProvider scope"]
+  Entra -->|no| Key["apiKey = getProviderApiKey"]
+  Token --> Base["configuration baseURL Responses API reasoning streaming"]
+  Key --> Base
+```
+
+Model-factory branching in `createModel`: each provider constructs a purpose-built LangChain chat model, and the final `ChatOpenAI` fallthrough branches on Entra ID auth before assembling the shared configuration.
+
+### Entra ID token provider for OpenAI-compatible gateways
+
+The `openai-compatible` provider can delegate authentication to Microsoft Entra ID (Azure Identity) instead of using a static API key. `resolveOpenAICompatibleAuthMode` resolves `OPENAI_COMPATIBLE_AUTH` to one of `api-key` (the default, including when unset) or `entra-id`; any other value fails closed. `providerUsesEntraId` returns true only for `openai-compatible` in `entra-id` mode, and `providerRequiresApiKey` correspondingly excludes that combination so credential resolution does not demand a static key.
+
+When Entra auth is active, `createModel` passes `createEntraTokenProvider(baseURL, scope)` as the `ChatOpenAI` `apiKey` callback. The OpenAI SDK invokes that callback for each request, so a long-running model uses refreshed credentials without reconstruction. The scope comes from `resolveOpenAICompatibleEntraScope` — `OPENAI_COMPATIBLE_ENTRA_SCOPE` when set, otherwise `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` (`https://cognitiveservices.azure.com/.default`, Azure OpenAI's standard Cognitive Services scope). Enterprise gateways normally override the scope with their own application ID URI.
+
+`createEntraTokenProvider` (in `src/agent/entra-auth.ts`) validates the base URL is HTTPS without embedded credentials or a metadata-host hostname (`169.254.169.254` / `metadata.google.internal`) before any token is fetched, throwing if the endpoint is unsafe. The Azure Identity credential is loaded lazily on the first callback invocation and coalesced so concurrent first requests share one credential construction and one token fetch: a configured `AZURE_FEDERATED_TOKEN_FILE` selects `WorkloadIdentityCredential` (with `AZURE_CLIENT_ID` / `AZURE_TENANT_ID`) explicitly, otherwise the default `DefaultAzureCredential` chain is used. Azure Identity caches and refreshes tokens before expiry, and on any acquisition failure the provider resets its memoized promise (so a later retry re-loads identity) and throws a sanitized error that never leaks credential material or response details.
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 
@@ -206,15 +239,41 @@ Repository `init`/`update` runs do not use the shared DeepAgent graph. `runOpenW
 
 `runNativeRepositoryGeneration` begins (or reconstructs) the durable run via `beginRepositoryRun`. A strict preflight that proves an update needs no work returns `{ skipped: true }` before any model is invoked. Otherwise the run proceeds in order: a planning phase (only when the run is in `planning`), then `runPendingPageAgents` drains the persisted page queue, then `finishRepositoryRun` finalizes. If the repository source changed while OpenWiki was running, the wiki is finalized without advancing its source checkpoint and the user is told to run `--update` to reconcile.
 
+### LangSmith trace thread grouping
+
+Both the planner and every page worker stream under one shared LangSmith thread per repository run, so their otherwise-independent traces group together in LangSmith as one planner plus one worker per page. The thread id is resolved once by `resolveTraceThreadId(run.state.runId)` and threaded into every `agent.stream` call as `configurable.thread_id`; LangGraph copies that field into each run's metadata, which is what LangSmith groups a thread by.
+
+`resolveTraceThreadId` returns the trimmed `OPENWIKI_TRACE_THREAD_ID` environment variable when it is set and non-empty, otherwise the durable `run.state.runId` — so a CI run can name the thread after the change that caused it while a normal run groups under its stable run id (which survives a resume). An empty or whitespace-only override falls back to the run id. The shared thread id is safe to pass to concurrent page workers only because repository workers have no checkpointer: with no persisted state keyed by `thread_id`, the workers cannot collide on or clobber one another's checkpoint, so the thread id serves purely as a grouping label.
+
+Each agent is also given a distinct trace name so the grouped thread is readable. The planner is built with `name: PLANNER_AGENT_NAME` (the constant `"planning agent"`), and each page worker with `name: workerAgentName(job.path)` — `"worker agent: <page>"` where `<page>` is the canonical path with the `/openwiki/` prefix and `.md` suffix stripped. Passed as the DeepAgent `name`, these replace the graph default name (`"LangGraph"`) so a run's thread reads as one planner followed by one worker per page.
+
+```mermaid
+sequenceDiagram
+  participant Run as runNativeRepositoryGeneration
+  participant Resolve as resolveTraceThreadId
+  participant Planner as runPlanningAgent
+  participant Stream as streamWorkerTools
+  participant Worker as runPageAgent
+  Run->>Resolve: resolveTraceThreadId run.state.runId
+  Resolve-->>Run: traceThreadId
+  Run->>Planner: name planning agent
+  Planner->>Stream: agent.stream configurable thread_id
+  loop each page job
+    Run->>Worker: name worker agent page
+    Worker->>Stream: agent.stream configurable thread_id
+  end
+```
+The shared trace thread id threads through the planner and every page worker's `agent.stream` call, grouping their traces into one LangSmith thread.
+
 ### The planner worker
 
-When the run is in the `planning` phase, `runPlanningAgent` builds one fresh, read-only DeepAgent whose sole completion action is `submit_plan`. The planner's filesystem surface is the small `PLANNER_FILESYSTEM_TOOLS` set — `read_file`, `ls`, `glob`, `grep` — exposed via `createFilesystemMiddleware`, and its `OpenWikiLocalShellBackend` is constructed with an empty `writableWikiPages` allowlist so it cannot write anything. Its middleware is `createFilesystemMiddleware` plus `NO_DELEGATION_MIDDLEWARE`.
+When the run is in the `planning` phase, `runPlanningAgent` builds one fresh, read-only DeepAgent whose sole completion action is `submit_plan`. The planner's filesystem surface is the small `PLANNER_FILESYSTEM_TOOLS` set — `read_file`, `ls`, `glob`, `grep` — exposed via `createFilesystemMiddleware`, and its `OpenWikiLocalShellBackend` is constructed with an empty `writableWikiPages` allowlist so it cannot write anything. Its middleware is `createFilesystemMiddleware`, a `toolCallLimitMiddleware` cap on `submit_plan` (`MAX_SUBMISSIONS_PER_WORKER` = 5, so a model that resubmits a rejected payload repeatedly fails the planner rather than looping), and `NO_DELEGATION_MIDDLEWARE`. It is built with `name: PLANNER_AGENT_NAME` (`"planning agent"`).
 
-`submit_plan` validates the model's plan against `PlanSchema` (an array of page specs each with `path`/`title`/`purpose` plus optional `seedPaths`/`relatedPages`/`instructions`, and an optional `deletePages` list) and persists it durably through `submitRepositoryPlan`. A rejected `invalid_input` submission is turned into a correctable `ToolMessage` so the worker can correct and retry rather than failing the run; any other throw propagates. The planner is streamed with the single instruction `"Plan this repository wiki now."`, and if it exits without having called `submit_plan` the runner throws — planning cannot complete by narration.
+`submit_plan` validates the model's plan against `PlanSchema` (an array of page specs each with `path`/`title`/`purpose` plus optional `seedPaths`/`relatedPages`/`instructions`, and an optional `deletePages` list) and persists it durably through `submitRepositoryPlan`. A rejected `invalid_input` submission is turned into a correctable `ToolMessage` so the worker can correct and retry rather than failing the run; a later `invalid_state` rejection after a plan is already installed is likewise converted to a "do not call submit_plan again" `ToolMessage`; any other throw propagates. The planner is streamed with the single instruction `"Plan this repository wiki now."` under the shared `configurable.thread_id`, and if it exits without having called `submit_plan` the runner throws — planning cannot complete by narration.
 
 ### The page-worker pool
 
-Each page is documented by its own fresh agent via `runPendingPageAgents`, which runs up to `pageConcurrency` workers at a time over the persisted page-job queue. The pool is process-local bookkeeping (not durable): a `claimed` set of job ids, a serialized `acquiring` promise so two loops never select the same job, an `inFlight` list of pages being written, a live `size` that can shrink, a single `fatal` slot, and a `skipped` snapshot list.
+Each page is documented by its own fresh agent via `runPendingPageAgents`, which runs up to `pageConcurrency` workers at a time over the persisted page-job queue. The pool is process-local bookkeeping (not durable): a `claimed` set of job ids, a serialized `acquiring` promise so two loops never select the same job, an `inFlight` list of pages being written, a live `size` that can shrink, a single `fatal` slot, and a `skipped` snapshot list. Every worker in the pool streams under the same shared `configurable.thread_id` resolved at the start of the run, so their concurrent traces group into the one LangSmith thread described above.
 
 Every page except `/openwiki/quickstart.md` is documented first. With a single worker the queue order already places quickstart last; with several workers quickstart is explicitly held back until every other page has finished, so its task-routing map links to pages that already exist. A fatal submission error stops new work, lets in-flight workers submit or skip, and is rethrown before `finish` so the run never finalizes with pending jobs.
 
@@ -222,15 +281,15 @@ Each worker loop waits a per-slot `workerStartStaggerMs` (default 1,000 ms, igno
 
 ### Page workers
 
-`runPageAgent` builds one fresh worker bounded to its assigned page job. Its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page. Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus three completion tools:
+`runPageAgent` drives one page job with a retry-before-skip loop. It captures a pre-run snapshot, then runs up to `PAGE_WORKER_ATTEMPT_LIMIT` (2) fresh worker attempts via `runPageWorkerAttempt`. Each attempt builds a fresh worker bounded to exactly its assigned page job: its backend is scoped with `writableWikiPages: [job.path]`, so the worker can write only its own page, and it is built with `name: workerAgentName(job.path)` (`"worker agent: <page>"`). Its tool surface is `PAGE_FILESYSTEM_TOOLS` — the planner's four read tools plus `write_file` and `edit_file` — plus two completion tools:
 
-- `submit_page` completes the page after it is written. It accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`) against `ClaimReconciliationSchema` and forwards them to `submitRepositoryPage`; other current Claims are retained automatically. An `invalid_input` rejection becomes a correctable `ToolMessage`; any other throw marks the submission fatal. It can be called at most once per worker.
+- `submit_page` completes the page after it is written. It accepts sparse Claim reconciliation (`confirmedClaimIds`, `claims`, `retractedClaimIds`) against `ClaimReconciliationSchema` and forwards them to `submitRepositoryPage`; other current Claims are retained automatically. An `invalid_input` rejection becomes a correctable `ToolMessage`; any other throw marks the submission fatal. It can be called at most once per worker attempt.
 - `inspect_claims` returns the page's complete current Claim set, for use only before intentionally revising or removing otherwise-current content; ordinary focused updates should not call it.
 - `submit_plan` is named in the worker tool allowlist (`WORKER_TOOL_NAMES`) for event classification but is not contributed to page workers — only the planner owns planning.
 
-The worker's middleware is again `createFilesystemMiddleware` (over `PAGE_FILESYSTEM_TOOLS`) plus `NO_DELEGATION_MIDDLEWARE`, which filters out the general-purpose `task` tool that DeepAgents contributes even when `subagents` is empty, so repository workers are deliberately non-delegating. `coerceRepositoryWorkerModelResponse` normalizes provider-streaming aggregates that arrived without `role: "assistant"` (for example reasoning-only first deltas) into proper `AIMessage`/`AIMessageChunk` so LangChain's `wrapModelCall` validator accepts them.
+The worker's middleware is again `createFilesystemMiddleware` (over `PAGE_FILESYSTEM_TOOLS`), a `toolCallLimitMiddleware` cap on `submit_page` (same `MAX_SUBMISSIONS_PER_WORKER` = 5), and `NO_DELEGATION_MIDDLEWARE`, which filters out the general-purpose `task` tool that DeepAgents contributes even when `subagents` is empty, so repository workers are deliberately non-delegating. `coerceRepositoryWorkerModelResponse` normalizes provider-streaming aggregates that arrived without `role: "assistant"` (for example reasoning-only first deltas) into proper `AIMessage`/`AIMessageChunk` so LangChain's `wrapModelCall` validator accepts them.
 
-If a page worker throws after submitting, it counts as submitted. If it throws before submitting on a non-fatal error, the runner restores the page's pre-run snapshot via `skipRepositoryPage`, records it as skipped (to be reconsidered on the next update), and emits a deferred-page warning; a fatal submission failure rethrows and is captured by the pool's `fatal` slot. Workers stream only bounded tool lifecycle events — narration is never surfaced — and `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools, tagging the page onto each event.
+A worker attempt that throws after submitting counts as submitted. If an attempt exits without submitting on a non-fatal error, `runPageAgent` restores the page and its Claims to the pre-run snapshot via `restoreRepositoryPage` and retries (so both attempts start from the same state), unless the attempt limit is already reached or the error is a provider rate limit — a rate limit is surfaced to the pool immediately rather than retried at once, because the provider is asking for less traffic. Only after the attempts are exhausted does `runPageAgent` call `skipRepositoryPage`, record the page as skipped (to be reconsidered on the next update), and emit a deferred-page warning. A fatal submission failure is not retried — the store itself is refusing, so a second attempt would fail the same way — and the thrown error propagates to the pool's `fatal` slot. The worker is streamed by `streamWorkerTools`, which streams only bounded tool lifecycle events — narration is never surfaced — and threads the shared trace thread id into its `agent.stream` call's `configurable.thread_id`; `parseWorkerToolEvent` forwards `tool_start`/`tool_end` only for the approved worker tools (those in `WORKER_TOOL_NAMES`), tagging the page onto each event.
 
 ## The host-driven session manager
 
@@ -254,12 +313,13 @@ The six lifecycle tools exposed by the host session manager (preceded by read-on
 
 ## The docs-only filesystem backend
 
-`OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers four independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
+`OpenWikiLocalShellBackend` extends the DeepAgents `LocalShellBackend` and layers five independent security boundaries on top, all enforced after canonicalizing paths so `..` traversal cannot escape:
 
-1. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and while any ignore rule is active, shell `execute` is restricted to a tiny anchored allowlist (`pwd`, `git rev-parse HEAD`) because arbitrary shell cannot be proven not to read an ignored path.
-2. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
-3. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
-4. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
+1. **Shell confinement.** The upstream `LocalShellBackend` runs `execute` directly on the host, so its `rootDir`/`virtualMode` options do not confine shell. In repository mode `execute` is therefore restricted to a small fully-anchored allowlist (`pwd`, `git rev-parse HEAD`) — a deliberate allowlist, not a denylist, because variable expansion, command substitution, `find -exec`, and `cd` + relative paths all defeat naive command scanning. Each entry is anchored `^...$` so it cannot be prefixed or chained with a second command; anything else is refused and the agent is steered to the gated filesystem tools (and, when `.openwikiignore` is active, reminded that ignore rules are enforced there too).
+2. **`.openwikiignore` exclusion.** Reads/writes/edits of an ignored path are hard-denied with an error; discovery tools (`ls`/`glob`/`grep`) silently drop ignored entries; and uploads/downloads reject ignored paths.
+3. **Docs-only confinement.** In repository mode with `docsOnly` set, writes, edits, and deletes are refused unless the canonicalized path is under the `openwiki/` tree; `local-wiki` mode relaxes this. An optional `writableWikiPages` allowlist can further scope a worker to a specific set of pages — the native planner uses an empty allowlist (read-only), and each native page worker is scoped to exactly its own page.
+4. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
+5. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
 
 The backend also refuses unbounded root globs and globs that target `.git` metadata, steering the agent toward `ls` at the root followed by targeted searches. Every successful write/edit/delete records the mutated path in the tool-result metadata (`openwikiMutationPath`) so downstream validation knows which page changed.
 

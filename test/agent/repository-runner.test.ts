@@ -5,6 +5,10 @@ import {
   ChatMessageChunk,
   ToolMessage,
 } from "@langchain/core/messages";
+import {
+  ThrottlingException,
+  ValidationException,
+} from "@aws-sdk/client-bedrock-runtime";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 type HarnessPage = {
@@ -29,6 +33,7 @@ type HarnessRun = {
     phase: "planning" | "generating";
     mode: "update";
     language: string;
+    runId: string;
     planningContext?: string;
     plan?: HarnessPlan;
   };
@@ -44,6 +49,7 @@ type ModelToolRequest = {
 };
 
 type CapturedMiddleware = {
+  name?: string;
   wrapModelCall?: (
     request: ModelToolRequest,
     handler: (request: ModelToolRequest) => Promise<unknown>,
@@ -51,6 +57,7 @@ type CapturedMiddleware = {
 };
 
 type CapturedAgentOptions = {
+  name?: string;
   tools: CompletionTool[];
   systemPrompt: unknown;
   subagents: unknown[];
@@ -67,12 +74,17 @@ type HarnessPlanInput = {
   deletePages?: string[];
 };
 
+const HARNESS_RUN_ID = vi.hoisted(() => "00000000-0000-4000-8000-000000000001");
+
 const harness = vi.hoisted(() => ({
   agentOptions: [] as CapturedAgentOptions[],
   beginCalls: 0,
   changedPaths: ["README.md"],
   currentRun: undefined as HarnessRun | undefined,
+  differentDuplicatePlanSubmission: false,
+  differentDuplicatePlanToolResults: [] as unknown[],
   driftOnce: false,
+  emitFrontmatterSignal: false,
   duplicatePlanSubmission: false,
   duplicatePlanToolResults: [] as unknown[],
   filesystemTools: [] as string[][],
@@ -95,8 +107,10 @@ const harness = vi.hoisted(() => ({
   planToolResults: [] as unknown[],
   planPaths: ["/openwiki/quickstart.md", "/openwiki/architecture.md"],
   resumed: false,
+  pageRestoreCalls: 0,
   restoreCalls: 0,
-  workerExitsWithoutSubmit: false,
+  streamConfigs: [] as Array<{ configurable?: Record<string, unknown> }>,
+  workerExitsWithoutSubmit: 0,
 }));
 
 vi.mock("deepagents", async (importOriginal) => {
@@ -254,9 +268,10 @@ vi.mock("deepagents", async (importOriginal) => {
                     ],
                   };
             const exitWithoutSubmit =
-              toolName === "submit_page" && harness.workerExitsWithoutSubmit;
+              toolName === "submit_page" &&
+              harness.workerExitsWithoutSubmit > 0;
             if (exitWithoutSubmit) {
-              harness.workerExitsWithoutSubmit = false;
+              harness.workerExitsWithoutSubmit -= 1;
             } else {
               await completionTool.invoke(input);
               if (
@@ -265,6 +280,24 @@ vi.mock("deepagents", async (importOriginal) => {
               ) {
                 const duplicate = await completionTool.invoke(input);
                 harness.duplicatePlanToolResults.push(duplicate);
+              }
+              if (
+                toolName === "submit_plan" &&
+                harness.differentDuplicatePlanSubmission
+              ) {
+                const duplicate = await completionTool.invoke({
+                  name: toolName,
+                  id: `${toolName}-different-duplicate`,
+                  type: "tool_call",
+                  args: {
+                    ...input,
+                    pages: input.pages.map((page) => ({
+                      ...page,
+                      purpose: `${page.purpose} with a conflicting revision`,
+                    })),
+                  },
+                });
+                harness.differentDuplicatePlanToolResults.push(duplicate);
               }
               if (
                 toolName === "submit_page" &&
@@ -277,7 +310,15 @@ vi.mock("deepagents", async (importOriginal) => {
           },
         }),
       );
-      return { stream };
+      return {
+        stream(
+          input: unknown,
+          config: { configurable?: Record<string, unknown> },
+        ) {
+          harness.streamConfigs.push(config);
+          return stream(input, config);
+        },
+      };
     },
   };
 });
@@ -290,6 +331,10 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       markdown: "original\n",
       claims: null,
     });
+  },
+  restoreRepositoryPage() {
+    harness.pageRestoreCalls += 1;
+    return Promise.resolve();
   },
   skipRepositoryPage(run: HarnessRun, snapshot: { jobId: string }) {
     harness.restoreCalls += 1;
@@ -319,6 +364,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
           phase: "planning",
           mode: "update",
           language: "en",
+          runId: HARNESS_RUN_ID,
           planningContext: "User and connector context",
         },
       };
@@ -328,7 +374,7 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       run,
       view: {
         status: "active",
-        runId: "00000000-0000-4000-8000-000000000001",
+        runId: HARNESS_RUN_ID,
         root: "/repo",
         mode: "update",
         language: "en",
@@ -484,8 +530,18 @@ vi.mock("../../src/generation/repository-run.js", () => ({
       remaining: 0,
     });
   },
-  finishRepositoryRun() {
+  finishRepositoryRun(
+    _run: unknown,
+    options?: { onEvent?: (event: OpenWikiRunEvent) => void },
+  ) {
     harness.finishCalls += 1;
+    if (harness.emitFrontmatterSignal) {
+      options?.onEvent?.({
+        type: "text",
+        source: "main",
+        text: "1 OpenWiki page(s) still carry code-derived frontmatter (openwiki_generated: true): legacy.md\n",
+      });
+    }
     if (harness.driftOnce && harness.finishCalls === 1) {
       return { status: "complete", sourceChanged: true };
     }
@@ -496,7 +552,9 @@ vi.mock("../../src/generation/repository-run.js", () => ({
 import {
   isRateLimitError,
   parseWorkerToolEvent,
+  PLANNER_AGENT_NAME,
   runNativeRepositoryGeneration,
+  workerAgentName,
 } from "../../src/agent/repository-runner.ts";
 import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 
@@ -575,10 +633,14 @@ async function getNoDelegationWrapModelCall(): Promise<
 
 beforeEach(() => {
   harness.agentOptions = [];
+  harness.streamConfigs = [];
   harness.beginCalls = 0;
   harness.changedPaths = ["README.md"];
   harness.currentRun = undefined;
+  harness.differentDuplicatePlanSubmission = false;
+  harness.differentDuplicatePlanToolResults = [];
   harness.driftOnce = false;
+  harness.emitFrontmatterSignal = false;
   harness.duplicatePlanSubmission = false;
   harness.duplicatePlanToolResults = [];
   harness.filesystemTools = [];
@@ -602,7 +664,8 @@ beforeEach(() => {
   harness.planPaths = ["/openwiki/quickstart.md", "/openwiki/architecture.md"];
   harness.resumed = false;
   harness.restoreCalls = 0;
-  harness.workerExitsWithoutSubmit = false;
+  harness.pageRestoreCalls = 0;
+  harness.workerExitsWithoutSubmit = 0;
 });
 
 describe("runNativeRepositoryGeneration", () => {
@@ -727,12 +790,57 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.finishCalls).toBe(1);
   });
 
-  test("skips a failed page worker and continues the queue", async () => {
+  test("keeps the accepted plan when the planner submits a different plan", async () => {
+    harness.differentDuplicatePlanSubmission = true;
+    harness.planPaths = ["/openwiki/quickstart.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    expect(harness.planSubmissionCalls).toBe(2);
+    const [rejection] = harness.differentDuplicatePlanToolResults;
+    expect(ToolMessage.isInstance(rejection)).toBe(true);
+    if (!ToolMessage.isInstance(rejection)) {
+      throw new Error(
+        "Expected duplicate submit_plan to return a ToolMessage.",
+      );
+    }
+    expect(rejection.name).toBe("submit_plan");
+    expect(rejection.status).toBe("error");
+    expect(rejection.text).toContain(
+      '"message":"This OpenWiki run already has a different persisted plan."',
+    );
+    expect(rejection.text).toContain(
+      '"retry":"A plan is already installed. Stop planning and do not call submit_plan again."',
+    );
+    expect(harness.currentRun?.state.plan?.pages[0]?.purpose).toBe(
+      "Document /openwiki/quickstart.md",
+    );
+    expect(harness.pageSubmissionCalls).toBe(1);
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("retries a failed page worker once before completing the page", async () => {
     harness.pageWorkerFailures = 1;
+    harness.planPaths = ["/openwiki/flaky.md", "/openwiki/later.md"];
+
+    await expect(runHarness()).resolves.toBeDefined();
+
+    // The first attempt threw, so its page was reset to the pre-run snapshot
+    // and the page was retried rather than skipped.
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
+    expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
+    expect(harness.finishCalls).toBe(1);
+  });
+
+  test("skips a page worker that fails every attempt and continues the queue", async () => {
+    harness.pageWorkerFailures = 2;
     harness.planPaths = ["/openwiki/failed.md", "/openwiki/later.md"];
 
     await expect(runHarness()).resolves.toBeDefined();
 
+    expect(harness.pageRestoreCalls).toBe(1);
     expect(harness.restoreCalls).toBe(1);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
     expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
@@ -748,6 +856,22 @@ describe("runNativeRepositoryGeneration", () => {
     expect(harness.restoreCalls).toBe(0);
     expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
     expect(harness.finishCalls).toBe(1);
+  });
+
+  test("caps completion-tool calls per worker", async () => {
+    await runHarness();
+
+    expect(
+      harness.agentOptions.map(({ middleware }) =>
+        middleware
+          .map(({ name }) => name)
+          .filter((name) => name?.startsWith("ToolCallLimitMiddleware")),
+      ),
+    ).toEqual([
+      ["ToolCallLimitMiddleware[submit_plan]"],
+      ["ToolCallLimitMiddleware[submit_page]"],
+      ["ToolCallLimitMiddleware[submit_page]"],
+    ]);
   });
 
   test("filters DeepAgents' automatic task capability at the model boundary", async () => {
@@ -927,24 +1051,61 @@ describe("runNativeRepositoryGeneration", () => {
     ).toBe(true);
   });
 
-  test("restores and leaves a page pending when its worker does not submit", async () => {
-    harness.workerExitsWithoutSubmit = true;
+  test("forwards its own onEvent to finishRepositoryRun so frontmatter signals surface", async () => {
+    // finishRepositoryRun computes the real frontmatter report (covered in
+    // generation/repository-run.test.ts); here the mock simulates it emitting
+    // a signal through the onEvent it was handed, proving
+    // runNativeRepositoryGeneration forwards its caller's onEvent through
+    // rather than swallowing it.
+    harness.emitFrontmatterSignal = true;
+
+    const events = await runHarness();
+
+    expect(
+      events.some(
+        (event) =>
+          event.type === "text" && event.text.includes("openwiki_generated"),
+      ),
+    ).toBe(true);
+  });
+
+  test("retries once when a worker exits without submitting and completes the page", async () => {
+    harness.workerExitsWithoutSubmit = 1;
     harness.planPaths = ["/openwiki/testing.md", "/openwiki/later.md"];
 
     const events = await runHarness();
 
-    expect(harness.restoreCalls).toBe(1);
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
     expect(harness.finishCalls).toBe(1);
-    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("skipped");
+    expect(harness.currentRun?.state.plan?.pages[0]?.status).toBe("complete");
     expect(harness.currentRun?.state.plan?.pages[1]?.status).toBe("complete");
-    expect(harness.agentOptions).toHaveLength(3);
+    // One planner, one worker per page, and one extra for the retry.
+    expect(harness.agentOptions).toHaveLength(4);
+    // Count by owner rather than position: the retry can be scheduled after a
+    // sibling page, so the two owners are what identify it as a retry.
+    const prompts = harness.agentOptions.map((option) =>
+      String(option.systemPrompt),
+    );
+    // The first page got two workers (attempt + retry); its sibling got one.
+    expect(
+      prompts.filter((prompt) =>
+        prompt.includes("You own exactly /openwiki/testing.md."),
+      ),
+    ).toHaveLength(2);
+    expect(
+      prompts.filter((prompt) =>
+        prompt.includes("You own exactly /openwiki/later.md."),
+      ),
+    ).toHaveLength(1);
+    // The page was recovered by the retry, so the skip warning must not fire.
     expect(
       events.some(
         (event) =>
           event.type === "text" &&
           event.text.includes("reconsidered on the next update"),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("reports strict no-op without constructing a worker", async () => {
@@ -1057,6 +1218,10 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
 
     const events = await runHarness({ pageConcurrency: 3 });
 
+    // A rate limit is surfaced to the pool instead of being retried, so the
+    // failed page costs exactly one attempt and no page reset.
+    expect(harness.pageRestoreCalls).toBe(0);
+
     // Which of the first three concurrent workers reaches the injected
     // failure first depends on scheduling, so assert on counts, not positions.
     expect(harness.restoreCalls).toBe(1);
@@ -1074,13 +1239,45 @@ describe("runNativeRepositoryGeneration with concurrent page workers", () => {
     ).toHaveLength(1);
   });
 
+  test("lowers concurrency after a Bedrock token-quota throttle", async () => {
+    harness.planPaths = [
+      "/openwiki/a.md",
+      "/openwiki/b.md",
+      "/openwiki/c.md",
+      "/openwiki/d.md",
+      "/openwiki/e.md",
+    ];
+    harness.pageWorkerFailures = 1;
+    harness.pageWorkerFailureError = new ThrottlingException({
+      message: "Too many tokens, please wait before trying again.",
+      $metadata: { httpStatusCode: 429 },
+    });
+
+    const events = await runHarness({ pageConcurrency: 3 });
+
+    // Same handling as any other 429: no immediate retry of the throttled
+    // page, and one fewer worker for the rest of the run.
+    expect(harness.pageRestoreCalls).toBe(0);
+    expect(harness.restoreCalls).toBe(1);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "text" &&
+          event.text.includes("Reduced page concurrency to 2"),
+      ),
+    ).toHaveLength(1);
+  });
+
   test("does not lower concurrency for an ordinary worker failure", async () => {
     harness.planPaths = ["/openwiki/a.md", "/openwiki/b.md", "/openwiki/c.md"];
     harness.pageWorkerFailures = 1;
 
     const events = await runHarness({ pageConcurrency: 2 });
 
-    expect(harness.restoreCalls).toBe(1);
+    // One retryable throw with no rate-limit signal: reset and retry, then the
+    // page completes and the pool keeps its concurrency.
+    expect(harness.pageRestoreCalls).toBe(1);
+    expect(harness.restoreCalls).toBe(0);
     expect(harness.finishCalls).toBe(1);
     expect(
       events.some(
@@ -1178,6 +1375,36 @@ describe("isRateLimitError", () => {
     ).toBe(true);
   });
 
+  test("recognizes Bedrock throttling from the AWS SDK", () => {
+    // Converse: HTTP 429, status only in $metadata.
+    expect(
+      isRateLimitError(
+        new ThrottlingException({
+          message: "Too many tokens, please wait before trying again.",
+          $metadata: { httpStatusCode: 429 },
+        }),
+      ),
+    ).toBe(true);
+    // ConverseStream: the throttle arrives as a stream event with no HTTP
+    // status, so only the exception name identifies it.
+    expect(
+      isRateLimitError(
+        new ThrottlingException({
+          message: "Too many tokens, please wait before trying again.",
+          $metadata: {},
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isRateLimitError(
+        new ValidationException({
+          message: "Input is too long for requested model.",
+          $metadata: { httpStatusCode: 400 },
+        }),
+      ),
+    ).toBe(false);
+  });
+
   test("ignores unrelated failures and non-objects", () => {
     expect(isRateLimitError(new Error("injected page worker failure"))).toBe(
       false,
@@ -1224,5 +1451,47 @@ describe("parseWorkerToolEvent", () => {
     expect(
       parseWorkerToolEvent([[], "messages", { text: "private narration" }]),
     ).toBeNull();
+  });
+});
+
+describe("LangSmith thread grouping", () => {
+  test("tags the planner and every concurrent page worker with the run's thread id", async () => {
+    await runHarness({ pageConcurrency: 2 });
+
+    // One planner plus one worker per planned page, each its own root trace.
+    expect(harness.streamConfigs).toHaveLength(1 + harness.planPaths.length);
+    for (const config of harness.streamConfigs) {
+      expect(config.configurable).toEqual({ thread_id: HARNESS_RUN_ID });
+    }
+  });
+
+  test("uses OPENWIKI_TRACE_THREAD_ID when CI sets it", async () => {
+    vi.stubEnv("OPENWIKI_TRACE_THREAD_ID", " ingest-3280b3e ");
+    try {
+      await runHarness();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    expect(harness.streamConfigs.length).toBeGreaterThan(0);
+    for (const config of harness.streamConfigs) {
+      expect(config.configurable).toEqual({ thread_id: "ingest-3280b3e" });
+    }
+  });
+});
+
+describe("LangSmith trace names", () => {
+  test("names the planner and each page worker after its page", async () => {
+    await runHarness({ pageConcurrency: 2 });
+
+    const [planner, ...workers] = harness.agentOptions.map(({ name }) => name);
+    expect(planner).toBe(PLANNER_AGENT_NAME);
+    // Order is the pool's (concurrent workers write the quickstart last).
+    expect(workers.sort()).toEqual(
+      harness.planPaths.map((path) => workerAgentName(path)).sort(),
+    );
+    expect(workerAgentName("/openwiki/coverage/forms/ho-3.md")).toBe(
+      "worker agent: coverage/forms/ho-3",
+    );
   });
 });

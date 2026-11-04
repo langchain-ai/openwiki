@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "ink-testing-library";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   InitSetupView,
@@ -31,12 +31,15 @@ function makeProps(
     selectedMode: "personal",
     provider: "anthropic",
     providerConfirmed: false,
+    authMode: "api-key",
+    authModeSelectionIndex: 0,
     apiKey: null,
     oauthTokens: null,
     secretKey: null,
     gcpProject: null,
     gcpLocation: null,
     baseUrl: null,
+    entraScope: null,
     region: null,
     modelId: null,
     modelIdOverride: null,
@@ -92,6 +95,7 @@ describe("InitSetupView", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     if (originalLangSmithKey === undefined) {
       delete process.env.LANGSMITH_API_KEY;
     } else {
@@ -169,6 +173,39 @@ describe("InitSetupView", () => {
     expect(frame).toContain("AWS credentials");
     expect(frame).toContain("Region");
     expect(frame).toContain("us-west-2");
+  });
+
+  test("Entra mode displays delegated auth without a provider-key row", () => {
+    vi.stubEnv("OPENAI_COMPATIBLE_AUTH", "entra-id");
+    const frame = frameOf(
+      makeProps({
+        provider: "openai-compatible",
+        authMode: "entra-id",
+        step: "base-url",
+      }),
+    );
+
+    expect(frame).toContain("Authentication");
+    expect(frame).toContain(
+      "Microsoft Entra ID via Azure Identity (checked on first request)",
+    );
+    expect(frame).not.toContain("Provider key");
+  });
+
+  test("in-session Entra selection overrides an API-key shell setting in the checklist", () => {
+    vi.stubEnv("OPENAI_COMPATIBLE_AUTH", "api-key");
+    const frame = frameOf(
+      makeProps({
+        provider: "openai-compatible",
+        authMode: "entra-id",
+        entraScope: "api://gateway/.default",
+        step: "entra-scope",
+      }),
+    );
+
+    expect(frame).toContain("Microsoft Entra ID via Azure Identity");
+    expect(frame).toContain("api://gateway/.default");
+    expect(frame).not.toContain("Provider key");
   });
 
   test("an OAuth provider renders the ChatGPT login row", () => {

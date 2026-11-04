@@ -95,6 +95,7 @@ vi.mock("../../src/generation/run-state.js", async (importOriginal) => {
   };
 });
 
+import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 import { ensureCodeModeRepoSetup } from "../../src/ingestion/code-mode.ts";
 import { ClaimsPersistenceError } from "../../src/claims/core/errors.ts";
 import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
@@ -109,6 +110,7 @@ import {
   finishRepositoryRun,
   inspectRepositoryPageClaims,
   nextRepositoryPage,
+  restoreRepositoryPage,
   skipRepositoryPage,
   submitRepositoryPage,
   submitRepositoryPlan,
@@ -365,6 +367,48 @@ test("restores the exact pending Markdown and Claims snapshot", async () => {
     gitHead: successfulMetadata.gitHead,
     status: "interrupted",
   });
+});
+
+test("restores a page snapshot without skipping the pending job", async () => {
+  const root = await createRepository(["testing.md"]);
+  const page = "/openwiki/testing.md";
+  const store = new ClaimsStore(root);
+  const originalClaims = {
+    schemaVersion: 1 as const,
+    pageVersion: await store.hashPage(page),
+    claims: [],
+  };
+  await store.writePage(page, originalClaims);
+
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, {
+    pages: [
+      {
+        path: page,
+        title: "Testing",
+        purpose: "Update testing documentation.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+  const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+
+  await run.backend.write(page, validPage("Rewritten"));
+  await store.writePage(page, {
+    schemaVersion: 1 as const,
+    pageVersion: await store.hashPage(page),
+    claims: [],
+  });
+
+  await restoreRepositoryPage(run, snapshot);
+
+  expect(await readFile(path.join(root, "openwiki/testing.md"), "utf8")).toBe(
+    validPage("testing"),
+  );
+  expect(await store.loadPage(page)).toEqual(originalClaims);
+  expect(run.state.plan?.pages[0]?.status).toBe("pending");
+  expect(await nextRepositoryPage(run)).toMatchObject({ status: "pending" });
 });
 
 test("preserves prior page coverage when a worker is skipped", async () => {
@@ -934,6 +978,62 @@ describe("beginRepositoryRun", () => {
           entry.sourceFingerprint?.startsWith("sha256:") === true,
       ),
     ).toBe(true);
+  });
+
+  test("does not fast-forward a page whose baseline is missing from a shallow clone", async () => {
+    const root = await createRepository();
+    const baselineHead = await git(root, ["rev-parse", "HEAD"]);
+    await git(root, ["add", "openwiki/.last-update.json"]);
+    await git(root, ["commit", "--quiet", "-m", "record update metadata"]);
+    await writeFile(
+      path.join(root, "README.md"),
+      "# Repository\n\nChanged after the baseline.\n",
+      "utf8",
+    );
+    await git(root, ["add", "README.md"]);
+    await git(root, ["commit", "--quiet", "-m", "change source"]);
+    const currentHead = await git(root, ["rev-parse", "HEAD"]);
+
+    const shallowRoot = await mkdtemp(
+      path.join(tmpdir(), "openwiki-shallow-checkout-"),
+    );
+    temporaryDirectories.push(shallowRoot);
+    await git(root, [
+      "clone",
+      "--quiet",
+      "--depth",
+      "1",
+      `file://${root}`,
+      shallowRoot,
+    ]);
+    await expect(
+      git(shallowRoot, ["cat-file", "-t", baselineHead]),
+    ).rejects.toThrow();
+
+    const result = await beginRepositoryRun({
+      root: shallowRoot,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+
+    expect(result.view).toMatchObject({
+      status: "active",
+      pageUpdateWindows: [
+        {
+          baseGitHead: baselineHead,
+          pages: ["/openwiki/quickstart.md"],
+          fullReview: true,
+        },
+      ],
+    });
+    const manifest = await readRepositoryPageManifest(shallowRoot);
+    expect(manifest.pages["/openwiki/quickstart.md"]?.gitHead).toBe(
+      baselineHead,
+    );
+    expect(manifest.pages["/openwiki/quickstart.md"]?.gitHead).not.toBe(
+      currentHead,
+    );
   });
 
   test("routes a clean page without manifest coverage to full review", async () => {
@@ -1748,6 +1848,42 @@ describe("finishRepositoryRun", () => {
     expect(
       manifestAfterSecond.pages["/openwiki/second.md"]?.sourceFingerprint,
     ).not.toBe(quickstartAfterFirst.sourceFingerprint);
+  });
+
+  test("surfaces frontmatter signals as a run-completion text event", async () => {
+    const root = await createRepository();
+    // No OKF front matter at all: the deterministic finalize pass migrates
+    // this page and stamps it `openwiki_generated: true`, in addition to the
+    // baseline `quickstart.md` page (from `createRepository`/`validPage`)
+    // that already has no `description`. Both should be reported.
+    await writeWikiPage(root, "legacy.md", "# Legacy\n\nBody.\n");
+    await git(root, ["add", "."]);
+    await git(root, ["commit", "--quiet", "-m", "add legacy page"]);
+
+    const run = await beginForcedUpdate(root);
+    await submitRepositoryPlan(run, {
+      pages: [
+        {
+          path: "/openwiki/quickstart.md",
+          title: "Quickstart",
+          purpose: "Refresh the entry point.",
+        },
+      ],
+    });
+    await completeCurrentPage(run, "Quickstart");
+
+    const events: OpenWikiRunEvent[] = [];
+    await finishRepositoryRun(run, { onEvent: (event) => events.push(event) });
+
+    const reportText = events
+      .filter((event) => event.type === "text")
+      .map((event) => event.text)
+      .find((text) => text.includes("openwiki_generated"));
+
+    expect(reportText).toBeDefined();
+    expect(reportText).toContain("legacy.md");
+    expect(reportText).toContain("no description yet");
+    expect(reportText).toContain("quickstart.md");
   });
 
   test("refreshes an untouched page version changed by finalization", async () => {

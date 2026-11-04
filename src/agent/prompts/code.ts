@@ -15,7 +15,7 @@ Use only the tools available to you. Prefer built-in filesystem discovery tools 
 Run discipline:
 - Filesystem tools are rooted at the target repository. Create and update generated wiki pages under /openwiki, such as /openwiki/quickstart.md, /openwiki/architecture/overview.md, or /openwiki/source-map.md.
 - Never pass host absolute paths like /Users/... to filesystem tools; that creates nested paths inside the repo instead of touching the intended file.
-- Shell execute commands run on the host. If you use execute, run commands from the current runtime root unless a source-specific instruction explicitly tells you to inspect a connector raw file or configured local repository path.
+- Shell execute is restricted because the local backend cannot confine arbitrary host commands. Use ls, glob, grep, and read_file for repository inspection.
 {DISCOVERY_INSTRUCTION}
 - Prefer grep/glob and short targeted reads over full-file reads when files are large.
 - Prioritize the most important, durable information. Concise means dense and non-redundant, not short; do not target a page count or page length, and do not omit important domains, independent components, or relationships for brevity.

@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 import { UPDATE_METADATA_PATH } from "../../src/config/constants.ts";
 import {
   readWikiSections,
@@ -143,6 +144,127 @@ afterEach(async () => {
 });
 
 describe("repository wiki retrieval", () => {
+  test("introduction matches return a reference that reads the matching prose", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: [
+          "The emergency shutdown token is QUARTZ_ABORT.",
+          "",
+          "## Installation",
+          "",
+          "Install the service with npm.",
+          "",
+          "## Logging",
+          "",
+          "Logs go to stdout.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const response = requireSearchResults(
+      await searchWiki(root, { query: "QUARTZ_ABORT" }),
+    );
+    expect(response.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#service",
+    ]);
+    expect(response.results[0]?.content).toContain("emergency shutdown token");
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/service.md",
+      sections: ["service"],
+    });
+    expect(read.sections[0]?.content).toContain("QUARTZ_ABORT");
+
+    const sectionResponse = requireSearchResults(
+      await searchWiki(root, { query: "stdout" }),
+    );
+    expect(sectionResponse.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#logging",
+    ]);
+  });
+
+  test("page metadata matches do not return the full-page introduction reference", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: [
+          "The emergency shutdown token is QUARTZ_ABORT.",
+          "",
+          "## Installation",
+          "",
+          "Install with npm.",
+          "",
+          "## Logging",
+          "",
+          "Logs go to stdout.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    for (const query of ["Service", "operation", "src/service.ts"]) {
+      const response = requireSearchResults(await searchWiki(root, { query }));
+      expect(response.results.length).toBeGreaterThan(0);
+      expect(response.results.flatMap((result) => result.ref)).not.toContain(
+        "openwiki/architecture/service.md#service",
+      );
+    }
+  });
+
+  test("does not add an introduction result when the title has no prose", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: "## Logging\n\nLogs go to stdout.",
+      }),
+      "utf8",
+    );
+    const response = requireSearchResults(
+      await searchWiki(root, { query: "Service" }),
+    );
+    expect(response.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#logging",
+    ]);
+  });
+
+  test("keeps the page-level fallback readable for pages without subsections", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: "The emergency shutdown token is QUARTZ_ABORT.",
+      }),
+      "utf8",
+    );
+    const response = requireSearchResults(
+      await searchWiki(root, { query: "QUARTZ_ABORT" }),
+    );
+    expect(response.results.flatMap((result) => result.ref)).toEqual([
+      "openwiki/architecture/service.md#service",
+    ]);
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/service.md",
+      sections: ["service"],
+    });
+    expect(read.sections[0]?.content).toContain("QUARTZ_ABORT");
+  });
+
   test("search returns compact section references for progressive reads", async () => {
     const root = await createRoot();
     await writeFile(
@@ -297,6 +419,259 @@ describe("repository wiki retrieval", () => {
     ]);
   });
 
+  test("read returns recorded sources and Claim versions only when requested", async () => {
+    const root = await createRoot();
+    const pagePath = path.join(root, "openwiki/architecture/service.md");
+    await writeFile(
+      pagePath,
+      [
+        "---",
+        "type: architecture",
+        "title: Service limit",
+        "description: Describes the configured request item limit.",
+        "tags: [service]",
+        "sources:",
+        "  - id: service-source",
+        "    resource: repo://src/service.ts#L1-L1",
+        "  - id: config-source",
+        "    resource: repo://src/config.ts",
+        "---",
+        "",
+        "# Service limit",
+        "",
+        "## Contract",
+        "",
+        "The service accepts at most ten items.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    const store = new ClaimsStore(root);
+    const evidenceVersion = `sha256:${"b".repeat(64)}`;
+    await store.writePage("/openwiki/architecture/service.md", {
+      schemaVersion: 1,
+      pageVersion: await store.hashPage("/openwiki/architecture/service.md"),
+      claims: [
+        {
+          id: "claim-service-limit",
+          statement: "The service accepts at most ten items.",
+          evidence: [
+            {
+              resource: "repo://src/service.ts#L1-L1",
+              version: evidenceVersion,
+            },
+          ],
+        },
+      ],
+    });
+
+    const request = {
+      page: "openwiki/architecture/service.md",
+      sections: ["contract"],
+    } as const;
+    await expect(readWikiSections(root, request)).resolves.not.toHaveProperty(
+      "provenance",
+    );
+    await expect(
+      readWikiSections(root, { ...request, includeProvenance: true }),
+    ).resolves.toEqual({
+      page: "openwiki/architecture/service.md",
+      sections: [
+        {
+          section: "contract",
+          content: "## Contract\n\nThe service accepts at most ten items.",
+        },
+      ],
+      provenance: {
+        sources: [
+          {
+            id: "service-source",
+            resource: "repo://src/service.ts#L1-L1",
+          },
+          {
+            id: "config-source",
+            resource: "repo://src/config.ts",
+          },
+        ],
+        claims: [
+          {
+            id: "claim-service-limit",
+            evidence: [
+              {
+                resource: "repo://src/service.ts#L1-L1",
+                version: evidenceVersion,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  test("read provenance is empty when a page has no persisted Claims", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/service.md"),
+      page({
+        title: "Service",
+        description: "Service operation guide.",
+        source: "src/service.ts",
+        body: "## Contract\n\nThe service accepts at most ten items.",
+      }),
+      "utf8",
+    );
+
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/service.md",
+      sections: ["contract"],
+      includeProvenance: true,
+    });
+
+    expect(read.provenance).toEqual({
+      sources: [{ id: "source", resource: "repo://src/service.ts" }],
+      claims: [],
+    });
+  });
+
+  test("read keeps every duplicate heading reachable when one already owns the suffix", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/payments.md"),
+      page({
+        title: "Payment Runtime",
+        description: "Payment behavior.",
+        source: "src/payments.ts",
+        body: [
+          "## Retry control",
+          "",
+          "The first retry section.",
+          "",
+          "## Retry control 1",
+          "",
+          "The section whose own slug already claims the `-1` anchor.",
+          "",
+          "## Retry control",
+          "",
+          "The repeated retry section.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const result = await readWikiSections(root, {
+      page: "openwiki/architecture/payments.md",
+      sections: ["retry-control", "retry-control-1", "retry-control-2"],
+    });
+
+    expect(result.sections).toEqual([
+      {
+        section: "retry-control",
+        content: "## Retry control\n\nThe first retry section.",
+      },
+      {
+        section: "retry-control-1",
+        content:
+          "## Retry control 1\n\nThe section whose own slug already claims the `-1` anchor.",
+      },
+      {
+        section: "retry-control-2",
+        content: "## Retry control\n\nThe repeated retry section.",
+      },
+    ]);
+  });
+
+  test("symbol-only headings return references that read can open", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/release.md"),
+      page({
+        title: "Release Process",
+        description: "Release behavior.",
+        source: "src/release.ts",
+        body: [
+          "## 🚀",
+          "",
+          "The launch token is MARIGOLD_LAUNCH.",
+          "",
+          "## Section",
+          "",
+          "The real section token is MARIGOLD_REAL.",
+          "",
+          "## ⚠️",
+          "",
+          "The warning token is MARIGOLD_WARN.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const references = [];
+    for (const query of ["MARIGOLD_LAUNCH", "MARIGOLD_REAL", "MARIGOLD_WARN"]) {
+      const result = requireSearchResults(await searchWiki(root, { query }));
+      references.push(result.results[0]?.ref[0]);
+    }
+
+    // Only the empty GitHub anchor is replaced; real and suffixed anchors keep their GitHub form.
+    expect(references).toEqual([
+      "openwiki/architecture/release.md#section-1",
+      "openwiki/architecture/release.md#section",
+      "openwiki/architecture/release.md#-1",
+    ]);
+
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/release.md",
+      sections: references.map((reference) => String(reference).split("#")[1]),
+    });
+    expect(read.sections.map(({ content }) => content)).toEqual([
+      "## 🚀\n\nThe launch token is MARIGOLD_LAUNCH.",
+      "## Section\n\nThe real section token is MARIGOLD_REAL.",
+      "## ⚠️\n\nThe warning token is MARIGOLD_WARN.",
+    ]);
+  });
+
+  test("keeps combining marks in heading anchors like GitHub", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/translation.md"),
+      page({
+        title: "Translation",
+        description: "Translated page behavior.",
+        source: "src/translation.ts",
+        body: [
+          "## हिन्दी अनुवाद",
+          "",
+          "The Hindi token is SAFFRON_HINDI.",
+          "",
+          "## Café setup",
+          "",
+          "The decomposed accent token is SAFFRON_ACCENT.",
+        ].join("\n"),
+      }),
+      "utf8",
+    );
+
+    const references = [];
+    for (const query of ["SAFFRON_HINDI", "SAFFRON_ACCENT"]) {
+      const result = requireSearchResults(await searchWiki(root, { query }));
+      references.push(result.results[0]?.ref[0]);
+    }
+
+    // GitHub keeps Devanagari vowel signs and a decomposed acute accent in the anchor.
+    expect(references).toEqual([
+      "openwiki/architecture/translation.md#हिन्दी-अनुवाद",
+      "openwiki/architecture/translation.md#café-setup",
+    ]);
+
+    const read = await readWikiSections(root, {
+      page: "openwiki/architecture/translation.md",
+      sections: ["हिन्दी-अनुवाद", "café-setup"],
+    });
+    expect(read.sections.map(({ content }) => content)).toEqual([
+      "## हिन्दी अनुवाद\n\nThe Hindi token is SAFFRON_HINDI.",
+      "## Café setup\n\nThe decomposed accent token is SAFFRON_ACCENT.",
+    ]);
+  });
+
   test("linked search spans repositories and identifies results for exact reads", async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), "openwiki-retrieval-"),
@@ -361,6 +736,25 @@ describe("repository wiki retrieval", () => {
             "## Route publication\n\nThe control plane publishes signed route snapshots to every data-plane cell.",
         },
       ],
+    });
+    await expect(
+      readWikiSections(dataPlane, {
+        wiki: "control-plane",
+        page: "openwiki/architecture/routing.md",
+        sections: ["route-publication"],
+        includeProvenance: true,
+      }),
+    ).resolves.toMatchObject({
+      wiki: "control-plane",
+      provenance: {
+        sources: [
+          {
+            id: "source",
+            resource: "repo://src/routes/reconciler.ts",
+          },
+        ],
+        claims: [],
+      },
     });
   });
 

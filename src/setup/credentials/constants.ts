@@ -10,6 +10,7 @@ import {
   openWikiLocalWikiDisplayPath,
 } from "../../config/openwiki-home.js";
 import type { OpenWikiRunMode } from "../../cli/commands.js";
+import type { OpenAICompatibleAuthMode } from "../../config/constants.js";
 import type { LangSmithRegion } from "../../connectors/sources/langsmith/setup.js";
 import type {
   OnboardingMode,
@@ -70,6 +71,14 @@ export const RUN_MODE_OPTIONS = [
   description: string;
   id: OpenWikiRunMode;
   name: string;
+}[];
+
+export const OPENAI_COMPATIBLE_AUTH_OPTIONS = [
+  { id: "api-key", label: "API key" },
+  { id: "entra-id", label: "Microsoft Entra ID" },
+] as const satisfies readonly {
+  id: OpenAICompatibleAuthMode;
+  label: string;
 }[];
 
 export const LANGSMITH_REGION_OPTIONS = [

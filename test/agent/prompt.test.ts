@@ -227,6 +227,25 @@ describe("createUserPrompt", () => {
     );
   });
 
+  test("keeps dollar sequences in the user message literal", () => {
+    const message =
+      "What do `echo $$` and `$'\\n'` do in deploy.sh? Also $& and $`.";
+
+    expect(createUserPrompt("chat", emptyContext(), message)).toBe(message);
+    expect(
+      createUserPrompt("chat", emptyContext(), message, "repository", "/repo"),
+    ).not.toContain("{RUNTIME_CONTEXT}");
+    expect(
+      createUserPrompt(
+        "init",
+        emptyContext({ wikiGoal: "Cover the $$ PID trick" }),
+        message,
+      ),
+    ).toContain(
+      `Cover the $$ PID trick\n\nAdditional user instruction:\n${message}`,
+    );
+  });
+
   test("chat falls back to a default opener when no message is given", () => {
     // A null or blank chat message must still yield a usable turn rather than an
     // empty prompt.

@@ -15,6 +15,38 @@ import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
  */
 export const CONVERSATION_HISTORY_MOUNT = "/conversation_history/";
 
+/** Maximum brace nesting accepted before a glob reaches recursive parsers. */
+const MAX_GLOB_BRACE_NESTING = 100;
+
+/**
+ * Checks unescaped brace depth without interpreting the rest of glob syntax.
+ */
+function exceedsGlobBraceNesting(pattern: string): boolean {
+  let braceDepth = 0;
+  let escaped = false;
+
+  for (const character of pattern) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (character === "{") {
+      braceDepth += 1;
+      if (braceDepth > MAX_GLOB_BRACE_NESTING) return true;
+    } else if (character === "}" && braceDepth > 0) {
+      braceDepth -= 1;
+    }
+  }
+
+  return false;
+}
+
 /**
  * Shared filesystem restrictions for native OpenWiki agents.
  */
@@ -81,6 +113,13 @@ class OpenWikiCompositeBackend extends CompositeBackend {
    * @returns Normal glob results or a bounded retry instruction.
    */
   override async glob(pattern: string, path = "/"): Promise<GlobResult> {
+    if (exceedsGlobBraceNesting(pattern)) {
+      return {
+        error:
+          "Glob pattern nesting is too deep. Retry with a simpler pattern.",
+      };
+    }
+
     try {
       return await super.glob(pattern, path);
     } catch (error) {
