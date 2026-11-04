@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0dfd1382f60a2516561c3b5d44929bd58802034862e341e44e2f4874b9902604",
+  "pageVersion": "sha256:ee74959c021b55bc18195e3ceb58992c0c4b18d603d1919eb54b7158cf7e202d",
   "claims": [
     {
       "id": "claim_881dbd60dd434311a4774d72dabe29af",
@@ -131,11 +131,11 @@
       "statement": "OpenWiki has no background ChatGPT token refresh loop; ensureFreshChatGptTokens runs once at run startup before the model is built, refreshing and persisting rotated tokens when the persisted token is expired or within the 60-second near-expiry threshold, and failing with a re-login message when no usable token set exists.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1445-L1469",
+          "resource": "repo://src/agent/index.ts#L1455-L1479",
           "version": "repo-lines-v1:sha256:b5411929e5fb9f4918bcd70da576618de797baf38e0b454bb128cc60cd412955:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlYmZhMzEzNGM2N2IyZGY4MWZjMmZhOGVhOWQ1M2I4ZTUyNTA1ZjU0YzYyMDEwYmJlNjI3ZDZiNTkwYWNhNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmYzhhZWUxOWFlM2E0Y2UxNjdkYmU5NWFiMmE1M2NmMGIxN2JmNjk1MWU1ZWY5ZTRmYTE3NWQ1NjEyY2RhYzEifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L333-L337",
+          "resource": "repo://src/agent/index.ts#L337-L341",
           "version": "repo-lines-v1:sha256:a3e1f86afe6451d04b6614ea513960bdbf154312106e5e69cfaf0dd58e74b32f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBjYzI1NjliOTYzYjg4Njk1NGEwZDk4NWYwN2JhYTUyMzNiNTk1NWQwZWEyNTFmOGIyMDdkYzJhZWU5MzY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkxYmFlMGJkYTQxZWQ2YTY1YzYwYTg1Y2ZlZDE0N2Q5MzcwODk4YWM2NTcwYzE1MWI4MTVjNDU4ZDQ5OTUyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM0YjcxNDE0MmVjOTk1ZmQ0Y2Q1NjhmODUzOTM0ODhmZWUzMjJiMjUzMTE2NGZiOWMyOWE2YzlkNTEyN2QwNiJ9"
         },
         {
@@ -153,7 +153,7 @@
       "statement": "For the openai-chatgpt provider, createModel builds a ChatOpenAI Responses-API client pointed at CODEX_RESPONSES_BASE_URL with useResponsesApi, zdrEnabled (store:false, required by the Codex backend), forced streaming, the chatgpt-account-id/originator/OpenAI-Beta headers, and a createCodexFetch wrapper that adapts the request body at the fetch boundary.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1218-L1254",
+          "resource": "repo://src/agent/index.ts#L1228-L1264",
           "version": "repo-lines-v1:sha256:672a9291b93a0cd3503cd47cb5fae2d9a3546f6d791dbc095197146c28afbd52:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZmNhNTM3NjU0NzAzYmI1NTExNmZkZjAzYmM0ZmI4ODIwNmExNmU5MGIwNDQwZGJlYTNlNTJiOTA0ZDIwNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxYTU3NTJlM2VlNzA1OWNjOGEyNThmYTljY2MyZjQwNzA3NDczMTJkYWEwMzVjOWI0YTM2MzBjMjQxNmY0ZDgifQ"
         },
         {
@@ -185,8 +185,8 @@
       "statement": "createGeminiEnterpriseModel routes a single Vertex project+region+ADC credential to different transports keyed off the model ID via resolveVertexSurface: gemini (ChatGoogle generateContent), anthropic (AnthropicVertex via ChatAnthropic createClient), and openai-maas (Vertex OpenAI-compatible endpoint from vertexOpenAIBaseUrl, which also routes xai/grok model IDs).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1532-L1624",
-          "version": "repo-lines-v1:sha256:ddbc90d316757e10515b92c9c8ec74f2aea957de7f6216844ff613ed354bda20:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNjQ4MGM2NWEyMWNlMjBmODhhYzQyZTEyMDhlNmRlNDY0N2FhZTE5ZjRjNGE5MmViYTU2MTYyY2Q0ZmIyODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwM2IxZTcwNTY3ODMyMjEyZWZiNjI3ZTc0YjFhOTMyZDIxODIzOTU3ZDlkYTM1Nzc1OGM0ZTU1Yjg1YmZkZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NmFiMTRjNDVlY2QyYTRmY2M5YjgxMTAwZGRlNjEwMWExNWMwMjk5MDdmNjNhYjc1OWU2YjcwMGY0YzVjODgifQ"
+          "resource": "repo://src/agent/index.ts#L1536-L1637",
+          "version": "repo-lines-v1:sha256:3cedbc6d32d0d52a1ebcc5e93c0877bb972f6c03a3d9e6abd4a8d54ff4080502:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZTk3MGQ4Yzg3NjA1NGExNTUwMjhmZGEzNGM1OGVhMmY1NzgzNjcxYzc0NzNmMzEyMTkwMWYwZDIzMjRmYzMxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNzkyOWU5MWUwZjk5YzNlODI1ZGU2OWI0MzVmYjY0ODRkMWIwYTFkZjJmNDY1NjFhYmYxYTI5ZjA0MTg4Yjg4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2NTZhYjE0YzQ1ZWNkMmE0ZmNjOWI4MTEwMGRkZTYxMDFhMTVjMDI5OTA3ZjYzYWI3NTllNmI3MDBmNGM1Yzg4In0"
         },
         {
           "resource": "repo://src/agent/vertex-surface.ts#L4-L48",
@@ -203,8 +203,8 @@
       "statement": "The Vertex openai-maas surface injects a fresh ADC bearer token on every request via createVertexAuthFetch (the OpenAI SDK's apiKey is only a placeholder the Authorization header overwrites), while the Claude-on-Vertex surface uses withAnthropicAuthEnvNeutralized to remove ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN around the AnthropicVertex constructor so a leftover key cannot clobber the Google OAuth token.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1545-L1623",
-          "version": "repo-lines-v1:sha256:a65647153eefa12d7e0843681664b1ff01a7a4f6b44a815f48583feab0c9c9c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YWNmMGEwOGEyMjlmMDgzZGVjYTljODRmNWMxNGViZmE1YzI5Yzc3OTIzOTM3ODU4YWNiZmMxZGQ0OWNlZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljMTk1YjJlNGZjN2I1YjQ2NmZjMDYzNmUwMjI0NTc5NDJhNjZhZGRkNWM5ZDUzM2YzYzRkZjQ2ZmVhNGFjNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkOTFjMGQxNTJkYTU3MjE5NzMxOWMyY2JjZGE2YTIwMGUyMzBkZThhYTg2MzVjY2M2OWFhZDQ4Y2M5Y2UyMDUifQ"
+          "resource": "repo://src/agent/index.ts#L1559-L1607",
+          "version": "repo-lines-v1:sha256:1190044902bc56d6bd8c6cf5722ef04ac494a53d2e4e07b830506e19814bd0b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZjY5MDA3YTdlNzVjY2RiMmMxOWVmYTlkOTVjNDNiZjc4N2YzM2EyYjljODI2NWM0YTVjZTY0MmZlNmRiZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMzExMzY2N2FlMWY2ZjQ5MzNmZTQ1MTAzZDgyOGEyZmRhMDgxMTJkNzBlMmMwNTllMmEzZThhZjZjYzg3OTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1Mjc3YWNiNDMxNjBkMTc5NThlNTk5NzIwNDMyMjVmYTEwM2EyZjIwOTFhOGY5ZmNlODk4N2YwZTUwMDhiYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZjRiYmVlYzU0ZmRmYTk0MGMxYjkzMTJlNDk5MGUzNzhlZGNiOWM0NjU0NWVmNmY2MjQ0MzE4ZWYzN2UyNmYifQ"
         },
         {
           "resource": "repo://src/agent/vertex-surface.ts#L95-L173",
@@ -297,7 +297,7 @@
       "statement": "Bedrock defaults its maxTokens to BEDROCK_DEFAULT_MAX_TOKENS (16000) via resolveBedrockMaxTokens (overridable by OPENWIKI_BEDROCK_MAX_TOKENS, validated as a positive integer) to avoid the 4096-token Converse API default cap, and resolveConfiguredMaxOutputTokens falls back to this Bedrock default when the provider-neutral OPENWIKI_MAX_OUTPUT_TOKENS is unset (after the OpenRouter legacy OPENWIKI_OPENROUTER_MAX_TOKENS and explicit OPENWIKI_MAX_OUTPUT_TOKENS take precedence); createModel passes it through as maxTokens.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1274-L1282",
+          "resource": "repo://src/agent/index.ts#L1284-L1292",
           "version": "repo-lines-v1:sha256:a72dab75357245dfb8e75d80ee5d8611047c0c0676079a91dd31f59ed387ea0a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0ODg5NjE0MTI0ZmYwYmFkM2MxZTNhMzAyYzRlZjAwODVhMGQzMWFkNGJiZGE3OGUwNDBlNGY0OWE4YzlkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWUxMmI2MTE4OTQzZTMwYzAwNjgzM2U3ODE2MzBhNTNiMzJmNDE3ZWY1Zjk3OTVjM2YxMmYzMzA4MDI0YzVkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWU4NDM0N2MyNDJlODA4MzZjMWVkNjJiNzBiMDY2Y2E2Y2I3YTNhMWRkNGNmOTdmNzNmOTVmMDUwNmQzMjNiYiJ9"
         },
         {
@@ -319,11 +319,11 @@
       "statement": "providerUsesStreaming forces the streaming HTTP transport for the copilot and bob providers (returning true for each): Copilot because its API rejects or empties non-streaming requests for non-GPT-5 models (Claude, Gemini) served over chat completions, mirroring the openai-chatgpt forced-streaming rationale; Bob because long generations can outlast the endpoint's response timeout, while streaming returns output (including tool calls) as it is produced. createModel applies it as a conditional spread rather than assigning streaming:false, since LangChain turns an explicit false into disableStreaming; it is used by both the bob ChatOpenAI branch and the generic ChatOpenAI branch (which serves copilot).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1297-L1310",
+          "resource": "repo://src/agent/index.ts#L1307-L1320",
           "version": "repo-lines-v1:sha256:f55b21f3c5957a5aff49df6fafbd3bdbe0d7cb6c22a1bcb2023c050b4a9fd9f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGJjYWYwN2I2MzgyZTFjYWM0ZjY3M2RjMmZjYTFmOWEyNGNmNDNjNzk2M2JlMGFmNTQ0NjA1YTAwYjVhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2E0NDY3ZmE2ZGJjNzRiODVmYTIxYWE2YWFkZjFlNTBiMWRhOGQ3MDg0ZTYwMmQxYTY4NWIxZWJjM2JmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0YzlkNGZlM2Q0NDgzNTcxMmU4OGI1ZGFlODYxNTFhZjgzMDlkYTUyZjU4Nzg1NjI5MzYyNTFjMjdlMzYxYWMifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1313-L1334",
+          "resource": "repo://src/agent/index.ts#L1323-L1344",
           "version": "repo-lines-v1:sha256:60dbae191961b80e09a33af0fabb157246074e45c3c1d3ef8ae373a970dbebc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyN2ViNDE1MzFiZWExZDBkMjE0MjliZmY0N2ZmZmI5MzQ0YTdkYjI1ZTRlYjNlMWY5MTM3ZjE2OTMzMzg1NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MjhkOTFiNzA1MTBhY2U3ZjgzZmNiYmIyZTM4ZWE5MDM3MGJhYzlhYTI0MzU3MWNiYTA5OTNiMWYyNjJiOWYifQ"
         },
         {
@@ -337,7 +337,7 @@
       "statement": "resolveReasoningConfig in src/config/reasoning.ts reads OPENWIKI_REASONING_EFFORT, validates it against REASONING_EFFORT_VALUES (none/low/medium/high/xhigh/max), and returns a {effort, transport} resolution only when a capability is declared for the provider+model pair; otherwise it throws 'not supported'. createModel spreads exactly one of three option sets keyed off the transport: responses-reasoning (reasoning:{effort} on ChatOpenAI), chat-completions-reasoning-effort (modelKwargs:{reasoning_effort}), or gemini-thinking-level (thinkingLevel on ChatGoogle).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1142-L1165",
+          "resource": "repo://src/agent/index.ts#L1146-L1169",
           "version": "repo-lines-v1:sha256:41644db8c502e7dee438df6b52d4b937e3b38483c5be472a359450690a91813e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MjUzMDFlZTg1MDE2N2M0NDM2Y2FjZjg0YTZkNWQwNDBlM2RhODc1MjY3NTgyYTdkYTNlNDYyZDU3NTc3NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTVlZTM0MDAwM2QzZWI3ZWE3MzhjNTQ2MDhiYmQ2MTZjZmU0ZWQxZGQzNjYzYTdjOGIzZGNkNWQwZWM1NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YWRlNTg4ODc1Y2Q3OGI4M2M2ZWVmZTdjZDkxMzcxYzM2NDM5MDEyMGU0ZDI1ZGU3ZDQwMjAzZjYyNzhjMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5YjAzNzZmNTllZmFkNWNlNTMwYTlkZjYwZWJiNDQ4YjU1MjYxN2FmMzhiN2Y0YmQ3MmIwYjc5YzMwN2YwMmUifQ"
         },
         {
@@ -351,11 +351,11 @@
       "statement": "gemini-3.6-flash supports reasoning effort via the gemini-thinking-level transport (values low/medium/high), which createModel maps to ChatGoogle's thinkingLevel option; the gemini provider also disables streaming and forces outputVersion v0 via GEMINI_THOUGHT_SIGNATURE_OPTIONS so Gemini 3.x thought-signatures round-trip across multi-turn tool calls.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1167-L1178",
+          "resource": "repo://src/agent/index.ts#L1171-L1182",
           "version": "repo-lines-v1:sha256:ca8c58598d65c91bdcd2cfad74c49cdb486c7d5ae68feb50cf0a0f7bd9b6d09f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZTYwNGQwZWU1MzE3YzVhYmQ3ZTUxMDc4OTY1OWYyMmRhZDVjZWIyMTE1MmRlMjdhYzM3MmM2ODA1NDNhYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2OTA5YzlhOGVlMTc3ZGFkNjUwYTBiYzk4MDYwM2FiMTM4Mzg5Y2MxYzBjZmU2YWY3NmQwMGZlZDI0NDQ5NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNzMxODgxMzE5OGFkOTI2MTVkYzE4MzI0NmQ5NjA5ODQ5NGE2OTM2YjU1YjMzMTBhNWU4YTMzY2JkNmJkZTYifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1481-L1493",
+          "resource": "repo://src/agent/index.ts#L1491-L1503",
           "version": "repo-lines-v1:sha256:5beb939847d6a1870b1474bf20fd93a6e18cc4c745649a0048ad26c8929152dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTI2NzRhNjBkODg3NzM1MDhmYTNmOWE5YWIyNDU2NmEyOWU3YTc4YjFhZDYzNTFkMDk5MjdjMTFjZDJlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NGVlOGE4ZDFhYTg0NTM5MWJjNjc5ZWI3MGNlN2Y0NmEzY2Q2ZmIyZDE2ZmNjYTY3ZmExNzhmNGY4YzFlMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2MWE5MGZmNWIxMGU0NWQyOGQ5NDFkOGY2YTg1ZDIxNjA2NTNmN2FiNzU3ODRjMGUyNDIwZTZlMjBjYTE4MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlZjE0MDdlZmU3MTEwMTc1ZWM5YjEyZGJmNTU1MWMzZGZmNjAzMWUxNjc1OGZlYzk0NzE3NjkzOWU1NGQ2NmQifQ"
         },
         {
@@ -381,7 +381,7 @@
           "version": "repo-lines-v1:sha256:c11e301d7bd1a73b3aeeecfd3084fc4d8ebb8c0a139cdd6efa8fd2f2dc8f6029:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MTkzNjliZGMyYTBlNGY2NDJjNzY2ODRiMzAzZTYwODQ1ZTFiNGMxNWZhNWZkNDdiYzU4MWVmYzA2M2UwYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyNmU4MDAxODZlNWI5NTU4YmJjYTIyMTliOGQzZTI1ZWU2ZTUxYzhiMDlhMjAxYThkOTQ4ZGFmZDRjY2VmMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://test/agent/create-model.test.ts#L656-L685",
+          "resource": "repo://test/agent/create-model.test.ts#L726-L755",
           "version": "repo-lines-v1:sha256:896c8ce2072f6f55190346e949f752d8da9b04eeb5fae6294bc45547d3490ebb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NDQ4N2ZlM2UwODAyYWIyM2FjZGQ3ZTEzZTZkMDdiY2Y1MGI2MjdmYjVhZGZiNDgzMWI5NzQxZTI1ODg1MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNzU5N2FkOWY2YTY1YzVlMzhjZWU3MmI3OGZlNWZhODljZWI0YzdkZjE4MmNmNDYzNTkwZjk4OTUxYWRlNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4OWI3NGI1MDkzMTA2MzFmOTUxZDQ2NmY4ZTg2YWYxM2JmMjJmNTc0ZmYwNTk0NTdmNDg1M2ZhMzM1MmM2NGQifQ"
         }
       ]
@@ -391,7 +391,7 @@
       "statement": "The bob (IBM Bob) provider is an api-key provider targeting https://api.us-east.bob.ibm.com/inference/v1 (overridable via BOB_BASE_URL) and is the only provider with fixedModel \"premium\", so resolveModelId returns it verbatim and skips model selection; createModel builds a ChatOpenAI client with a placeholder apiKey and injects the real key per request through createBobFetch.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1297-L1311",
+          "resource": "repo://src/agent/index.ts#L1307-L1321",
           "version": "repo-lines-v1:sha256:0b104cb5d54d8962de284c3ef49694a65a2a83f8479eadab016f0017b1dacf50:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGJjYWYwN2I2MzgyZTFjYWM0ZjY3M2RjMmZjYTFmOWEyNGNmNDNjNzk2M2JlMGFmNTQ0NjA1YTAwYjVhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2E0NDY3ZmE2ZGJjNzRiODVmYTIxYWE2YWFkZjFlNTBiMWRhOGQ3MDg0ZTYwMmQxYTY4NWIxZWJjM2JmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDgyNDZhMWRhODZlZWIyYWVkZTdhM2NiMTdiODUxYWEzOGZlMzQyODdmNWQ4M2MyYzdjZmMxMTRiZTM5ZDUifQ"
         },
         {
@@ -419,11 +419,11 @@
       "statement": "resolveRunConfig in src/agent/index.ts is the single ordering boundary that turns the declarative provider registry plus env settings into a run config (provider, modelId, providerRetryAttempts, pageConcurrency, maxOutputTokens, streamIdleTimeout) before createModel runs; any throw inside it is tagged 'config' for telemetry, and its onProviderResolved callback publishes the provider the instant it is known so later failures still attribute to it. The steps run in order: resolveConfiguredProvider, resolveExternalCliCredential/validateExternalCliCredential for copilot, ensureProviderCredentials, ensureProviderBaseUrl/SecretKey/Region, ensureFreshChatGptTokens for openai-chatgpt, resolveModelId, then the availability check and the run-level settings.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L192-L194",
+          "resource": "repo://src/agent/index.ts#L196-L198",
           "version": "repo-lines-v1:sha256:328f0b061068a917132c6adf5cb3ed7154ee9f8c43e1d9fc9947543bac338422:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MwOWM4Njc1N2RjOTFjM2YxOTY5N2YyZjZhZTJhZTk2NGI5NDgyMzc2NzZmYTgwMDFhOTUxYzFlODY5YmRiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3YWYxMTAxYzk3YjdjMmY1MjU0MDc4MmU2MzRjYzQ0NDBmMGU5NzAzNDFlNTJmOTc1MjMxMWQ3OGI3ZDdkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjE2MGEyMjNmNGFjYzY4MWQzMTQ2ZDdhMTZjZDlhNjM1ZTRjNTUwNzQzMjJkZjVjM2U3MjlmYTEyMGVkYzU3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDY0ZGQ2MWE4YzQxYmVkZDQxMTI5N2ZhY2NjZjEwYWM2YjY1MzY1ZGIyOGYyNTBlNGRjYmJiNDg4ZWQzMWFiOSJ9"
         },
         {
-          "resource": "repo://src/agent/index.ts#L294-L389",
+          "resource": "repo://src/agent/index.ts#L298-L393",
           "version": "repo-lines-v1:sha256:3f39a8627d9f80a06465d66c286964c00ba8e0e977c6e37f5f9385febdef5d81:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMzVmYjI4MzZmNmIwMTU0YTZhOTE1MjM3Y2EzNWZkOGI2MzNmNjIyYzNjNGExNWZiNDQ0NDJjZDZhMDc2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkZjk3MDA2YzE4YjMwNzRlZGE2MTdlYWQ0MWRkMWNhNzI3MzA5NDc1NjQ5MzYxNWMyODFjNjY2MTM1OWQ3NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNzQwNjJlYmIzMTdjYTQ3MThkNDkxOWZhODE0ODdjOTg4ZmE2YzFmOWI5MjRiMzlmMjJiZmEzZGYyYmI5ZGQifQ"
         }
       ]
@@ -433,11 +433,11 @@
       "statement": "ensureProviderCredentials in src/agent/index.ts fails fast at run startup by calling getMissingProviderEnvKey and, if it returns a key, throwing with the provider label plus getProviderCredentialHint (ADC / AWS-SDK / gh auth login guidance); it is paired with ensureProviderBaseUrl (required for openai-compatible and validated against getProviderBaseUrlWarnings), ensureProviderSecretKey (the paired AWS secret), and ensureProviderRegion (bedrock only).",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L322-L331",
+          "resource": "repo://src/agent/index.ts#L326-L335",
           "version": "repo-lines-v1:sha256:a07dda7130f5753365ad786d7726bc577301d93a572142896682871d78c9b8b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiN2U2MmM2MGUxMmI4NTM1N2ZhNjRhMmY1YmRjNmQzZjJjMmQ0MmMwMjg4ODJkYTE0YmVlNjVlM2ViMWQ5ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMmNmZWEyYmM3NmRlZjgzMjE3YTNhNGFjOGI2ODg5NzFmNDVhNjA4OTJiOWZkY2VkZGI1NTljYzVlMmY1NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkZjM2OGE2ZDJiZTE4NzZkNDY0MmQwMmQ2ZmQ2NzhlYzFkYzJkMDZlNjNlZGQ2NjE5ZjgxMTY2ZjI5NjkxZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMzhjMDVlODdiMmZjMDY4MzY1NWIwOTc5NDgxM2ViZTE0NGVkMTk2N2M4ZDJhMjY1ZWE5YzM2NGJlMWMwOWMifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L990-L1054",
+          "resource": "repo://src/agent/index.ts#L994-L1058",
           "version": "repo-lines-v1:sha256:7bb69cdf03157773554bf13aef502f88005e98da21642a738fe482e680a44400:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNDQ0NDM2NWUwN2NkMGFiOTg4MjQwZmZmMTAyOWZhNmY4MzhkZTAzNTkwMjIwNWViOGZkMmU1ZjNiZjc4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NmFkOTNmNzU3NTZlNWU2Yzk3MDZkYjhhNjg4Y2UzZmNiZDg2NjEzY2NjODExMzIzNzA0NDBjZTM0N2MzYjYifQ"
         }
       ]
@@ -447,7 +447,7 @@
       "statement": "getSelectedModelAvailability in src/model-availability.ts is the only availability adapter and covers only the openai provider: all other providers, a custom OPENAI_BASE_URL override, or a missing key short-circuit to { status: 'unknown' }; otherwise it queries https://api.openai.com/v1/models and returns 'available' on a matching id, 'unavailable' on a missing one, and 'unknown' on any non-OK response, unexpected body, or fetch failure. resolveRunConfig treats only 'unavailable' as fatal (throwing a 'set OPENWIKI_MODEL_ID' message) and debug-logs 'unknown', so a catalogue lookup failure never blocks inference.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L341-L359",
+          "resource": "repo://src/agent/index.ts#L345-L363",
           "version": "repo-lines-v1:sha256:a1d1e67cd5763926ffd4202390f70497fe8601f7075da7802a8d354d0a14359f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NWIxOGI2YzE5NmYzOTY1M2ViMDBjNjQxOWZhYzk0OGI3NDhjMGYyZmFhYmQzNmVjZmZlMWMwN2QyMjMxODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjNGI3MTQxNDJlYzk5NWZkNGNkNTY4Zjg1MzkzNDg4ZmVlMzIyYjI1MzExNjRmYjljMjlhNmM5ZDUxMjdkMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlNTYwOTZmY2FhYjhlNmE4YjgyODIyNzk0YmM3NTgyNjFmZTZiNjI0NjYyMThjNWY5MDlkZmI4MWM3OTkyYzQifQ"
         },
         {
@@ -461,7 +461,7 @@
       "statement": "After model resolution, resolveRunConfig resolves the four run-level settings createModel threads into the chat-model constructor: resolvePageConcurrency (1 to MAX_PAGE_CONCURRENCY 8, default 1); resolveProviderRetryAttempts, which sets maxRetries and when OPENWIKI_PROVIDER_RETRY_ATTEMPTS is unset gives PARALLEL_PROVIDER_RETRY_ATTEMPTS (5) for pageConcurrency > 1 runs (transient rate limits dominate) else DEFAULT_PROVIDER_RETRY_ATTEMPTS (3); resolveConfiguredMaxOutputTokens (OpenRouter legacy maxTokens precedence, then OPENWIKI_MAX_OUTPUT_TOKENS, then the 16000 Bedrock default); and resolveStreamIdleTimeoutForProvider, which is non-undefined only for bedrock and is spread as streamIdleTimeout on ChatBedrockConverse.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L360-L384",
+          "resource": "repo://src/agent/index.ts#L364-L388",
           "version": "repo-lines-v1:sha256:7fbc23015350d614b7315080072e734c120e7bdb7449d8d982f5d56350b9078f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2VjMTQ5MGM5YmI4ODNlNTkyOGFiNGZkMGRlM2Q3ODcyNTM0ZTlmY2Q2MjgwMGViZWFjNWQ2Y2JkYjY4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmUzOTY5ZDZiODgyZGE2NDA5ZDllN2E2NDNiNDQxOTNlMmEzNjAzOTI3Y2JjZDI1ZmNmYWNjYzc5OTgxYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MDFmZjA0OTEwNWMxMThjOGNkMzhhYzA3YmIzNjYwMzU5NGJjOTdkMGRlNjJiNjY0OGRjYWRiYmI1NGI4N2UifQ"
         },
         {
@@ -495,7 +495,7 @@
           "version": "repo-lines-v1:sha256:5b446bfc0aefab61795fc7055b0160677021f529860d2723bd832f4e9b572fa5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1313-L1334",
+          "resource": "repo://src/agent/index.ts#L1323-L1344",
           "version": "repo-lines-v1:sha256:60dbae191961b80e09a33af0fabb157246074e45c3c1d3ef8ae373a970dbebc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyN2ViNDE1MzFiZWExZDBkMjE0MjliZmY0N2ZmZmI5MzQ0YTdkYjI1ZTRlYjNlMWY5MTM3ZjE2OTMzMzg1NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MjhkOTFiNzA1MTBhY2U3ZjgzZmNiYmIyZTM4ZWE5MDM3MGJhYzlhYTI0MzU3MWNiYTA5OTNiMWYyNjJiOWYifQ"
         },
         {
@@ -524,7 +524,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-07T08:10:39.081Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }

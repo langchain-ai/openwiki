@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0b0d3f252c5ac10663e855bd4cbfd4142a6a57456ccc679204bb42b8acc18f37",
+  "pageVersion": "sha256:b1368bcf1cd05a784ef2f69b3bc7547e77d270ba774a1c6a8b5145fc85e44e66",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -191,7 +191,7 @@
       "statement": "In code mode the wiki brief is written to <repo>/openwiki/INSTRUCTIONS.md at mode 0o644 via saveRepositoryWikiInstructions, and the setup controller saves onboarding.json with wikiGoal cleared so the brief lives with the repository rather than in the home directory.",
       "evidence": [
         {
-          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2678-L2699",
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L2680-L2701",
           "version": "repo-lines-v1:sha256:45145b0a58106a9cd22718e0017454c94d87b2a8301548d4342afb45967dad53:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmZTJkMzUxMzlmZThhMzRjYzAxMzU5MTcwNmRhNjAxMjM5ZTc3ZTJiYmYyMzc2MjE3YjdmYWJjYjNiNTQxNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3N2UwNTA3NDZhYzc4OWFmZjI5NTczNWQwYzZkNDgzMGJiNjI0NzQ2OTM1OTQxMmI0YmU0MzBjNTM1MTczNDYifQ"
         },
         {
@@ -219,7 +219,7 @@
           "version": "repo-lines-v1:sha256:9743270287998ae1c18d25c03788d6be89d1e15aed480ea98e8bea1f47391d41:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I5NTkyNWUwNjcyNzIzNmMyY2UyNjVlMjA0NDdkNTdhNzU3MzM3Y2RmYmNmZmY3MmY1ZGFiNTAxZDRiOWI2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2NWNkMDg2MTE5YzhiYWI1NGJiNWUzOTU3YjlmYmI5ZjRkMTk3NGU4OTgzODA3OGIwZWZjMWI0ZWMzOWY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y2YTJiZTljZGUzODIzOWJiOGUzYTJmOWNhY2NiNjY0NGIyZTJkNWYwY2Y0ZjRmNDMzNDg1NjIwNmRjYzVjMSJ9"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L403-L405",
+          "resource": "repo://src/generation/repository-run.ts#L404-L406",
           "version": "repo-lines-v1:sha256:7139580478dfa8d0eaf197c59cd29eb61d1019dd49604b8425b99a7af85d37a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU0YWNjMWM3YTI3YTM5ODQ5ZTAwNjdhM2ZmOTczNmY3MGQ3ZDY4N2Q4MjNhYjEwY2EwMWM0OTA5ZThkNmM4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY0NzA5Y2ZkMzQ1MTk1N2U5Nzc1NzM5M2RlNDljNWNlN2VlZDczYTIwYjc4NDg4NDMzNzI0MTcxZDQ0YjUwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODMzZGRhNGIwMjRhYTdhMTFjMDY0MjZjZWQxMTEyOTBjYWI1NTYwODkwMDIwOTAxMWRmZmNiYjUxMGFhYzU2MSJ9"
         },
         {
@@ -233,32 +233,32 @@
       "statement": "writeCodeModeAgentSnippets creates AGENTS.md when missing but not CLAUDE.md (a missing CLAUDE.md returns nextContent undefined because Claude Code falls back to reading AGENTS.md when no CLAUDE.md sits beside it, so creating one would only shadow it), and otherwise replaces only the content between the <!-- OPENWIKI:START --> and <!-- OPENWIKI:END --> markers, preparing and validating both files before writing either and aborting with the file unchanged when markers are malformed or duplicated. A CLAUDE.md whose trimmed content is exactly @AGENTS.md (CLAUDE_AGENTS_IMPORT) is left unchanged (nextContent undefined). When CLAUDE.md and AGENTS.md resolve to the same file on disk (e.g. CLAUDE.md is a symlink to AGENTS.md, detected by resolvesToSameFile via matching inode and device, with inode 0 treated as unknown), the CLAUDE.md snippet carries the full instructions inline (the same snippet as AGENTS.md) instead of the @AGENTS.md pointer, because the import would point the file at itself; otherwise the CLAUDE.md snippet is the minimal @AGENTS.md pointer. A CLAUDE.md with marker regions or other content is refreshed in place.",
       "evidence": [
         {
+          "resource": "repo://src/ingestion/code-mode.ts#L216-L254",
+          "version": "repo-lines-v1:sha256:c7ed176a6e344a202996e4b2c0e7bf778de7a3ca79f527b6b284fdbead9f8e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxM2FkYWNhNTMyNTM0NzVlY2I0OGI4MDBkMjFkZTU1ZmQwNjBhM2FlNjI3ZmMxZTEwOWJjMTRhMmFhNWRiYzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyM2Q4NDJhN2U4YmJkMmU5Y2QzMGE4ODdkZDk2NTdjYTU1NjQ2YjdjNjA0YzMwNzQzYzkxMmU4MTQ2NDJkNWIifQ"
+        },
+        {
           "resource": "repo://src/ingestion/code-mode.ts#L22-L49",
           "version": "repo-lines-v1:sha256:cc97229667c93efaa5454f2fe3653fb2eedb7740162d3a5bf910d63279a566a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MjZjOTg1MzIyMzRiMjQyNTkyYzIzN2I0MTJjYmNmYjFjZGMxZDFhMzJkZmU1MTNhNzJjZjExNzJhMTY2YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZGU4OGI0YWMzMWMxNDkxMjA5NWViYWQ5ODZlMmJhZjk1MGU1MjAyMjkxMTM2NzNiNDY2MGQ3YTY4Nzk2NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiYzFiYjljMjUxODI0ZGVkOGI2MGVkYmRjZDc0MmY3Mjc0MzI5MWY4ZGNhNjM2MzhkYWFkZTU1MGVmMTM2ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkYjJmZTk1YjJjZWY2YWI2MmNjZDMwZDc3M2YxNWJhZGJhNmQzNDAzMmZlYWEyMDM0ZDZkNmY1ZmM3YzI5MzUifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L216-L249",
-          "version": "repo-lines-v1:sha256:c01ee7202d4cbd4185ec50b4d1fab659b390a829f5716fb67867d520247966bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZWZiMmM4ZThiNDY5NmZhMDY3MDkxNTJjNTViYzEyNjM5YjEyYWY3MmY3ODlhY2I1MTgxZGJiOWNkMmQ2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNTU0YzdkZjI5NmI4NDgyOTNmNzRiZmE2ODRjYjUyMDRjOWVmZGE0ZDZjNzRlNjA2MDUzZDA1NmU4MzMwMzQifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L268-L271",
+          "version": "repo-lines-v1:sha256:af6269ffcef3d3f92e5a90188b8d356853d10d7399354f20a819e4493d0b6d7e:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2I5NGQ1MTdiN2M5ZDk2MDgxODE4OWE0ZmZkYTE2NzY0N2ZjY2FlMmEzMWJkZDJmY2ZhMzgxOTAwNTE2ZGZiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRhZDA0M2Y2NDhkODk1ZTdhYWNiNDAxOTU1ZTlmMWIxMjYxOTE5MTM4ZmU1MjQ2OTY3ODU4ZTIyZDJhNDA2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDY0OTQyMDYzNjVlNTZkZWFkNDAwYTAwYTRlZTViNjM5MjU3MzYxMTJlMTBiNDU2M2UzYTE4MDQ4NmFhOGVlNiJ9"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L264-L266",
-          "version": "repo-lines-v1:sha256:a2c72165539ca07b0c7ffca4b95cbc3ca9a30447e7137f67ff5a41e25466dfda:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU5ODg3OTkxMzdiYmY4MzdhMjA2NmVkMGFkNGE3YWM2YjQwMjVmOGQ1ZWMyM2MzM2QxMmUwMjRkOGUyZWY4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNlMmU4Y2Y1ZjcwOTQzZWRlMzdjMTAxOTUxNzBlNTQxMTU5YTIxM2MyZDlkZTY4MDQ2ZjA2ZTExNWVmNjhiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTAwMTY4ZDM2MDgxY2EyYmNkZDI2ODQ4YTMzOTIwOTU0NjI5OGQ3NWQ1NmJlMjg5YWU4NGJhMzBkYTVhOTdhYiJ9"
+          "resource": "repo://src/ingestion/code-mode.ts#L633-L650",
+          "version": "repo-lines-v1:sha256:cf313a7ee45ec8df00e8ce3860b30128eece25d40834f6fc2e16eb1727a807d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjliYTYwYjUxNDM1ODM2YTZhNzNhZDJjNjE1NjUwNGVmNmE1MDUyODU5MzBjMWI2YTQ0YjBkMGY0YzllNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDE1Y2U3ZTg4NDk1NDQ3NWM2ZmY3NzI3NzI0MDZkNzE0Y2M5ODZiZTY3MjhhMTQyZDljOGFjYzRkYzIwNzUifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L633-L671",
-          "version": "repo-lines-v1:sha256:d75c1d750de94233bcf3b3661cc7be0a16b1e9f1182d00479ed84fc6f20d9b48:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YmU5YzA1YTJmNzNkOGEwNjA1Nzc4MmY5ODMwNGNkZTA0NTM3ZDA2NjU4ODY2MmU0ZmYwNWNiMjU4N2JiMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjliYTYwYjUxNDM1ODM2YTZhNzNhZDJjNjE1NjUwNGVmNmE1MDUyODU5MzBjMWI2YTQ0YjBkMGY0YzllNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWEyMjc0YmYzNmEwOWMyMjI3ZWRkNGI2M2E1YjgzZDFkZmUyNTIzYjFmOTE3NmE4NGMyY2M0N2IwYTlkODYifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L653-L671",
+          "version": "repo-lines-v1:sha256:d804cf2c8ca6844b39e19fa3a2f62846630ca714225071f0daff9d1ed01b4a45:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZDk3MGY2NmExZjQ5ZWY5NWZmNDE0YTA4M2JmNmNmMWJkNTM4ZTFhMTk4YjkyNDA4M2M5ZDI1ODIzYWVkNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3MWEyMjc0YmYzNmEwOWMyMjI3ZWRkNGI2M2E1YjgzZDFkZmUyNTIzYjFmOTE3NmE4NGMyY2M0N2IwYTlkODYifQ"
         },
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L673-L688",
-          "version": "repo-lines-v1:sha256:6fbe418899b3765b168479960f11cadfb70bf9564640b5501a4e16c99ce5a05d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MmQ5YTZmNDcyZDc2NmFiMzRmYjU1ZTA2ZGNjOTk3NTc2NzMwNmIwOTI3NTE0ZDQzMDlhYmU2NzRkYTY5NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L186-L204",
+          "version": "repo-lines-v1:sha256:26a9770f2d5d20fc696b66908577dd480b256e0cce3c89dad2c6cedd5df94705:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNzg5MDNjMDJlODNjYTNhMThhNjdlZmFiZTUxYjA0MjgzY2FlNDM1NjM2ZjhmMDdlOTMwZTYwYTg5NTEzOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyM2IzMzVmYzk5ZDI4ZGE0NmQ0Y2QzZDBkNmFlYTVhN2Y5ODFhM2YwY2RhNTI4NmJlYjE3ZDgzMzU5YWYwZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNTRiM2Y5MjBkMTg3MTNlMjkyNDliMjM3Njk2NThkYWI1ZjI2NTg4MDQyM2QxMDc4NDg4MGZjNDE1NTI0YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhNGJlOWJjZTFjODE0Mjg2OGM5ZDg4ZWI3MmUwM2M0MGZkZGJjMmQxY2M0ZTA1NDBjMzdhNzVkN2YxYmVmMzYifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L167-L192",
-          "version": "repo-lines-v1:sha256:4056f4903c0866bda2d04d8d7c9803159980d549d37a733fb51096f1b46ddeca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiY2EzZDdmMjQwZjI0YWY1ZDk3ZDRiMTY0Zjg1NjBjMjA1YWMxMjA4Mzk1Y2U4NTBlOTU0MzZhOWM5YTk0ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MjQ1NmZhYWE1ODY4YTA3ZGI0ZDlhOTg5NzU3NzAxN2FlNTMwYTYxNDVhMzhhMWQzNmJiZDFlNjYyOGRiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMmZjNmNlODE3Mzk1ZWE5MmMwZjg4MDc3YmU5NmQ5YjhjMjNlMjI0YTFlMGIzZTJlNzc0NGIxMjEyMjFiZGYifQ"
-        },
-        {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L239-L260",
-          "version": "repo-lines-v1:sha256:1d5ef7a8b7c24bca0fe25f357c1c932a18e00999686d3e7532f6704834984f1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxODQ4Y2RjOGY1MjdmNDQzNmUxNTU1YjQ5YmMwNjZlZGIyMDVkYzFmZWZhOGRjMDBjYjE3YWMwYWQzMWY5NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZDM5MjQzNjdhMzUxYjU5OGU5NmJiZTZkOGE5NDljYzE2NGZkNmU3NDFiOGI4NDkzZTkzY2EwOWJiZGU5OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MmI3Y2RkM2U0ZDEwNzFlYmZlMzA5Y2YwMTdjMWZmZTJlYzZlOWZkNzUyNTYxMTNiZGEwNWU1YmQ4OWE3MDgifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L231-L260",
+          "version": "repo-lines-v1:sha256:bc0e1ec77280e1292fae897caeefd38a747c4db9429c5b22f40fe50777526ae2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZWZhNTJmMTEyZjgwYzBjZjA2NGM0MWFlZjkwZTgyODkyNDBmOGUxOTFhNjIxOTZiZmEwOWFkYzVhN2E4ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjZWQ0MjRhYTE3ZmZkZTk5MDQyMjI0YTJmMjQyZGQ2MzFlODRlOTJjYTM3NjM1NzgzMTEyMGM5OTE1YTE2MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5ZDgzMGNhNjg4NDkxYzlkNGEzN2RkNjNmYzkyYTY2NTdjZDQyYzEwMTQwZjc2MDM5YmI2M2ZmMTc0NzkxNjYifQ"
         }
       ]
     },
@@ -289,7 +289,7 @@
           "version": "repo-lines-v1:sha256:5f4d7ad5a74e6ca35e97a213e549115c7ea15a1113a86dd09044bd4bf205ce62:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NWUwMDZmMmE4YTJlZDc5MmRiMWFkNzkyM2ZiNzA4ZjgxMDRiMzVlNDczNzFiZDQ5MDUwN2Q0ZjQ0NDdmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxODQ1ZjZlNGEyYjkzODdmMDRmZmJkOWY5ZTI2MWZjOTMwMTU1Y2IyNjc3OGNkMDhiZTY5MGE3MTExNzc5MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2YmUyN2U1NjM1MDAxODY0ODRiNThiZTc0MDI0NjI0NzE3ZDZhMDRmMGE0ZjI0ODg4ZDIyMjdiZTEzMmJiZjEifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L696-L787",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L714-L805",
           "version": "repo-lines-v1:sha256:d5795fd065f11d8a90bceceae9635df59ca0a0017de0e2a807bda458a1f1d365:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4NmU3YmRkNTQ3ZmE0YzA0YjU4ZDkyNDM2OTY2ZDBiOWFhZjAwNjdlMWMxZjBlNzk0M2Q4Y2VkNDQ0MmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWVhMTVhMGY3YjFkNzc0MWMwOTJkZTgwMmQzOWZkYTQ0MzRlY2YwNWY5NDM1OGM2ZjM2OWNhOTExNmUyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3NjUxZTQ1NmZhM2VhZjM5MjdiN2NlODk5NjI5MTQ0ZmE3YzE4MDQ2Y2FhYzU5NWFmZWQ4MjQ1ZTQyNmQ1YWUifQ"
         },
         {
@@ -347,7 +347,7 @@
       "statement": "beginRepositoryRun validates the requested --language value before touching the repository, rejecting an unrecognized BCP-47 tag (via resolveLanguage) rather than silently defaulting to English, because a wrong language would be persisted in durable run state and a later resume refuses to change a started run's language.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L392-L401",
+          "resource": "repo://src/generation/repository-run.ts#L393-L402",
           "version": "repo-lines-v1:sha256:e71e280af789945c43573bd42734abfb16a9a67f3e459becb7696b1d6d5dcb11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkNjJkYWU4YTliYTI4MjRlNzBhMzFjZmQxODVlNTI5Y2ZjOTk4MmE2NDU2YTEwOWI4MTI2ZTBmYTVkMTE5ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YmIxNGZiNDYyNWViYjFiODRkODE0NTQzYTU2NGZhMDRiMWIzOGVhZTdjZmYxYjAzMDM4MGQ1NWQ5NDQxNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2YmEzOGEzMTAwZjFmMThiMjZmNWZlODE2MDlhNjY5Y2ZkYWU5YWE4MDgxNjBmNWNjZGM4YmQ4YmNjMmY0ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzOTgwN2E5OTJjYTU4ZWMxMWQxNGQxMDc3NGUzNjEzOGRiMWQ0ODU3Zjg5MTNiM2FmYjU4M2ZlM2QyNWJkYTkifQ"
         },
         {
@@ -387,22 +387,22 @@
           "version": "repo-lines-v1:sha256:0c69dc8f0a0ba64d7d6145890891a5d86407169ff9c907f4dea9eb9a502903e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MjA0MGUwOTVhOTRlMmFkYTc0ZTQyMWYzNzE4NzUxYTkxYTgxMGJmZDY2ZjQ4ZjRlOTM5YzdiNzQ4MGViNjcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmMjhlZGIwNzU3NGQ3MWFiYmUzM2Q3MDBlM2RhODk0MGQzYmIxOTdkYWNmMTQxZDUzYWFiZmJkZmZlZDdiOWE4In0"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L314-L598",
+          "resource": "repo://test/ingestion/code-mode.test.ts#L332-L616",
           "version": "repo-lines-v1:sha256:ccf10867932cebaea0b96dfeee55d0579eda7de554b163bac2fe39e3ef6188ed:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjg1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4OWM1MjA5MTA0NzliOWQ3OGNhY2M3MjAzOWQ1NDIzMjdjOWRiNjEwNmQ2ZTBmNGYwMzY1YTYyNGI4OTk1ZWJjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNGJjYzU2OWQ0YWViOGQ0NTYzMmM5M2RiMzYxZTA0NjIzZTBhODVkZDg0YjUyZDk1ODIxYWVlMzE4MThlNWI5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4MDM1OGFkYjY2NDRiNDJjNzQyMzE3YmQyOGI3MmExMTNiNDNmMzM1YzQ5NWE3OWRhYjYxZDkzMDk0YTIyNjkwIn0"
         }
       ]
     },
     {
       "id": "claim_87d5f5cfffc2434398e9b86d391bcfce",
-      "statement": "The AGENTS.md managed block (createCodeModeAgentsSnippet) is retrieval-first rather than eager-load: it instructs the agent not to enumerate, preload, or search wikis at task start, but to use openwiki_search for just-in-time context and openwiki_read for the relevant complete sections when unfamiliar architecture or dependency behavior materially affects the task or source inspection leaves an important uncertainty, stopping once the question is grounded. When search returns workspace_required the agent asks which listed workspace to use and retries with its ID; openwiki_list_workspaces/openwiki_list_wikis are for discovering workspace membership. openwiki/quickstart.md and its links are the fallback only when retrieval tools are unavailable. Source code and tests are authoritative, and the brief's unknowns/review items are verification gaps rather than automatic requirements; the narrowest quiet validation that proves the changed behavior is preferred.",
+      "statement": "The AGENTS.md managed block (createCodeModeAgentsSnippet) is retrieval-first rather than eager-load: it instructs the agent not to enumerate, preload, or search wikis at task start, but to use openwiki_search for just-in-time context and openwiki_read for the relevant complete sections when the user asks for it, when unfamiliar architecture or dependency behavior materially affects the task, or when source inspection leaves an important uncertainty, stopping once the question is grounded. When search returns workspace_required the agent asks which listed workspace to use and retries with its ID; openwiki_list_workspaces/openwiki_list_wikis are for discovering workspace membership. openwiki/quickstart.md and its links are the fallback only when retrieval tools are unavailable. Source code and tests are authoritative, and the brief's unknowns/review items are verification gaps rather than automatic requirements; the narrowest quiet validation that proves the changed behavior is preferred.",
       "evidence": [
         {
-          "resource": "repo://src/ingestion/code-mode.ts#L625-L650",
-          "version": "repo-lines-v1:sha256:fe9cd264ecd39902b3afa4367807181edd5ef0ae00c2da503942d4bf0ced0092:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4NzRhMWE3MzI1MTkyZWI1ZWFmYTZlYjU5OTUwZjY4MGVjNzdkMWMwNjg5Y2RiNDA0NTY3OTM5NzhhMDZkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDE1Y2U3ZTg4NDk1NDQ3NWM2ZmY3NzI3NzI0MDZkNzE0Y2M5ODZiZTY3MjhhMTQyZDljOGFjYzRkYzIwNzUifQ"
+          "resource": "repo://src/ingestion/code-mode.ts#L632-L650",
+          "version": "repo-lines-v1:sha256:1a315748a79ec46d95b38bf87c94da94bf5811e23f0a0e4a67700183bafe3ac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyOThiNGEwMDU0MjQwZjRiNWEyMTIxZDI2ODg4ZjJiZGI3NTQxOTRkMmYzYzNmMTNlMGQwNDc4NzkyYjg1NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMDE1Y2U3ZTg4NDk1NDQ3NWM2ZmY3NzI3NzI0MDZkNzE0Y2M5ODZiZTY3MjhhMTQyZDljOGFjYzRkYzIwNzUifQ"
         },
         {
-          "resource": "repo://test/ingestion/code-mode.test.ts#L194-L212",
-          "version": "repo-lines-v1:sha256:80d2468955319380a800bc8245907d20d34cdda3b951dc58599955963c8e9478:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlYWZlNTA2Mzk5YmU3OGIyYzk3OWI3MmJiYzBmMzg3YWU3YmU0YWQ2NDY2ZDljZmIxMjI3YzhmOGY5OTI3OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMGZjOWU2N2RiMDdlZDIzOWJiM2FkMjMxMmVhYWI5YTcwZTFmNmZiYTAxMjg4YjBiYTZlNjFkN2Y4ZWU3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjgzMTE2OGJmNzQ5MTU0YWU4YmJkZWJhZTEyMTNmMWJjODdjZDNmMDZmY2Q4YTNkMzc5MmE0MzcwZGNmZDMifQ"
+          "resource": "repo://test/ingestion/code-mode.test.ts#L211-L230",
+          "version": "repo-lines-v1:sha256:686e9edee064120db17f1324526ca0e946f2498de2aac21b5c1d8e8f43298c11:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxN2E1ODZjYjljODU3ZWEwMGE0NjU4MmM3MDk5YzUzZDIyMTY4NTg4MzY5YTUyMTEwZTY0MmI5NDgxZjMzZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MjgzMTE2OGJmNzQ5MTU0YWU4YmJkZWJhZTEyMTNmMWJjODdjZDNmMDZmY2Q4YTNkMzc5MmE0MzcwZGNmZDMifQ"
         }
       ]
     },
@@ -441,7 +441,7 @@
           "version": "repo-lines-v1:sha256:e32d8f9bd51d5b432a35bdb0bb951e02e4c13e708f69557471dc6a6fe0524dc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NzY1MzcxYWVhMWNjN2Q0NmVjNmVmY2NiYmU5ZTllNzNjOTE4OTRmMGQwNmM3MWYxMjVhYzhiZTI1NWI3YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0OWU4N2RjZWZhYTVlMGYxMWJkZTY5MjY1YWRhZDBjOGI3NmEwN2I0OTczMGVjYTVlY2MxMjA4YmU2NDQzNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMGMwMDlkZWFmY2I5NWNjMDQ4OGIwODNjYjlhNTVmYzI5ZjNhMzRkOGU3MmI2MjVkNmI3MWU3MTVkNzljMTMifQ"
         },
         {
-          "resource": "repo://src/setup/credentials/use-init-setup.ts#L1708-L1728",
+          "resource": "repo://src/setup/credentials/use-init-setup.ts#L1710-L1730",
           "version": "repo-lines-v1:sha256:8723133f82200327a081963efb7232db7ede5c3ff4cb93921489ffed35eaf88a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNDcxMDBhZTU3MGFiN2JjZjhlMThmY2M2MTFjMWJjZDUxYzhjMmFjOGY1YWUyOTI1NWY0NDRmNDc0NWI3ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDFkNzNjNDUyMmJlYTM5ZmY4MTVlMjRiY2YxMzExODUzMWQ2NzFlYjNjZjUzMTIxODg1ZTExYTFjNDcyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyOWQ5ZTc4Y2E1ZjUzZWY1MjQ1MTY5NjVjNWZmYWE2YzU3MmU0YjU3OTVlZmNjZjg5MDc2ZGI2YTczNmVlMjUifQ"
         }
       ]
@@ -458,7 +458,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-07T08:10:39.081Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }

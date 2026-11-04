@@ -34,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Onboarding and Setup
@@ -282,9 +282,10 @@ repository runs (`beginRepositoryRun`). It:
   (`createCodeModeAgentsSnippet`) is retrieval-first rather than eager-load: it
   tells the agent **not** to enumerate, preload, or search wikis at task start,
   but to reach for `openwiki_search` (just-in-time context) and `openwiki_read`
-  (the relevant complete sections) when unfamiliar architecture or dependency
-  behavior materially affects the task, or when source inspection leaves an
-  important uncertainty — stopping once the question is grounded. If a search
+  (the relevant complete sections) when the user asks for it, when unfamiliar
+  architecture or dependency behavior materially affects the task, or when
+  source inspection leaves an important uncertainty — stopping once the
+  question is grounded. If a search
   returns `workspace_required`, the agent asks which listed workspace to use and
   retries with its ID; `openwiki_list_workspaces`/`openwiki_list_wikis` are for
   discovering workspace membership itself. `openwiki/quickstart.md` and its
