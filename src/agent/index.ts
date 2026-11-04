@@ -235,6 +235,9 @@ export async function runOpenWikiAgent(
         command,
         model: config.modelId,
         ...(generation.skipped ? { skipped: true } : {}),
+        ...(generation.skippedPages
+          ? { skippedPages: generation.skippedPages }
+          : {}),
       };
     } catch (error) {
       attachOpenRouterDebugInfo(error, debugFetchCapture.getLastFailure());

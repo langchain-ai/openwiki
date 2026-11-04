@@ -573,6 +573,44 @@ describe("runPrintCommand", () => {
     expect(process.exitCode).toBe(0);
   });
 
+  test("exits 1 and names the pages when the run skipped pages", async () => {
+    vi.mocked(runOpenWikiAgent).mockImplementation(
+      (
+        _command: unknown,
+        _cwd: unknown,
+        options: { onEvent?: (event: unknown) => void },
+      ) => {
+        options.onEvent?.({ type: "text", source: "agent", text: "wiki done" });
+        return Promise.resolve({
+          command: "update",
+          model: "test-model",
+          skippedPages: ["/openwiki/quickstart.md"],
+        });
+      },
+    );
+
+    await runPrintCommand(
+      makeCommand("run", {
+        command: "update",
+        dryRun: false,
+        language: null,
+        mode: "code",
+        modeSource: "option",
+        modelId: null,
+        print: true,
+        shouldStart: false,
+        userMessage: null,
+        telemetryFile: null,
+      }),
+    );
+
+    expect(stdout.join("")).toContain("wiki done");
+    const errOutput = stderr.join("");
+    expect(errOutput).toContain("/openwiki/quickstart.md");
+    expect(errOutput).toContain("interrupted");
+    expect(process.exitCode).toBe(1);
+  });
+
   test("pulls code-mode connectors before the agent in code mode", async () => {
     vi.mocked(runCodeModeConnectors).mockResolvedValue("augmented");
     vi.mocked(runOpenWikiAgent).mockResolvedValue(undefined as never);
