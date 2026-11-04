@@ -59,6 +59,14 @@ for the single page OpenWiki assigns you.
 3. If `openwiki_begin` returns `status: "noop"`, report that no update is needed
    and stop.
 4. If it returns `phase: "planning"`:
+   - long lists in the result are capped, with exact totals in `changedPathCount`
+     and `claimIssueCount`. When a `changedPathsTruncated` flag is true, find the
+     rest with `git diff --name-only <baseGitHead>..HEAD` (not on a `fullReview`
+     window), `git diff --name-only HEAD` and
+     `git ls-files --others --exclude-standard`, leaving out `openwiki/` and
+     `.openwikiignore` paths. `claimIssuePages` names every page with a Claims
+     issue; OpenWiki adds those pages to the plan and each page job lists the
+     Claims that need attention;
    - first map repository manifests, major directories, entrypoints, and public
      surfaces; then trace representative end-to-end flows through callers,
      state/persistence, failure handling, configuration, operations, and
