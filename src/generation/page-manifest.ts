@@ -240,6 +240,36 @@ export async function seedRepositoryPageManifest(
 }
 
 /**
+ * Finds existing pages that cannot establish a verified coverage entry.
+ *
+ * A valid earlier source checkpoint does not require regenerating a page.
+ * This checks only the Markdown/Claims proof used by manifest finalization;
+ * unreadable or malformed state still rejects instead of becoming model work.
+ *
+ * @param root - Repository root that owns the pages.
+ * @param pages - Existing factual pages to check.
+ * @returns Canonical pages requiring verified Claims before finish.
+ */
+export async function findUnverifiedRepositoryPages(
+  root: string,
+  pages: readonly string[],
+): Promise<string[]> {
+  const store = new ClaimsStore(root);
+  const unverified: string[] = [];
+  for (const page of pages) {
+    const canonical = normalizeWikiPagePath(page);
+    const claims = await store.loadPage(canonical);
+    if (
+      !claims?.verification ||
+      claims.pageVersion !== (await store.hashPage(canonical))
+    ) {
+      unverified.push(canonical);
+    }
+  }
+  return unverified;
+}
+
+/**
  * Replaces coverage with the complete surviving factual page inventory.
  *
  * @param root - Absolute repository root.
