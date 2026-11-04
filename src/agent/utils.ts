@@ -986,6 +986,126 @@ export async function getRepositoryChangedPaths(
 }
 
 /**
+ * One commit message offered to the update planner as a hint.
+ */
+export interface RepositoryCommitContext {
+  /**
+   * Full commit object name.
+   */
+  sha: string;
+
+  /**
+   * Single-line subject, truncated.
+   */
+  subject: string;
+
+  /**
+   * Message body, truncated; empty when the commit has none.
+   */
+  body: string;
+}
+
+const COMMIT_CONTEXT_MAX_COMMITS = 20;
+const COMMIT_CONTEXT_MAX_SUBJECT_CHARS = 200;
+const COMMIT_CONTEXT_MAX_BODY_CHARS = 400;
+const COMMIT_CONTEXT_MAX_TOTAL_CHARS = 6000;
+
+/**
+ * Returns the newest commit messages after a baseline for planner context.
+ *
+ * The list is empty without a baseline, while `.openwikiignore` is active
+ * (messages can describe ignored paths), or when the history lookup fails.
+ *
+ * @param cwd - Absolute repository root.
+ * @param openWikiIgnore - Active repository read boundary.
+ * @param baseGitHead - Readable baseline commit, if any.
+ * @returns At most 20 commits, newest first, within a fixed character budget.
+ */
+export async function getRepositoryCommitContext(
+  cwd: string,
+  openWikiIgnore: OpenWikiIgnore,
+  baseGitHead?: string,
+): Promise<RepositoryCommitContext[]> {
+  if (!baseGitHead || openWikiIgnore.isActive) return [];
+
+  let stdout: string;
+  try {
+    // -z ends each commit with NUL, which a commit message cannot contain, and
+    // %s is always one line, so the sha/subject/body split cannot be forged.
+    ({ stdout } = await execFileAsync(
+      "git",
+      [
+        "--no-pager",
+        "log",
+        "-z",
+        "--no-merges",
+        "--no-show-signature",
+        `--max-count=${COMMIT_CONTEXT_MAX_COMMITS}`,
+        "--format=%H%n%s%n%b",
+        `${baseGitHead}..HEAD`,
+        // Generated wiki commits are not source intent and would use up the cap.
+        "--",
+        ".",
+        `:(exclude)${OPEN_WIKI_DIR}`,
+      ],
+      { cwd, maxBuffer: 4 * 1024 * 1024 },
+    ));
+  } catch {
+    // Commit text is planner assistance, like changed paths.
+    return [];
+  }
+
+  const commits: RepositoryCommitContext[] = [];
+  let remaining = COMMIT_CONTEXT_MAX_TOTAL_CHARS;
+  for (const record of stdout.split("\0")) {
+    if (remaining <= 0) break;
+    const [sha = "", subject = "", ...bodyLines] = record.trim().split("\n");
+    if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(sha.trim())) continue;
+    const cleanSubject = truncateCodePoints(
+      stripControlCharacters(subject).trim(),
+      Math.min(COMMIT_CONTEXT_MAX_SUBJECT_CHARS, remaining),
+    );
+    remaining -= cleanSubject.length;
+    const body = truncateCodePoints(
+      stripControlCharacters(bodyLines.join("\n"))
+        .replace(/\n{3,}/gu, "\n\n")
+        .trim(),
+      Math.min(COMMIT_CONTEXT_MAX_BODY_CHARS, Math.max(remaining, 0)),
+    );
+    remaining -= body.length;
+    commits.push({ sha: sha.trim(), subject: cleanSubject, body });
+  }
+  return commits;
+}
+
+/**
+ * Removes control characters from commit text, keeping tab and newline.
+ *
+ * @param value - Raw commit subject or body.
+ * @returns Text without the rest of C0, DEL and C1.
+ */
+function stripControlCharacters(value: string): string {
+  return (
+    value
+      .replace(/\r/gu, "")
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/gu, "")
+  );
+}
+
+/**
+ * Truncates text without splitting a surrogate pair.
+ *
+ * @param value - Text to shorten.
+ * @param limit - Most code points to keep.
+ * @returns The text, with an ellipsis when it was shortened.
+ */
+function truncateCodePoints(value: string, limit: number): string {
+  const points = Array.from(value);
+  return points.length <= limit ? value : `${points.slice(0, limit).join("")}…`;
+}
+
+/**
  * Runs a best-effort Git query and returns its non-empty output lines.
  */
 async function runGitLines(cwd: string, args: string[]): Promise<string[]> {

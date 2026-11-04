@@ -2,12 +2,16 @@ import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
 import type { OpenWikiRunEvent, RunContext } from "../agent/types.js";
-import type { UpdateNoopStatus } from "../agent/utils.js";
+import type {
+  RepositoryCommitContext,
+  UpdateNoopStatus,
+} from "../agent/utils.js";
 import {
   createOpenWikiContentSnapshot,
   createRepositorySourceSnapshot,
   createRunContext,
   getRepositoryChangedPaths,
+  getRepositoryCommitContext,
   isReadableGitCommit,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
@@ -163,6 +167,14 @@ export interface RepositoryPageUpdateWindow {
    * Visible repository paths changed after the shared baseline.
    */
   changedPaths: string[];
+
+  /**
+   * Newest commit messages after the baseline, as hints for the planner.
+   *
+   * Empty for full-review windows, while `.openwikiignore` is active, and when
+   * the history lookup fails.
+   */
+  commits: RepositoryCommitContext[];
 
   /**
    * Whether the planner must review without a bounded historical baseline.
@@ -891,6 +903,8 @@ async function getRepositoryPageUpdateWindows(
   const windows: RepositoryPageUpdateWindow[] = [];
   const baselines = [...pagesByBaseline.keys()].sort(compareCodeUnits);
   for (const baseline of baselines) {
+    const fullReview =
+      baseline.length === 0 || !(await isReadableGitCommit(root, baseline));
     windows.push({
       ...(baseline ? { baseGitHead: baseline } : {}),
       pages: [...(pagesByBaseline.get(baseline) ?? [])].sort(compareCodeUnits),
@@ -899,8 +913,10 @@ async function getRepositoryPageUpdateWindows(
         ignore,
         baseline || undefined,
       ),
-      fullReview:
-        baseline.length === 0 || !(await isReadableGitCommit(root, baseline)),
+      commits: fullReview
+        ? []
+        : await getRepositoryCommitContext(root, ignore, baseline),
+      fullReview,
     });
   }
   return windows;

@@ -104,6 +104,8 @@ vi.mock("../../src/generation/run-state.js", async (importOriginal) => {
 
 import type { OpenWikiRunEvent } from "../../src/agent/types.ts";
 import { ensureCodeModeRepoSetup } from "../../src/ingestion/code-mode.ts";
+import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
+import { getRepositoryCommitContext } from "../../src/agent/utils.ts";
 import { ClaimsPersistenceError } from "../../src/claims/core/errors.ts";
 import { ClaimsStore } from "../../src/claims/brains/code/store.ts";
 import {
@@ -1103,6 +1105,177 @@ describe("beginRepositoryRun", () => {
     );
   });
 
+  describe("commit context for the planner", () => {
+    /**
+     * Commits one file with a subject and optional body.
+     *
+     * @param root - Absolute temporary repository root.
+     * @param file - Repository-relative file written for the commit.
+     * @param subject - Commit subject.
+     * @param body - Optional commit body.
+     */
+    async function commitChange(
+      root: string,
+      file: string,
+      subject: string,
+      body?: string,
+    ): Promise<void> {
+      await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+      await writeFile(path.join(root, file), `${subject}\n`, "utf8");
+      await git(root, ["add", file]);
+      await git(root, [
+        "commit",
+        "--quiet",
+        "-m",
+        subject,
+        ...(body ? ["-m", body] : []),
+      ]);
+    }
+
+    /**
+     * Begins an update without forcing it, so the manifest baseline is used.
+     *
+     * @param root - Absolute temporary repository root.
+     * @returns The update windows of the begin view.
+     */
+    async function beginWindows(root: string) {
+      const result = await beginRepositoryRun({
+        root,
+        mode: "update",
+        actor: ACTOR,
+        now: () => new Date(STARTED_AT),
+      });
+      if (result.view.status !== "active") {
+        throw new Error("Expected an active update.");
+      }
+      return result.view.pageUpdateWindows;
+    }
+
+    test("carries multi-line bodies and odd subjects intact", async () => {
+      const root = await createRepository();
+      const baseline = await git(root, ["rev-parse", "HEAD"]);
+      const subject = 'fix: "quoted" | a;b <c> \u001e\u001f 🙂';
+      await commitChange(
+        root,
+        "src/a.ts",
+        subject,
+        "First paragraph.\n\nSecond paragraph\nwith a wrapped line.",
+      );
+      await commitChange(root, "src/b.ts", "feat: second");
+      await commitChange(root, "openwiki/index.md", "docs: update OpenWiki");
+
+      const [window] = await beginWindows(root);
+
+      expect(window?.baseGitHead).toBe(baseline);
+      expect(window?.commits.map(({ subject: s }) => s)).toEqual([
+        "feat: second",
+        'fix: "quoted" | a;b <c>  🙂',
+      ]);
+      expect(window?.commits[1]?.body).toBe(
+        "First paragraph.\n\nSecond paragraph\nwith a wrapped line.",
+      );
+      expect(window?.commits[0]?.body).toBe("");
+      expect(window?.commits[0]?.sha).toBe(
+        await git(root, ["rev-parse", "HEAD~1"]),
+      );
+    });
+
+    test("lists merged commits without the merge commit itself", async () => {
+      const root = await createRepository();
+      const branch = await git(root, ["branch", "--show-current"]);
+      await git(root, ["checkout", "--quiet", "-b", "side"]);
+      await commitChange(root, "src/side.ts", "feat: side change");
+      await git(root, ["checkout", "--quiet", branch]);
+      await commitChange(root, "src/main.ts", "feat: main change");
+      await git(root, [
+        "merge",
+        "--quiet",
+        "--no-ff",
+        "-m",
+        "merge side",
+        "side",
+      ]);
+
+      const [window] = await beginWindows(root);
+
+      expect(window?.commits.map(({ subject }) => subject).sort()).toEqual([
+        "feat: main change",
+        "feat: side change",
+      ]);
+    });
+
+    test("caps the commit count, subject, body and total size", async () => {
+      const root = await createRepository();
+      for (let index = 0; index < 25; index += 1) {
+        await commitChange(
+          root,
+          `src/c${index}.ts`,
+          `change ${index} ${"s".repeat(300)}`,
+          "b".repeat(1000),
+        );
+      }
+
+      const [window] = await beginWindows(root);
+      const commits = window?.commits ?? [];
+
+      expect(commits.length).toBeGreaterThan(0);
+      expect(commits.length).toBeLessThanOrEqual(20);
+      expect(commits[0]?.subject.startsWith("change 24 ")).toBe(true);
+      for (const commit of commits) {
+        expect(Array.from(commit.subject).length).toBeLessThanOrEqual(201);
+        expect(Array.from(commit.body).length).toBeLessThanOrEqual(401);
+      }
+      const total = commits.reduce(
+        (sum, { subject, body }) => sum + subject.length + body.length,
+        0,
+      );
+      expect(total).toBeLessThanOrEqual(6000 + commits.length * 2);
+    });
+
+    test("has no commits for a full-review window", async () => {
+      const root = await createRepository();
+      await rm(path.join(root, "openwiki", ".claims", "quickstart.json"));
+      await git(root, ["add", "openwiki/.claims/quickstart.json"]);
+      await git(root, ["commit", "--quiet", "-m", "remove legacy claims"]);
+
+      const [window] = await beginWindows(root);
+
+      expect(window?.fullReview).toBe(true);
+      expect(window?.commits).toEqual([]);
+    });
+
+    test("has no commits while .openwikiignore is active", async () => {
+      const root = await createRepository();
+      await writeFile(path.join(root, ".openwikiignore"), "secret/\n", "utf8");
+      await git(root, ["add", ".openwikiignore"]);
+      await git(root, ["commit", "--quiet", "-m", "add ignore file"]);
+      await commitChange(root, "src/a.ts", "feat: touches secret/ internals");
+
+      const [window] = await beginWindows(root);
+
+      expect(window?.fullReview).toBe(false);
+      expect(window?.changedPaths).toContain("src/a.ts");
+      expect(window?.commits).toEqual([]);
+    });
+
+    test("returns an empty list when the history lookup fails", async () => {
+      const root = await createRepository();
+      const ignore = await OpenWikiIgnore.load(root);
+      const missingBaseline = "0".repeat(40);
+
+      await expect(
+        getRepositoryCommitContext(root, ignore, missingBaseline),
+      ).resolves.toEqual([]);
+      await expect(
+        getRepositoryCommitContext(
+          path.join(root, "does-not-exist"),
+          ignore,
+          missingBaseline,
+        ),
+      ).resolves.toEqual([]);
+    });
+  });
+
   test("routes a clean page without manifest coverage to full review", async () => {
     const root = await createRepository();
     await rm(path.join(root, "openwiki", ".claims", "quickstart.json"));
@@ -1236,12 +1409,14 @@ describe("beginRepositoryRun", () => {
       baseGitHead: partialMergeHead,
       pages: ["/openwiki/second.md"],
       changedPaths: [],
+      commits: [],
       fullReview: false,
     });
     expect(pendingWindow).toEqual({
       baseGitHead: baselineHead,
       pages: ["/openwiki/quickstart.md"],
       changedPaths: ["README.md"],
+      commits: [expect.objectContaining({ subject: "change source" })],
       fullReview: false,
     });
     await expect(readRepositoryPageManifest(freshRoot)).resolves.toMatchObject({
