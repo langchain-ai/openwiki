@@ -864,6 +864,163 @@ describe("createModel openrouter output-token cap", () => {
   });
 });
 
+describe("createModel Mistral credential isolation", () => {
+  const modelId = "mistral-small-2603";
+  const fetchMock = vi.fn<typeof fetch>();
+
+  beforeEach(() => {
+    vi.stubEnv("OPENAI_API_KEY", "fake-openai-provider-key");
+    vi.stubEnv("MISTRAL_API_KEY", "fake-mistral-provider-key");
+    vi.stubEnv("MISTRAL_BASE_URL", undefined);
+    vi.stubEnv("OPENAI_CUSTOM_HEADERS", undefined);
+    vi.stubEnv(REASONING_EFFORT_KEY, undefined);
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "mock-mistral-only",
+          object: "chat.completion",
+          created: 0,
+          model: modelId,
+          choices: [
+            {
+              index: 0,
+              message: { role: "assistant", content: "OK" },
+              finish_reason: "stop",
+            },
+          ],
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  test.each([undefined, "", " \t\n "])(
+    "rejects a missing or blank Mistral key before OpenAI fallback (%j)",
+    (apiKey) => {
+      vi.stubEnv("MISTRAL_API_KEY", apiKey);
+
+      expect(() => createModel("mistral", modelId, 0, 32)).toThrow(
+        "MISTRAL_API_KEY is required for the Mistral provider.",
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  test("uses the Mistral key and preserves the endpoint and output cap", async () => {
+    const model = createModel("mistral", modelId, 0, 32) as ChatOpenAI;
+
+    await model.invoke("Reply exactly OK.");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [input, init] = fetchMock.mock.calls[0];
+    const request = new Request(input, init);
+    expect(request.url).toBe("https://api.mistral.ai/v1/chat/completions");
+    expect(
+      request.headers.get("authorization") ===
+        "Bearer fake-mistral-provider-key",
+    ).toBe(true);
+    expect(JSON.parse(await request.text())).toMatchObject({
+      model: modelId,
+      max_tokens: 32,
+    });
+  });
+
+  test.each([
+    "Authorization: Bearer fake-custom-key",
+    "X-API-Key: fake-custom-key",
+  ])(
+    "rejects ambient custom headers without exposing their values",
+    (headers) => {
+      vi.stubEnv("OPENAI_CUSTOM_HEADERS", headers);
+      let failure: unknown;
+
+      try {
+        createModel("mistral", modelId, 0, 32);
+      } catch (error) {
+        failure = error;
+      }
+
+      expect(
+        failure instanceof Error &&
+          failure.message ===
+            "Remove OPENAI_CUSTOM_HEADERS when using the Mistral provider.",
+      ).toBe(true);
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  test.each([undefined, "", " \t\n "])(
+    "allows absent or blank custom headers without mutating the environment",
+    async (headers) => {
+      vi.stubEnv("OPENAI_CUSTOM_HEADERS", headers);
+      const model = createModel("mistral", modelId, 0, 32);
+
+      await model.invoke("Reply exactly OK.");
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(process.env.OPENAI_CUSTOM_HEADERS).toBe(headers);
+    },
+  );
+
+  test("preserves custom-header behavior for the OpenAI provider", async () => {
+    vi.stubEnv("OPENAI_CUSTOM_HEADERS", "X-API-Key: fake-openai-custom-key");
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "mock-openai-only",
+          object: "response",
+          created_at: 0,
+          status: "completed",
+          model: "gpt-4.1",
+          output: [
+            {
+              id: "mock-message",
+              type: "message",
+              status: "completed",
+              role: "assistant",
+              content: [{ type: "output_text", text: "OK", annotations: [] }],
+            },
+          ],
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    );
+
+    const model = createModel("openai", "gpt-4.1", 0, 32);
+
+    await model.invoke("Reply exactly OK.");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [input, init] = fetchMock.mock.calls[0];
+    const request = new Request(input, init);
+    expect(request.url).toBe("https://api.openai.com/v1/responses");
+    expect(request.headers.get("x-api-key") === "fake-openai-custom-key").toBe(
+      true,
+    );
+  });
+
+  test("does not retry a failed request when the retry limit is zero", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "mock failure" } }), {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const model = createModel("mistral", modelId, 0, 32);
+
+    await expect(model.invoke("Reply exactly OK.")).rejects.toThrow();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 function restoreEnv(key: string, value: string | undefined): void {
   if (value === undefined) {
     delete process.env[key];

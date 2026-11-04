@@ -99,6 +99,7 @@ import {
   getProviderModelOptions,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderRegionEnvKeys,
+  MISTRAL_BASE_URL_ENV_KEY,
   getProviderSecretKeyEnvKey,
   getProvidersForKnownModelId,
   isModelIdForOtherProvider,
@@ -1126,6 +1127,17 @@ export function createModel(
   maxOutputTokens?: number,
   streamIdleTimeout?: number,
 ) {
+  if (provider === "mistral") {
+    if (!getProviderApiKey(provider)?.trim()) {
+      throw new Error("MISTRAL_API_KEY is required for the Mistral provider.");
+    }
+    if (process.env.OPENAI_CUSTOM_HEADERS?.trim()) {
+      throw new Error(
+        "Remove OPENAI_CUSTOM_HEADERS when using the Mistral provider.",
+      );
+    }
+  }
+
   const retryOptions = { maxRetries: providerRetryAttempts };
   const configuredMaxOutputTokens =
     maxOutputTokens ?? resolveConfiguredMaxOutputTokens(provider);
@@ -2757,6 +2769,7 @@ export function formatEnvironmentDebugValue(
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
+    key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
     key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
