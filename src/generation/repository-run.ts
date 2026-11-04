@@ -939,19 +939,23 @@ async function fastForwardUnchangedRepositoryPageCoverage(
   if (!source.gitHead) return;
 
   const manifest = await readRepositoryPageManifest(root);
+  // Pages usually share a baseline, and every Git lookup starts a process.
+  const unchangedByBaseline = new Map<string, boolean>();
   for (const page of [...pages].sort(compareCodeUnits)) {
     const entry = manifest.pages[page];
     if (!entry?.gitHead || entry.gitHead === source.gitHead) continue;
-    // An unreadable baseline (shallow clone, rewritten history) hides which
-    // paths changed, so the page keeps its checkpoint and gets reviewed.
-    if (!(await isReadableGitCommit(root, entry.gitHead))) continue;
 
-    const changedPaths = await getRepositoryChangedPaths(
-      root,
-      ignore,
-      entry.gitHead,
-    );
-    if (changedPaths.length > 0) continue;
+    let unchanged = unchangedByBaseline.get(entry.gitHead);
+    if (unchanged === undefined) {
+      // An unreadable baseline (shallow clone, rewritten history) hides which
+      // paths changed, so the page keeps its checkpoint and gets reviewed.
+      unchanged =
+        (await isReadableGitCommit(root, entry.gitHead)) &&
+        (await getRepositoryChangedPaths(root, ignore, entry.gitHead))
+          .length === 0;
+      unchangedByBaseline.set(entry.gitHead, unchanged);
+    }
+    if (!unchanged) continue;
 
     await recordRepositoryPageCompletion(
       root,

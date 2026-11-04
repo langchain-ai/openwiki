@@ -13,6 +13,7 @@ const failureHarness = vi.hoisted(() => ({
   stateWrites: 0,
   stateRemovals: 0,
   sourceMutationsAfterManifestReplacement: 0,
+  changedPathLookups: [] as (string | undefined)[],
 }));
 
 vi.mock("../../src/generation/page-manifest.js", async (importOriginal) => {
@@ -57,6 +58,12 @@ vi.mock("../../src/agent/utils.js", async (importOriginal) => {
     await importOriginal<typeof import("../../src/agent/utils.js")>();
   return {
     ...actual,
+    async getRepositoryChangedPaths(
+      ...args: Parameters<typeof actual.getRepositoryChangedPaths>
+    ) {
+      failureHarness.changedPathLookups.push(args[2]);
+      return actual.getRepositoryChangedPaths(...args);
+    },
     async writeLastUpdateMetadata(
       ...args: Parameters<typeof actual.writeLastUpdateMetadata>
     ) {
@@ -121,6 +128,7 @@ import {
 } from "../../src/generation/repository-run.ts";
 import {
   readRepositoryPageManifest,
+  recordRepositoryPageCompletion,
   writeRepositoryPageManifest,
 } from "../../src/generation/page-manifest.ts";
 import {
@@ -547,6 +555,7 @@ beforeEach(() => {
   failureHarness.stateWrites = 0;
   failureHarness.stateRemovals = 0;
   failureHarness.sourceMutationsAfterManifestReplacement = 0;
+  failureHarness.changedPathLookups = [];
 });
 
 afterEach(async () => {
@@ -980,6 +989,64 @@ describe("beginRepositoryRun", () => {
           entry.sourceFingerprint?.startsWith("sha256:") === true,
       ),
     ).toBe(true);
+  });
+
+  test("asks Git about a shared baseline once while fast-forwarding", async () => {
+    const root = await createRepository(["architecture.md", "concepts.md"]);
+    const baselineHead = await git(root, ["rev-parse", "HEAD"]);
+    await writeWikiPage(root, "index.md", "# Generated index\n");
+    await git(root, ["add", "openwiki/index.md"]);
+    await git(root, ["commit", "--quiet", "-m", "update generated index"]);
+
+    const result = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+
+    expect(result.view.status).toBe("noop");
+    expect(
+      failureHarness.changedPathLookups.filter(
+        (baseline) => baseline === baselineHead,
+      ),
+    ).toHaveLength(1);
+  });
+
+  test("fast-forwards only the pages whose own baseline is unchanged", async () => {
+    const root = await createRepository(["architecture.md"]);
+    const oldBaseline = await git(root, ["rev-parse", "HEAD"]);
+    await writeFile(
+      path.join(root, "README.md"),
+      "# Repository\n\nChanged after the old baseline.\n",
+      "utf8",
+    );
+    await git(root, ["add", "README.md"]);
+    await git(root, ["commit", "--quiet", "-m", "change source"]);
+    const newBaseline = await git(root, ["rev-parse", "HEAD"]);
+    const sourceFingerprint = `sha256:${"0".repeat(64)}`;
+    await recordRepositoryPageCompletion(root, "/openwiki/architecture.md", {
+      sourceFingerprint,
+      gitHead: oldBaseline,
+    });
+    await recordRepositoryPageCompletion(root, "/openwiki/quickstart.md", {
+      sourceFingerprint,
+      gitHead: newBaseline,
+    });
+    await git(root, ["add", "openwiki"]);
+    await git(root, ["commit", "--quiet", "-m", "update generated wiki"]);
+    const currentHead = await git(root, ["rev-parse", "HEAD"]);
+
+    await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+      now: () => new Date(STARTED_AT),
+    });
+
+    const { pages } = await readRepositoryPageManifest(root);
+    expect(pages["/openwiki/quickstart.md"]?.gitHead).toBe(currentHead);
+    expect(pages["/openwiki/architecture.md"]?.gitHead).toBe(oldBaseline);
   });
 
   test("does not fast-forward a page whose baseline is missing from a shallow clone", async () => {
