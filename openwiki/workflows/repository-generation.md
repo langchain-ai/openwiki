@@ -46,8 +46,8 @@ sources:
     resource: repo://test/generation/repository-run.test.ts
 generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+  - by: openwiki/0.7.3
+    at: 2026-11-02T08:07:01.639Z
 ---
 
 # Repository Generation Lifecycle

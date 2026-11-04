@@ -4,6 +4,20 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # deepagents (pinned in package.json) declares a peer range of
+      # langsmith >=0.7.1 <0.10.0, so langsmith 0.10+ triggers an ERESOLVE
+      # warning on `npm install -g openwiki`. Remove this once deepagents widens
+      # its langsmith peer range.
+      - dependency-name: langsmith
+        versions:
+          - ">=0.10.0"
+      # typescript-eslint currently requires TypeScript <6.1. TypeScript 7 is
+      # exercised side-by-side through the typescript7 alias used by build and
+      # typecheck. Remove this once typescript-eslint supports TypeScript 7.
+      - dependency-name: typescript
+        versions:
+          - ">=7.0.0"
     groups:
       minor-and-patch:
         patterns:

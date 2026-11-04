@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7947d844bd5077e6727b4aae5be838da393d0fb7e10b10f83f8c891970b187fb",
+  "pageVersion": "sha256:75265962bfd0b50eea227fb4cc6a69241cc077fdff30e2b270ea9e509580da4b",
   "claims": [
     {
       "id": "claim_da05ca1b44a042d9ab9a5935194059af",
@@ -116,15 +116,23 @@
     },
     {
       "id": "claim_41af8302f7d04c7fb3f409b2331f5580",
-      "statement": "withRunTelemetry is the single boundary that records an openwiki_run event, wrapping the whole setup->connectors->agent sequence so a throw anywhere in it is recorded exactly once, and it rethrows the original error after recording so the CLI still owns the failure UX.",
+      "statement": "withRunTelemetry is the primary run-telemetry boundary that records an openwiki_run event for the normal run lifecycle, wrapping the whole setup->connectors->agent sequence so a throw anywhere in it is recorded exactly once, and it rethrows the original error after recording so the CLI still owns the failure UX; it is not the sole recording path because the agent crash guard records escaped rejections separately.",
       "evidence": [
         {
-          "resource": "repo://src/cli/runners.ts#L289-L320",
-          "version": "repo-lines-v1:sha256:98d51c73b43689e03b327ec8605f550cb0a2fffcb9dc064c96185cad0730746c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMzdjODQ2MWM0YTkxODJkMTg4MDYxMmMyMWE1ZWExMTk4ZTU1MjAwNGU5ZGQyZTMzYzE2MGQwZWRmODMxNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ODhmMmU4NTdiMDE0MGRiYTU3NTFhZjdlNzVjYmQ4ZjVlNTJjNDFkODY4NzZkM2FkNmVhNmUxYWIxNTc3YTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YjM3NGQ3MDMwZmUxODU1ZDVmOGEzZTZlZWVmOGQ1YzFiM2I4YTk0M2I3YTliNzU5OTFkNjI0NmM4M2ZjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ODkzMzIxODhlMGY4YTUyMDlkZTNjOWQzMjE0ZjdhYjgwNTY4MTg4M2RkMDMzYTMwYjRiODkwYzdlYTY3NjYifQ"
+          "resource": "repo://src/agent/crash-guard.ts#L104-L126",
+          "version": "repo-lines-v1:sha256:77bb175a988dae563a48c30d8afde448014d3f563bd2531b39f7da4c172b2b7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YjI2Yzg4OWQ2NTQyNTg1ZDJkNWY0YjBmYWQ0YWM5MjYzYmY0ODRmOWIwY2RjYzdkMzkyMjVjMTg0YjQ4MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGY4NmI0NzZiMGQ2ZGJiZDE2ZmExOWZlMTdhOGJlNzc1MWFiZTNlZTgwN2I1MTBmYjVmOGNkZDBkYWQxNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkY2IwNTFkYjhhYWRiNGZkMTgwZmM3YjhkM2FjM2FhMzM2MTBlZWIxZGFhMjFmNDE3NDk4YmNmNGJkMzQzNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YmJkZmYyNjJiYTFkZGE1MDhlNTMyNTVlMzc0ZGY2OTBkYWE0ZmUyNjYzMTMwZGQ0Y2U1N2YwYTQxOWNkZDEifQ"
         },
         {
-          "resource": "repo://src/ingestion/ingestion.ts#L190-L195",
-          "version": "repo-lines-v1:sha256:a027e0da08c09d97311e4798e0e06c939eedb5d11c2028e0b36607979dd299b3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU5OTljNTU5YjM1NTEwM2MyNTViYzIwYTI4OGIyZDg5Y2Y4Y2ViZTJmNDVmYTc0NGYzNTgwMjBmMTMyZDFkMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjUxYmJjNTkwY2E1OGFmZTAwYmNiYzE4OWI2NTc1ZjZmMmQ5MGRiM2Y3MDRjMjFlZTBjYWNiNDcxYzdhMDgxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDJmYjk5YTg2ZDgxMzk1MDg4NGY5YmUwYjViNjAyOWFkYzNmYjRmZTY4OWRlZDhhZTQ5ZDAzMzI2NTg0NGY4YyJ9"
+          "resource": "repo://src/cli/app/app.tsx#L569-L605",
+          "version": "repo-lines-v1:sha256:c361ab3c2ba6e08e067285dee4965ea434df87b5759105d47c70dc1f24a10992:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMTE1YjJmNzBmOTM5Mjk1Y2ZkNmQ0NThiY2M0ZTFjM2M0YTQzY2UxZDBmN2Y4MGJkNjJhZjYzZTFkZTUzY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NzFmZGQyZWExOWY0NWRmNGZkOTY1ZDMyNGMzN2ZhOGEzYWRlODNlYTNhMDU4N2EzYjNlNDU4YmQ1M2M3NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3ZDhkYmU3NzI3MWQ4OWE1YzZkYzdhNGM3YTUzZTk4Nzk4MDAyZTBiZWJjNWE1ZGI0MTI1MmJjODIwMTg0NGQifQ"
+        },
+        {
+          "resource": "repo://src/cli/runners.ts#L289-L321",
+          "version": "repo-lines-v1:sha256:22fd01ee3f697f66de3152e5ab790ff8847da0f9c784563acf87dd08d0b48db2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMzdjODQ2MWM0YTkxODJkMTg4MDYxMmMyMWE1ZWExMTk4ZTU1MjAwNGU5ZGQyZTMzYzE2MGQwZWRmODMxNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNzY3ODBlNDgzNjgzY2RlZmRhYmVkZjhmYzM1NWUyOTQxYjNiZTVmYTBjODc0MWRjYmZjYTM0ODg0ZTU1ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YjM3NGQ3MDMwZmUxODU1ZDVmOGEzZTZlZWVmOGQ1YzFiM2I4YTk0M2I3YTliNzU5OTFkNjI0NmM4M2ZjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5YTY4ZTg4NGQ1MDcxMDY2YzFkN2Y2OGRiNDg4ZGM3NDM0ZTEyNzAyYTE3OWZhYTYyMjJmMTk4YTc3ZDYwMjYifQ"
+        },
+        {
+          "resource": "repo://src/ingestion/ingestion.ts#L190-L199",
+          "version": "repo-lines-v1:sha256:baa85b38dbb8d5e319f8bb701a3fddcc885417acea022ee848748d48c33b7e1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMzM4NTUwOTgyZjMwNGZiMTc2YWYwZWQxODM1YzY3YzQ1MjBiZDBlNzBkNWY0NGU1M2JjNDMyZDczM2Y0ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1MWJiYzU5MGNhNThhZmUwMGJjYmMxODliNjU3NWY2ZjJkOTBkYjNmNzA0YzIxZWUwY2FjYjQ3MWM3YTA4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMDgwMGRjZGE5NWE1NTk4MGI1YWVjYzQyNGRhNWEwZDY5YTNhMmEwZWE5NzZiMjgzMjZkOTNlODg4NmQ1YTQifQ"
         },
         {
           "resource": "repo://src/telemetry/with-run-telemetry.ts#L39-L85",
@@ -137,7 +145,7 @@
       "statement": "withRunTelemetry threads a mutable RunTelemetryContext through the run: the agent publishes the resolved provider onto it the instant resolution succeeds and publishes a noop outcome for an update short-circuit; a clean return defaults to success and a throw records failure with describeErrorForTelemetry diagnostics.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L253-L260",
+          "resource": "repo://src/agent/index.ts#L257-L264",
           "version": "repo-lines-v1:sha256:dad168ab58b0857d13b7d105990e16ee8465dae24c6225995bdc8657173a28d5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1OTVmNGVlNWZmNjNkNTA5NTA0MTlkYzM0NDE0NTEzODUxZGM5NzM2ZmQxN2E0ZjdiZmE5MzBiMjYxYjZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcwYjhiNmE3NTE1Njg4ZGIzZDAxZDk4M2RmZGY2ZDQzYjkzMDUwNzJlYmYwYTg2MmIyNzBlNjk0ZTI5NDc1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWYxOGJhNDE5M2EyODNiZDM3ZWVkYTQ4Mzk5NjhlZTMzODViOWJmZTIwNDYxYWRmNTk4NmU2MGJmMzI0MmQ1ZCJ9"
         },
         {
@@ -415,10 +423,32 @@
           "version": "repo-lines-v1:sha256:013128d9dcee6a02bc3119a38f9eeb8a5b680624c6fde2507f9bd0754255f563:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNzkwMjc2ODk4ODNjOTg5MjczZWYzNmFkOWE0MzVmMzVjNDViZmRjNDlkMjI0ZjYzNTNiODc1NDAxYzVlNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmZWJmN2RkNGU2YzgzNDQ1YjYyODE2Yjc1YzQ0YzA3MzI2YWYzN2E0YzExYmVmODdiZGM4ZjJlMzUwZGI4NzcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_38fc0a9004fc4a67b492da0b5c46ecf9",
+      "statement": "The crash guard (src/agent/crash-guard.ts, installed once at CLI startup by installCrashGuard) is the last-resort second recording path: for a rejection that escapes every catch it claims the single module-level activeRun slot synchronously before any await (so a burst of rejections collapses to one record), records the crash as a failure via recordRunSafe with the same describeErrorForTelemetry diagnostics as the primary boundary, best-effort stamps the run interrupted, prints the raw error to stderr (a local path that never enters telemetry), and exits non-zero; the agent registers the run only for the stream-consumption window and clears it in a finally so a clean run leaves no stale record.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/crash-guard.ts#L104-L185",
+          "version": "repo-lines-v1:sha256:057b64d11376865f7dc73932821d78b1ebfb8e3b7da3b2f60fc92c56c2d8df14:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2YjI2Yzg4OWQ2NTQyNTg1ZDJkNWY0YjBmYWQ0YWM5MjYzYmY0ODRmOWIwY2RjYzdkMzkyMjVjMTg0YjQ4MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkY2IwNTFkYjhhYWRiNGZkMTgwZmM3YjhkM2FjM2FhMzM2MTBlZWIxZGFhMjFmNDE3NDk4YmNmNGJkMzQzNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/agent/crash-guard.ts#L60-L75",
+          "version": "repo-lines-v1:sha256:abe3cf169f03ffe12d12b2d222280d045bebba8954609d9488971e8d64ea3918:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NzkxZWJlYzUwMTU5YzIzMjkzNGU3YWUwNWYyZjI2Zjk2ZWZlMmY1OWJmZDY5ZWMwOTQ0YTdlYWQyMGMxNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YTg1YWMzN2E3NjBjYzA5NGQxYzk1MzYyMDA5NWE0MDNiZGY0MDY3YmE3MzM3ZGNlZDFjMzY3YmRlMDUzY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNzNhN2QzY2FjNTZiM2U5ODNjMTcwNjMyNzViOGI5ZjI3Yzc0Njc5MTEyOTUyNWUyYjMwMTg0MTMyNzZjMTUifQ"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L695-L706",
+          "version": "repo-lines-v1:sha256:0e997a3386733d9a4d218f9ace79ff7e2c2475e651adb1664840ad74b449f444:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NmRkYzliYTEwYTBmMmYwMGNlMjE5OGYxNjQyZDI0NzRmNDdjYmE3OGY2ODJjY2VjZjhjMTZiMDZkMDE4NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTk1ZjRlZTVmZjYzZDUwOTUwNDE5ZGMzNDQxNDUxMzg1MWRjOTczNmZkMTdhNGY3YmZhOTMwYjI2MWI2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwY2M3YWNmMDlkMTg4NTMyNjgxZTUwZjQ1ZDA5OGEyMDNkN2RjOGRiNWEwYzkyZDQ0NzAwZjczMGQ3NzM2ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzNDYxNDM0NWIzZWEzOWRiNTlmNTBjYjY5Y2I1ZjlkY2Q0Zjk4ZDBkOGI4Y2RkMGNiZTcyNTQxZTk1NGNjZjQifQ"
+        },
+        {
+          "resource": "repo://src/cli/cli.tsx#L40-L43",
+          "version": "repo-lines-v1:sha256:7f1f89406435ead74e06dbd099b373c17f1845afbdadfaebd49782e174c95b66:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZkMmEyOTZiNDQ3NGQxODgxNzEyZTYwZmYxN2E3MGQzMjQ3ZTc3YzZhMTYyYjVhYWE3NmZiZTRmMjkwMGQ4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGZhOTIyOGVlY2Y0Zjc3NjUyMTBhMzI4MjJlODk4MjNhZjg4OGRjYjFhYTA2NGY4ZjM1NzkwMDU0ODZiODc5ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjc0YTM2Yzk4ZDkzZWRhYzM5ODJhY2NhMWIzM2Y4Y2Y1MjY5MGRmOWRkNTlmM2M2MTQ2Y2QyYzlkNTk1YTEzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGJmNTdlY2M4OGRhNjNhZjY3NWVlMTNlYmJjZmFjZGE3OTlmMGE2YTdhZWM3ZjllNzA5NTJiMzU3NWI0ZTBiMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-07T08:10:39.081Z"
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-02T08:07:01.639Z"
   }
 }
