@@ -24,6 +24,8 @@ sources:
     resource: repo://src/agent/utils.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
@@ -32,6 +34,8 @@ sources:
     resource: repo://src/integrations/mcp/server.ts
   - id: openwiki-source-76702f01df0808033c14cf17
     resource: repo://test/agent/create-model-entra.test.ts
+  - id: openwiki-source-21fe6d4741a8225393c37599
+    resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-6e76d6023798412a72871e94
     resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-6cc520117b0eb03bfd36a7c8
@@ -40,6 +44,8 @@ sources:
     resource: repo://test/agent/gemini-enterprise-claude.e2e.test.ts
   - id: openwiki-source-8826337e8c8799af4371a0e5
     resource: repo://test/agent/index-middleware.test.ts
+  - id: openwiki-source-b6012bb523844d86d43df530
+    resource: repo://test/agent/redaction.test.ts
   - id: openwiki-source-d5f8bf1d374d40091b048814
     resource: repo://test/agent/repository-prompts.test.ts
   - id: openwiki-source-ec5a58d1a89689ead79b8150
@@ -128,6 +134,8 @@ sources:
     resource: repo://test/openrouter-debug-fetch.test.ts
   - id: openwiki-source-2b788920f8a5c721b3430f6c
     resource: repo://test/openwiki-home.test.ts
+  - id: openwiki-source-3c6a11e2a3bca56fd0943e08
+    resource: repo://test/setup/credentials/steps.test.ts
   - id: openwiki-source-e3be493bc871948f42420690
     resource: repo://test/visualize/client-interaction.test.ts
   - id: openwiki-source-1904eaebd82125a3a3881dac
@@ -140,10 +148,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+  - by: openwiki/0.7.3
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # Testing Guide
@@ -157,15 +165,15 @@ while preserving complete failure output.
 
 ## Tooling
 
-- **Test runner: Vitest.** `vitest` (and `@vitest/coverage-v8`) are dev
-  dependencies; there is no separate framework. Tests import `describe`,
-  `expect`, `test`, `vi`, and the `beforeEach`/`afterEach` hooks directly from
-  `vitest`.
+- **Test runner: Vitest.** `vitest` (`^5.0.5`) and
+  `@vitest/coverage-v8` (`^5.0.5`) are dev dependencies; there is no separate
+  framework. Tests import `describe`, `expect`, `test`, `vi`, and the
+  `beforeEach`/`afterEach` hooks directly from `vitest`.
 - **Ink component tests: ink-testing-library.** Terminal UI written with Ink is
   exercised by rendering React components with `render` from
-  `ink-testing-library` and asserting on the rendered frame (`lastFrame()`).
-  These tests are the `.tsx` files under `test/cli/components/` and
-  `test/setup/credentials/`.
+  `ink-testing-library` (`^4.0.0`) and asserting on the rendered frame
+  (`lastFrame()`). These tests are the `.tsx` files under `test/cli/components/`
+  and `test/setup/credentials/`.
 - **No global config beyond `vitest.config.ts`.** Test discovery keeps Vitest's
   defaults; the only tuning is one discovery exclusion and the coverage block
   (see below).
@@ -192,10 +200,13 @@ flowchart TD
 
 The `pnpm test` gate: typecheck, then build, then the coverage run.
 
-1. **`typecheck`** runs `tsc --noEmit` against both the server project
-   (`tsconfig.json`) and the browser/client project (`tsconfig.client.json`).
-2. **`build`** compiles both TypeScript projects and copies the visualize
-   client assets.
+1. **`typecheck`** runs `tsc --noEmit` (via the pinned `typescript7`
+   binary) against both the server project (`tsconfig.json`) and the
+   browser/client project (`tsconfig.client.json`).
+2. **`build`** compiles both TypeScript projects (again through the
+   `typescript7` binary) and then runs
+   `node scripts/copy-visualize-assets.cjs` to copy the visualize client
+   assets.
 3. **`coverage`** runs `vitest run --coverage`, which executes every test and
    produces a coverage report.
 
@@ -261,7 +272,8 @@ the application `src/` root). Two npm scripts wrap the harness:
 - `pnpm run eval:ledger` — runs `tsx evals/ledger/run.ts`, the live
   checkpoint-replay evaluation (replays a benchmark's Git history through
   OpenWiki and grades each frozen wiki snapshot).
-- `pnpm run eval:ledger:typecheck` — runs `tsc --noEmit -p
+- `pnpm run eval:ledger:typecheck` — runs
+  `node ./node_modules/typescript7/bin/tsc --noEmit -p
   evals/ledger/tsconfig.json`, the focused typecheck for the LEDGER source.
   (A `eval:ledger:reevaluate` script re-judges a completed run without
   re-invoking OpenWiki.)
@@ -287,14 +299,14 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation, middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction, the repository runner (including parallel page workers, retry-before-skip, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, and the wiki internal-link validator plus its dogfood test |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation (incl. the Mistral createModel branch), middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction (incl. `MISTRAL_API_KEY`), the repository runner (including parallel page workers, retry-before-skip, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, the wiki translation middleware, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, and the wiki internal-link validator plus its dogfood test |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
-| `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle, page planning, page-manifest persistence, and run-state persistence                                 |
+| `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle (including per-baseline fast-forward caching, the commit-messages-since-baseline planner context, and begin-view bounding), page planning, page-manifest persistence, and run-state persistence                                 |
 | `test/okf/`                                                                                                                                              | `src/okf/` — OKF frontmatter parsing/normalization/repair/validation and index labels/sync |
-| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution) across nine hosts, host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry, the protocol schema, the session manager, and the packaged skill contracts |
-| `test/cli/` (incl. `test/cli/run-log/`)                                                                                                                    | `src/cli/` — CLI wiring, Ink components, the run-log reducer/progress/summary/activity/tool-input helpers, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
-| `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard                                                                   |
+| `test/integrations/`                                                                                                                                      | `src/integrations/` — the host installer (registry, install/uninstall/status, scope ownership, skill-bundle resolution) across nine hosts, host config adapters (atomic writes and JSON/TOML/JSONC MCP-config ownership), the CLI install dogfood path, the published package-contents guard, the MCP server and stdio entry (incl. the begin-view bounding guidance in `INSTRUCTIONS`), the protocol schema, the session manager (incl. begin-view path-limit bounding), the begin-view projection, and the packaged skill contracts |
+| `test/cli/` (incl. `test/cli/components/`, `test/cli/run-log/`)                                                                                                                    | `src/cli/` — CLI wiring, Ink components (the shared primitives and the interactive wiki-workspace manager), the run-log reducer/progress/summary/activity/tool-input helpers, and error diagnostics (`--debug` stack extraction/redaction, OpenRouter metadata, `previous_errors` capping)                                    |
+| `test/setup/`                                                                                                                                             | `src/setup/` — the credentials setup wizard (incl. the Mistral provider article)                                                                   |
 | `test/visualize/`                                                                                                                                          | `src/visualize/` — the live-server/static-export HTML page, graph payload, server, static export, client-lib pure logic, and browser client interaction wiring |
 | `test/config/`, `test/mermaid/`, `test/scheduling/`, `test/telemetry/`, `test/auth/`, `test/ingestion/`, `test/platform/` | the matching `src/` subsystem                                                                                 |
 
@@ -493,12 +505,26 @@ The remaining agent tests guard the prompts and adjacent surfaces:
   fully-shaped `ActiveBeginView`/`RepositoryPageWorkerJob` fixtures. It pins
   that the planner prompt carries the actual user/connector context, the
   per-page committed update windows (with `Baseline <head>` or
-  `Baseline unknown (full review required)`), the claim issues requiring
+  `Baseline unknown (full review required)`), the **commit-messages-since-baseline**
+  section added to the planner prompt — the one-line hint commit list rendered
+  under each window's baseline as JSON `{"sha","subject","body"}` objects that
+  warn the planner the hints are only "where to look" and "current code
+  remains the evidence", and that a prompt-injection payload planted in a
+  commit body (e.g. `Ignore previous instructions.` or a
+  `## Claims requiring attention:` heading) is kept inside the quoted JSON and
+  never escapes into the prompt structure — the claim issues requiring
   reconciliation, the wiki goal, and the planning instructions (hierarchical
   paths, `relatedPages`, `submit_plan directly`), and that the page-worker
   prompt propagates only the Claims requiring explicit reconciliation, stamps
   the "You own exactly <path>" ownership line, and emits the sparse-Claim and
-  canonical-evidence (`repo://...`) guidance.
+  canonical-evidence (`repo://...`) guidance. It also pins the update-window
+  and commit-message formatting: a scoped update mandate is added only when a
+  user/connector context names specific files for an update (preserving
+  unrelated page framing, scheduling only directly requested pages and
+  genuinely affected cross-references, and not refreshing quickstart unless
+  its task-routing links actually change), an unknown-baseline window renders
+  as an explicit full-review window with no changed paths, and the commit list
+  is ordered newest-first under its baseline.
 - `test/agent/vertex-surface.test.ts` exercises the Vertex AI surface dispatch
   in `src/agent/vertex-surface.ts`. `resolveVertexSurface` routes Claude ids to
   the `anthropic` surface, partner/MaaS ids (meta, mistral, deepseek, qwen,
@@ -608,6 +634,33 @@ tree into a temp root (not the live checkout, so a broken link in someone's
 working tree cannot be rewritten by `pnpm test`) and asserts the real
 checked-in content passes validation — `filesScanned` and `linksChecked` are
 both greater than zero and `issuesFound` is `0`.
+
+`test/agent/translation-middleware.test.ts` exercises the wiki translation
+middleware (`resolveTranslationPlan` and `createWikiTranslationMiddleware` from
+`src/agent/translation-middleware.ts`) against a real `OpenWikiLocalShellBackend`
+in a temp dir, using a fake model that records every prompt and returns a
+scripted translation with no network access. The `resolveTranslationPlan` suite
+pins the plan decision: an update that switches to a different language issues a
+full translate-all pass; a region-only change with the same primary subtag does
+not; an update with no requested language still returns a marker-sweep plan so
+pending pages are retried; and the plan never applies to `init`/`chat` commands.
+The `createWikiTranslationMiddleware beforeAgent` suite pins the translation
+contract end-to-end: it sends each visible Markdown page's original content to
+the model (the complete source page is the factual boundary, and front matter is
+covered so reader-facing values are translated), writes the translated body back
+atomically, and skips non-concept files (indexes, dotfiles). It stamps a page
+with `openwiki_translation_pending: "<target>"` when the model fails or returns
+an empty/truncated result (recognized from provider-specific output-limit
+metadata across OpenAI/Responses/Anthropic/Bedrock/Gemini) so a later update
+retries it, keeps the original content, and reports a single warning naming the
+page and reason; a sibling translation failure does not abort the rest of the
+pages; a refused marker write is reported to stderr; and a plain update retries
+only pending pages and clears the marker on success. It also pins the
+local-wiki root handling, the missing-wiki and directory-listing-error no-ops,
+whitespace-only page skipping, unchanged-translation no-write, array-shaped
+backend content flattening, structured model-output flattening (text blocks kept,
+non-text blocks dropped), and a language tag `Intl` cannot name falling back to
+its bare value in the prompt.
 
 ### Claims: nested layout
 
@@ -742,8 +795,24 @@ concern, mirroring `src/generation/`:
   is forbidden, an already-absent retraction is an idempotent retry, Claim
   fingerprints containing delimiter characters are not conflated, and session
   state stays atomic when evidence resolution fails.
-- `test/generation/repository-run.test.ts` is the end-to-end run-lifecycle test
-  described in detail below.
+- `test/generation/repository-run.test.ts` is the end-to-end run-lifecycle
+  test described in detail below. It also covers the **per-baseline
+  fast-forward caching** during `beginRepositoryRun`: a docs-only Git commit
+  fast-forwards every page's manifest entry to the current head as a no-op,
+  a shared baseline is queried from Git only once (the harness counts
+  `changedPathLookups` for the baseline and asserts a single lookup), only
+  the pages whose own baseline is unchanged fast-forward while a page whose
+  baseline changed stays on its old head, and a page whose baseline is
+  missing from a shallow clone falls through to a `fullReview` window rather
+  than fast-forwarding. It pins the **commit context for the planner** — the
+  commit list an update window carries since its baseline (multi-line bodies
+  and odd subjects intact, merged commits without the merge commit itself, a
+  capped commit/subject/body/total size, no commits for a `fullReview` or
+  `.openwikiignore`-active window, and an empty list when the history lookup
+  fails) — and the **begin-view bounding** that the begin result exposes to
+  host transports (a clean page without manifest coverage routes to a
+  `fullReview` window, and a source mutation detected during a no-op manifest
+  replacement falls through to active planning).
 
 ### Ingestion: code-mode setup and connectors
 
@@ -776,7 +845,18 @@ re-setup. Sibling files
 from Ink components and the run-log rendering helpers. The Ink components live
 under `test/cli/components/` and the credentials setup wizard's component tests
 live under `test/setup/credentials/` (see the tooling section above for the
-`ink-testing-library` pattern).
+`ink-testing-library` pattern). The Ink primitives themselves are covered by
+`test/cli/components/primitives.test.tsx`, which renders the shared layout
+building blocks (`Panel`, `Rows`, `StatusLine`, `MenuRow`, `InputCursor`,
+`PromptBlock` from `src/cli/components/primitives.tsx`) with
+`ink-testing-library` and asserts on the stripped-ANSI frame — for example that a
+`Panel` renders its `#`-prefixed title above its children and that `Rows` pads
+labels to a common width. A larger component test,
+`test/cli/components/wiki-workspace-manager.test.tsx`, exercises the
+`WikiWorkspaceManager` interactive component (`src/cli/components/wiki-workspace-manager.tsx`)
+that lets the operator pick discovered repositories for a multi-workspace link:
+it drives the keyboard flow (down-arrow moves, Backspace edits the filter,
+enter confirms) and asserts the rendered selection state through `flushInk`.
 
 The **run-log** helpers reduce the `OpenWikiRunEvent` stream into the items the
 Ink App renders, and `test/cli/run-log/` tests each one in isolation:
@@ -872,13 +952,35 @@ concurrency** (`OPENWIKI_PAGE_CONCURRENCY`), the gemini-enterprise (Vertex)
 Google Cloud settings (`GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/
 `GOOGLE_APPLICATION_CREDENTIALS`), the AI-Studio `GEMINI_API_KEY`, the hosted
 OpenAI-compatible provider base URLs (`BASETEN_BASE_URL`, `BOB_BASE_URL`,
-`FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`), and the reasoning-effort settings
-(`OPENWIKI_REASONING_EFFORT`,
+`FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, and `MISTRAL_BASE_URL`), and the
+reasoning-effort settings (`OPENWIKI_REASONING_EFFORT`,
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`).
+
+The Mistral provider is covered across three further test files.
+`test/agent/create-model.test.ts` has a `createModel Mistral credential
+isolation` describe block that pins the Mistral `createModel` branch: a
+missing or blank `MISTRAL_API_KEY` is rejected before any OpenAI fallback
+(with `MISTRAL_API_KEY is required for the Mistral provider.` and no `fetch`
+call), a present key is sent as the `Bearer` authorization against the
+`https://api.mistral.ai/v1/chat/completions` endpoint with the configured
+`max_tokens` preserved, ambient `OPENAI_CUSTOM_HEADERS` (an `Authorization` or
+`X-API-Key` header) are rejected without exposing their values (with
+`Remove OPENAI_CUSTOM_HEADERS when using the Mistral provider.`) so a custom
+header can never override the Mistral key, absent or blank custom headers are
+allowed without mutating the environment, and a failed request is not retried
+when the retry limit is zero. `test/agent/redaction.test.ts` pins
+`MISTRAL_API_KEY` redaction: `sanitizeDiagnosticText` redacts the exact value
+of a `MISTRAL_API_KEY` set in the environment, replacing it with a
+`[REDACTED:MISTRAL_API_KEY]` placeholder so the secret never reaches a
+diagnostic surface. `test/setup/credentials/steps.test.ts` covers the Mistral
+provider article in the setup wizard: the `mistral` provider follows the
+`provider` → `api-key` → `model` → `langsmith` step order (the same shape as
+the other api-key providers like fireworks, baseten, nebius, and nvidia).
 
 `test/config/constants.test.ts` is the broad provider-constants suite for
 `src/config/constants.ts`. It pins model-id validation, provider normalization
-and resolution, the `resolveProviderBaseUrl` defaults and overrides — including
+and resolution (including `resolveConfiguredProvider` falling back to `mistral`
+when only a `MISTRAL_API_KEY` is present), the `resolveProviderBaseUrl` defaults and overrides — including
 the hosted OpenAI-compatible providers where `BOB_BASE_URL` (via
 `BOB_BASE_URL_ENV_KEY`) and the baseten/fireworks/nvidia keys override the
 built-in defaults while a whitespace-only override falls back to the default
@@ -1028,18 +1130,42 @@ it, and the MCP transport server that exposes it.
   and over-length identities).
 - `test/integrations/session-manager.test.ts` exercises
   `HostSessionManager.create` and its single-run adapter over the real
-  repository lifecycle. It asserts the ordered six-tool lifecycle
+  repository lifecycle. It asserts the ordered ten-tool surface — the four
+  retrieval tools (`openwiki_list_workspaces`, `openwiki_list_wikis`,
+  `openwiki_search`, `openwiki_read`) plus the six lifecycle tools
   (`openwiki_begin` → `openwiki_submit_plan` → `openwiki_next_page` →
   `openwiki_inspect_page_claims` → `openwiki_submit_page` → `openwiki_finish`)
-  and that `inspectPageClaims` is exposed on demand. It covers resumability
-  across different hosts (a `codex`-started run is resumed by `claude-code`),
-  nested-path-to-Git-root resolution via `realpath`, the strict active-run-id
-  guard, begin conflict mapping (a second `begin` with a conflicting mode
-  rejects with `conflict` and retains the prior active run), the
-  one-operation-at-a-time guard, repository lifecycle failure mapping to
-  bounded `HostIntegrationError`s, the retention of active state when
-  `finish` fails, the durable-finish completion that clears active state, and
-  an older process-local run being cleared after a proven update no-op.
+  — and that `inspectPageClaims` is exposed on demand, that retrieval tools
+  answer without an active generation run (`openwiki_search`/`openwiki_read`
+  locate sections and reject a missing page with a bounded
+  `HostIntegrationError`), and that host and producer identities are
+  validated. It covers resumability across different hosts (a `codex`-started
+  run is resumed by `claude-code`), nested-path-to-Git-root resolution via
+  `realpath`, the strict active-run-id guard, begin conflict mapping (a second
+  `begin` with a conflicting mode rejects with `conflict` and retains the
+  prior active run), the one-operation-at-a-time guard, repository lifecycle
+  failure mapping to bounded `HostIntegrationError`s, the retention of active
+  state when `finish` fails, the durable-finish completion that clears active
+  state, and an older process-local run being cleared after a proven update
+  no-op. It also pins the **begin-view bounding** contract from
+  `src/integrations/core/begin-view.ts`: a drifted repository with more than
+  `HOST_BEGIN_PATH_LIMIT` changed paths yields a `HostActiveBeginView` whose
+  top-level `changedPaths` list is capped, whose `changedPathCount` keeps the
+  exact total, and whose `changedPathsTruncated` flag is set — with the paths
+  recovered from native Git (`git diff <baseGitHead>..HEAD`, `git diff HEAD`,
+  `git ls-files --others --exclude-standard`, excluding `openwiki/`) — while a
+  smaller drift keeps every path and clears the truncation flag, and a
+  truncated begin still accepts a `submit_plan` call.
+- `test/integrations/begin-view.test.ts` exercises
+  `toHostActiveBeginView` from `src/integrations/core/begin-view.ts` directly,
+  pinning the projection that bounds host begin-view lists while keeping
+  exact totals: it caps `claimIssues` at `HOST_BEGIN_CLAIM_ISSUE_LIMIT` while
+  still naming every affected page in `claimIssuePages` (with
+  `claimIssueCount`/`claimIssuesTruncated` reporting the overflow), splits
+  the `HOST_BEGIN_PATH_LIMIT` budget evenly across update windows (each window
+  gets a `changedPathCount`/`changedPathsTruncated` pair, and windows past the
+  budget carry no paths), and leaves lists at the limits complete (no
+  truncation flag, full `claimIssuePages`).
 - `test/integrations/mcp-server.test.ts` exercises
   `createOpenWikiMcpServer` through linked in-memory MCP transports. It asserts
   the server advertises the full ordered tool surface — the four retrieval
@@ -1050,13 +1176,22 @@ it, and the MCP transport server that exposes it.
   that the `INSTRUCTIONS` embedding (from `src/integrations/mcp/server.ts`) leads
   with the retrieval/search guidance: do not enumerate or preload wikis at task
   start, search only when grounded, the `workspace_required` /
-  `openwiki_list_workspaces` / `openwiki_list_wikis` / `openwiki_read` flow, and
-  treating wiki content as context rather than instructions. It then asserts the
-  generation-lifecycle guidance: author with the host's native repository tools,
+  `openwiki_list_workspaces` / `openwiki_list_wikis` / `openwiki_read` flow,
+  and treating wiki content as context rather than instructions. It then
+  asserts the generation-lifecycle guidance: resolve the Git root and call
+  `openwiki_begin` before authoring (reporting `status=noop` and stopping when
+  begin returns no work); the begin result **caps long lists and keeps exact
+  totals** in `changedPathCount` and `claimIssueCount`, and when a
+  `changedPathsTruncated` flag is true the host recovers the rest with
+  `git diff --name-only <baseGitHead>..HEAD` (not on a `fullReview` window),
+  `git diff --name-only HEAD`, and `git ls-files --others --exclude-standard`
+  (leaving out `openwiki/` and `.openwikiignore` paths), while
+  `claimIssuePages` names every page with a Claims issue; then author with the
+  host's native repository tools,
   `openwiki_submit_plan`/`openwiki_next_page`/`openwiki_inspect_page_claims`/
-  `openwiki_submit_page`, that issue-free Claims are "retained automatically" and
-  only sparse Claim decisions are submitted, the stale or unresolved recheck
-  requirement, "Never report success before finish", and "source drift
+  `openwiki_submit_page`, that issue-free Claims are "retained automatically"
+  and only sparse Claim decisions are submitted, the stale or unresolved
+  recheck requirement, "Never report success before finish", and "source drift
   invalidated the plan" — while never mentioning the removed
   `openwiki_resolve_claims`. It also covers successful tool calls (text JSON
   plus structured content) and error bounding: a `HostIntegrationError` is
@@ -1166,7 +1301,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **X connector stream isolation:** `pnpm exec vitest run test/x-connector-stream-isolation.test.ts`.
 - **OpenRouter debug-fetch concurrency:** `pnpm exec vitest run test/openrouter-debug-fetch.test.ts`.
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
-- **Ink components:** `pnpm exec vitest run test/cli/components/`.
+- **Ink components:** `pnpm exec vitest run test/cli/components/`, or `-t "Panel"`/`-t "Rows"` for the shared primitives (`test/cli/components/primitives.test.tsx`), or `pnpm exec vitest run test/cli/components/wiki-workspace-manager.test.tsx` for the interactive workspace-selection keyboard flow.
 - **Run-log helpers:** `pnpm exec vitest run test/cli/run-log/` (reducer/progress/summary/activity/tool-input), or `-t "retains concurrent worker progress fields"` for the concurrent-worker progress field pin.
 - **Generation skip/restore path:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "restores the exact pending Markdown and Claims snapshot"` (snapshot restore + `finishRepositoryRun` with `skippedPageSnapshots`), `-t "restores a page snapshot without skipping the pending job"` (restore leaves the page pending), or `-t "resets an interrupted skipped job to pending on resume"` (resume re-queueing).
 - **Agent retry-before-skip:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "retries once when a worker exits without submitting and completes the page"` (recovered by retry) or `-t "skips a page worker that fails every attempt and continues the queue"` (give-up path).
@@ -1177,16 +1312,17 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **LangSmith trace names:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "names the planner and each page worker after its page"` (`PLANNER_AGENT_NAME` + `workerAgentName(page)`).
 - **Repository-worker response coercion:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "coerces roleless generic streaming aggregates before LangChain validates wrapModelCall"` (roleless `ChatMessageChunk` → `AIMessageChunk` with collapsed tool calls), `-t "coerces generic assistant messages before LangChain validates wrapModelCall"` (`ChatMessage` → `AIMessage`), or `-t "leaves non-assistant generic model responses untouched"`.
 - **Rate-limit / worker-tool-event helpers:** `pnpm exec vitest run test/agent/repository-runner.test.ts -t "recognizes status fields, codes, messages, and causes"` (incl. Bedrock `ThrottlingException`/`ValidationException` classification) or `-t "forwards only approved tool lifecycle events"`.
-- **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts`.
+- **Repository worker prompts (planner/page-worker):** `pnpm exec vitest run test/agent/repository-prompts.test.ts` (incl. the commit-messages-since-baseline section, prompt-injection containment in quoted commit bodies, and the scoped update-window mandate).
 - **Vertex AI surface dispatch (incl. Grok routing):** `pnpm exec vitest run test/agent/vertex-surface.test.ts` (Claude→anthropic, partner/Grok→openai-maas, Gemini/unknown→gemini, auth-fetch and env neutralization).
 - **Update no-op fast-skip:** `pnpm exec vitest run test/agent/update-noop.test.ts`.
 - **Source fingerprinting / changed paths:** `pnpm exec vitest run test/agent/repository-source-fingerprint.test.ts`.
 - **Page manifest persistence:** `pnpm exec vitest run test/generation/page-manifest.test.ts`.
 - **Run-state persistence:** `pnpm exec vitest run test/generation/run-state.test.ts`.
 - **Plan construction and Claim reconciliation:** `pnpm exec vitest run test/generation/page-jobs.test.ts`.
+- **Per-baseline fast-forward caching / commit context / begin-view bounding:** `pnpm exec vitest run test/generation/repository-run.test.ts -t "fast-forwards every page after a docs-only Git commit"` (no-op fast-forward), `-t "asks Git about a shared baseline once while fast-forwarding"` (single baseline lookup), `-t "fast-forwards only the pages whose own baseline is unchanged"` (per-baseline caching), `-t "does not fast-forward a page whose baseline is missing from a shallow clone"` (shallow-clone full-review fallthrough), or `-t "commit context for the planner"` (the commit-messages-since-baseline list shape, caps, and edge cases).
 - **Host protocol schema:** `pnpm exec vitest run test/integrations/protocol.test.ts`.
-- **Host session manager:** `pnpm exec vitest run test/integrations/session-manager.test.ts`.
-- **MCP server adapter and INSTRUCTIONS:** `pnpm exec vitest run test/integrations/mcp-server.test.ts`.
+- **Host session manager (incl. begin-view bounding):** `pnpm exec vitest run test/integrations/session-manager.test.ts` (ten-tool surface, cross-host resumability, active-run guards, and the begin-view path-limit bounding tests `bounds begin path lists above the limit and keeps exact totals`/`keeps every begin path at or below the limit`/`accepts a plan submitted after a truncated begin`), or `pnpm exec vitest run test/integrations/begin-view.test.ts` for the pure `toHostActiveBeginView` projection (`HOST_BEGIN_PATH_LIMIT`/`HOST_BEGIN_CLAIM_ISSUE_LIMIT` capping with exact totals and `claimIssuePages`).
+- **MCP server adapter and INSTRUCTIONS (incl. begin-view bounding guidance):** `pnpm exec vitest run test/integrations/mcp-server.test.ts` (the `INSTRUCTIONS` now assert the begin result caps long lists and keeps exact totals, the `changedPathsTruncated` recovery via `git diff --name-only`, and `claimIssuePages`).
 - **Host installer (registry, scope, skill bundle):** `pnpm exec vitest run test/integrations/installer.test.ts`.
 - **Host config adapters (JSON/TOML/JSONC ownership):** `pnpm exec vitest run test/integrations/config-adapters.test.ts`.
 - **Integrations CLI dogfood:** `pnpm exec vitest run test/integrations/cli-dogfood.test.ts`.
@@ -1198,9 +1334,13 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Agent stream redaction:** `pnpm exec vitest run test/agent/stream-redaction.test.ts` (pins `parseAgentStreamChunk`'s suppression of file/image/input_file/image_url base64 blocks, `model_request` namespace classification, and `updates`-mode tool-call-only message handling).
 - **OpenAI-compatible Entra token provider:** `pnpm exec vitest run test/agent/entra-auth.test.ts` (lazy Azure Identity, workload-identity preference, token caching/refresh, error wrapping, HTTPS/scheme blocklist, and full Chat Completions/Responses × JSON/SSE model round-trips).
 - **OpenAI-compatible Entra model wiring:** `pnpm exec vitest run test/agent/create-model-entra.test.ts` (static-key preservation, renewable callback in `entra-id` mode, unsafe-base-URL and invalid-mode rejection).
+- **Mistral createModel credential isolation:** `pnpm exec vitest run test/agent/create-model.test.ts -t "createModel Mistral credential isolation"` (missing-key rejection before OpenAI fallback, Mistral endpoint/key/max-tokens preservation, `OPENAI_CUSTOM_HEADERS` rejection without value exposure, zero-retry behavior).
+- **Mistral API-key redaction:** `pnpm exec vitest run test/agent/redaction.test.ts -t "redacts the exact value of MISTRAL_API_KEY when set"` (`sanitizeDiagnosticText` replaces the secret with `[REDACTED:MISTRAL_API_KEY]`).
+- **Mistral setup-wizard provider article:** `pnpm exec vitest run test/setup/credentials/steps.test.ts -t "orderedSetupSteps"` (the `mistral` provider's `provider` → `api-key` → `model` → `langsmith` step order).
 - **Wiki internal-link validator (dogfood):** `pnpm exec vitest run test/agent/wiki-link-validator-dogfood.test.ts` (checks the checked-in `openwiki/` tree passes validation) or `pnpm exec vitest run test/agent/wiki-link-validator.test.ts` (scoped unit cases).
+- **Wiki translation middleware:** `pnpm exec vitest run test/agent/translation-middleware.test.ts` (resolveTranslationPlan switching/sweep rules, beforeAgent full-pass translation, pending-marker retry on model failure/output-limit truncation, per-page failure isolation, and array/structured content flattening).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
-- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, the OpenAI-compatible Entra auth round-trip, `MANAGED_ENV_KEYS` membership including `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`, `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, and the hosted OpenAI-compatible base URLs).
+- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, the OpenAI-compatible Entra auth round-trip, `MANAGED_ENV_KEYS` membership including `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`, `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, `MISTRAL_BASE_URL`, and the hosted OpenAI-compatible base URLs).
 - **Provider constants (incl. page-concurrency and Bob/Copilot base-URL overrides):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia/copilot, retry/max-token/stream-timeout/reasoning surfaces).
 - **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
 - **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).

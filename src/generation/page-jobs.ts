@@ -108,6 +108,9 @@ export interface ProposedRepositoryPlan {
    * Existing generated pages explicitly selected for deletion.
    */
   deletePages?: string[];
+
+  /** Leave unrelated stale Claim pages for a later full update. */
+  deferUnplannedClaimIssues?: boolean;
 }
 
 /**
@@ -174,8 +177,15 @@ export function createRepositoryPlan(
 
   if (mode === "update") {
     const deleted = new Set(deletePages);
-    addRequiredClaimIssueJobs(pages, pagePaths, deleted, claimIssues);
+    if (!proposed.deferUnplannedClaimIssues) {
+      addRequiredClaimIssueJobs(pages, pagePaths, deleted, claimIssues);
+    }
     addRequiredRewriteJobs(pages, pagePaths, deleted, requiredRewritePages);
+  } else if (proposed.deferUnplannedClaimIssues) {
+    throw new RepositoryRunError(
+      "invalid_input",
+      "Init cannot defer Claim issues.",
+    );
   }
 
   // Quickstart is the synthesis/navigation page; generate it after domain pages.
@@ -186,7 +196,12 @@ export function createRepositoryPlan(
     return compareCodeUnits(left.path, right.path);
   });
 
-  return { pages, deletePages };
+  const deferredClaimPages = proposed.deferUnplannedClaimIssues
+    ? uniqueSorted(
+        claimIssues.map((issue) => normalizeWikiPagePath(issue.page)),
+      ).filter((page) => !pagePaths.has(page) && !deletePages.includes(page))
+    : [];
+  return { pages, deletePages, deferredClaimPages };
 }
 
 /**

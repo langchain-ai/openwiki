@@ -2,12 +2,17 @@ import { randomUUID } from "node:crypto";
 import { OpenWikiLocalShellBackend } from "../agent/docs-only-backend.js";
 import { OpenWikiIgnore } from "../agent/openwiki-ignore.js";
 import type { OpenWikiRunEvent, RunContext } from "../agent/types.js";
-import type { UpdateNoopStatus } from "../agent/utils.js";
+import type {
+  RepositoryCommitContext,
+  UpdateNoopStatus,
+} from "../agent/utils.js";
 import {
   createOpenWikiContentSnapshot,
   createRepositorySourceSnapshot,
   createRunContext,
   getRepositoryChangedPaths,
+  getRepositoryCommitContext,
+  isReadableGitCommit,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
   writeLastUpdateMetadata,
@@ -162,6 +167,14 @@ export interface RepositoryPageUpdateWindow {
    * Visible repository paths changed after the shared baseline.
    */
   changedPaths: string[];
+
+  /**
+   * Newest commit messages after the baseline, as hints for the planner.
+   *
+   * Empty for full-review windows, while `.openwikiignore` is active, and when
+   * the history lookup fails.
+   */
+  commits: RepositoryCommitContext[];
 
   /**
    * Whether the planner must review without a bounded historical baseline.
@@ -890,6 +903,8 @@ async function getRepositoryPageUpdateWindows(
   const windows: RepositoryPageUpdateWindow[] = [];
   const baselines = [...pagesByBaseline.keys()].sort(compareCodeUnits);
   for (const baseline of baselines) {
+    const fullReview =
+      baseline.length === 0 || !(await isReadableGitCommit(root, baseline));
     windows.push({
       ...(baseline ? { baseGitHead: baseline } : {}),
       pages: [...(pagesByBaseline.get(baseline) ?? [])].sort(compareCodeUnits),
@@ -898,7 +913,10 @@ async function getRepositoryPageUpdateWindows(
         ignore,
         baseline || undefined,
       ),
-      fullReview: baseline.length === 0,
+      commits: fullReview
+        ? []
+        : await getRepositoryCommitContext(root, ignore, baseline),
+      fullReview,
     });
   }
   return windows;
@@ -921,16 +939,23 @@ async function fastForwardUnchangedRepositoryPageCoverage(
   if (!source.gitHead) return;
 
   const manifest = await readRepositoryPageManifest(root);
+  // Pages usually share a baseline, and every Git lookup starts a process.
+  const unchangedByBaseline = new Map<string, boolean>();
   for (const page of [...pages].sort(compareCodeUnits)) {
     const entry = manifest.pages[page];
     if (!entry?.gitHead || entry.gitHead === source.gitHead) continue;
 
-    const changedPaths = await getRepositoryChangedPaths(
-      root,
-      ignore,
-      entry.gitHead,
-    );
-    if (changedPaths.length > 0) continue;
+    let unchanged = unchangedByBaseline.get(entry.gitHead);
+    if (unchanged === undefined) {
+      // An unreadable baseline (shallow clone, rewritten history) hides which
+      // paths changed, so the page keeps its checkpoint and gets reviewed.
+      unchanged =
+        (await isReadableGitCommit(root, entry.gitHead)) &&
+        (await getRepositoryChangedPaths(root, ignore, entry.gitHead))
+          .length === 0;
+      unchangedByBaseline.set(entry.gitHead, unchanged);
+    }
+    if (!unchanged) continue;
 
     await recordRepositoryPageCompletion(
       root,
@@ -1017,6 +1042,7 @@ function samePlanIgnoringJobIds(
       }),
     ),
     deletePages: [...plan.deletePages],
+    deferredClaimPages: [...(plan.deferredClaimPages ?? [])],
   });
   return JSON.stringify(simplify(left)) === JSON.stringify(simplify(right));
 }
@@ -1374,11 +1400,12 @@ export async function submitRepositoryPage(
       // worker may be mid-edit on them, so projecting a verification stamp
       // into their front matter or rehashing their sidecar here would record
       // transient bytes. Their own submit (or finish) finalizes them.
-      const otherPendingPages = new Set(
-        latestPlan.pages
+      const otherPendingPages = new Set([
+        ...latestPlan.pages
           .filter(({ id, status }) => status === "pending" && id !== current.id)
           .map(({ path }) => path),
-      );
+        ...(latestPlan.deferredClaimPages ?? []),
+      ]);
       await run.claimsRuntime.finalize(run.state.startedAt, otherPendingPages);
       await assertPageClaimsDurable(run, current.path);
     } catch (error) {
@@ -1646,7 +1673,10 @@ export async function finishRepositoryRun(
       "Every skipped OpenWiki page job requires its original page snapshot before finish.",
     );
   }
-  const skippedPages = new Set(skippedJobs.map(({ path }) => path));
+  const skippedPages = new Set([
+    ...skippedJobs.map(({ path }) => path),
+    ...(plan.deferredClaimPages ?? []),
+  ]);
   const sourceChangedBeforeFinish = await hasRepositorySourceChanged(run);
   const producerActorsByPage = new Map<string, string>();
   for (const [page, entry] of Object.entries(
@@ -1688,7 +1718,11 @@ export async function finishRepositoryRun(
     at: run.state.startedAt,
     producerActor: run.state.actor.producerActor,
     producerActorsByPage,
-    claimSources: run.claimsRuntime.session.getEvidenceResourcesByPage(),
+    claimSources: new Map(
+      [...run.claimsRuntime.session.getEvidenceResourcesByPage()].filter(
+        ([page]) => !skippedPages.has(page),
+      ),
+    ),
     runOperation: captureFrontmatterReport,
   });
 

@@ -42,10 +42,10 @@ sources:
     resource: repo://src/okf/claim-sources.ts
   - id: openwiki-source-95484b6dcd037757691dcbb2
     resource: repo://src/okf/claims-verification.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # Grounded Claims
@@ -435,9 +435,16 @@ for every `init` / `update` job, so a worker authoring a page sees the full
 substance and reconciliation standard. The MCP server `INSTRUCTIONS` constant
 inlines only `CLAIMS_RECONCILIATION_GUIDANCE` (the host already drives page
 authoring through `openwiki_submit_page`, whose tool description carries the
-sparse-decision rules), alongside workspace-discovery guidance and the
-deterministic page-job lifecycle, so the same reconciliation rules reach every
-MCP host integration and tool description.
+sparse-decision rules), alongside workspace-discovery guidance, the
+deterministic page-job lifecycle, and a **begin-view recovery / Claims-issue
+surface** for update runs: when `begin` returns `changedPathsTruncated` the host
+recovers the remaining changed paths itself with `git diff --name-only
+<baseGitHead>..HEAD` (and the uncommitted variants), and `claimIssuePages`
+names every page carrying a Claims issue, which OpenWiki adds to the plan and
+which `openwiki_next_page` then enumerates for attention. So the same
+reconciliation rules reach every MCP host integration and tool description, with
+enough of the begin-view surface for a host to build a complete plan without
+OpenWiki enumerating every changed path up front.
 
 ## Related pages
 

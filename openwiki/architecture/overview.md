@@ -40,14 +40,18 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+  - id: openwiki-source-c194ba7f94bf86a83012a7b4
+    resource: repo://src/integrations/install/registry.ts
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # Architecture Overview
@@ -73,11 +77,11 @@ selects the personal brain. See [Two modes](../concepts/two-modes.md).
 **Driver** decides which model and tools do the authoring. In _native_
 generation, OpenWiki resolves a configured provider, builds its own chat model,
 and runs its own DeepAgents workers. In _host-driven_ generation, a coding agent
-(Codex, Claude Code, OpenCode, Cursor, IBM Bob / Bob Shell, Kiro, Oh My Pi, or
-Antigravity) uses its own authenticated model and native repository tools, while
-OpenWiki exposes the durable page-job lifecycle over MCP and owns validation
-and finalization. Host-driven runs currently support only repository code wikis,
-not personal brains.
+(Codex, Claude Code, OpenCode, Cursor, IBM Bob, Kiro, Oh My Pi, Antigravity
+CLI, or GitHub Copilot CLI) uses its own authenticated model and native
+repository tools, while OpenWiki exposes the durable page-job lifecycle over
+MCP and owns validation and finalization. Host-driven runs currently support
+only repository code wikis, not personal brains.
 
 ```mermaid
 flowchart TD
@@ -295,7 +299,17 @@ match, plus a single-operation guard that rejects overlapping lifecycle calls.
 `openwiki_begin` rejects an unrecognized `language` with `invalid_input`
 instead of starting a run (delegating to the same `beginRepositoryRun`
 language check), so the caller can correct the code and retry with nothing to
-clean up. `openwiki_inspect_page_claims` returns the current pending page's
+clean up. Because a host transport cannot assume unbounded result payloads,
+the adapter bounds the begin view it returns through `toHostActiveBeginView`:
+the top-level `changedPaths` and per-window path lists are capped
+(`HOST_BEGIN_PATH_LIMIT` of 200 paths, shared across update windows), and the
+`claimIssues` list is capped at `HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50). Totals
+stay exact — `changedPathCount`/`claimIssueCount` report the real lengths and
+`changedPathsTruncated`/`claimIssuesTruncated` flag omissions — and a
+`claimIssuePages` list names every page with a Claims issue even when its
+issues were truncated. No work is lost: omitted changed paths come from the
+host's own Git, and each page's full Claims return from `openwiki_next_page`.
+`openwiki_inspect_page_claims` returns the current pending page's
 complete Claim set on demand for broad rewrites; `openwiki_next_page` returns
 only `existingClaimCount` and the stale or unresolved Claims requiring an
 explicit decision, so focused updates stay compact. `openwiki_finish` is the
