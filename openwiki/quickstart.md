@@ -30,16 +30,20 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
+  - id: openwiki-source-58835b77ce38a0dd1fed8d09
+    resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-c194ba7f94bf86a83012a7b4
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+generated: { by: "openwiki/0.8.0", at: "2026-11-05T08:06:42.707Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.8.0
+    at: 2026-11-05T08:06:42.707Z
 ---
 
 # OpenWiki Quickstart
@@ -55,7 +59,7 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.7.3), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.8.0), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
@@ -268,7 +272,18 @@ durable queue, Claims reconciliation, source-drift handling, and deterministic
 finalization. Host-driven runs currently support repository code wikis (not
 personal brains), use the host's authenticated model session, and use repository
 source and tests only — connector context (including LangSmith) is not yet
-supported. The host submits only sparse Claim decisions for each page
+supported. An unrecognized `language` fails `openwiki_begin` with `invalid_input`
+instead of starting a run. `openwiki_begin` returns bounded `changedPaths` and
+per-update-window path lists capped at 200 paths, plus `claimIssues` capped at 50,
+but keeps the totals exact: `changedPathCount` and `claimIssueCount` are the true
+counts, and `claimIssuePages` names every page with a Claims issue even when its
+issue is omitted. When `changedPathsTruncated` is set the host recovers the rest
+from its own Git (`git diff --name-only <baseGitHead>..HEAD` on a non-fullReview
+window, plus `git diff --name-only HEAD` and
+`git ls-files --others --exclude-standard`, omitting `openwiki/` and
+`.openwikiignore` paths); a truncated per-window list likewise recovers from Git,
+and a truncated `claimIssues` list is still fully covered by `claimIssuePages`.
+The host submits only sparse Claim decisions for each page
 (`confirmedClaimIds` for rechecked issue Claims kept unchanged, `claims` for
 revisions and additions, `retractedClaimIds` for removals); OpenWiki
 automatically retains current issue-free Claims and makes the full Claim set

@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4d843e2e0bdc452355e70239c76ad904fc2fe24382b921acf25446fcbecd8379",
+  "pageVersion": "sha256:0d61d096b6bf35e740bf3a52816674fc4f5db081a82f3d8652c4a6ac1e69fccb",
   "claims": [
     {
       "id": "claim_5836585e22d244e79875961ea0a09258",
-      "statement": "OpenWiki is a Node.js (>=22.22.0) CLI published as the `openwiki` npm package (v0.7.3) whose binary resolves to `dist/cli/cli.js`, described as a CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase, and whose runtime is driven by one of fifteen model providers (including the Mistral provider alongside the other API-key providers).",
+      "statement": "OpenWiki is a Node.js (>=22.22.0) CLI published as the `openwiki` npm package (v0.8.0) whose binary resolves to `dist/cli/cli.js`, described as a CLI that uses a DeepAgents documentation agent to generate and maintain an OpenWiki for a codebase, and whose runtime is driven by one of fifteen model providers (including the Mistral provider alongside the other API-key providers).",
       "evidence": [
         {
           "resource": "repo://package.json#L1-L9",
-          "version": "repo-lines-v1:sha256:23c298ac1b5f7e3883caf55741b2d1b46f311cb2bcdb828392b26904cdd2a007:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMyMjJlOTNkN2E1OTk2MGEwNGFkMmQwNGUyMDQ3ZDNkMzgyZTkwYmRjYjFiMjgzN2Q4ODcwOWZlMzA2Y2I2MyJ9"
+          "version": "repo-lines-v1:sha256:292d22877361ae602ff02b78606336908bcbcfb6dff5bb8ea495d506e83282a0:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMyMjJlOTNkN2E1OTk2MGEwNGFkMmQwNGUyMDQ3ZDNkMzgyZTkwYmRjYjFiMjgzN2Q4ODcwOWZlMzA2Y2I2MyJ9"
         },
         {
           "resource": "repo://package.json#L10-L12",
@@ -269,10 +269,28 @@
           "version": "repo-lines-v1:sha256:a5860b1fa427e49f391fc9d044410cb514e1ab931400499bac2a509d4f96762d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGE3Y2MwMWNjN2I1ZDBkNDYwZDIxMGMzNTRjNWUwYzEyMjJmMTc0MjY5NTMwODQwMjNiM2RmZjA1NGI5ZTQ1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTYzZGI2NTBlMmE0NGU3M2ZmM2ZkODNiMjExZWYzNjJjMzM1ZmEwNDAyMzcyMDE1NTliYTgxNjY0OGU2YWFhMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQ0OGEwYTc0NGJmNjAxZmZkMjQyZTNmNmViMzFjMjQ4MjFhZjQxNjE4MTFmMDVmYWJhNmE1MmU0OWExODIwNSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_91ff21b607574e7599fde5fc6e31276b",
+      "statement": "In host-driven generation `openwiki_begin` returns a bounded begin view: the top-level `changedPaths` and each update window's path list are capped (HOST_BEGIN_PATH_LIMIT 200, split evenly across windows) and `claimIssues` is capped (HOST_BEGIN_CLAIM_ISSUE_LIMIT 50), while `changedPathCount`, per-window `changedPathCount`, and `claimIssueCount` stay exact, `claimIssuePages` names every page with a Claims issue even when its issue is omitted, and `changedPathsTruncated`/per-window and `claimIssuesTruncated` flags signal truncation so the host can recover the rest from its own Git; an unrecognized `language` fails `openwiki_begin` with `invalid_input` instead of starting a run.",
+      "evidence": [
+        {
+          "resource": "repo://src/integrations/core/begin-view.ts#L71-L109",
+          "version": "repo-lines-v1:sha256:76902a00acf6766f858fec7b93307d80db5868b6c0c5c94a1ea28c145945a47d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDhmMGEwZTRmOTVlNjViNDZjYTdmN2NhNDIyMmFmMWIwOWQ3MzA0ZDYzZjJiZTFkZDM2ZGUzYTUxNDY3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYmU1NTU5OTg1M2VlYTAyNzA1NmM5Mjc1ZWY1MmYzNWVhMDRkMzUxNDhmMGExNzYxNDg4MWY4NTNmNTllNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/begin-view.ts#L9-L43",
+          "version": "repo-lines-v1:sha256:4afaa7eb03e67fa3910cad86bb3b9115ee56146059ccef5f9f87a565312dbce4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkOWU4NjgwNzYzMDcyMWJmMDY0YWU1OGNmNDFkM2NiMzI4ZWZiOTQwYjRkMWQ5Yzc0NDNlMGY1Mjc1MDUwZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NjkyNzM0MmM0NzQ5ZDQyYjE2YjQ3ZTlhMGE0YzQyNWRlYzVlN2U1NGQ0ODU3MTZjODE1MWZjMmE2OWYzYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlN2RjYzdmZTU5MWViNWJlOTk1ODQxMTdhMmNmMzk5YzkxMmJkYjhlOTJkZGVkMDNiMDE2Zjk0YmYzMTRhMjMifQ"
+        },
+        {
+          "resource": "repo://src/integrations/core/session-manager.ts#L225-L236",
+          "version": "repo-lines-v1:sha256:940fbfb3afa4eb86254d97e70ef400597f1788f259c42579a93eac462f5504a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NzRiYTFiYjE5NWNlNTc2YTFhZGRkNGRkYzIyMDI1NjllMDhmYmM0YzUzOTRjMmQzNzI1ODIxMmU2ZDIwNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMzA5ZmZjZWFjYTliOTc3Y2ZlZGZjNDA1MWExZDNhYTU2ODM4Yzk3MDIwYjg0NGYzOTMxMzVjNTcyZTAwYWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MTRkZWVlMTcyNDg5MDAzNTRkY2Q5N2QzYjRkMjBmMTBkMTA2OTY3YzJjZDQ0MWQ3OTEyMTgwYjRjMDQxZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4OTA1ODFhNzExY2RiYTM2MTJkZjcxYmU1NmM3NDVkYTNmMmJjZDI1ZGVmMTA4MDA5Y2U0ZTI5NjE3NzdiZmEifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.3",
-    "at": "2026-11-04T08:06:10.698Z"
+    "by": "openwiki/0.8.0",
+    "at": "2026-11-05T08:06:42.707Z"
   }
 }
