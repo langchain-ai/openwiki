@@ -1,5 +1,13 @@
 # openwiki
 
+## 0.9.0
+
+### Minor Changes
+
+- [#1081](https://github.com/langchain-ai/openwiki/pull/1081) [`686fee5`](https://github.com/langchain-ai/openwiki/commit/686fee5d5b976fc1fa3557e31b08268d81c15a03) Thanks [@rstuhlmuller](https://github.com/rstuhlmuller)! - Allow MCP hosts to defer unrelated stale Claim pages during focused updates while preserving their evidence debt. Stop asserting that every repository has a scheduled update workflow.
+
+- [#1069](https://github.com/langchain-ai/openwiki/pull/1069) [`7bff3c6`](https://github.com/langchain-ai/openwiki/commit/7bff3c625836e81d8f7ba7f934c14640199d574b) Thanks [@p4norman](https://github.com/p4norman)! - `openwiki visualize` can open on a specific page: a `#page=<id>` URL fragment (for example `http://localhost:4300/#page=architecture/overview`) selects that page on first load. An unknown id opens the default entry page as before.
+
 ## 0.8.0
 
 ### Minor Changes
