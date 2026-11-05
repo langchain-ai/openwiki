@@ -45,9 +45,6 @@ sources:
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
 generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
 ---
 
 # Repository Generation Lifecycle

@@ -30,10 +30,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-f5f9f9512cc2874a9127f6e1
     resource: repo://test/cli/diagnostics/error-diagnostics.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.7.3
+    at: 2026-11-04T08:06:10.698Z
 ---
 
 # CLI Commands and Flags
@@ -156,9 +156,14 @@ instance, the panel additionally includes the error `name`, a sanitized
 `message`, an inline HTTP status extracted from the message
 (`httpStatusFromMessage`, the first 4xx/5xx value), and a `stack` diagnostic.
 The stack is sanitized via `sanitizeDiagnosticText` — which redacts the live
-values of secret-bearing environment variables and bearer-token / known provider
-key patterns such as `sk-or-v1-…` — and truncated to 2,000 characters with a
-trailing `...` so a long trace cannot flood the terminal. Debug mode also walks
+values of secret-bearing environment variables (iterating a fixed key list that
+includes the provider API-key env keys — OpenAI, Anthropic, Gemini, Mistral,
+OpenRouter, and the OpenAI-compatible key — plus AWS/Bedrock credentials, the
+Copilot, Fireworks, Nebius, Nvidia, and Baseten keys, `LANGSMITH_API_KEY`, and
+the Azure client secret/certificate-password keys, replacing each with
+`[REDACTED:<KEY>]`) and bearer-token / known provider key patterns such as
+`sk-or-v1-…` — and truncated to 2,000 characters with a trailing `...` so a long
+trace cannot flood the terminal. Debug mode also walks
 the `cause` chain to its innermost error and reports it as `rootCause` (its
 sanitized message plus allowlisted fields), so a generic wrapper like
 "Connection error." is accompanied by the actual cause beneath it — DNS, a
