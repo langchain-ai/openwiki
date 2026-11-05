@@ -34,6 +34,8 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-5835357b69a5869be210533b
@@ -44,7 +46,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.8.0", at: "2026-11-05T08:06:42.707Z" }
+verified:
+  - by: openwiki/0.8.0
+    at: 2026-11-05T08:06:42.707Z
 ---
 
 # Repository Generation Lifecycle
@@ -529,6 +534,45 @@ and source-fingerprint invalidation semantics. The host adapter does not, howeve
 participate in skipped-page handling: it calls `finishRepositoryRun` without
 `skippedPageSnapshots`, so a skipped job in a host-driven run makes finish report
 the missing-snapshot `invalid_state` unless the host supplies snapshots itself.
+
+### Host begin view capping
+
+A host transport (MCP) cannot stream arbitrarily large begin views to a model the
+way the in-process native runner can. The adapter therefore routes every active
+begin view through `toHostActiveBeginView` (in
+`src/integrations/core/begin-view.ts`) before returning it. Capping keeps totals
+exact while bounding only the lists a model must read:
+
+- `changedPaths` is capped to `HOST_BEGIN_PATH_LIMIT` (200), split evenly across
+  update windows (`Math.floor(200 / pageUpdateWindows.length)` per window). The
+  view still carries the exact `changedPathCount` and a per-window
+  `changedPathCount`, plus `changedPathsTruncated` flags (top-level and per
+  window) that are true when the corresponding list was trimmed.
+- `claimIssues` is capped to `HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50), while the exact
+  `claimIssueCount`, `claimIssuesTruncated`, and `claimIssuePages` (every page
+  with a Claims issue, including pages whose issues were omitted) are preserved.
+
+The host loses no required work from the trimming: omitted changed paths come
+from its own Git, and each page's Claims come back from `openwiki_next_page`.
+Planning and page jobs read the run's own durable state, not the capped view, so
+the cap affects only what the model sees.
+
+### The `tools()` block and tool descriptions
+
+`HostSessionManager.tools()` returns the read-only retrieval tools followed by
+the six generation lifecycle tools, each with a model-facing description and a
+strict Zod input schema. The `openwiki_begin` description records the begin-view
+capping contract: it states that long lists are capped with exact
+`changedPathCount` and `claimIssueCount` totals, and gives the recovery commands
+for a truncated `changedPathsTruncated` flag — `git diff --name-only
+<baseGitHead>..HEAD` (not on a fullReview window), `git diff --name-only HEAD`,
+and `git ls-files --others --exclude-standard`, excluding `openwiki/` and
+`.openwikiignore` paths. It names `claimIssuePages` as every page with a Claims
+issue, and notes that an unrecognized `language` fails the call with
+`invalid_input` instead of starting a run. The other five tool descriptions
+(`openwiki_submit_plan`, `openwiki_next_page`, `openwiki_inspect_page_claims`,
+`openwiki_submit_page`, `openwiki_finish`) describe their operation contracts and
+are unchanged across the capping work.
 
 ## Parallel page workers
 
