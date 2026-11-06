@@ -22,10 +22,10 @@ sources:
     resource: repo://src/okf/generated-provenance.ts
   - id: openwiki-source-5835357b69a5869be210533b
     resource: repo://src/okf/index-sync.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Wiki Finalization and Link Integrity
@@ -77,11 +77,12 @@ sequenceDiagram
     participant Claims as synchronizeClaimSources
     participant Prov as finalizeGeneratedProvenance
     Caller->>Caller: validate skipped jobs match snapshots
+    Caller->>Caller: skippedPages = skipped job paths ∪ deferredClaimPages
     Caller->>Caller: hasRepositorySourceChanged before finish
     Caller->>Caller: build producerActorsByPage from manifest
     Caller->>Caller: apply deletions and reconcile deleted claims
     Caller->>Caller: wrap index_sync to capture frontmatter report
-    Caller->>Fin: prepared baseline, at, producerActor, producerActorsByPage, claimSources
+    Caller->>Fin: prepared baseline, at, producerActor, producerActorsByPage, claimSources (minus skippedPages)
     Fin->>Mermaid: validate fenced diagrams
     Fin->>Index: rebuild directory indexes
     Fin->>LinkVal: stamp broken internal links
@@ -89,8 +90,8 @@ sequenceDiagram
     Fin->>Prov: reconcile generated stamps vs baseline
     Caller->>Caller: restore skipped page Markdown from snapshots
     Caller->>Caller: finalize Claims with excludedPages=skippedPages
-    Caller->>Caller: assertRepositoryClaimsDurable (excludes skipped)
-    Caller->>Caller: replaceRepositoryPageManifest (regenerated / preserveSource / preserve skipped)
+    Caller->>Caller: assertRepositoryClaimsDurable (excludes skippedPages)
+    Caller->>Caller: replaceRepositoryPageManifest (regenerated / preserveSource / preserve skippedPages)
     Caller->>Caller: hasRepositorySourceChanged again
     Caller->>Caller: write interrupted or complete metadata
     Caller->>Caller: remove .run.json last
@@ -113,8 +114,9 @@ edits have settled. Because index synchronization may add or change links,
 link validation is placed after it so it sees the final set of hrefs.
 
 `"claims_sources"` only runs when the caller passes `claimSources`; the
-repository run supplies the session's per-page evidence resources, while a
-personal-mode run may omit it.
+repository run supplies the session's per-page evidence resources (filtered to
+exclude the `skippedPages` set, so skipped and deferred-claim pages keep their
+prior OKF `sources` projection), while a personal-mode run may omit it.
 
 ## What finalization writes deterministically
 
@@ -239,13 +241,27 @@ At finish, the sequence is:
 2. **Validate the skipped-page-snapshot contract.** A page job may be `skipped`
    (via `skipRepositoryPage`, which rolls a failed worker back from its
    `RepositoryPageSnapshot` and writes `"interrupted"` metadata). `finish`
-   accepts an optional `skippedPageSnapshots` list and requires that the skipped
-   jobs and the supplied snapshots agree exactly — one snapshot per skipped job,
-   each snapshot's `jobId` and `path` matching the job. Mismatched counts or
-   paths fail the run with *"Every skipped OpenWiki page job requires its
-   original page snapshot before finish."* before any wiki bytes are touched.
+   accepts an optional `skippedPageSnapshots` list and requires that the
+   formally skipped jobs and the supplied snapshots agree exactly — one snapshot
+   per skipped job, each snapshot's `jobId` and `path` matching the job. Mismatched
+   counts or paths fail the run with *"Every skipped OpenWiki page job requires
+   its original page snapshot before finish."* before any wiki bytes are touched.
    The snapshot carries the page's pre-worker Markdown (or `null` when it did not
    exist) and its pre-worker Claims sidecar.
+
+   `finish` then builds the `skippedPages` set that flows through every later
+   exclusion. It is the union of the formally skipped job paths and the plan's
+   `deferredClaimPages` — pages the planner routed around this run because their
+   Claim issues were not resolvable here. Deferred-claim pages are *not* skipped
+   jobs and need no snapshot: they were never opened by a worker, so their
+   Markdown and Claims sidecar already sit at their prior checkpoint. They are
+   folded into `skippedPages` so the same exclusions apply to them — they are
+   dropped from the authoritative Claim set, from the session's per-page
+   evidence resources projected into OKF `sources`, and from the per-page
+   producer-actor map (`producerActorsByPage` only records pages this run
+   actually completed), so a deferred page keeps its prior source checkpoint and
+   verification rather than being re-proved against bytes this run did not
+   regenerate.
 3. **Record the pre-finish source state and build per-page producers.**
    `hasRepositorySourceChanged` recomputes the model-visible repository source
    fingerprint and compares it against the planned fingerprint, capturing
@@ -280,10 +296,12 @@ At finish, the sequence is:
    Only the Markdown is restored here — the Claims sidecar was already restored
    by `skipRepositoryPage`, and the Claims runtime is re-prepared to drop the
    skipped pages from the authoritative set.
-7. **Finalize the Claims runtime** with `excludedPages` set to the skipped
-   pages, so skipped pages are dropped from the authoritative Claim set rather
-   than verified against bytes that were just restored.
-8. **`assertRepositoryClaimsDurable`** (also excluding the skipped pages) confirms
+7. **Finalize the Claims runtime** with `excludedPages` set to `skippedPages`
+   (the union of formally skipped job paths and `deferredClaimPages`), so those
+   pages are dropped from the authoritative Claim set rather than verified against
+   bytes that were just restored (skipped jobs) or that this run never touched
+   (deferred-claim pages).
+8. **`assertRepositoryClaimsDurable`** (also excluding `skippedPages`) confirms
    no orphaned Claims sidecars remain and that every non-empty Claim set matches
    a durable sidecar and the final Markdown bytes exactly.
 9. **Rebuild the page manifest.** After the durability proof,
