@@ -54,6 +54,7 @@ export const OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY =
   "OPENWIKI_BEDROCK_MAX_TOKENS";
 export const BEDROCK_DEFAULT_MAX_TOKENS = 16000;
 export const OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_OUTPUT_TOKENS";
+export const OPENWIKI_MAX_INPUT_TOKENS_ENV_KEY = "OPENWIKI_MAX_INPUT_TOKENS";
 export const BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY = "BEDROCK_AWS_ACCESS_KEY_ID";
 export const BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY =
   "BEDROCK_AWS_SECRET_ACCESS_KEY";
@@ -1092,6 +1093,34 @@ export function resolveMaxOutputTokens(
   }
 
   return parsedMaxOutputTokens;
+}
+
+export function resolveMaxInputTokens(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawMaxInputTokens = env[OPENWIKI_MAX_INPUT_TOKENS_ENV_KEY];
+
+  if (rawMaxInputTokens === undefined) {
+    return undefined;
+  }
+
+  const maxInputTokens = rawMaxInputTokens.trim();
+
+  if (!/^[1-9]\d*$/u.test(maxInputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_INPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  const parsedMaxInputTokens = Number(maxInputTokens);
+
+  if (!Number.isSafeInteger(parsedMaxInputTokens)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_MAX_INPUT_TOKENS_ENV_KEY}. Expected a positive integer.`,
+    );
+  }
+
+  return parsedMaxInputTokens;
 }
 
 /** Milliseconds to wait for the first or next Bedrock stream chunk. 0 disables the watchdog. */
