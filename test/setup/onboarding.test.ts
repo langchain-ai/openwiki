@@ -546,7 +546,7 @@ describe("normalizeOnboardingConfig (via readOpenWikiOnboardingConfig)", () => {
     expect(config.ingestionSchedule).toEqual({
       description: "",
       expression: "",
-      launchAgentPath: undefined,
+      nativeJobPath: undefined,
       pausedAt: undefined,
       updatedAt: new Date(0).toISOString(),
       warning: undefined,
@@ -560,7 +560,7 @@ describe("normalizeOnboardingConfig (via readOpenWikiOnboardingConfig)", () => {
       ingestionSchedule: {
         description: "nightly",
         expression: "0 3 * * *",
-        launchAgentPath: "/Library/LaunchAgents/openwiki.plist",
+        nativeJobPath: "/Library/LaunchAgents/openwiki.plist",
         pausedAt: "2026-02-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
         warning: "battery only",
@@ -575,7 +575,7 @@ describe("normalizeOnboardingConfig (via readOpenWikiOnboardingConfig)", () => {
     expect(config.ingestionSchedule).toEqual({
       description: "nightly",
       expression: "0 3 * * *",
-      launchAgentPath: "/Library/LaunchAgents/openwiki.plist",
+      nativeJobPath: "/Library/LaunchAgents/openwiki.plist",
       pausedAt: "2026-02-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
       warning: "battery only",
