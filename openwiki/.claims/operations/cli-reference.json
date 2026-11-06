@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8076c9c62a5518a45083ecfa43226598f6b02b1b90716d0521c102bf12dbb664",
+  "pageVersion": "sha256:6af3a8a09931e169b7394eb458b777cf6c08d0a58336d14857379aa4690ea711",
   "claims": [
     {
       "id": "claim_e161d3153b544232b9f17aa2f2838616",
@@ -486,7 +486,7 @@
     },
     {
       "id": "claim_9dc5b258668e4fa9ac130bd5d2c72089",
-      "statement": "The stack diagnostic is sanitized via sanitizeDiagnosticText (which redacts live secret-bearing environment-variable values and bearer-token / known provider key patterns such as sk-or-v1-…) and truncated to 2,000 characters with a trailing ellipsis so a long trace cannot flood the terminal; in debug mode getErrorDiagnostics additionally walks the cause chain to its innermost error and reports it as rootCause (its sanitized message plus allowlisted fields), so a generic wrapper like \"Connection error.\" is accompanied by the actual cause beneath it rather than the same message repeated at every level.",
+      "statement": "The stack diagnostic is sanitized via sanitizeDiagnosticText (which redacts live secret-bearing environment-variable values — iterating a fixed key list that includes the provider API-key env keys OpenAI, Anthropic, Gemini, Mistral, OpenRouter, and the OpenAI-compatible key, plus AWS/Bedrock credentials, the Copilot, Fireworks, Nebius, Nvidia, and Baseten keys, LANGSMITH_API_KEY, and the Azure client secret/certificate-password keys, replacing each with [REDACTED:<KEY>] — and bearer-token / known provider key patterns such as sk-or-v1-…) and truncated to 2,000 characters with a trailing ellipsis so a long trace cannot flood the terminal; in debug mode getErrorDiagnostics additionally walks the cause chain to its innermost error and reports it as rootCause (its sanitized message plus allowlisted fields), so a generic wrapper like \"Connection error.\" is accompanied by the actual cause beneath it rather than the same message repeated at every level.",
       "evidence": [
         {
           "resource": "repo://src/cli/diagnostics/error-diagnostics.ts#L290-L299",
@@ -501,8 +501,8 @@
           "version": "repo-lines-v1:sha256:ba5137b0101392ec20f40910bdcd5cabc60431eb046f8925a68565d2b4d1e2bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWNhOTBlZDQ0ZGU3ZTNiYzkwYzc0MWZlZGM0NjQ2ZTlmZGIxM2UwNWQ5ZTE1NTE5MmUxNzQ2NjkzZjgzOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZGFhMzBlZDJiMmNmNDAwNmM1YTAyOTZhN2EzMDdjM2MyYTBhNzM0NzU1MTRkOGY4NjlkNTU4ZGNlMDhlNGMifQ"
         },
         {
-          "resource": "repo://src/platform/diagnostics.ts#L31-L73",
-          "version": "repo-lines-v1:sha256:ae8d189844e39ee73236b66ee3b35af5948c3b5a72ce222326a13c49911c83a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDc5MTRmNWVlYjI0Mjc0NTI5NmU2ODIwM2RjMDkzOGY1Zjc0ODkwNzcwNDQ2MzYyNTMzZTk2OGNmZjBiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwOGQyMzFkMDRiMmVhMzg0NThiMmYzZTY1NzIwYmVhNmM1NTU1MTczOGI3NzA4YWRlOTI4YjUzOTBmZWU4MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxOGVhOWRiYzhlMDdlZjZlMmEwNDY3MTY3OTY1YzJjMDVjYzJhZDk1YWFjZWRiYzVjMjcyNGM4MGNkNGRkNTIifQ"
+          "resource": "repo://src/platform/diagnostics.ts#L32-L75",
+          "version": "repo-lines-v1:sha256:b3c64425eaef271b841945eb2e06d439c383521f54c292fd9c68cf2965f4f441:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDc5MTRmNWVlYjI0Mjc0NTI5NmU2ODIwM2RjMDkzOGY1Zjc0ODkwNzcwNDQ2MzYyNTMzZTk2OGNmZjBiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwOGQyMzFkMDRiMmVhMzg0NThiMmYzZTY1NzIwYmVhNmM1NTU1MTczOGI3NzA4YWRlOTI4YjUzOTBmZWU4MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxOGVhOWRiYzhlMDdlZjZlMmEwNDY3MTY3OTY1YzJjMDVjYzJhZDk1YWFjZWRiYzVjMjcyNGM4MGNkNGRkNTIifQ"
         },
         {
           "resource": "repo://test/cli/diagnostics/error-diagnostics.test.ts#L116-L142",
@@ -567,6 +567,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.3",
-    "at": "2026-11-02T08:07:01.639Z"
+    "at": "2026-11-04T08:06:10.698Z"
   }
 }

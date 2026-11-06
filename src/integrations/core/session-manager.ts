@@ -163,6 +163,7 @@ export class HostSessionManager {
       return submitRepositoryPlan(run, {
         pages: input.pages,
         deletePages: input.deletePages,
+        deferUnplannedClaimIssues: input.deferUnplannedClaimIssues,
       });
     });
   }
