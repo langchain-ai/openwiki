@@ -269,7 +269,7 @@ export async function finalizeWikiArtifacts({
   );
   if (claimSources) {
     await runOperation("claims_sources", () =>
-      synchronizeClaimSources(backend, outputMode, claimSources),
+      synchronizeClaimSources(backend, outputMode, claimSources, producerActor),
     );
   }
   await runOperation("generated_provenance", () =>
