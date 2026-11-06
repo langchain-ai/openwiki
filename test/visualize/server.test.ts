@@ -1,6 +1,9 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { createRequestHandler } from "../../src/visualize/server.ts";
+import {
+  closeVisualizerResources,
+  createRequestHandler,
+} from "../../src/visualize/server.ts";
 import type { WikiGraph } from "../../src/visualize/graph.ts";
 import { PAGE } from "../../src/visualize/page.ts";
 
@@ -203,6 +206,30 @@ describe("createRequestHandler", () => {
     // The close listener drops the subscriber so we never write to a dead socket.
     request.closeListener();
     expect(sseClients.has(out.res)).toBe(false);
+  });
+
+  test("shutdown ends active SSE streams and closes the wiki watcher", () => {
+    const disconnectedRequest = makeRequest("/events");
+    const disconnected = makeResponse();
+    handler(disconnectedRequest.req, disconnected.res);
+
+    const activeRequest = makeRequest("/events");
+    const active = makeResponse();
+    handler(activeRequest.req, active.res);
+
+    disconnectedRequest.closeListener();
+    const watchHandle = { close: vi.fn() };
+
+    closeVisualizerResources(sseClients, watchHandle);
+
+    expect(disconnected.ended).toBe(false);
+    expect(active.ended).toBe(true);
+    expect(sseClients.size).toBe(0);
+    expect(watchHandle.close).toHaveBeenCalledOnce();
+
+    // Normal disconnect cleanup remains safe after shutdown clears the set.
+    activeRequest.closeListener();
+    expect(sseClients.size).toBe(0);
   });
 
   test("an unknown route is a 404, never a filesystem read", () => {
