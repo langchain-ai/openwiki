@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
   requireResolvedLanguage,
+  getLanguageScript,
   getPrimaryLanguageSubtag,
+  isSameWrittenLanguage,
   resolveLanguage,
 } from "../../src/platform/language.ts";
 
@@ -80,5 +82,37 @@ describe("getPrimaryLanguageSubtag", () => {
 
   test("preserves malformed persisted values for a safe mismatch", () => {
     expect(getPrimaryLanguageSubtag("not_a_locale")).toBe("not_a_locale");
+  });
+});
+
+describe("getLanguageScript", () => {
+  test("resolves the likely writing script of a language tag", () => {
+    expect(getLanguageScript("zh-CN")).toBe("Hans");
+    expect(getLanguageScript("zh-TW")).toBe("Hant");
+    expect(getLanguageScript("sr")).toBe("Cyrl");
+    expect(getLanguageScript("sr-Latn")).toBe("Latn");
+    expect(getLanguageScript("en")).toBe("Latn");
+  });
+
+  test("treats an absent persisted language as English", () => {
+    expect(getLanguageScript(undefined)).toBe("Latn");
+    expect(getLanguageScript(null)).toBe("Latn");
+  });
+
+  test("preserves malformed persisted values for a safe mismatch", () => {
+    expect(getLanguageScript("not_a_locale")).toBe("not_a_locale");
+  });
+});
+
+describe("isSameWrittenLanguage", () => {
+  test("matches a region-only change with the same script", () => {
+    expect(isSameWrittenLanguage("en-GB", "en")).toBe(true);
+    expect(isSameWrittenLanguage("en", undefined)).toBe(true);
+  });
+
+  test("distinguishes script variants sharing a primary subtag", () => {
+    expect(isSameWrittenLanguage("zh-TW", "zh-CN")).toBe(false);
+    expect(isSameWrittenLanguage("sr-Latn", "sr")).toBe(false);
+    expect(isSameWrittenLanguage("az-Arab", "az")).toBe(false);
   });
 });

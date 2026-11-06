@@ -90,3 +90,45 @@ export function getPrimaryLanguageSubtag(
     return tag;
   }
 }
+
+/**
+ * Returns a language tag's likely writing script (for example `Hans` for
+ * `zh-CN`), resolved through the `Intl.Locale` likely-subtag data so script
+ * variants such as `zh-CN` and `zh-TW` can be told apart. An absent tag is
+ * treated as English. Malformed persisted values are returned as written so
+ * they cannot accidentally compare equal to a valid requested tag.
+ */
+export function getLanguageScript(tag: string | null | undefined): string {
+  if (!tag) return "Latn";
+
+  try {
+    return new Intl.Locale(tag).maximize().script ?? tag;
+  } catch {
+    return tag;
+  }
+}
+
+/**
+ * Returns whether a requested and a persisted language tag denote the same
+ * written language, meaning both the primary subtag and the likely writing
+ * script match.
+ *
+ * A region-only change such as `en` to `en-GB` compares equal, so an update
+ * can keep skipping retranslation. A script-variant change such as `zh-CN`
+ * to `zh-TW` (Simplified to Traditional) or `sr` to `sr-Latn` compares
+ * unequal and must be treated as a real language switch.
+ *
+ * @param requested - Canonical requested output language.
+ * @param persisted - Persisted wiki language, if any.
+ * @returns Whether both tags denote the same written language.
+ */
+export function isSameWrittenLanguage(
+  requested: string,
+  persisted: string | null | undefined,
+): boolean {
+  return (
+    getPrimaryLanguageSubtag(requested) ===
+      getPrimaryLanguageSubtag(persisted) &&
+    getLanguageScript(requested) === getLanguageScript(persisted)
+  );
+}
