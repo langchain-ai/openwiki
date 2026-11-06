@@ -15,6 +15,7 @@ export const MISTRAL_BASE_URL_ENV_KEY = "MISTRAL_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
+export const TSUBASA_API_KEY_ENV_KEY = "TSUBASA_API_KEY";
 export const OPENAI_API_KEY_ENV_KEY = "OPENAI_API_KEY";
 export const OPENAI_BASE_URL_ENV_KEY = "OPENAI_BASE_URL";
 export const OPENAI_COMPATIBLE_API_KEY_ENV_KEY = "OPENAI_COMPATIBLE_API_KEY";
@@ -151,7 +152,8 @@ export type OpenWikiProvider =
   | "openai"
   | "openai-chatgpt"
   | "openai-compatible"
-  | "openrouter";
+  | "openrouter"
+  | "tsubasa";
 
 /**
  * How a provider authenticates. Providers default to `"api-key"` (a pasted
@@ -291,6 +293,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "nebius",
   "nvidia",
   "mistral",
+  "tsubasa",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -474,6 +477,15 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "openai/gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "openai/gpt-5.5", label: "GPT 5.5" },
+    ],
+  },
+  tsubasa: {
+    apiKeyEnvKey: TSUBASA_API_KEY_ENV_KEY,
+    baseURL: "https://api.tsubasa.sh/v1",
+    label: "Tsubasa",
+    modelOptions: [
+      { id: "tsubasa-fast", label: "Tsubasa Fast" },
+      { id: "tsubasa-pro", label: "Tsubasa Pro" },
     ],
   },
 };
@@ -1022,7 +1034,9 @@ export function resolveConfiguredProvider(
                             BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
                           )
                         ? "bedrock"
-                        : DEFAULT_PROVIDER)
+                        : env[TSUBASA_API_KEY_ENV_KEY]
+                          ? "tsubasa"
+                          : DEFAULT_PROVIDER)
   );
 }
 
