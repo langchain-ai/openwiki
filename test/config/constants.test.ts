@@ -57,6 +57,8 @@ import {
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeout,
   resolveStreamIdleTimeoutForProvider,
+  resolveRequestTimeout,
+  resolveRequestTimeoutForProvider,
 } from "../../src/config/constants.ts";
 import {
   getReasoningCapability,
@@ -510,6 +512,79 @@ describe("resolveStreamIdleTimeoutForProvider", () => {
         OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
       }),
     ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
+  });
+});
+
+describe("resolveRequestTimeout", () => {
+  test("keeps the client default when no override is set", () => {
+    expect(resolveRequestTimeout({})).toBeUndefined();
+  });
+
+  test("accepts positive millisecond values", () => {
+    expect(
+      resolveRequestTimeout({
+        OPENWIKI_REQUEST_TIMEOUT: " 3600000 ",
+      }),
+    ).toBe(3600000);
+    expect(
+      resolveRequestTimeout({
+        OPENWIKI_REQUEST_TIMEOUT: "2147483647",
+      }),
+    ).toBe(2147483647);
+  });
+
+  test("rejects invalid request timeouts", () => {
+    for (const value of [
+      "",
+      "   ",
+      "0",
+      "-1",
+      "1.5",
+      "abc",
+      "1e2",
+      "2147483648",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveRequestTimeout({
+          OPENWIKI_REQUEST_TIMEOUT: value,
+        }),
+      ).toThrow(/OPENWIKI_REQUEST_TIMEOUT/u);
+    }
+  });
+});
+
+describe("resolveRequestTimeoutForProvider", () => {
+  test("applies to providers built on the OpenAI client", () => {
+    for (const provider of [
+      "openai",
+      "openai-compatible",
+      "openai-chatgpt",
+      "bob",
+      "copilot",
+    ] as const) {
+      expect(
+        resolveRequestTimeoutForProvider(provider, {
+          OPENWIKI_REQUEST_TIMEOUT: "3600000",
+        }),
+      ).toBe(3600000);
+    }
+  });
+
+  test("ignores the timeout for providers with their own clients", () => {
+    for (const provider of [
+      "anthropic",
+      "bedrock",
+      "gemini",
+      "gemini-enterprise",
+      "openrouter",
+    ] as const) {
+      expect(
+        resolveRequestTimeoutForProvider(provider, {
+          OPENWIKI_REQUEST_TIMEOUT: "invalid",
+        }),
+      ).toBeUndefined();
+    }
   });
 });
 
