@@ -48,10 +48,10 @@ sources:
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-c194ba7f94bf86a83012a7b4
     resource: repo://src/integrations/install/registry.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Architecture Overview
@@ -152,15 +152,17 @@ sequenceDiagram
     end
   end
   Driver->>Run: finish (finalize-once)
-  Run->>Run: restore skipped pages, finalize Claims excluding them
+  Run->>Run: restore skipped pages, finalize Claims excluding skipped + deferred-claim pages
   Run->>Run: re-check source fingerprint at both ends
   Run-->>Driver: { status: complete, sourceChanged? }
 ```
 
 Caption: The `begin → submit_plan → next_page → submit_page → finish`
 lifecycle. `finish` is a single deterministic finalization; it refuses to run
-while any page job is still `pending`, restores skipped pages' Markdown, and
-persists `interrupted` metadata when pages were skipped or source drifted.
+while any page job is still `pending`, restores skipped pages' Markdown,
+excludes skipped and deferred-claim pages from Claim finalization, and
+persists `interrupted` metadata when pages were skipped, deferred, or source
+drifted.
 
 ## CLI entrypoint
 
@@ -263,13 +265,20 @@ with the next page rather than aborting; the page is reconsidered on a later
 update. A fatal submission failure (the store refusing the page) is not retried
 and is rethrown so the run stops rather than looping on an unfixable error.
 `runPendingPageAgents` collects every skipped-page snapshot and passes them to
-`finishRepositoryRun`, which restores the skipped pages' Markdown after
-finalization, finalizes Claims with those pages excluded, and persists
-`interrupted` update metadata so the run is honestly recorded as partial.
-Page restore and the planned/abandoned-page deletions at finish tolerate a
-human-readable "not found" backend error instead of aborting the run, so a
-page that never existed or was already removed is treated as already restored
-or deleted.
+`finishRepositoryRun`. A focused update may defer unrelated stale Claim pages
+by passing `deferUnplannedClaimIssues` to `submit_plan`; the planner records
+those deferred-claim pages on the plan and leaves them untouched for a later
+full update. `finishRepositoryRun` restores the skipped pages' Markdown after
+finalization and finalizes Claims excluding both skipped pages and
+deferred-claim pages, so neither is restamped as complete by this run; it
+persists `interrupted` update metadata so the run is honestly recorded as
+partial. The same exclusion applies per page during generation:
+`submitRepositoryPage` finalizes the submitting page's Claims while excluding
+every other pending page plus the deferred-claim pages, so a concurrent worker
+mid-edit on another page never records transient bytes there. Page restore and
+the planned/abandoned-page deletions at finish tolerate a human-readable "not
+found" backend error instead of aborting the run, so a page that never existed
+or was already removed is treated as already restored or deleted.
 
 If finalization detects that repository source drifted underneath the plan,
 the run does not abort or auto-replan. `finishRepositoryRun` re-checks the

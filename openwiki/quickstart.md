@@ -26,6 +26,8 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
+  - id: openwiki-source-1197594de038075f3570340c
+    resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
@@ -40,10 +42,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.8.0", at: "2026-11-05T08:06:42.707Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.8.0
-    at: 2026-11-05T08:06:42.707Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # OpenWiki Quickstart
@@ -59,7 +61,7 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.8.0), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.9.0), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
@@ -234,6 +236,15 @@ durable page queue, while ephemeral CI runners start fresh after failure unless
 their workspace is preserved. An update whose Claims preflight is clean, source
 fingerprint is unchanged, and every existing page has complete baseline coverage
 is proven a strict no-op at `begin` time and skips model invocation.
+
+For a focused update, `openwiki_submit_plan` may set
+`deferUnplannedClaimIssues: true`. With that flag the planner omits unplanned
+pages that carry only stale or unresolved Claim issues — those
+`deferredClaimPages` are left untouched this run rather than forced into the
+plan, so a later full update reconciles them. Finalization excludes deferred-claim
+pages from the durable Claims proof and the source-checkpoint restamp, so the
+run still `finish`es with `interrupted` metadata until a full update reclaims
+them.
 
 By default a native run documents one page per worker. Set
 `OPENWIKI_PAGE_CONCURRENCY` to an integer from `1` to `8` (default `1`) to run
