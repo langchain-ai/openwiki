@@ -954,6 +954,7 @@ export function getInputDisplayWidth(
 
 export function getProviderArticle(provider: OpenWikiProvider): "a" | "an" {
   return provider === "baseten" ||
+    provider === "crusoe" ||
     provider === "fireworks" ||
     provider === "gemini" ||
     provider === "gemini-enterprise" ||

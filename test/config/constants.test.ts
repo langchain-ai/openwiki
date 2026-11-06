@@ -30,6 +30,7 @@ import {
   MISTRAL_BASE_URL_ENV_KEY,
   NEBIUS_BASE_URL,
   NVIDIA_BASE_URL_ENV_KEY,
+  CRUSOE_BASE_URL_ENV_KEY,
   normalizeModelId,
   normalizeProvider,
   providerRequiresApiKey,
@@ -135,6 +136,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(isValidProvider("copilot")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
     expect(isValidProvider("mistral")).toBe(true);
+    expect(isValidProvider("crusoe")).toBe(true);
     expect(isValidProvider("gemini")).toBe(true);
     expect(isValidProvider("gemini-enterprise")).toBe(true);
     expect(isValidProvider("nope")).toBe(false);
@@ -178,6 +180,22 @@ describe("resolveConfiguredProvider", () => {
 
   test("falls back to mistral when only a Mistral key is present", () => {
     expect(resolveConfiguredProvider({ MISTRAL_API_KEY: "x" })).toBe("mistral");
+  });
+
+  test("falls back to crusoe when only a Crusoe key is present", () => {
+    expect(resolveConfiguredProvider({ CRUSOE_API_KEY: "x" })).toBe("crusoe");
+  });
+
+  test("ranks crusoe after nvidia and before bedrock when inferring", () => {
+    expect(
+      resolveConfiguredProvider({ NVIDIA_API_KEY: "x", CRUSOE_API_KEY: "y" }),
+    ).toBe("nvidia");
+    expect(
+      resolveConfiguredProvider({
+        CRUSOE_API_KEY: "x",
+        BEDROCK_AWS_ACCESS_KEY_ID: "y",
+      }),
+    ).toBe("crusoe");
   });
 
   test("falls back to bedrock when a complete legacy key pair is present", () => {
@@ -233,6 +251,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(resolveProviderBaseUrl("mistral", {})).toBe(
       "https://api.mistral.ai/v1",
     );
+    expect(resolveProviderBaseUrl("crusoe", {})).toBe(
+      "https://api.inference.crusoecloud.com/v1",
+    );
   });
 
   test("prefers a non-empty env override over the default", () => {
@@ -274,6 +295,11 @@ describe("resolveProviderBaseUrl", () => {
         [MISTRAL_BASE_URL_ENV_KEY]: "https://gateway.example/mistral/v1",
       }),
     ).toBe("https://gateway.example/mistral/v1");
+    expect(
+      resolveProviderBaseUrl("crusoe", {
+        [CRUSOE_BASE_URL_ENV_KEY]: "https://gateway.example/crusoe/v1",
+      }),
+    ).toBe("https://gateway.example/crusoe/v1");
   });
 
   test("ignores a whitespace-only override", () => {
@@ -295,6 +321,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(
       resolveProviderBaseUrl("mistral", { [MISTRAL_BASE_URL_ENV_KEY]: "   " }),
     ).toBe("https://api.mistral.ai/v1");
+    expect(
+      resolveProviderBaseUrl("crusoe", { [CRUSOE_BASE_URL_ENV_KEY]: "   " }),
+    ).toBe("https://api.inference.crusoecloud.com/v1");
   });
 
   test("returns undefined for a provider with no default and no override", () => {
@@ -770,6 +799,7 @@ describe("providerUsesStreaming", () => {
         "mistral",
         "nebius",
         "nvidia",
+        "crusoe",
       ] as const) {
         expect(providerUsesStreaming(provider)).toBe(false);
       }
@@ -1264,6 +1294,7 @@ describe("getDefaultModelId", () => {
       "nvidia/nemotron-3-super-120b-a12b",
     );
     expect(getDefaultModelId("mistral")).toBe("mistral-small-2603");
+    expect(getDefaultModelId("crusoe")).toBe("moonshotai/Kimi-K2.6");
     expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
