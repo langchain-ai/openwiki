@@ -143,7 +143,11 @@ import {
   resolveStreamIdleTimeoutForProvider,
   type OpenWikiProvider,
 } from "../config/constants.js";
-import { resolveReasoningConfig } from "../config/reasoning.js";
+import {
+  hasPhaseReasoningEffort,
+  resolveReasoningConfig,
+  type ReasoningPhase,
+} from "../config/reasoning.js";
 import {
   resolveExternalCliCredential,
   validateExternalCliCredential,
@@ -198,18 +202,23 @@ export async function runOpenWikiAgent(
         telemetryContext.provider = resolved;
       });
       debugFetchCapture.setRetryAttempts(config.providerRetryAttempts);
-      const model = inStageSync(
-        "build",
-        () =>
-          createModel(
-            config.provider,
-            config.modelId,
-            config.providerRetryAttempts,
-            config.maxOutputTokens,
-            config.streamIdleTimeout,
-          ),
-        { errorClass: "build_error", errorDetail: "model" },
-      );
+      const buildModel = (phase?: ReasoningPhase) =>
+        inStageSync(
+          "build",
+          () =>
+            createModel(
+              config.provider,
+              config.modelId,
+              config.providerRetryAttempts,
+              config.maxOutputTokens,
+              config.streamIdleTimeout,
+              phase,
+            ),
+          { errorClass: "build_error", errorDetail: "model" },
+        );
+      const phased = hasPhaseReasoningEffort();
+      const model = buildModel(phased ? "writing" : undefined);
+      const planningModel = phased ? buildModel("planning") : undefined;
       const generation = await inStage(
         "run",
         () =>
@@ -221,6 +230,7 @@ export async function runOpenWikiAgent(
             planningContext: options.userMessage,
             modelId: config.modelId,
             model,
+            planningModel,
             pageConcurrency: config.pageConcurrency,
             onEvent: options.onEvent,
           }),
@@ -1126,6 +1136,7 @@ export function createModel(
   providerRetryAttempts: number,
   maxOutputTokens?: number,
   streamIdleTimeout?: number,
+  reasoningPhase?: ReasoningPhase,
 ) {
   if (provider === "mistral") {
     if (!getProviderApiKey(provider)?.trim()) {
@@ -1161,6 +1172,7 @@ export function createModel(
     process.env,
     {
       useResponsesApi: chatOpenAiUsesResponsesApi,
+      phase: reasoningPhase,
     },
   );
 
