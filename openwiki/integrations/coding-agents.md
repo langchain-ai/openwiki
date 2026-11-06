@@ -60,10 +60,10 @@ sources:
     resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
@@ -164,7 +164,19 @@ In order, the six lifecycle tools are: `openwiki_begin`,
   back from `openwiki_next_page`.
 - **`openwiki_submit_plan`** — Persists the run's final canonical page plan.
   `pages` may be empty (a valid update with no page work or only deletions), and
-  `deletePages` is optional.
+  `deletePages` is optional. The optional `deferUnplannedClaimIssues` flag
+  (in `SubmitPlanInput`) is an **update-only** opt-out: when true, the planner
+  skips inserting regeneration jobs for stale/unresolved Claim-issue pages the
+  host did not plan (`createRepositoryPlan` in
+  `src/generation/page-jobs.ts` omits the `addRequiredClaimIssueJobs` step and
+  instead collects those pages into `deferredClaimPages`, excluding pages the
+  plan already generates or deletes). Those deferred pages are left for a later
+  full update. Init rejects the flag with `invalid_input` ("Init cannot defer
+  Claim issues."). The deferred set travels in the durable plan and finalization
+  treats it like skipped work — `finishRepositoryRun` folds
+  `plan.deferredClaimPages` into its `skippedPages` exclusion, so deferred
+  pages are excluded from index/provenance/Claims finalization and their prior
+  source checkpoint and Claims are preserved.
 - **`openwiki_next_page`** — Returns the first pending page job with its Claim
   count and **only the stale or unresolved Claims requiring an explicit
   decision**; current issue-free Claims are retained automatically and stay
@@ -197,7 +209,7 @@ sequenceDiagram
     Host->>SM: openwiki_begin(root, mode)
     SM->>Core: resolve root + beginRepositoryRun
     Core-->>Host: noop OR planning run
-    Host->>SM: openwiki_submit_plan(pages, deletePages)
+    Host->>SM: openwiki_submit_plan(pages, deletePages, deferUnplannedClaimIssues?)
     SM->>Core: submitRepositoryPlan
     loop until complete
         Host->>SM: openwiki_next_page

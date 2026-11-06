@@ -148,10 +148,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Testing Guide
@@ -786,7 +786,13 @@ concern, mirroring `src/generation/`:
   deletion is forbidden, duplicate planned pages and generate/delete overlap
   are rejected, structural and reserved working pages (`index.md`,
   `nested/_draft.md`) are rejected, and page inputs are normalized with
-  quickstart ordered last. The `reconcilePageClaims` suite pins sparse
+  quickstart ordered last. It also pins the **focused-claim plan tests**: an
+  update can pass `deferUnplannedClaimIssues: true` to defer Claim issues for
+  pages the model did not plan into the queue, which populates
+  `plan.deferredClaimPages` with those pages (so they are not turned into
+  reconciliation jobs in the same run); the deferral is honored only when
+  explicitly requested, and an `init` plan that sets the flag is rejected
+  with `Init cannot defer Claim issues`. The `reconcilePageClaims` suite pins sparse
   reconciliation: omitted issue-free Claims are retained without model
   round-tripping, a stale or unresolved Claim requires an explicit
   confirm/update/retract decision, duplicate sparse proposals and conflicting
@@ -1040,11 +1046,18 @@ parts that can run in plain Node and the browser-only client glue that cannot:
   mounts a minimal DOM matching `page.ts`'s post-#670 layout, replaces the
   third-party globals (`ForceGraph`, `marked`, `DOMPurify`, `mermaid`,
   `ResizeObserver`, `fetch`) with recording stubs, imports the client under
-  `data-static-export`, and asserts on the handlers it registers. Its primary
-  target is the issue #670 regression: background clicks must not be wired to
-  any handler, so clicking blank graph space never clears the reader, while
-  node clicks select a page and highlight its sidebar entry. It also asserts
-  the graph-label decluttering feature driven by `shouldShowNodeLabel`: by
+  `data-static-export`, and asserts on the handlers it registers. It pins the
+  **`#page` fragment navigation**: opening the client with no `#page` fragment
+  shows the default entry page (`Quickstart`), `#page=<id>` opens that page
+  and highlights its sidebar entry, and an unknown `#page` id falls back to
+  the default entry page rather than erroring. Its primary target is the issue
+  #670 regression: background clicks must not be wired to any handler, so
+  clicking blank graph space never clears the reader, while node clicks select
+  a page and highlight its sidebar entry, and a selected page stays open with
+  no `#detail .empty` placeholder. It also asserts the issue #1066 regression:
+  in-page Markdown links to non-ASCII page names (percent-encoded by `marked`)
+  navigate in-app instead of falling through to a native 404, and the
+  graph-label decluttering feature driven by `shouldShowNodeLabel` — by
   default no labels are painted, hovering a node draws only that node's label,
   and clicking a node draws its label plus the labels of its directly
   connected neighbours. These assertions call the registered
@@ -1118,7 +1131,9 @@ it, and the MCP transport server that exposes it.
   surface: `BeginInput` (strict, trims `root`/`language`, rejects unknown
   modes and extra fields), `RunInput`/`NextPageInput` (shared strict UUID run
   identity, with `RunInput === NextPageInput`), `SubmitPlanInput` (strict,
-  accepts an empty `pages` array, rejects extra fields),
+  accepts an empty `pages` array, rejects extra fields, and carries the
+  optional `deferUnplannedClaimIssues` boolean that lets an update plan defer
+  Claim issues for unplanned pages),
   `PlanPageInput` (canonicalizes `path`/`title`/`purpose`/`seedPaths`/
   `relatedPages`/`instructions`), and `SubmitPageInput` — the sparse Claim
   reconciliation schema with `confirmedClaimIds`/`claims`/`retractedClaimIds`.

@@ -126,10 +126,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Source Map
@@ -242,18 +242,31 @@ before anything else.
   intend to revise or remove otherwise-current content. `submitRepositoryPage`
   takes sparse Claim decisions (`confirmedClaimIds`/`claims`/`retractedClaimIds`)
   which `reconcilePageClaims` turns into confirm/update/add/retract operations,
-  retaining omitted issue-free Claims. The shared-state mutations of
-  `submitRepositoryPage` and `skipRepositoryPage` run under `withRunMutation`, a
-  per-run promise chain keyed by object identity, so concurrent workers never
-  lose a completion while the model-owned work stays outside the lock. It also
-  owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot` records
-  the pending page and its claims sidecar before a worker runs,
-  `restoreRepositoryPage` (also used between worker retries) restores the page
-  markdown and sidecar, `skipRepositoryPage` rolls a failed worker back
-  (restoring the page markdown and sidecar, marking the job `skipped`), and
-  `restoreRepositoryPageMarkdown` re-applies the snapshot during
-  `finishRepositoryRun` for every skipped job, tolerating a not-found page when
-  the snapshot recorded no markdown.
+  retaining omitted issue-free Claims; its page-local finalize excludes other
+  in-flight pending pages and the plan's `deferredClaimPages`, so a concurrent
+  worker or a deferred stale-claim page never records transient bytes. The
+  shared-state mutations of `submitRepositoryPage` and `skipRepositoryPage` run
+  under `withRunMutation`, a per-run promise chain keyed by object identity, so
+  concurrent workers never lose a completion while the model-owned work stays
+  outside the lock. It also owns the skip-failed-page-workers path:
+  `captureRepositoryPageSnapshot` records the pending page and its claims
+  sidecar before a worker runs, `restoreRepositoryPage` (also used between
+  worker retries) restores the page markdown and sidecar, `skipRepositoryPage`
+  rolls a failed worker back (restoring the page markdown and sidecar, marking
+  the job `skipped`), and `restoreRepositoryPageMarkdown` re-applies the
+  snapshot during `finishRepositoryRun` for every skipped job, tolerating a
+  not-found page when the snapshot recorded no markdown. A plan may carry
+  `deferredClaimPages` — stale Claim pages an update deliberately leaves for a
+  later full run: `createRepositoryPlan` (in `page-jobs.ts`) populates the set
+  only when the `deferUnplannedClaimIssues` input (on `protocol.ts`'s
+  `SubmitPlanInput`, threaded through `session-manager.ts`) is set on an
+  `update`, skipping the required-claim-issue jobs it would otherwise insert;
+  the set is part of `RepositoryRunPlan` (`run-state.ts` schema) and is compared
+  by `samePlanIgnoringJobIds`, so a duplicate plan submission matches only when
+  the deferred set agrees. `finishRepositoryRun` folds `deferredClaimPages` into
+  its `skippedPages` set so the strict whole-run finalize excludes both skipped
+  and deferred stale-claim pages, leaving them for reconsideration on the next
+  update.
 
 ## Subsystems
 
@@ -376,7 +389,11 @@ schema-versioned, with `planning`/`generating` phases and `pending`/`skipped`/
 reconciles per-page Claims (`reconcilePageClaims`), turning sparse
 `confirmedClaimIds`/`claims`/`retractedClaimIds` decisions into
 confirm/update/add/retract operations while retaining omitted issue-free
-Claims. `src/generation/page-manifest.ts`
+Claims. `createRepositoryPlan` also emits the plan's `deferredClaimPages`:
+when an `update` carries `deferUnplannedClaimIssues`, it skips the
+required-claim-issue jobs it would otherwise insert and records the affected
+stale-Claim pages for a later full run (an `init` plan cannot defer and is
+rejected if it tries). `src/generation/page-manifest.ts`
 owns the committed page-correctness ledger (`openwiki/.page-manifest.json`,
 schema-versioned via `REPOSITORY_PAGE_MANIFEST_SCHEMA_VERSION`), recording each
 completed page's git head, source fingerprint, page version, and producer
@@ -385,7 +402,12 @@ provenance (`completedBy`, `completedRunId`), and is read and rewritten by
 `src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle exposes a
 six-operation surface (`beginRepositoryRun`, `submitRepositoryPlan`,
 `nextRepositoryPage`, `inspectRepositoryPageClaims`, `submitRepositoryPage`,
-`finishRepositoryRun`). `nextRepositoryPage` returns `claimsRequiringAttention`
+`finishRepositoryRun`); `submitRepositoryPlan` normalizes a proposal via
+`createRepositoryPlan` and persists the `RepositoryRunPlan` (its `pages`,
+`deletePages`, and `deferredClaimPages`), while a duplicate plan submission is
+accepted only when `samePlanIgnoringJobIds` finds the same ordered pages,
+`deletePages`, and `deferredClaimPages` (ignoring generated job ids).
+`nextRepositoryPage` returns `claimsRequiringAttention`
 and `existingClaimCount` rather than the full Claim set;
 `inspectRepositoryPageClaims` returns the complete compact Claim set on demand.
 Its snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
@@ -396,7 +418,9 @@ between worker retries) restores both the page markdown and its Claims sidecar,
 while `restoreRepositoryPageMarkdown` tolerates a not-found page when the
 snapshot held no markdown, so deleting a newly added page counts as a clean
 restore; `finishRepositoryRun` requires a snapshot for every skipped job
-(matching `jobId` and `path`) and re-applies those snapshots before finalizing.
+(matching `jobId` and `path`) and re-applies those snapshots before finalizing,
+folding `deferredClaimPages` into its `skippedPages` set so the strict
+whole-run finalize excludes both skipped and deferred stale-claim pages.
 
 ### claims — grounded-claim persistence, reconciliation guidance, and evidence resolution
 
