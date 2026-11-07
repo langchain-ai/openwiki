@@ -155,7 +155,7 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !isOpenWikiStatusLine(line))
     .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
@@ -896,15 +896,24 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
  */
 const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
 
-function isUpdateMetadataStatusLine(line: string): boolean {
-  const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
-  const normalizedPath = statusPath.replace(/\\/gu, "/");
+function isOpenWikiStatusLine(line: string): boolean {
+  const shortStatusMatch = /^(?:[ MARCUD?!]{2})\s+(.+)$/u.exec(line);
+  const nameStatusMatch = /^(?:[ACDMRTUXB]\d*)\s+(.+)$/u.exec(line.trim());
+  const pathsText =
+    shortStatusMatch?.[1] ??
+    nameStatusMatch?.[1] ??
+    GIT_STATUS_LINE_PATTERN.exec(line)?.[1];
 
-  return [PAGE_MANIFEST_PATH, UPDATE_METADATA_PATH].some(
-    (metadataPath) =>
-      normalizedPath === metadataPath ||
-      normalizedPath.endsWith(` -> ${metadataPath}`),
-  );
+  if (!pathsText) {
+    return false;
+  }
+
+  const paths = splitGitPaths(pathsText).map(normalizeGitPath).filter(Boolean);
+  if (paths.length === 0) {
+    return false;
+  }
+
+  return paths.every((changedPath) => isOpenWikiPath(changedPath));
 }
 
 /**
