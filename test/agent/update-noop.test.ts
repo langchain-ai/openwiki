@@ -168,6 +168,26 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("skips update when worktree has untracked or uncommitted changes under openwiki/", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await writeFile(
+      path.join(repo, "openwiki", "untracked-page.md"),
+      "# Untracked\nContent\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(repo, "openwiki", "quickstart.md"),
+      "# Quickstart\nModified in worktree\n",
+      "utf8",
+    );
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
   test("does not skip update when the previous run was interrupted", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);
