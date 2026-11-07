@@ -129,6 +129,7 @@ import {
   providerUsesExternalCliAuth,
   providerUsesResponsesApi,
   providerUsesStreaming,
+  resolveCodexServiceTier,
   resolveConfiguredMaxOutputTokens,
   resolveConfiguredProvider,
   resolveOpenAiCompatibleStreamMessages,
@@ -1139,6 +1140,7 @@ export function createModel(
   }
 
   const retryOptions = { maxRetries: providerRetryAttempts };
+  const codexServiceTier = resolveCodexServiceTier(provider);
   const configuredMaxOutputTokens =
     maxOutputTokens ?? resolveConfiguredMaxOutputTokens(provider);
   const maxTokensOptions =
@@ -1262,6 +1264,7 @@ export function createModel(
       streaming: true,
       ...maxTokensOptions,
       ...responsesReasoningOptions,
+      ...(codexServiceTier ? { service_tier: codexServiceTier } : {}),
       ...retryOptions,
       configuration: {
         baseURL: CODEX_RESPONSES_BASE_URL,
