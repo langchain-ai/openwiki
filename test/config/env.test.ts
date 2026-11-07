@@ -181,6 +181,10 @@ describe("MANAGED_ENV_KEYS", () => {
       "OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED",
     );
   });
+
+  test("manages the fast mode setting", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_FAST_MODE");
+  });
 });
 
 describe("parseEnv <-> formatEnv round-trip", () => {
