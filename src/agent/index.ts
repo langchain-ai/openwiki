@@ -141,6 +141,7 @@ import {
   resolvePageConcurrency,
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeoutForProvider,
+  resolveClientTimeout,
   type OpenWikiProvider,
 } from "../config/constants.js";
 import { resolveReasoningConfig } from "../config/reasoning.js";
@@ -207,6 +208,7 @@ export async function runOpenWikiAgent(
             config.providerRetryAttempts,
             config.maxOutputTokens,
             config.streamIdleTimeout,
+            config.clientTimeout,
           ),
         { errorClass: "build_error", errorDetail: "model" },
       );
@@ -276,6 +278,7 @@ export async function runOpenWikiAgent(
       config.streamIdleTimeout,
       openWikiIgnore,
       runTimestamp,
+      config.clientTimeout,
     );
   } catch (error) {
     // Enrich the error for the CLI's debug/auth UI, then rethrow. The telemetry
@@ -306,6 +309,7 @@ async function resolveRunConfig(
   pageConcurrency: number;
   maxOutputTokens: number | undefined;
   streamIdleTimeout: number | undefined;
+  clientTimeout: number | undefined;
 }> {
   try {
     const provider = resolveConfiguredProvider();
@@ -378,6 +382,11 @@ async function resolveRunConfig(
       options,
       `model.streamIdleTimeout=${streamIdleTimeout ?? "provider-default"}`,
     );
+    const clientTimeout = resolveClientTimeout(process.env);
+    emitDebug(
+      options,
+      `model.clientTimeout=${clientTimeout ?? "provider-default"}`,
+    );
 
     return {
       provider,
@@ -386,6 +395,7 @@ async function resolveRunConfig(
       pageConcurrency,
       maxOutputTokens,
       streamIdleTimeout,
+      clientTimeout,
     };
   } catch (error) {
     tagErrorStage(error, "config");
@@ -588,6 +598,7 @@ async function runOpenWikiAgentCore(
   streamIdleTimeout: number | undefined,
   openWikiIgnore: OpenWikiIgnore,
   runTimestamp: string,
+  clientTimeout?: number,
 ): Promise<OpenWikiRunResult> {
   const outputMode = options.outputMode ?? "local-wiki";
   const context = await inStage(
@@ -614,6 +625,7 @@ async function runOpenWikiAgentCore(
         providerRetryAttempts,
         maxOutputTokens,
         streamIdleTimeout,
+        clientTimeout,
       ),
     { errorClass: "build_error", errorDetail: "model" },
   );
@@ -1126,6 +1138,7 @@ export function createModel(
   providerRetryAttempts: number,
   maxOutputTokens?: number,
   streamIdleTimeout?: number,
+  clientTimeout?: number,
 ) {
   if (provider === "mistral") {
     if (!getProviderApiKey(provider)?.trim()) {
@@ -1151,6 +1164,11 @@ export function createModel(
       : { maxOutputTokens: configuredMaxOutputTokens };
   const streamIdleTimeoutOptions =
     streamIdleTimeout === undefined ? {} : { streamIdleTimeout };
+  const configuredClientTimeout = clientTimeout ?? resolveClientTimeout();
+  const clientTimeoutOptions =
+    configuredClientTimeout === undefined
+      ? {}
+      : { timeout: configuredClientTimeout };
   const chatOpenAiUsesResponsesApi = providerUsesResponsesApi(
     provider,
     modelId,
@@ -1213,6 +1231,7 @@ export function createModel(
       location,
       retryOptions,
       configuredMaxOutputTokens,
+      configuredClientTimeout,
     );
   }
 
@@ -1227,6 +1246,9 @@ export function createModel(
       apiKey: getProviderApiKey(provider),
       ...(baseURL ? { anthropicApiUrl: baseURL } : {}),
       ...(maxTokens !== undefined ? { maxTokens } : {}),
+      ...(configuredClientTimeout !== undefined
+        ? { clientOptions: { timeout: configuredClientTimeout } }
+        : {}),
       // The Anthropic SDK rejects non-streaming requests whose max_tokens
       // implies more than 10 minutes (above ~21,333 tokens) before sending
       // them, which caps OPENWIKI_MAX_OUTPUT_TOKENS well below the models'
@@ -1262,6 +1284,7 @@ export function createModel(
       streaming: true,
       ...maxTokensOptions,
       ...responsesReasoningOptions,
+      ...clientTimeoutOptions,
       ...retryOptions,
       configuration: {
         baseURL: CODEX_RESPONSES_BASE_URL,
@@ -1327,6 +1350,7 @@ export function createModel(
       },
       model: modelId,
       ...maxTokensOptions,
+      ...clientTimeoutOptions,
       ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
       ...retryOptions,
     });
@@ -1347,6 +1371,7 @@ export function createModel(
     ...maxTokensOptions,
     ...responsesReasoningOptions,
     ...chatCompletionsReasoningOptions,
+    ...clientTimeoutOptions,
     // Some gateways only serve the streaming transport; see
     // resolveOpenAiCompatibleStreaming for the full rationale. Spread rather
     // than assigning a boolean: `streaming: false` is not the same as omitting
@@ -1557,9 +1582,12 @@ function createGeminiEnterpriseModel(
   location: string,
   retryOptions: { maxRetries: number },
   maxOutputTokens?: number,
+  clientTimeout?: number,
 ) {
   const maxTokensOptions =
     maxOutputTokens === undefined ? {} : { maxTokens: maxOutputTokens };
+  const clientTimeoutOptions =
+    clientTimeout === undefined ? {} : { timeout: clientTimeout };
   const googleMaxOutputTokensOptions =
     maxOutputTokens === undefined ? {} : { maxOutputTokens };
 
@@ -1595,6 +1623,9 @@ function createGeminiEnterpriseModel(
                 projectId,
                 region: location,
                 dangerouslyAllowBrowser: true,
+                ...(clientTimeout !== undefined
+                  ? { timeout: clientTimeout }
+                  : {}),
               }),
           ),
         ...(maxTokens !== undefined ? { maxTokens } : {}),
@@ -1618,6 +1649,7 @@ function createGeminiEnterpriseModel(
         },
         model: toVertexPublisherModel(modelId),
         ...maxTokensOptions,
+        ...clientTimeoutOptions,
         ...retryOptions,
       });
 

@@ -150,6 +150,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_STREAM_IDLE_TIMEOUT");
   });
 
+  test("manages the client timeout", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_CLIENT_TIMEOUT_MS");
+  });
+
   test("manages the repository page worker concurrency", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_PAGE_CONCURRENCY");
   });
