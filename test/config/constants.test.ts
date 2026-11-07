@@ -57,6 +57,8 @@ import {
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeout,
   resolveStreamIdleTimeoutForProvider,
+  OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY,
+  resolveClientTimeout,
 } from "../../src/config/constants.ts";
 import {
   getReasoningCapability,
@@ -510,6 +512,50 @@ describe("resolveStreamIdleTimeoutForProvider", () => {
         OPENWIKI_STREAM_IDLE_TIMEOUT: "invalid",
       }),
     ).toThrow(/OPENWIKI_STREAM_IDLE_TIMEOUT/u);
+  });
+});
+
+describe("resolveClientTimeout", () => {
+  test("uses the provider default when no override is set", () => {
+    expect(resolveClientTimeout({})).toBeUndefined();
+  });
+
+  test("accepts positive integer millisecond values", () => {
+    expect(
+      resolveClientTimeout({
+        [OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY]: "600000",
+      }),
+    ).toBe(600000);
+    expect(
+      resolveClientTimeout({
+        [OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY]: " 1800000 ",
+      }),
+    ).toBe(1800000);
+    expect(
+      resolveClientTimeout({
+        [OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY]: "2147483647",
+      }),
+    ).toBe(2147483647);
+  });
+
+  test("rejects invalid or non-positive client timeouts", () => {
+    for (const value of [
+      "",
+      "   ",
+      "0",
+      "-1",
+      "1.5",
+      "abc",
+      "1e5",
+      "2147483648",
+      "9007199254740992",
+    ]) {
+      expect(() =>
+        resolveClientTimeout({
+          [OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY]: value,
+        }),
+      ).toThrow(/OPENWIKI_CLIENT_TIMEOUT_MS/u);
+    }
   });
 });
 
