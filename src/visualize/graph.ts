@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { isWikiAgentGuide } from "../claims/brains/code/paths.js";
 
 import type { WikiEdge, WikiGraph, WikiMeta, WikiNode } from "./graph-types.js";
 
@@ -140,7 +141,8 @@ async function collectMarkdown(
     } else if (
       entry.isFile() &&
       entry.name.endsWith(".md") &&
-      !EXCLUDED_FILES.has(entry.name)
+      !EXCLUDED_FILES.has(entry.name) &&
+      !isWikiAgentGuide(entry.name)
     ) {
       out.push(full);
     }

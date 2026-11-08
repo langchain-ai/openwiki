@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { normalizeWikiPagePath } from "../claims/brains/code/paths.js";
+import {
+  isWikiAgentGuide,
+  normalizeWikiPagePath,
+} from "../claims/brains/code/paths.js";
 import { ClaimsStore } from "../claims/brains/code/store.js";
 import { PAGE_MANIFEST_PATH } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
@@ -119,6 +122,17 @@ export async function readRepositoryPageManifest(
   try {
     const parsed: unknown = JSON.parse(await readFile(file, "utf8"));
     const manifest = ManifestSchema.parse(parsed);
+    // Older releases treated folder guides as factual pages. Drop only their
+    // canonical ledger entries; leave user-owned Markdown and old sidecars alone.
+    for (const page of Object.keys(manifest.pages)) {
+      if (
+        page.startsWith("/openwiki/") &&
+        path.posix.normalize(page) === page &&
+        isWikiAgentGuide(page)
+      ) {
+        delete manifest.pages[page];
+      }
+    }
     assertCanonicalManifestPages(manifest);
     return manifest;
   } catch (error) {

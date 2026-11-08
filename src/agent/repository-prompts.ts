@@ -12,7 +12,11 @@ import type { PageJob } from "../generation/run-state.js";
 // Workers see one virtual filesystem; without this, weaker models search only
 // /openwiki/ and cite repository files they never read.
 const REPOSITORY_LAYOUT = `Repository files are at the filesystem root (for example /src/agent/index.ts);
-the wiki lives under /openwiki/. Search and read source outside /openwiki/.`;
+the wiki lives under /openwiki/. Search and read source outside /openwiki/.
+Exact-basename AGENTS.md files under /openwiki/ are user-authored folder instructions,
+not generated pages or factual evidence. Read applicable ancestor guides before
+planning or authoring a page. Preserve them; never schedule, rewrite, or delete
+them as PageJobs or reconcile their contents as Claims.`;
 
 /**
  * Builds the bounded planner prompt from the complete active run context.

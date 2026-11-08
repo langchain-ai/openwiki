@@ -137,6 +137,26 @@ describe("createRepositoryPlan", () => {
     }
   });
 
+  test.each([
+    "AGENTS.md",
+    "nested/AGENTS.md",
+    "/openwiki/nested/AGENTS.md",
+    "agents.md",
+    "Agents.md",
+    "nested/agents.md",
+    "/openwiki/nested/Agents.md",
+  ])(
+    "rejects generation and deletion of user-owned guide %s",
+    (page) => {
+      expect(() =>
+        createRepositoryPlan("update", { pages: [proposedPage(page)] }, []),
+      ).toThrow(RepositoryRunError);
+      expect(() =>
+        createRepositoryPlan("update", { pages: [], deletePages: [page] }, []),
+      ).toThrow(RepositoryRunError);
+    },
+  );
+
   test("normalizes page inputs and orders quickstart last", () => {
     const plan = createRepositoryPlan(
       "init",

@@ -15,6 +15,11 @@ export const RESERVED_WIKI_FILES: ReadonlySet<string> = new Set([
   "instructions.md",
 ]);
 
+/** Returns whether a path names an exact, user-owned folder guide. */
+export function isWikiAgentGuide(filePath: string): boolean {
+  return path.posix.basename(filePath.replace(/\\/gu, "/")) === "AGENTS.md";
+}
+
 /**
  * Canonicalizes a virtual generated-page path.
  *
@@ -78,7 +83,8 @@ export function normalizeWikiToolPagePath(page: string): string {
   if (
     !normalized.startsWith("/openwiki/") ||
     !normalized.endsWith(".md") ||
-    segments.includes(CLAIMS_DIRECTORY)
+    segments.includes(CLAIMS_DIRECTORY) ||
+    path.posix.basename(normalized).toLowerCase() === "agents.md"
   ) {
     throw new ClaimSessionError(
       `Wiki page must be a Markdown file below /openwiki: ${page}`,
@@ -106,6 +112,7 @@ export function isGroundedWikiPage(page: string): boolean {
     normalized.startsWith("/openwiki/") &&
     normalized.endsWith(".md") &&
     !segments.includes(CLAIMS_DIRECTORY) &&
+    !isWikiAgentGuide(normalized) &&
     !RESERVED_WIKI_FILES.has(basename)
   );
 }

@@ -89,6 +89,10 @@ describe("ClaimsStore", () => {
     await writeFixture("openwiki/concepts/claims.md", "# Claims\n");
     await writeFixture("openwiki/index.md", "# Index\n");
     await writeFixture("openwiki/nested/INSTRUCTIONS.md", "# Internal\n");
+    await writeFixture("openwiki/AGENTS.md", "# Root instructions\n");
+    await writeFixture("openwiki/nested/AGENTS.md", "# Folder instructions\n");
+    await writeFixture("openwiki/.claims/AGENTS.json", "{}\n");
+    await writeFixture("openwiki/.claims/nested/AGENTS.json", "{}\n");
     await writeFixture("openwiki/nested/.claims/hidden.md", "# Hidden\n");
     await writeFixture("openwiki/other/.CLAIMS/hidden.md", "# Hidden\n");
     await writeFixture("openwiki/notes.txt", "not markdown\n");
@@ -114,6 +118,8 @@ describe("ClaimsStore", () => {
       "/openwiki/concepts/claims.md",
       "/openwiki/quickstart.md",
     ]);
+    await expect(store.discoverSidecarPages()).resolves.toEqual([]);
+    await expect(store.loadPage("/openwiki/AGENTS.md")).rejects.toThrow();
   });
 
   test("round-trips stable pretty JSON through atomic writes", async () => {
