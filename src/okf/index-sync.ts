@@ -327,10 +327,16 @@ function readIndexMetadata(content: string): {
 
 /**
  * Returns optional front matter text only when it can be rendered in an index.
+ *
+ * Each index entry is a single Markdown list line, so runs of whitespace,
+ * including the newlines a YAML block scalar (`description: |` or `>`) carries,
+ * are collapsed to one space. Otherwise a multi-line value would split the
+ * entry and leak its extra lines into the list as separate content.
  */
 function usableString(value: unknown): string | undefined {
-  if (typeof value !== "string" || !value.trim()) return undefined;
-  return value;
+  if (typeof value !== "string") return undefined;
+  const singleLine = value.replace(/\s+/gu, " ").trim();
+  return singleLine || undefined;
 }
 
 /**
