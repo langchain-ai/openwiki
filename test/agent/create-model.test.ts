@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { ChatGoogle } from "@langchain/google/node";
 import { ChatOpenAI } from "@langchain/openai";
 import { createModel } from "../../src/agent/index.ts";
@@ -930,6 +931,51 @@ describe("createModel Mistral credential isolation", () => {
       model: modelId,
       max_tokens: 32,
     });
+  });
+
+  test("omits name from replayed assistant messages", async () => {
+    const model = createModel("mistral", modelId, 0, 32) as ChatOpenAI;
+
+    await model.invoke([
+      new HumanMessage({ content: "Plan.", name: "user-name" }),
+      new AIMessage({ content: "Planned.", name: "planning agent" }),
+      new HumanMessage("Continue."),
+    ]);
+
+    const [input, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(await new Request(input, init).text()) as {
+      messages: { role: string; name?: string }[];
+    };
+    expect(body.messages.map((message) => message.role)).toEqual([
+      "user",
+      "assistant",
+      "user",
+    ]);
+    expect(body.messages[0].name).toBe("user-name");
+    expect(body.messages[1]).not.toHaveProperty("name");
+  });
+
+  test("omits name from replayed assistant messages for openai-compatible", async () => {
+    vi.stubEnv("OPENAI_COMPATIBLE_BASE_URL", "https://api.mistral.ai/v1");
+    vi.stubEnv("OPENAI_COMPATIBLE_API_KEY", "fake-compatible-key");
+    const model = createModel(
+      "openai-compatible",
+      modelId,
+      0,
+      32,
+    ) as ChatOpenAI;
+
+    await model.invoke([
+      new HumanMessage("Plan."),
+      new AIMessage({ content: "Planned.", name: "planning agent" }),
+      new HumanMessage("Continue."),
+    ]);
+
+    const [input, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(await new Request(input, init).text()) as {
+      messages: { name?: string }[];
+    };
+    expect(body.messages[1]).not.toHaveProperty("name");
   });
 
   test.each([

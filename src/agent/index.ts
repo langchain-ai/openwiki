@@ -1305,7 +1305,8 @@ export function createModel(
 
   const baseURL = resolveProviderBaseUrl(provider);
   const configuration =
-    provider === "openai-compatible" && !chatOpenAiUsesResponsesApi
+    (provider === "openai-compatible" || provider === "mistral") &&
+    !chatOpenAiUsesResponsesApi
       ? {
           ...(baseURL ? { baseURL } : {}),
           fetch: createOpenAiCompatibleFetch(),
@@ -1426,13 +1427,25 @@ function normalizeOpenAiCompatibleChatCompletionsBody(
     }
 
     const content = normalizeOpenAiCompatibleTextContent(message.content);
+    // Subagent middleware stamps AIMessage.name, but the Chat Completions
+    // schema only allows `name` on system/user/tool messages, and strict
+    // gateways (Mistral, Cerebras, ...) reject it with 422 extra_forbidden.
+    const dropsAssistantName =
+      message.role === "assistant" && message.name !== undefined;
 
-    if (content === null) {
+    if (content === null && !dropsAssistantName) {
       return message;
     }
 
     changed = true;
-    return { ...message, content };
+    const normalizedMessage: Record<string, unknown> =
+      content === null ? { ...message } : { ...message, content };
+
+    if (dropsAssistantName) {
+      delete normalizedMessage.name;
+    }
+
+    return normalizedMessage;
   });
 
   return changed ? { ...body, messages: normalizedMessages } : null;
