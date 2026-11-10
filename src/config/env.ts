@@ -14,6 +14,8 @@ import {
   OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   COPILOT_API_KEY_ENV_KEY,
   COPILOT_BASE_URL_ENV_KEY,
+  CRUSOE_API_KEY_ENV_KEY,
+  CRUSOE_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderBaseUrlWarnings,
@@ -115,6 +117,8 @@ export const MANAGED_ENV_KEYS = [
   BOB_BASE_URL_ENV_KEY,
   COPILOT_API_KEY_ENV_KEY,
   COPILOT_BASE_URL_ENV_KEY,
+  CRUSOE_API_KEY_ENV_KEY,
+  CRUSOE_BASE_URL_ENV_KEY,
   FIREWORKS_API_KEY_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   MISTRAL_API_KEY_ENV_KEY,
@@ -483,6 +487,10 @@ function getBaseUrlDiagnosticWarnings(
     return getProviderBaseUrlWarnings("bob", value);
   }
 
+  if (key === CRUSOE_BASE_URL_ENV_KEY) {
+    return getProviderBaseUrlWarnings("crusoe", value);
+  }
+
   if (key === FIREWORKS_BASE_URL_ENV_KEY) {
     return getProviderBaseUrlWarnings("fireworks", value);
   }
@@ -528,6 +536,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === BOB_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
+    key === CRUSOE_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||

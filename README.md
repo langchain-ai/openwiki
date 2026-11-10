@@ -250,7 +250,7 @@ You can also use OpenWiki's own [Deep Agents](https://github.com/langchain-ai/de
 openwiki --init
 ```
 
-The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [fifteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
+The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [sixteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
 
 Update an existing wiki from repository changes since its last successful run and any stale Claims:
 
@@ -461,21 +461,21 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 These settings apply when running OpenWiki directly. Coding-agent integrations use the host's authenticated model session.
 
-OpenWiki supports fifteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
+OpenWiki supports sixteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
 
-| Provider                                                     | Credential                              |
-| ------------------------------------------------------------ | --------------------------------------- |
-| **OpenAI** _(default)_                                       | `OPENAI_API_KEY`                        |
-| **OpenAI (ChatGPT login)**                                   | Browser sign-in, uses your ChatGPT plan |
-| **Anthropic**                                                | `ANTHROPIC_API_KEY`                     |
-| **IBM Bob**                                                  | `BOB_API_KEY`                           |
-| **Gemini** (AI Studio)                                       | `GEMINI_API_KEY`                        |
-| **Gemini Enterprise** (Vertex AI)                            | Google ADC, keyless                     |
-| **AWS Bedrock**                                              | IAM credentials                         |
-| **GitHub Copilot**                                           | GitHub CLI session                      |
-| **OpenRouter**                                               | `OPENROUTER_API_KEY`                    |
-| **Nebius / Fireworks / Baseten / NVIDIA NIM / Mistral**      | Provider API key                        |
-| **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways) | Base URL + key                          |
+| Provider                                                               | Credential                              |
+| ---------------------------------------------------------------------- | --------------------------------------- |
+| **OpenAI** _(default)_                                                 | `OPENAI_API_KEY`                        |
+| **OpenAI (ChatGPT login)**                                             | Browser sign-in, uses your ChatGPT plan |
+| **Anthropic**                                                          | `ANTHROPIC_API_KEY`                     |
+| **IBM Bob**                                                            | `BOB_API_KEY`                           |
+| **Gemini** (AI Studio)                                                 | `GEMINI_API_KEY`                        |
+| **Gemini Enterprise** (Vertex AI)                                      | Google ADC, keyless                     |
+| **AWS Bedrock**                                                        | IAM credentials                         |
+| **GitHub Copilot**                                                     | GitHub CLI session                      |
+| **OpenRouter**                                                         | `OPENROUTER_API_KEY`                    |
+| **Nebius / Fireworks / Baseten / NVIDIA NIM / Mistral / Crusoe Cloud** | Provider API key                        |
+| **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways)           | Base URL + key                          |
 
 <details>
 <summary><b>GitHub Copilot</b></summary>
@@ -661,7 +661,7 @@ When `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` is also set, the effort
 
 <br/>
 
-**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, `MISTRAL_BASE_URL`, or `COPILOT_BASE_URL`. The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
+**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, `MISTRAL_BASE_URL`, `CRUSOE_BASE_URL`, or `COPILOT_BASE_URL`. The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
 
 ```bash
 OPENWIKI_PROVIDER=anthropic
