@@ -549,7 +549,7 @@ export function parseCommand(argv: string[]): CliCommand {
       }
 
       if (arg.startsWith("--modelId=") || arg.startsWith("--model-id=")) {
-        const [, rawModelId = ""] = arg.split("=", 2);
+        const rawModelId = arg.slice(arg.indexOf("=") + 1);
         const parsedModelId = normalizeModelId(rawModelId);
         if (!isValidModelId(parsedModelId)) {
           return {
@@ -937,7 +937,7 @@ function parseRunCommand(
     }
 
     if (arg.startsWith("--mode=")) {
-      const [, rawMode = ""] = arg.split("=", 2);
+      const rawMode = arg.slice(arg.indexOf("=") + 1);
 
       if (!isOpenWikiRunMode(rawMode)) {
         return {
@@ -984,7 +984,7 @@ function parseRunCommand(
     }
 
     if (arg.startsWith("--modelId=") || arg.startsWith("--model-id=")) {
-      const [, rawModelId = ""] = arg.split("=", 2);
+      const rawModelId = arg.slice(arg.indexOf("=") + 1);
       const parsedModelId = normalizeModelId(rawModelId);
 
       if (!isValidModelId(parsedModelId)) {
@@ -1016,7 +1016,7 @@ function parseRunCommand(
     }
 
     if (arg.startsWith("--telemetry-file=")) {
-      const [, value = ""] = arg.split("=", 2);
+      const value = arg.slice(arg.indexOf("=") + 1);
 
       if (value.length === 0) {
         return {
