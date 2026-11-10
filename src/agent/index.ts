@@ -1427,9 +1427,9 @@ function normalizeOpenAiCompatibleChatCompletionsBody(
     }
 
     const content = normalizeOpenAiCompatibleTextContent(message.content);
-    // Subagent middleware stamps AIMessage.name, but the Chat Completions
-    // schema only allows `name` on system/user/tool messages, and strict
-    // gateways (Mistral, Cerebras, ...) reject it with 422 extra_forbidden.
+    // Subagent middleware stamps AIMessage.name. OpenAI accepts `name` on
+    // assistant messages, but strict OpenAI-compatible gateways (Mistral)
+    // reject it with 422 extra_forbidden, so it is dropped here.
     const dropsAssistantName =
       message.role === "assistant" && message.name !== undefined;
 
