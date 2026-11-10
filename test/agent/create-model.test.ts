@@ -864,6 +864,36 @@ describe("createModel openrouter output-token cap", () => {
   });
 });
 
+describe("createModel openrouter base URL", () => {
+  beforeEach(() => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  test("uses the default OpenRouter endpoint when no override is set", () => {
+    vi.stubEnv("OPENROUTER_BASE_URL", undefined);
+
+    const model = createModel("openrouter", "z-ai/glm-4.7-flash", 0) as {
+      baseURL?: string;
+    };
+
+    expect(model.baseURL).toBe("https://openrouter.ai/api/v1");
+  });
+
+  test("passes OPENROUTER_BASE_URL through to ChatOpenRouter", () => {
+    vi.stubEnv("OPENROUTER_BASE_URL", "https://us.openrouter.ai/api/v1");
+
+    const model = createModel("openrouter", "z-ai/glm-4.7-flash", 0) as {
+      baseURL?: string;
+    };
+
+    expect(model.baseURL).toBe("https://us.openrouter.ai/api/v1");
+  });
+});
+
 describe("createModel Mistral credential isolation", () => {
   const modelId = "mistral-small-2603";
   const fetchMock = vi.fn<typeof fetch>();

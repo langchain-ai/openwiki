@@ -172,6 +172,10 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("MISTRAL_BASE_URL");
   });
 
+  test("manages the OpenRouter base URL", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENROUTER_BASE_URL");
+  });
+
   test("manages the reasoning effort setting", () => {
     expect(MANAGED_ENV_KEYS).toContain("OPENWIKI_REASONING_EFFORT");
   });
