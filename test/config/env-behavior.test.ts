@@ -646,6 +646,18 @@ describe("getCredentialDiagnostics", () => {
     expect(entry?.warnings).toContain("invalid base URL");
   });
 
+  test("validates the OpenRouter base URL as a non-secret setting", async () => {
+    await env.saveOpenWikiEnv({ OPENROUTER_BASE_URL: "not-a-url" });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === "OPENROUTER_BASE_URL",
+    );
+
+    expect(entry?.preview).toBe('"not-a-url"');
+    expect(entry?.warnings).toContain("invalid base URL");
+  });
+
   test("surfaces and validates the OpenAI-compatible Responses API opt-in", async () => {
     await env.saveOpenWikiEnv({
       [OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY]: BOOLEAN_TRUE_ENV_VALUE,

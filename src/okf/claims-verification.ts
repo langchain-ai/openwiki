@@ -35,10 +35,12 @@ export type ClaimsVerificationChanges = ReadonlyMap<string, string>;
 export async function synchronizeClaimsVerification(
   store: ClaimsVerificationPageStore,
   verificationByPage: ReadonlyMap<string, ClaimsVerificationEvent | null>,
+  excludedPages: ReadonlySet<string> = new Set(),
 ): Promise<ClaimsVerificationChanges> {
   const changes = new Map<string, string>();
 
   for (const page of await store.discoverPages()) {
+    if (excludedPages.has(page)) continue;
     const content = await store.readMarkdown(page);
     const repaired = repairOkfFrontmatter(content, page).content;
     const current = readVerificationEvents(repaired);

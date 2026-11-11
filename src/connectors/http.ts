@@ -11,6 +11,11 @@
  *     honoring a numeric or HTTP-date `Retry-After` header within the cap,
  *   - the same backoff on network errors (connection reset, DNS, timeout).
  *
+ * A caller AbortSignal is merged with the per-attempt timeout. Caller
+ * cancellation is not retried: if that signal is aborted, the helper stops
+ * immediately and does not sleep. A timeout-only abort leaves the caller
+ * signal unset and is still treated as transient.
+ *
  * Auth failures (401/403) and other 4xx are returned as-is: they are not
  * transient, and callers such as Gmail need to see a 401 to trigger a token
  * refresh. Retrying them would waste attempts and could lock accounts.
@@ -21,6 +26,10 @@ const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_BASE_DELAY_MS = 500;
 const MAX_BACKOFF_DELAY_MS = 20_000;
 
+function toError(value: unknown): Error {
+  return value instanceof Error ? value : new Error(String(value));
+}
+
 export interface FetchWithResilienceOptions {
   /** Per-attempt timeout in milliseconds. Default 30s. */
   timeoutMs?: number;
@@ -30,9 +39,10 @@ export interface FetchWithResilienceOptions {
   baseDelayMs?: number;
   /**
    * Injectable sleep, defaulting to a real timer. Overridden in tests so
-   * backoff does not slow the suite. Receives the delay in milliseconds.
+   * backoff does not slow the suite. Receives the delay and optional caller
+   * signal so implementations can release their timer when cancellation wins.
    */
-  sleep?: (ms: number) => Promise<void>;
+  sleep?: (ms: number, signal?: AbortSignal | null) => Promise<void>;
   /**
    * Injectable RNG in [0, 1) for jitter. Defaults to `Math.random` for real
    * full jitter so concurrent clients de-correlate their retries. Override in
@@ -41,9 +51,22 @@ export interface FetchWithResilienceOptions {
   random?: () => number;
 }
 
-const realSleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
+const realSleep = (ms: number, signal?: AbortSignal | null): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(toError(signal.reason));
+      return;
+    }
+
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(toError(signal?.reason));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 
 /** Whether an HTTP status is worth retrying (rate limit or server error). */
@@ -87,6 +110,32 @@ function backoffDelayMs(
   return Math.round(random() * ceiling);
 }
 
+async function waitForRetry(
+  delayMs: number,
+  sleep: NonNullable<FetchWithResilienceOptions["sleep"]>,
+  signal?: AbortSignal | null,
+): Promise<void> {
+  if (!signal) {
+    await sleep(delayMs);
+    return;
+  }
+  if (signal.aborted) {
+    throw toError(signal.reason);
+  }
+
+  let onAbort: () => void = () => undefined;
+  const aborted = new Promise<never>((_resolve, reject) => {
+    onAbort = () => reject(toError(signal.reason));
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+
+  try {
+    await Promise.race([sleep(delayMs, signal), aborted]);
+  } finally {
+    signal.removeEventListener("abort", onAbort);
+  }
+}
+
 /**
  * `fetch` with a per-attempt timeout and bounded retry/backoff on transient
  * failures. Non-transient responses (2xx/3xx/4xx) are returned to the caller
@@ -127,17 +176,23 @@ export async function fetchWithResilience(
         );
         // Discard the body so the connection can be reused before we retry.
         await response.body?.cancel();
-        await sleep(delay);
+        await waitForRetry(delay, sleep, init.signal);
         continue;
       }
 
       return response;
     } catch (error) {
       lastError = error;
-      if (attempt >= maxRetries) {
+      // Timeout aborts are transient and share AbortError with caller
+      // cancellation. Only the caller signal says the caller gave up.
+      if (init.signal?.aborted === true || attempt >= maxRetries) {
         break;
       }
-      await sleep(backoffDelayMs(attempt, baseDelayMs, random));
+      await waitForRetry(
+        backoffDelayMs(attempt, baseDelayMs, random),
+        sleep,
+        init.signal,
+      );
     }
   }
 

@@ -52,10 +52,10 @@ sources:
     resource: repo://src/platform/language.ts
   - id: openwiki-source-cfc15a67b4c02c45974332dc
     resource: repo://test/generation/page-jobs.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Claims Reconciliation on Update
@@ -230,15 +230,54 @@ otherwise skippable update.
 
 ## Turning issues into required page jobs
 
-When a run does proceed, unresolved and stale issues become mandatory work.
-During plan normalization, `addRequiredClaimIssueJobs` groups outstanding
-grounding issues by page and, for any page the planner did not already schedule
-(and did not delete), inserts a pending page job. Its seed paths are derived from
-the issue resources — each evidence URI is stripped of its `repo://` scheme and
-`#Lx-Ly` fragment — so the worker rereads exactly the sources whose evidence
-moved. A stale or unresolved marker is thus treated as a requirement to recheck
-current source, not as an instruction to retract the affected Claim
-automatically.
+When a run does proceed, unresolved and stale issues become mandatory work —
+unless the run explicitly defers them. During plan normalization,
+`createRepositoryPlan` gates Claim-issue injection on the planner's
+`deferUnplannedClaimIssues` flag. When the flag is false (the default), it calls
+`addRequiredClaimIssueJobs`, which groups outstanding grounding issues by page
+and, for any page the planner did not already schedule (and did not delete),
+inserts a pending page job. Its seed paths are derived from the issue
+resources — each evidence URI is stripped of its `repo://` scheme and `#Lx-Ly`
+fragment — so the worker rereads exactly the sources whose evidence moved. A
+stale or unresolved marker is thus treated as a requirement to recheck current
+source, not as an instruction to retract the affected Claim automatically.
+
+### The focused-update defer option
+
+A focused update that asks the planner to regenerate only a few pages should not
+be forced to also resolve every unrelated stale page elsewhere in the wiki. The
+planner may submit `deferUnplannedClaimIssues: true` in
+`ProposedRepositoryPlan` to opt out of required-issue injection. In that mode,
+`createRepositoryPlan` skips `addRequiredClaimIssueJobs` entirely and instead
+derives `deferredClaimPages` — the set of issue-bearing pages the planner did
+_not_ schedule and did not delete — by mapping each outstanding Claim issue's
+page through `normalizeWikiPagePath` and dropping any path the plan already
+generates or deletes. The deferred set is stored on the run plan alongside
+`pages` and `deletePages`.
+
+Deferral is an update-only facility: an `init` run that submits
+`deferUnplannedClaimIssues` is rejected with `invalid_input` ("Init cannot
+defer Claim issues."), because an initial generation must establish every page's
+grounding before the first durability proof. Required rewrite jobs are still
+injected regardless of the flag, so language-rewrite work is never deferred.
+
+The deferred pages are not silently forgotten — they are routed around the
+persistence and durability machinery so a later full update can settle them:
+
+- They are folded into the `skippedPages` set at `finishRepositoryRun`, alongside
+  genuinely skipped page jobs, and excluded from `finalize` and
+  `assertRepositoryClaimsDurable` (see [Durability at page
+  completion](#durability-at-page-completion)).
+- At each per-page `submitRepositoryPage`, the current job's
+  `finalize`/durability proof excludes them too, so a deferred page is never
+  stamped with another worker's verification projection or rehashed.
+- Because their stale or unresolved issues are never rechecked, the run
+  records itself as `interrupted` rather than `complete` whenever
+  `skippedPages` is non-empty, so the next update resumes rather than no-ops.
+
+A deferred page keeps its prior checkpoint and provenance through the manifest
+restamp's `preserveSourcePages` branch (described below), since it was not
+recompleted by this run.
 
 ### Update scoping to explicit requests
 
@@ -298,13 +337,24 @@ that together form a `ProposedPageClaimReconciliation`:
 - `retractedClaimIds` — existing Claims explicitly removed from the page.
 
 The worker declares only the sparse decisions its edits require; it does not
-repeat issue-free Claims. The repository run validates the page's front matter
-(repairing it deterministically first), then calls `reconcilePageClaims` with
-that sparse payload. `reconcilePageClaims` diffs the payload against the page's
-inspected Claims and derives the confirm, update, add, and retract operations.
-After applying them through the session it persists the page's dirty Claim state
-via `finalize` and proves durability with `assertPageClaimsDurable` before the
-job is recorded complete and the queue advances; any failure in that block is
+repeat issue-free Claims. The reconciliation standard the worker follows —
+stale or unresolved markers require an explicit decision, omitted issue-free
+Claims are retained, the final page body and reconciled Claim set must agree,
+and `inspect_claims` is available on demand for intentional revision of
+otherwise-current content — is codified in `CLAIMS_RECONCILIATION_GUIDANCE` in
+`src/claims/guidance.ts`, the model-facing text embedded in both the native
+agent page-worker prompt and the MCP host instructions. The substance standard
+that governs which propositions are Claim-worthy lives alongside it in
+`CLAIMS_SUBSTANCE_GUIDANCE`; this page references those modules rather than
+duplicating the rules.
+
+The repository run validates the page's front matter (repairing it
+deterministically first), then calls `reconcilePageClaims` with that sparse
+payload. `reconcilePageClaims` diffs the payload against the page's inspected
+Claims and derives the confirm, update, add, and retract operations. After
+applying them through the session it persists the page's dirty Claim state via
+`finalize` and proves durability with `assertPageClaimsDurable` before the job
+is recorded complete and the queue advances; any failure in that block is
 wrapped in a `RepositoryRunError` with `invalid_input`.
 
 The `submit_page` tool surfaces those `invalid_input` rejections as
@@ -320,17 +370,14 @@ the worker is not retried and the run stops. A `submit_page` that already
 succeeded throws if the model calls it again.
 
 The per-page `finalize` call excludes the pages still owned by **other pending
-jobs** (`otherPendingPages`). A concurrent worker may be mid-edit on those
-pages, so projecting a verification stamp into their front matter or rehashing
-their sidecar here would record transient bytes; their own `submit_page` (or the
-final `finish`) finalizes them. Only the submitted page is durably proved at
-this point; the strict whole-run proof waits until every job is complete.
-
-The shared rules the worker must follow — stale or unresolved markers require an
-explicit decision, omitted issue-free Claims are retained, the final page body
-and reconciled Claim set must agree — are codified in
-`CLAIMS_RECONCILIATION_GUIDANCE`, the model-facing standard embedded in both the
-native agent page-worker prompt and the MCP host instructions.
+jobs** (`otherPendingPages`) — the set of paths of every other job still
+`pending`, plus every page in `deferredClaimPages`. A concurrent worker may be
+mid-edit on a pending page, and a deferred page deliberately left its Claim
+issues for a later run, so projecting a verification stamp into either's front
+matter or rehashing its sidecar here would record transient bytes (or undo the
+deferral). Their own `submit_page` (or the final `finish`) finalizes them.
+Only the submitted page is durably proved at this point; the strict whole-run
+proof waits until every job is complete.
 
 ### How a proposal is normalized and matched
 
@@ -469,7 +516,9 @@ validation**: before any work, it requires exactly one page snapshot for every
 skipped page job, matched by job id and path, and throws an `invalid_state`
 error if a skipped job lacks its original snapshot. The skipped page paths form
 the `skippedPages` set that flows into both `finalize` and
-`assertRepositoryClaimsDurable`.
+`assertRepositoryClaimsDurable`. That set also includes `deferredClaimPages`,
+so the pages a focused update deliberately left for a later run are excluded
+from the whole-run proof on the same footing as genuinely skipped pages.
 
 ### Snapshot restore precedes claims finalization
 
@@ -589,9 +638,9 @@ current source and re-hashes its Markdown before writing the sidecar. Orphan
 and deleted-page sidecars are removed in the same pass. This is the point at
 which refreshed evidence versions become durable, so a subsequent update's
 preflight sees current tokens and can correctly report the page as no longer
-stale. A run that finishes with skipped pages (or any detected source drift)
-records itself as `interrupted` rather than `complete`, so the next update
-resumes rather than no-ops.
+stale. A run that finishes with skipped pages or deferred Claim pages (or any
+detected source drift) records itself as `interrupted` rather than `complete`,
+so the next update resumes rather than no-ops.
 
 ## Related pages
 

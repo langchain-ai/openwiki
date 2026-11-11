@@ -26,20 +26,26 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
+  - id: openwiki-source-1197594de038075f3570340c
+    resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
+  - id: openwiki-source-58835b77ce38a0dd1fed8d09
+    resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-c194ba7f94bf86a83012a7b4
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # OpenWiki Quickstart
@@ -55,12 +61,13 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.7.2), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.9.0), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
-documentation agent driven by one of fourteen model providers, wrapped by a CLI
-that can run interactively (an Ink TUI) or one-shot (print mode).
+documentation agent driven by one of fifteen model providers (including
+Mistral alongside the other API-key providers), wrapped by a CLI that can run
+interactively (an Ink TUI) or one-shot (print mode).
 
 The CLI has two operating modes:
 
@@ -75,16 +82,23 @@ OpenWiki is a pnpm + TypeScript project. The commands you will use most:
 
 ```sh
 pnpm install          # install dependencies
-pnpm run build        # tsc (server + client) then copy visualizer assets
+pnpm run build        # typescript7 tsc -p tsconfig.json + tsconfig.client.json, then copy visualizer assets
+pnpm run typecheck    # typescript7 tsc --noEmit for both server and client projects
 pnpm run dev          # run the CLI from source via tsx (src/cli/cli.tsx)
-pnpm run coverage     # run the Vitest suite with coverage
+pnpm run coverage     # vitest run --coverage
 pnpm test             # typecheck + build + coverage (the full CI-equivalent gate)
 ```
 
+The `build` script compiles the server project (`tsconfig.json`) and client
+project (`tsconfig.client.json`) with the `typescript7` compiler binary
+(`node ./node_modules/typescript7/bin/tsc`) and then copies visualizer assets
+via `scripts/copy-visualize-assets.cjs`. `typecheck` runs the same binary in
+`--noEmit` mode against both projects. `test` chains `pnpm run typecheck &&
+pnpm run build && pnpm run coverage`, so it is the full CI-equivalent gate.
 `pnpm run dev` executes the TypeScript entrypoint directly with `tsx`, while the
-shipped binary runs the compiled `dist/cli/cli.js`. Before opening a PR, run
-`pnpm run format`, `pnpm run lint`, and `pnpm test`; `format` and `lint` mirror
-the per-PR checks and `test` typechecks, builds, and runs Vitest with coverage.
+shipped `openwiki` binary and `start` script run the compiled `dist/cli/cli.js`.
+Before opening a PR, run `pnpm run format`, `pnpm run lint`, and `pnpm test`;
+`format` and `lint` mirror the per-PR checks.
 
 To exercise the CLI against another local repository, link the package globally
 (`pnpm link --global`) or alias `openwiki` to `node /path/to/openwiki/dist/cli/cli.js`,
@@ -223,6 +237,15 @@ their workspace is preserved. An update whose Claims preflight is clean, source
 fingerprint is unchanged, and every existing page has complete baseline coverage
 is proven a strict no-op at `begin` time and skips model invocation.
 
+For a focused update, `openwiki_submit_plan` may set
+`deferUnplannedClaimIssues: true`. With that flag the planner omits unplanned
+pages that carry only stale or unresolved Claim issues — those
+`deferredClaimPages` are left untouched this run rather than forced into the
+plan, so a later full update reconciles them. Finalization excludes deferred-claim
+pages from the durable Claims proof and the source-checkpoint restamp, so the
+run still `finish`es with `interrupted` metadata until a full update reclaims
+them.
+
 By default a native run documents one page per worker. Set
 `OPENWIKI_PAGE_CONCURRENCY` to an integer from `1` to `8` (default `1`) to run
 that many page workers at once; each worker still owns exactly one page, the
@@ -260,7 +283,18 @@ durable queue, Claims reconciliation, source-drift handling, and deterministic
 finalization. Host-driven runs currently support repository code wikis (not
 personal brains), use the host's authenticated model session, and use repository
 source and tests only — connector context (including LangSmith) is not yet
-supported. The host submits only sparse Claim decisions for each page
+supported. An unrecognized `language` fails `openwiki_begin` with `invalid_input`
+instead of starting a run. `openwiki_begin` returns bounded `changedPaths` and
+per-update-window path lists capped at 200 paths, plus `claimIssues` capped at 50,
+but keeps the totals exact: `changedPathCount` and `claimIssueCount` are the true
+counts, and `claimIssuePages` names every page with a Claims issue even when its
+issue is omitted. When `changedPathsTruncated` is set the host recovers the rest
+from its own Git (`git diff --name-only <baseGitHead>..HEAD` on a non-fullReview
+window, plus `git diff --name-only HEAD` and
+`git ls-files --others --exclude-standard`, omitting `openwiki/` and
+`.openwikiignore` paths); a truncated per-window list likewise recovers from Git,
+and a truncated `claimIssues` list is still fully covered by `claimIssuePages`.
+The host submits only sparse Claim decisions for each page
 (`confirmedClaimIds` for rechecked issue Claims kept unchanged, `claims` for
 revisions and additions, `retractedClaimIds` for removals); OpenWiki
 automatically retains current issue-free Claims and makes the full Claim set

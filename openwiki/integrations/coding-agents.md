@@ -24,6 +24,8 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-85064d6a188fa56bcc282f11
     resource: repo://src/ingestion/code-mode.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-5c32d5425e61a6c32d810844
     resource: repo://src/integrations/core/errors.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
@@ -58,10 +60,10 @@ sources:
     resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
@@ -103,7 +105,12 @@ guidance — directing the host not to enumerate or preload wikis at task start,
 to use `openwiki_search` only when a concrete architecture or dependency
 uncertainty materially affects the task, and to resolve workspace ambiguity via
 `openwiki_list_workspaces` and `openwiki_list_wikis` — so the four read-only
-tools and the six lifecycle tools share one coherent guidance surface.
+tools and the six lifecycle tools share one coherent guidance surface. The
+instructions also describe the **bounded begin result** — exact
+`changedPathCount`/`claimIssueCount` totals, the `changedPathsTruncated`/
+`claimIssuesTruncated` flags with the `git` recovery commands for omitted
+paths, and the `claimIssuePages` list — so the host knows how to plan from a
+capped view.
 
 ## The MCP tool set
 
@@ -142,10 +149,34 @@ In order, the six lifecycle tools are: `openwiki_begin`,
   It then resolves the root, calls `beginRepositoryRun`, and either records the
   active run or returns a proven update **no-op** (`status=noop`) without an
   active run. A clean update returns no-op so the host reports "no update
-  required" and stops.
+  required" and stops. For an active run the begin result is **bounded** by
+  `toHostActiveBeginView` (`src/integrations/core/begin-view.ts`): `changedPaths`
+  is capped at `HOST_BEGIN_PATH_LIMIT` (200) and `claimIssues` at
+  `HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50), each carrying exact
+  `changedPathCount`/`claimIssueCount` totals and
+  `changedPathsTruncated`/`claimIssuesTruncated` flags, plus a `claimIssuePages`
+  list naming every page with a Claims issue. When a `changedPathsTruncated`
+  flag is true the host recovers omitted paths from its own Git
+  (`git diff --name-only <baseGitHead>..HEAD`, not on a `fullReview` window;
+  `git diff --name-only HEAD` and `git ls-files --others --exclude-standard`),
+  excluding `openwiki/` and `.openwikiignore`. The host loses no required work:
+  planning and page jobs read the run's own state, and each page's Claims come
+  back from `openwiki_next_page`.
 - **`openwiki_submit_plan`** — Persists the run's final canonical page plan.
   `pages` may be empty (a valid update with no page work or only deletions), and
-  `deletePages` is optional.
+  `deletePages` is optional. The optional `deferUnplannedClaimIssues` flag
+  (in `SubmitPlanInput`) is an **update-only** opt-out: when true, the planner
+  skips inserting regeneration jobs for stale/unresolved Claim-issue pages the
+  host did not plan (`createRepositoryPlan` in
+  `src/generation/page-jobs.ts` omits the `addRequiredClaimIssueJobs` step and
+  instead collects those pages into `deferredClaimPages`, excluding pages the
+  plan already generates or deletes). Those deferred pages are left for a later
+  full update. Init rejects the flag with `invalid_input` ("Init cannot defer
+  Claim issues."). The deferred set travels in the durable plan and finalization
+  treats it like skipped work — `finishRepositoryRun` folds
+  `plan.deferredClaimPages` into its `skippedPages` exclusion, so deferred
+  pages are excluded from index/provenance/Claims finalization and their prior
+  source checkpoint and Claims are preserved.
 - **`openwiki_next_page`** — Returns the first pending page job with its Claim
   count and **only the stale or unresolved Claims requiring an explicit
   decision**; current issue-free Claims are retained automatically and stay
@@ -178,7 +209,7 @@ sequenceDiagram
     Host->>SM: openwiki_begin(root, mode)
     SM->>Core: resolve root + beginRepositoryRun
     Core-->>Host: noop OR planning run
-    Host->>SM: openwiki_submit_plan(pages, deletePages)
+    Host->>SM: openwiki_submit_plan(pages, deletePages, deferUnplannedClaimIssues?)
     SM->>Core: submitRepositoryPlan
     loop until complete
         Host->>SM: openwiki_next_page
@@ -220,6 +251,20 @@ several invariants:
   any non-`HostIntegrationError` as a generic "OpenWiki MCP operation failed."
   so unexpected exception detail never leaks through the transport.
 
+The begin result is the one place the host-visible view diverges from the
+in-process planner's view. `HostSessionManager.begin` passes an active run
+through `toHostActiveBeginView` (`src/integrations/core/begin-view.ts`), the
+**begin-view bounding layer** that sits between `beginRepositoryRun` and the
+host. It bounds the begin lists for host transports while keeping exact totals:
+`changedPaths` is capped at `HOST_BEGIN_PATH_LIMIT` (200) and `claimIssues` at
+`HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50), each `pageUpdateWindow`'s paths at an equal
+share of the path limit, with `changedPathCount`/`claimIssueCount` totals and
+`changedPathsTruncated`/`claimIssuesTruncated` flags, plus a `claimIssuePages`
+list of every page with a Claims issue. The no-op view is returned unchanged.
+Planning and page jobs read the run's own state, so the host loses no required
+work: omitted paths come from its own Git, and each page's Claims come back from
+`openwiki_next_page`.
+
 `HostSessionManager.create` validates the host identity against a lowercase
 `[a-z0-9-]{1,64}` pattern (`isValidHostId`) and derives the metadata model
 identity as `host-agent/<host>`; the producer actor defaults to the host id when
@@ -252,6 +297,45 @@ connects a `StdioServerTransport`. The adapter registers each tool's schema and
 description with the MCP SDK and executes it through `executeTool`. The server
 is invoked by the CLI's `openwiki mcp --host <id>` command, which looks up the
 host's registry entry to supply the correct provenance actor.
+
+```mermaid
+sequenceDiagram
+    participant CLI as openwiki mcp --host id
+    participant Stdio as runOpenWikiMcp
+    participant SM as HostSessionManager
+    participant Srv as createOpenWikiMcpServer
+    participant SDK as McpServer
+    CLI->>Stdio: runOpenWikiMcp(host, producerActor?)
+    Stdio->>SM: HostSessionManager.create(host, producerActor)
+    SM-->>Stdio: manager (validated id)
+    Stdio->>Srv: createOpenWikiMcpServer(manager)
+    Srv->>SDK: new McpServer(name, version, instructions=INSTRUCTIONS)
+    loop each ProtocolTool from manager.tools()
+        Srv->>SDK: registerTool(name, description, inputSchema, executeTool)
+    end
+    Srv-->>Stdio: server
+    Stdio->>SDK: connect(new StdioServerTransport())
+    Note over SDK: INSTRUCTIONS + tool schemas advertised at init
+    loop tool calls
+        SDK->>Srv: executeTool(tool, input)
+        Srv->>SM: tool.handle(input) via provider.tools()
+        SM-->>Srv: result OR HostIntegrationError
+        alt HostIntegrationError
+            Srv-->>SDK: toolError(code: message)
+        else unexpected throw
+            Srv-->>SDK: toolError("OpenWiki MCP operation failed.")
+        else success
+            Srv-->>SDK: content + structuredContent
+        end
+    end
+```
+
+MCP server construction and tool registration. `HostSessionManager.tools()`
+supplies the ordered ten-tool set (four retrieval via `createRetrievalTools()`
+then six lifecycle), and the server advertises the `INSTRUCTIONS` guidance
+(embedding `CLAIMS_RECONCILIATION_GUIDANCE`) plus each tool's schema at
+initialization; `executeTool` bounds transport-visible errors to
+`HostIntegrationError` codes or a generic failure string.
 
 ## Installation: host config and the skill bundle
 
@@ -317,18 +401,24 @@ OpenWiki as a Pi package extension declared in `package.json` under the `pi`
 key, which points the host at `dist/integrations/pi/openwiki.js` and the shared
 `integrations/openwiki` skill bundle. The extension
 (`src/integrations/pi/openwiki.ts`) is a thin in-process bridge: it registers
-the six generation lifecycle tools (no retrieval tools) with Pi's tool API,
-lazily spawns one stdio MCP client transport that runs
-`node dist/cli/cli.js mcp --host pi`, and forwards each tool call to the MCP
-server, surfacing `isError` results as thrown errors. The bridge is a singleton
-per Pi session — `bridge()` caches one `StdioClientTransport`/`Client` pair and
-resets it on transport close or a call failure; `session_shutdown` closes the
-bridge. Because `--host pi` is not in `HOST_TARGETS`, `getHostTarget("pi")`
-returns `undefined` and the MCP command falls back to `producerActor: "pi"`,
-so Pi-authored pages are stamped with the `pi` producer actor. The CLI accepts
-any `[a-z0-9-]{1,64}` host id for `openwiki mcp --host`, which is how the
-non-registered `pi` host reaches the same `HostSessionManager` lifecycle as the
-nine installed targets.
+all ten tools — the four read-only retrieval tools plus the six generation
+lifecycle tools — with Pi's tool API, lazily spawns one stdio MCP client
+transport using `process.execPath` to run the CLI at
+`dist/cli/cli.js mcp --host pi`, and forwards each tool call to the MCP server,
+surfacing `isError` results as thrown errors. Because a Pi host may be an
+Electron or Bun-compiled executable whose `process.execPath` is not a plain
+Node binary, `bridgeEnvironment()` re-exports `ELECTRON_RUN_AS_NODE` or
+`BUN_BE_BUN` (Bun >= 1.2.16) so the child runs the CLI script rather than the
+host application; without it the child starts the host app and exits, which
+the host reports as `MCP error -32000: Connection closed`. The bridge is a
+singleton per Pi session — `bridge()` caches one
+`StdioClientTransport`/`Client` pair and resets it on transport close or a call
+failure; `session_shutdown` closes the bridge. Because `--host pi` is not in
+`HOST_TARGETS`, `getHostTarget("pi")` returns `undefined` and the MCP command
+falls back to `producerActor: "pi"`, so Pi-authored pages are stamped with the
+`pi` producer actor. The CLI accepts any `[a-z0-9-]{1,64}` host id for
+`openwiki mcp --host`, which is how the non-registered `pi` host reaches the
+same `HostSessionManager` lifecycle as the nine installed targets.
 
 ### Config adapters
 
@@ -378,6 +468,47 @@ skill to a cleanup backup, and prunes now-empty skill parent directories.
 `status` reports `installed` only when both the skill and the config entry are
 intact, `modified` when either is partially present, and `unsupported` when the
 requested scope does not exist for the host.
+
+```mermaid
+sequenceDiagram
+    participant CLI as integrations install
+    participant I as HostIntegrationInstaller
+    participant Ctx as resolveInstallContext
+    participant Cfg as Config Adapter
+    CLI->>I: install(target, scope, root, force?)
+    I->>Ctx: resolveInstallContext(target, scope, root)
+    Ctx-->>I: skillDirectory + mcpConfig
+    I->>I: inspectInstallation + inventorySkill(canonical)
+    alt modified and not force
+        I-->>CLI: conflict
+    else already current
+        I->>Cfg: installManagedConfig
+        Cfg-->>I: changed?
+        I-->>CLI: unchanged OR installed
+    else fresh install/upgrade
+        I->>I: cp bundle to staging sibling
+        I->>I: inventorySkill(staging) == canonical?
+        I->>I: writeReceipt(staging)
+        I->>Cfg: snapshotTextFile(config)
+        I->>Cfg: installManagedConfig
+        opt prior skill exists
+            I->>I: move prior skill aside (rollback OR forced backup)
+        end
+        I->>I: move staging into skillDirectory
+        alt commit fails
+            I->>I: rollbackInstall (restore config + prior skill, remove staging)
+            I-->>CLI: AggregateError on incomplete rollback
+        end
+        I->>I: cleanupPriorSkill (remove rollback OR keep forced backup)
+        I-->>CLI: installed (paths, backup?)
+    end
+```
+
+The install transaction. The installer stages the skill into a private sibling,
+verifies the staged copy, writes the receipt, then commits by mutating the
+config and atomically moving the staged skill into place; any pre-commit
+failure rolls both back, and an incomplete rollback surfaces as an
+`AggregateError`.
 
 ## User-level vs project scope
 

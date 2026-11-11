@@ -11,6 +11,8 @@ export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
+export const MISTRAL_API_KEY_ENV_KEY = "MISTRAL_API_KEY";
+export const MISTRAL_BASE_URL_ENV_KEY = "MISTRAL_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
 export const NVIDIA_API_KEY_ENV_KEY = "NVIDIA_API_KEY";
 export const NVIDIA_BASE_URL_ENV_KEY = "NVIDIA_BASE_URL";
@@ -45,6 +47,7 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OPENROUTER_BASE_URL_ENV_KEY = "OPENROUTER_BASE_URL";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY =
@@ -146,6 +149,7 @@ export type OpenWikiProvider =
   | "fireworks"
   | "gemini"
   | "gemini-enterprise"
+  | "mistral"
   | "nebius"
   | "nvidia"
   | "openai"
@@ -291,6 +295,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "atlascloud",
   "nebius",
   "nvidia",
+  "mistral",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -401,6 +406,22 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "moonshotai/kimi-k2.6", label: "Kimi K2.6" },
     ],
   },
+  mistral: {
+    apiKeyEnvKey: MISTRAL_API_KEY_ENV_KEY,
+    baseURL: "https://api.mistral.ai/v1",
+    baseUrlEnvKey: MISTRAL_BASE_URL_ENV_KEY,
+    label: "Mistral",
+    // Mistral serves chat completions with tool calling on an OpenAI-compatible
+    // surface, so it shares the ChatOpenAI branch with Fireworks and NVIDIA.
+    // IDs are the active releases from docs.mistral.ai/models (Medium 3.5 and
+    // Large 3 were deprecated on 2026-10-31); Mistral also exposes rolling
+    // "*-latest" aliases that can be pasted directly as custom model IDs.
+    modelOptions: [
+      { id: "mistral-small-2603", label: "Mistral Small 4" },
+      { id: "mistral-large-4", label: "Mistral Large 4" },
+      { id: "codestral-2508", label: "Codestral" },
+    ],
+  },
   openai: {
     apiKeyEnvKey: OPENAI_API_KEY_ENV_KEY,
     baseUrlEnvKey: OPENAI_BASE_URL_ENV_KEY,
@@ -459,6 +480,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
+    baseUrlEnvKey: OPENROUTER_BASE_URL_ENV_KEY,
     label: "OpenRouter",
     modelOptions: [
       { id: "z-ai/glm-5.2", label: "GLM 5.2" },
@@ -1007,16 +1029,18 @@ export function resolveConfiguredProvider(
                     ? "nebius"
                     : env[NVIDIA_API_KEY_ENV_KEY]
                       ? "nvidia"
-                      : hasNonEmptyEnvValue(
-                            env,
-                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                          ) ||
-                          hasNonEmptyEnvValue(
-                            env,
-                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                          )
-                        ? "bedrock"
-                        : DEFAULT_PROVIDER)
+                      : env[MISTRAL_API_KEY_ENV_KEY]
+                        ? "mistral"
+                        : hasNonEmptyEnvValue(
+                              env,
+                              BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                            ) ||
+                            hasNonEmptyEnvValue(
+                              env,
+                              BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                            )
+                          ? "bedrock"
+                          : DEFAULT_PROVIDER)
   );
 }
 
