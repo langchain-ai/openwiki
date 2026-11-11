@@ -126,10 +126,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-06T08:06:02.348Z
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # Source Map
@@ -172,7 +172,14 @@ before anything else.
   reconstruction. `createModel`'s `mistral` branch requires
   `MISTRAL_API_KEY` and forbids a non-empty `OPENAI_CUSTOM_HEADERS` (the
   Mistral endpoint is OpenAI-compatible, so it shares the `ChatOpenAI`
-  configuration).
+  configuration). `createModel`'s `openrouter` branch builds a
+  `ChatOpenRouter` whose `baseURL` is `resolveProviderBaseUrl("openrouter")`,
+  which returns an `OPENROUTER_BASE_URL` override when set and non-empty else
+  falls back to the `OPENROUTER_BASE_URL` constant
+  (`https://openrouter.ai/api/v1`), so an override targets a regional endpoint
+  such as `https://us.openrouter.ai/api/v1` rather than the default; the
+  `--debug` OpenRouter request-capture matcher (`isOpenRouterFetchInput`)
+  follows the same resolved base URL.
 - **`src/config/constants.ts`** is the single large registry of stable strings:
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
@@ -578,7 +585,8 @@ loads and saves the OpenWiki `.env` and
 is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
 including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
 `MISTRAL_API_KEY_ENV_KEY`, `MISTRAL_BASE_URL_ENV_KEY`,
-`OPENAI_COMPATIBLE_AUTH_ENV_KEY`, `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`,
+`OPENROUTER_BASE_URL_ENV_KEY`, `OPENAI_COMPATIBLE_AUTH_ENV_KEY`,
+`OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`,
 `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`,
 `OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY`,
 `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY`, and the

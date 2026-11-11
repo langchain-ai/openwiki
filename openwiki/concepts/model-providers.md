@@ -32,10 +32,12 @@ sources:
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+  - id: openwiki-source-5fc87e9739dab52c4e447110
+    resource: repo://test/config/constants.test.ts
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.9.0
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # Model Providers and Credentials
@@ -84,7 +86,7 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `copilot`                      | GitHub Copilot                | external-cli  | `COPILOT_API_KEY`                           | `https://api.githubcopilot.com` / `COPILOT_BASE_URL`           |
 | `gemini`                       | Gemini (AI Studio)            | api-key       | `GEMINI_API_KEY`                            | (SDK default)                                                  |
 | `gemini-enterprise`            | Gemini Enterprise (Vertex AI) | ADC (keyless) | none — `GOOGLE_CLOUD_PROJECT`               | derived from project/location                                  |
-| `openrouter`                   | OpenRouter                    | api-key       | `OPENROUTER_API_KEY`                        | `https://openrouter.ai/api/v1`                                 |
+| `openrouter`                   | OpenRouter                    | api-key       | `OPENROUTER_API_KEY`                        | `https://openrouter.ai/api/v1` / `OPENROUTER_BASE_URL`         |
 | `openai-compatible`            | OpenAI-compatible             | api-key (or Entra ID) | `OPENAI_COMPATIBLE_API_KEY` (skipped in Entra mode) | required via `OPENAI_COMPATIBLE_BASE_URL`                      |
 | `bedrock`                      | AWS Bedrock                   | aws-sdk       | `BEDROCK_AWS_ACCESS_KEY_ID` (legacy pair)   | AWS SDK credential chain                                       |
 | `fireworks`                    | Fireworks                     | api-key       | `FIREWORKS_API_KEY`                         | `https://api.fireworks.ai/inference/v1` / `FIREWORKS_BASE_URL` |
@@ -142,19 +144,18 @@ guard skips the `apiKeyEnvKey` check), and `providerRequiresApiKey` returns
 `OPENAI_COMPATIBLE_ENTRA_SCOPE`) whenever the missing key is for
 `openai-compatible`.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 6: ...a gateway Create->>Entra: build prov Expecting 'participant', 'participant_actor', 'destroy', got 'SOLID_ARROW' -->
-```text
+```mermaid
 sequenceDiagram
-    participant Create as createModel
+    participant Model as createModel
     participant Entra as createEntraTokenProvider
     participant Azure as Azure Identity SDK
     participant GW as Entra gateway
-    Create->>Entra: build provider for baseURL plus scope
+    Model->>Entra: build provider for baseURL plus scope
     Entra->>Entra: SSRF guard HTTPS only no metadata hosts
-    Create->>Azure: OpenAI SDK calls token provider per request
+    Model->>Azure: OpenAI SDK calls token provider per request
     Azure->>Azure: DefaultAzureCredential or WorkloadIdentityCredential
-    Azure->>Create: bearer token cached and auto refreshed
-    Create->>GW: request with Authorization Bearer token
+    Azure->>Model: bearer token cached and auto refreshed
+    Model->>GW: request with Authorization Bearer token
 ```
 
 Diagram: The Entra ID token-provider lifecycle for an OpenAI-compatible run.

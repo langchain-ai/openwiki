@@ -88,6 +88,8 @@ sources:
     resource: repo://test/cli/run-log/tool-input.test.ts
   - id: openwiki-source-5fc87e9739dab52c4e447110
     resource: repo://test/config/constants.test.ts
+  - id: openwiki-source-3782823f29993efcdedd20ac
+    resource: repo://test/config/env-behavior.test.ts
   - id: openwiki-source-507f854511667d512b3fa0ee
     resource: repo://test/config/env.test.ts
   - id: openwiki-source-7813b7a34b04f73e9967e3c9
@@ -148,10 +150,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-06T08:06:02.348Z
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # Testing Guide
@@ -739,15 +741,20 @@ streams:
   with a redundant `restore()` being a no-op that does not prematurely restore
   while another run is still active) — that an OpenRouter failure fans out to
   every active run's sink while each run can clear its own failure, and that
-  non-OpenRouter requests pass through untouched. It also pins the transient-404
-  retry contract (only a provider `404` carrying `error.metadata.provider_name`
-  is retried, not an ordinary `404`, and a non-cloneable request body is never
-  resent) and the malformed-success classification: a `200` body that is invalid
-  JSON, missing `choices`, or has a non-object first choice/message is converted
-  to a retryable `502` `OpenRouterError` (surfaced both through the raw `fetch`
-  response and through `ChatOpenRouter.invoke`), while a transient provider 404
-  that precedes such a malformed success is retried first before the malformed
-  response is classified.
+  non-OpenRouter requests pass through untouched. It is also **override-aware**:
+  a `captures failures from an overridden OPENROUTER_BASE_URL` test stubs
+  `OPENROUTER_BASE_URL` to a regional endpoint (`https://us.openrouter.ai/api/v1`)
+  and asserts a failure from that overridden endpoint is still captured, so the
+  debug-fetch matcher follows the configured base URL rather than a hardcoded
+  one. It also pins the transient-404 retry contract (only a provider `404`
+  carrying `error.metadata.provider_name` is retried, not an ordinary `404`,
+  and a non-cloneable request body is never resent) and the malformed-success
+  classification: a `200` body that is invalid JSON, missing `choices`, or has a
+  non-object first choice/message is converted to a retryable `502`
+  `OpenRouterError` (surfaced both through the raw `fetch` response and through
+  `ChatOpenRouter.invoke`), while a transient provider 404 that precedes such a
+  malformed success is retried first before the malformed response is
+  classified.
 
 ### OKF: frontmatter and index
 
@@ -960,7 +967,20 @@ Google Cloud settings (`GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`/
 OpenAI-compatible provider base URLs (`BASETEN_BASE_URL`, `BOB_BASE_URL`,
 `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, and `MISTRAL_BASE_URL`), and the
 reasoning-effort settings (`OPENWIKI_REASONING_EFFORT`,
-`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`).
+`OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`), and the OpenRouter
+base URL (`OPENROUTER_BASE_URL`) — a dedicated `manages the OpenRouter base URL`
+membership test pins `OPENROUTER_BASE_URL` into the managed set so a regional
+override (such as `https://us.openrouter.ai/api/v1`) is owned by the managed
+environment surface alongside the hosted provider base URLs.
+
+The OpenRouter base URL is also covered end-to-end. A `createModel openrouter
+base URL` describe block in `test/agent/create-model.test.ts` pins the
+`openrouter` provider's model construction: with no override the model's
+`baseURL` is the default `https://openrouter.ai/api/v1`, and an
+`OPENROUTER_BASE_URL` override (for example
+`https://us.openrouter.ai/api/v1`) is passed through to `ChatOpenRouter` as
+the model's `baseURL`, so `createModel` honors the regional endpoint rather
+than hardcoding the default.
 
 The Mistral provider is covered across three further test files.
 `test/agent/create-model.test.ts` has a `createModel Mistral credential
@@ -990,8 +1010,11 @@ when only a `MISTRAL_API_KEY` is present), the `resolveProviderBaseUrl` defaults
 the hosted OpenAI-compatible providers where `BOB_BASE_URL` (via
 `BOB_BASE_URL_ENV_KEY`) and the baseten/fireworks/nvidia keys override the
 built-in defaults while a whitespace-only override falls back to the default
-(`bob` is among the providers with a built-in default) and the Copilot base URL
-resolves from `COPILOT_BASE_URL` — provider retry
+(`bob` is among the providers with a built-in default) — the Copilot base URL
+resolved from `COPILOT_BASE_URL`, and the OpenRouter base URL resolved from
+`OPENROUTER_BASE_URL` (a non-empty override such as
+`https://us.openrouter.ai/api/v1` is preferred while a whitespace-only
+override falls back to the `https://openrouter.ai/api/v1` default) — provider retry
 attempts, per-provider max-output-token ceilings, stream-idle-timeout
 resolution, reasoning capability flags, the Bedrock AWS-SDK credential/region
 surface, and provider API-key env-key resolution. It also pins the page-worker
@@ -1007,8 +1030,12 @@ keeping generic `http(s)` validation for other providers. Sibling files
 (`test/config/env-behavior.test.ts`, `test/config/copilot-provider.test.ts`,
 `test/config/openai-chatgpt-provider.test.ts`, `test/config/openwiki-home.test.ts`)
 cover `loadOpenWikiEnv`/`saveOpenWikiEnv`, credential preview/diagnostics (with
-the bob base URL surfaced in diagnostics), the GitHub Copilot and OpenAI-ChatGPT
-provider configs, and the OpenWiki home/connector path helpers.
+the bob base URL surfaced in diagnostics, and `validates the OpenRouter base
+URL as a non-secret setting` pinning that `OPENROUTER_BASE_URL` is treated as
+non-secret — an invalid value is previewed unredacted and carries an
+`invalid base URL` warning, mirroring the bob base-URL diagnostic), the GitHub
+Copilot and OpenAI-ChatGPT provider configs, and the OpenWiki home/connector
+path helpers.
 
 ### Visualize: page, graph, and client interaction
 
@@ -1314,7 +1341,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Git-repo connector incremental diff:** `pnpm exec vitest run test/git-repo-connector.test.ts`.
 - **Connector failure isolation (ingest-all):** `pnpm exec vitest run test/ingest-all-connectors.test.ts`.
 - **X connector stream isolation:** `pnpm exec vitest run test/x-connector-stream-isolation.test.ts`.
-- **OpenRouter debug-fetch concurrency:** `pnpm exec vitest run test/openrouter-debug-fetch.test.ts`.
+- **OpenRouter debug-fetch concurrency (incl. override-aware capture):** `pnpm exec vitest run test/openrouter-debug-fetch.test.ts` (global-fetch patching, reference-counted restore, per-run failure capture, the `captures failures from an overridden OPENROUTER_BASE_URL` override-aware case, transient-404 retry, and malformed-success classification).
 - **A single named test:** `pnpm exec vitest run test/config -t "treats whitespace-only overrides as unset"`.
 - **Ink components:** `pnpm exec vitest run test/cli/components/`, or `-t "Panel"`/`-t "Rows"` for the shared primitives (`test/cli/components/primitives.test.tsx`), or `pnpm exec vitest run test/cli/components/wiki-workspace-manager.test.tsx` for the interactive workspace-selection keyboard flow.
 - **Run-log helpers:** `pnpm exec vitest run test/cli/run-log/` (reducer/progress/summary/activity/tool-input), or `-t "retains concurrent worker progress fields"` for the concurrent-worker progress field pin.
@@ -1350,13 +1377,15 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **OpenAI-compatible Entra token provider:** `pnpm exec vitest run test/agent/entra-auth.test.ts` (lazy Azure Identity, workload-identity preference, token caching/refresh, error wrapping, HTTPS/scheme blocklist, and full Chat Completions/Responses × JSON/SSE model round-trips).
 - **OpenAI-compatible Entra model wiring:** `pnpm exec vitest run test/agent/create-model-entra.test.ts` (static-key preservation, renewable callback in `entra-id` mode, unsafe-base-URL and invalid-mode rejection).
 - **Mistral createModel credential isolation:** `pnpm exec vitest run test/agent/create-model.test.ts -t "createModel Mistral credential isolation"` (missing-key rejection before OpenAI fallback, Mistral endpoint/key/max-tokens preservation, `OPENAI_CUSTOM_HEADERS` rejection without value exposure, zero-retry behavior).
+- **OpenRouter base URL in createModel:** `pnpm exec vitest run test/agent/create-model.test.ts -t "createModel openrouter base URL"` (default `https://openrouter.ai/api/v1` when unset, `OPENROUTER_BASE_URL` override passed through to `ChatOpenRouter` as `baseURL`).
+- **OpenRouter base URL diagnostics:** `pnpm exec vitest run test/config/env-behavior.test.ts -t "validates the OpenRouter base URL as a non-secret setting"` (`OPENROUTER_BASE_URL` previewed unredacted with an `invalid base URL` warning, mirroring the bob base-URL diagnostic).
 - **Mistral API-key redaction:** `pnpm exec vitest run test/agent/redaction.test.ts -t "redacts the exact value of MISTRAL_API_KEY when set"` (`sanitizeDiagnosticText` replaces the secret with `[REDACTED:MISTRAL_API_KEY]`).
 - **Mistral setup-wizard provider article:** `pnpm exec vitest run test/setup/credentials/steps.test.ts -t "orderedSetupSteps"` (the `mistral` provider's `provider` → `api-key` → `model` → `langsmith` step order).
 - **Wiki internal-link validator (dogfood):** `pnpm exec vitest run test/agent/wiki-link-validator-dogfood.test.ts` (checks the checked-in `openwiki/` tree passes validation) or `pnpm exec vitest run test/agent/wiki-link-validator.test.ts` (scoped unit cases).
 - **Wiki translation middleware:** `pnpm exec vitest run test/agent/translation-middleware.test.ts` (resolveTranslationPlan switching/sweep rules, beforeAgent full-pass translation, pending-marker retry on model failure/output-limit truncation, per-page failure isolation, and array/structured content flattening).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
-- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, the OpenAI-compatible Entra auth round-trip, `MANAGED_ENV_KEYS` membership including `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`, `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, `MISTRAL_BASE_URL`, and the hosted OpenAI-compatible base URLs).
-- **Provider constants (incl. page-concurrency and Bob/Copilot base-URL overrides):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia/copilot, retry/max-token/stream-timeout/reasoning surfaces).
+- **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, the OpenAI-compatible Entra auth round-trip, `MANAGED_ENV_KEYS` membership including `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`, `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, `MISTRAL_BASE_URL`, `OPENROUTER_BASE_URL`, and the hosted OpenAI-compatible base URLs).
+- **Provider constants (incl. page-concurrency and Bob/Copilot/OpenRouter base-URL overrides):** `pnpm exec vitest run test/config/constants.test.ts` (model-id validation, provider resolution, `resolvePageConcurrency`, `resolveProviderBaseUrl` defaults/overrides for bob/baseten/fireworks/nvidia/copilot/openrouter, retry/max-token/stream-timeout/reasoning surfaces).
 - **LEDGER eval harness:** `pnpm exec vitest run evals/ledger` (the offline Vitest suite for the LEDGER source; run `pnpm run eval:ledger:typecheck` for its isolated tsconfig typecheck). These sit outside the application `test/` tree and `pnpm test` gate — see [Evaluation Systems](../testing/evals.md).
 - **DeepSWE eval harness:** `python -m unittest discover -s evals/deepswe/tests -p 'test_*.py'` inside the pinned Harbor environment (no npm/Vitest entry point; see [Evaluation Systems](../testing/evals.md)).
 
