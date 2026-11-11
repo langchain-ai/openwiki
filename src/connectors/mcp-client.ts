@@ -960,10 +960,12 @@ function validateHeaderName(key: string): string {
 
 function validateMcpUrl(value: string): string {
   const url = new URL(value);
+  // WHATWG URL keeps the brackets on an IPv6 hostname, so the IPv6 loopback
+  // address is "[::1]", never "::1".
   const isLocalhost =
     url.hostname === "localhost" ||
     url.hostname === "127.0.0.1" ||
-    url.hostname === "::1";
+    url.hostname === "[::1]";
 
   if (url.protocol !== "https:" && !(url.protocol === "http:" && isLocalhost)) {
     throw new Error("HTTP MCP URLs must use https, except localhost http.");
