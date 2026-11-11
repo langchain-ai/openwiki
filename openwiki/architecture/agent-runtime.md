@@ -11,8 +11,8 @@ tags:
   - filesystem-sandbox
   - langchain
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-04T08:06:10.698Z
+  - by: openwiki/0.9.0
+    at: 2026-11-11T08:06:00.631Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -56,7 +56,7 @@ sources:
     resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-04T08:06:10.698Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -109,7 +109,7 @@ Each branch constructs a purpose-built client:
 - **Gemini (AI Studio)** builds `ChatGoogle` with `platformType: "gai"`, disabling streaming and pinning `outputVersion: "v0"` so Gemini 3.x thought-signatures round-trip correctly across tool-calling turns; when `gemini-3.6-flash` declares a reasoning capability, the resolved effort is passed as `ChatGoogle`'s `thinkingLevel` option.
 - **Gemini Enterprise (Vertex)** delegates to `createGeminiEnterpriseModel`, which picks the client from the model family: Claude via the Anthropic Vertex SDK, partner/open-weight models over Vertex's OpenAI-compatible MaaS surface, and Gemini/Gemma over native `generateContent`. Auth is uniform ADC + project + region; only the transport differs.
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
-- **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
+- **OpenRouter** builds `ChatOpenRouter` with `baseURL` set to `resolveProviderBaseUrl(provider)` — so it honors an `OPENROUTER_BASE_URL` override (e.g. a regional endpoint such as `https://us.openrouter.ai/api/v1`) and otherwise falls back to the `OPENROUTER_BASE_URL` constant — optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap. `--debug` OpenRouter request capture follows the override too: the `isOpenRouterFetchInput` matcher recognizes any fetch whose URL starts with `resolveProviderBaseUrl("openrouter") ?? OPENROUTER_BASE_URL` and includes `/chat/completions`, so debug summaries are captured against the regional endpoint the client actually targets.
 - **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
 - **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
 - **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the dedicated `bob` branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires. Bob also forces the streaming HTTP transport, because long generations (such as planning a large repository) can outlast the Bob endpoint's non-streaming response timeout.

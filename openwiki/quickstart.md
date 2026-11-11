@@ -4,6 +4,8 @@ title: OpenWiki Quickstart
 description: Entry-point orientation for a coding agent working on the OpenWiki CLI codebase, with a task-routing map into the architecture, workflow, concept, operations, integration, and testing pages.
 tags: [openwiki, quickstart, cli, orientation, task-routing, deepagents]
 sources:
+  - id: openwiki-source-fe40bdf5ac5a95cc1c252b13
+    resource: repo://.changeset/openrouter-base-url.md
   - id: openwiki-source-f317ee207e1653d2033c81a4
     resource: repo://CONTRIBUTING.md
   - id: openwiki-source-c45a528335f5cf7306567dc9
@@ -14,6 +16,8 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
@@ -26,6 +30,8 @@ sources:
     resource: repo://src/cli/commands.ts
   - id: openwiki-source-278e7e180eac811fc1a24f7a
     resource: repo://src/config/constants.ts
+  - id: openwiki-source-c2770ac037a7f4b0116a0dc5
+    resource: repo://src/config/env.ts
   - id: openwiki-source-1197594de038075f3570340c
     resource: repo://src/generation/page-jobs.ts
   - id: openwiki-source-7c5ecb56558cc061dab24f9d
@@ -42,10 +48,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-06T08:06:02.348Z
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # OpenWiki Quickstart
@@ -195,6 +201,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Look up CLI commands and flags (init/update, mode, print, integrations, visualize, schedule) | [CLI Reference](./operations/cli-reference.md)        |
 | Understand environment loading, the `~/.openwiki` state directory, provider/token/reasoning settings, and secret sanitization | [Configuration and Environment](./operations/configuration.md) |
+| Override a hosted provider base URL — for example, retarget OpenRouter at a regional endpoint via `OPENROUTER_BASE_URL` (overridable alongside each provider's key; `--debug` OpenRouter request capture follows the overridden URL) | [Model Providers and Credentials](./concepts/model-providers.md) and [Configuration and Environment](./operations/configuration.md) |
 | Set up scheduled self-update in CI and the docs-PR workflow                                  | [CI Scheduling and Self-Update](./operations/ci-scheduling.md) |
 
 ### Integrate with other tools
