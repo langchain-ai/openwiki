@@ -28,7 +28,15 @@ describe("resolveModelId", () => {
     );
   });
 
-  test.each(["bedrock", "openai-compatible"] as const)(
+  test("defaults Bedrock to its first global inference profile preset", () => {
+    delete process.env[OPENWIKI_MODEL_ID_ENV_KEY];
+
+    expect(resolveModelId({}, "bedrock")).toBe(
+      "global.anthropic.claude-haiku-5-5",
+    );
+  });
+
+  test.each(["openai-compatible"] as const)(
     "requires an explicit model ID for %s, which has no presets",
     (provider) => {
       delete process.env[OPENWIKI_MODEL_ID_ENV_KEY];

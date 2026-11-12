@@ -508,8 +508,8 @@ function createWorkflowProviderEnv(env: NodeJS.ProcessEnv): string {
     lines.push(`${config.regionEnvKey}: \${{ vars.${config.regionEnvKey} }}`);
   }
 
-  // Bedrock ships no preset model list because entitlements are account- and
-  // region-specific, so there is nothing safe to suggest and the line is left out.
+  // OpenAI-compatible ships no preset model list because its models depend on
+  // the configured endpoint, so there is nothing safe to suggest and the line is left out.
   const modelId =
     env[OPENWIKI_MODEL_ID_ENV_KEY]?.trim() || config.modelOptions[0]?.id;
   if (modelId !== undefined) {
