@@ -600,7 +600,7 @@ function getOpenAiCompatibleHeadersWarnings(value: string): string[] {
 
     return [];
   } catch {
-    return ["invalid header JSON"];
+    return ["invalid headers"];
   }
 }
 

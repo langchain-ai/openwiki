@@ -413,7 +413,7 @@ describe("createModel OpenAI-compatible transport selection", () => {
     }
   });
 
-  test("does not install content normalization for OpenAI-compatible Responses API requests", () => {
+  test("does not normalize chat-completions bodies for OpenAI-compatible Responses API requests", async () => {
     const savedApiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
     const savedBaseUrl = process.env.OPENAI_COMPATIBLE_BASE_URL;
     const savedUseResponsesApi =
@@ -421,6 +421,12 @@ describe("createModel OpenAI-compatible transport selection", () => {
     process.env.OPENAI_COMPATIBLE_API_KEY = "test-compatible-key";
     process.env.OPENAI_COMPATIBLE_BASE_URL = "https://vllm.example/v1";
     process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY] = "true";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
 
     try {
       const model = createModel("openai-compatible", "local-model", 0) as {
@@ -429,11 +435,25 @@ describe("createModel OpenAI-compatible transport selection", () => {
       };
 
       expect(model.useResponsesApi).toBe(true);
-      expect(model.clientConfig?.fetch).toBeUndefined();
+
+      const body = JSON.stringify({
+        messages: [{ content: [{ type: "text", text: "hi" }] }],
+      });
+      await model.clientConfig?.fetch?.(
+        "https://vllm.example/v1/chat/completions",
+        { method: "POST", body },
+      );
+
+      const [, init] = fetchMock.mock.calls[0] as unknown as [
+        string,
+        { body: string },
+      ];
+      expect(init.body).toBe(body);
     } finally {
       restoreEnv("OPENAI_COMPATIBLE_API_KEY", savedApiKey);
       restoreEnv("OPENAI_COMPATIBLE_BASE_URL", savedBaseUrl);
       restoreEnv(OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY, savedUseResponsesApi);
+      vi.unstubAllGlobals();
     }
   });
 
@@ -581,6 +601,63 @@ describe("createModel OpenAI-compatible custom headers", () => {
       { headers?: unknown } | undefined,
     ];
     expect(init?.headers).toBeUndefined();
+  });
+
+  test("merges configured headers into Responses API requests", async () => {
+    process.env[HEADERS_KEY] = '{"x-portkey-api-key":"pk-123"}';
+    const savedUseResponsesApi =
+      process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY];
+    process.env[OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY] = "true";
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response("{}", { headers: { "content-type": "application/json" } }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const model = createModel("openai-compatible", "local-model", 0) as {
+        clientConfig?: { fetch?: typeof fetch };
+        useResponsesApi?: boolean;
+      };
+      const compatibleFetch = model.clientConfig?.fetch;
+
+      expect(model.useResponsesApi).toBe(true);
+
+      if (!compatibleFetch) {
+        throw new Error(
+          "Expected openai-compatible to install a fetch wrapper.",
+        );
+      }
+
+      await compatibleFetch("https://vllm.example/v1/responses", {
+        method: "POST",
+        body: "{}",
+      });
+
+      const [, init] = fetchMock.mock.calls[0] as unknown as [
+        string,
+        { headers: Headers },
+      ];
+      expect(init.headers.get("x-portkey-api-key")).toBe("pk-123");
+    } finally {
+      restoreEnv(OPENAI_COMPATIBLE_USE_RESPONSES_API_KEY, savedUseResponsesApi);
+    }
+  });
+
+  test.each([
+    ["a name with a space", '{"x portkey":"a"}'],
+    ["an empty name", '{"":"a"}'],
+    ["a value with a newline", '{"x-ok":"line1\\nline2"}'],
+  ])("fails fast on %s without echoing the value", (_label, value) => {
+    process.env[HEADERS_KEY] = value;
+
+    expect(() => createModel("openai-compatible", "local-model", 0)).toThrow(
+      "OPENAI_COMPATIBLE_HEADERS contains an invalid HTTP header name or value",
+    );
+    expect(() =>
+      createModel("openai-compatible", "local-model", 0),
+    ).not.toThrow(/line1/u);
   });
 
   test("fails fast on malformed header JSON", () => {

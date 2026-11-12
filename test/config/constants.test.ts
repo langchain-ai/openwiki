@@ -1108,6 +1108,23 @@ describe("resolveOpenAiCompatibleHeaders", () => {
       'OPENAI_COMPATIBLE_HEADERS value for "x-portkey-api-key" must be a string.',
     );
   });
+
+  test.each([
+    ["a name with a space", '{"x portkey":"a"}'],
+    ["an empty name", '{"":"a"}'],
+    ["a value with a newline", '{"x-ok":"line1\\nline2"}'],
+  ])("rejects %s without echoing the value", (_label, value) => {
+    let message = "";
+
+    try {
+      resolveOpenAiCompatibleHeaders({ OPENAI_COMPATIBLE_HEADERS: value });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain("OPENAI_COMPATIBLE_HEADERS contains an invalid");
+    expect(message).not.toContain("line1");
+  });
 });
 
 describe("getMissingProviderEnvKey", () => {

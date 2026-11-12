@@ -1284,10 +1284,15 @@ export function createModel(
 
   const baseURL = resolveProviderBaseUrl(provider);
   const configuration =
-    provider === "openai-compatible" && !chatOpenAiUsesResponsesApi
+    provider === "openai-compatible"
       ? {
           ...(baseURL ? { baseURL } : {}),
-          fetch: createOpenAiCompatibleFetch(),
+          // Installed for both transports so custom headers reach the wire on
+          // the Responses API too; chat-completions body normalization only
+          // applies when the Responses API is not in use.
+          fetch: createOpenAiCompatibleFetch({
+            normalizeChatCompletions: !chatOpenAiUsesResponsesApi,
+          }),
         }
       : baseURL
         ? {
@@ -1335,7 +1340,9 @@ export function createModel(
   });
 }
 
-function createOpenAiCompatibleFetch(): typeof fetch {
+function createOpenAiCompatibleFetch(options: {
+  normalizeChatCompletions: boolean;
+}): typeof fetch {
   // Resolved once per model instantiation rather than per request: like the
   // API key, a hand-edited env var is expected to require a fresh model (and
   // thus a fresh agent run) to take effect.
@@ -1346,8 +1353,9 @@ function createOpenAiCompatibleFetch(): typeof fetch {
 
     return globalThis.fetch(
       input,
-      normalizeOpenAiCompatibleChatCompletionsInit(input, initWithHeaders) ??
-        initWithHeaders,
+      (options.normalizeChatCompletions
+        ? normalizeOpenAiCompatibleChatCompletionsInit(input, initWithHeaders)
+        : null) ?? initWithHeaders,
     );
   };
 }

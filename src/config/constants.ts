@@ -554,7 +554,8 @@ export function resolveOpenAICompatibleEntraScope(
  * route on a custom header rather than (or in addition to) `Authorization` —
  * `x-portkey-api-key`, `x-portkey-config`, and similar. This accepts a JSON
  * object of string header names to string values and fails closed on
- * malformed input so a typo doesn't silently drop the header.
+ * malformed input (including names or values the Fetch `Headers` class would
+ * reject) so a typo doesn't silently drop the header.
  */
 export function resolveOpenAiCompatibleHeaders(
   env: NodeJS.ProcessEnv = process.env,
@@ -598,6 +599,22 @@ export function resolveOpenAiCompatibleHeaders(
     }
 
     headers[key] = value;
+  }
+
+  // Headers.set rejects more than non-string values (empty or whitespace
+  // names, control characters or newlines in values). Validate once here so a
+  // bad value fails at startup instead of surfacing as a TypeError inside
+  // every fetch, where it would look like a transport error and be retried.
+  for (const [key, value] of Object.entries(headers)) {
+    try {
+      new Headers().set(key, value);
+    } catch {
+      // Name the offending key but never echo the value: it may be a secret.
+      throw new Error(
+        `${OPENAI_COMPATIBLE_HEADERS_ENV_KEY} contains an invalid HTTP ` +
+          `header name or value for ${JSON.stringify(key)}.`,
+      );
+    }
   }
 
   return headers;
