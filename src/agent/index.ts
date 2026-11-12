@@ -869,18 +869,7 @@ async function createCheckpointer(
     await prepareCheckpointDirectory(target.connString);
   }
 
-  const checkpointer = SqliteSaver.fromConnString(target.connString);
-
-  if (target.persistent) {
-    try {
-      pruneCheckpointHistory(checkpointer);
-    } catch {
-      // Best-effort startup prune of stale checkpoints left by prior killed runs;
-      // errors should not prevent checkpointer creation.
-    }
-  }
-
-  return checkpointer;
+  return SqliteSaver.fromConnString(target.connString);
 }
 
 async function prepareCheckpointDirectory(filePath: string): Promise<void> {
