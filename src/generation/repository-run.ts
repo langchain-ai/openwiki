@@ -626,6 +626,13 @@ export async function beginRepositoryRun(
 }
 
 /**
+ * Matches Node's `ENOENT` code where a filesystem backend places it: at the
+ * start of the message or right after the backend's own `'<path>':` prefix.
+ * Anchoring it there keeps a page whose name contains "enoent" from matching.
+ */
+const ENOENT_ERROR_PATTERN = /(?:^|:\s)ENOENT:/u;
+
+/**
  * True when a backend result error indicates a file or directory does not exist.
  *
  * Matches:
@@ -635,12 +642,10 @@ export async function beginRepositoryRun(
  *   e.g. `"Error deleting '...': ENOENT: no such file or directory, lstat '...'"` (see #871)
  */
 export function isNotFoundBackendError(error: string): boolean {
-  const lower = error.toLowerCase();
   return (
     error === "file_not_found" ||
-    lower.includes("not found") ||
-    lower.includes("enoent") ||
-    lower.includes("no such file or directory")
+    error.includes("not found") ||
+    ENOENT_ERROR_PATTERN.test(error)
   );
 }
 

@@ -569,6 +569,24 @@ test("isNotFoundBackendError matches error codes, prose, and ENOENT messages", (
   expect(isNotFoundBackendError("invalid_state")).toBe(false);
 });
 
+test("isNotFoundBackendError ignores a page path that merely contains the error code", () => {
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/troubleshooting/enoent.md': EACCES: permission denied, unlink '/repo/openwiki/troubleshooting/enoent.md'",
+    ),
+  ).toBe(false);
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/ENOENT.md': EACCES: permission denied, unlink '/repo/openwiki/ENOENT.md'",
+    ),
+  ).toBe(false);
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/Not Found Errors.md': EACCES: permission denied, unlink '/repo/openwiki/Not Found Errors.md'",
+    ),
+  ).toBe(false);
+});
+
 test("tolerates an ENOENT missing-directory error from the backend when skipping a never-written page", async () => {
   // Regression for #871: when a new page belongs to a directory not yet created on disk,
   // DeepAgents filesystem backend delete() throws ENOENT during lstat traversal:
