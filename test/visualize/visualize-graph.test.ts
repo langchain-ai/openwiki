@@ -7,6 +7,7 @@ import {
   firstHeading,
   splitFrontmatter,
 } from "../../src/visualize/graph.ts";
+import { renderFrontmatter } from "../../src/okf/frontmatter.ts";
 
 const tempDirs: string[] = [];
 
@@ -64,6 +65,25 @@ describe("splitFrontmatter", () => {
     expect(meta.type).toBe("Reference");
     expect(meta.title).toBe("Stub page");
     expect(body).toBe("");
+  });
+
+  test("unescapes quoted scalars the way YAML reads them", () => {
+    const title = 'The "update" command at C:\\wiki';
+    const { meta } = splitFrontmatter(
+      `${renderFrontmatter({ type: "Reference", title }, { generated: false })}# Heading\n`,
+    );
+    expect(meta.title).toBe(title);
+
+    const { meta: other } = splitFrontmatter(
+      [
+        "---",
+        "title: 'Don''t panic'",
+        'description: Run "openwiki init"',
+        "---",
+      ].join("\n"),
+    );
+    expect(other.title).toBe("Don't panic");
+    expect(other.description).toBe('Run "openwiki init"');
   });
 
   test("treats CRLF files ending at the closing delimiter as an empty body", () => {
