@@ -157,6 +157,7 @@ function buildClaimsRuntime(
  * @param session - Process-local Claims working state.
  * @param store - Repository Claims and Markdown persistence boundary.
  * @param verificationByPage - Durable verification eligibility by factual page.
+ * @param excludedPages - Pages whose restored Markdown must remain unchanged.
  * @returns Page-version synchronization warnings requiring run failure.
  */
 async function finalizeVerificationProjection(
