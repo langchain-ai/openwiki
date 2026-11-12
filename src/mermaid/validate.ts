@@ -155,7 +155,8 @@ export function heuristicError(body: string): string | undefined {
   }
 
   // An unescaped angle bracket inside a label.
-  if (/[[({][^)\]}]*[<>][^)\]}]*[)\]}]/u.test(body)) {
+  const withoutLineBreaks = body.replace(/<\/?br\s*\/?>/giu, " ");
+  if (/[[({][^)\]}]*<[A-Za-z/][^)\]}]*[)\]}]/u.test(withoutLineBreaks)) {
     return "Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label.";
   }
 
