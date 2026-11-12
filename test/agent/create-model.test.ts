@@ -1085,6 +1085,17 @@ describe("createModel ChatGPT fast mode", () => {
       /OPENWIKI_FAST_MODE is not supported for provider "openai"/u,
     );
   });
+
+  test("accepts fast mode off for a provider other than ChatGPT login", () => {
+    vi.stubEnv("OPENAI_API_KEY", "fake-openai-provider-key");
+    process.env[FAST_MODE_KEY] = "false";
+
+    try {
+      expect(() => createModel("openai", "gpt-5.6-terra", 0)).not.toThrow();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
 
 function restoreEnv(key: string, value: string | undefined): void {

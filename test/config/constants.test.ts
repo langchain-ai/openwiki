@@ -771,6 +771,15 @@ describe("resolveCodexServiceTier", () => {
       resolveCodexServiceTier("openai", { OPENWIKI_FAST_MODE: "true" }),
     ).toThrow(/Fast mode requires the openai-chatgpt provider/);
   });
+
+  test("accepts false with any provider", () => {
+    expect(
+      resolveCodexServiceTier("openai", { OPENWIKI_FAST_MODE: "false" }),
+    ).toBeUndefined();
+    expect(
+      resolveCodexServiceTier("anthropic", { OPENWIKI_FAST_MODE: " FALSE " }),
+    ).toBeUndefined();
+  });
 });
 
 describe("providerUsesStreaming", () => {

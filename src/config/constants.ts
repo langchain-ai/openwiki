@@ -1313,13 +1313,15 @@ export function resolveOpenAiCompatibleStreaming(
  *
  * `true` requests the `priority` tier, which Codex labels Fast mode and bills
  * at a higher ChatGPT usage rate. `false` and an unset variable send no tier,
- * which is how the Codex CLI requests standard routing.
+ * which is how the Codex CLI requests standard routing. `false` is accepted
+ * with every provider, so a value left in `~/.openwiki/.env` after switching
+ * provider does not fail every run.
  *
  * @param provider - Active model provider.
  * @param env - Environment containing the optional setting.
  * @returns `"priority"` when fast mode is on, otherwise `undefined`.
- * @throws When the value is not `true` or `false`, or the provider is not the
- * ChatGPT login.
+ * @throws When the value is not `true` or `false`, or when it is `true` and
+ * the provider is not the ChatGPT login.
  */
 export function resolveCodexServiceTier(
   provider: OpenWikiProvider,
@@ -1339,13 +1341,17 @@ export function resolveCodexServiceTier(
     );
   }
 
+  if (value === "false") {
+    return undefined;
+  }
+
   if (provider !== "openai-chatgpt") {
     throw new Error(
       `${OPENWIKI_FAST_MODE_ENV_KEY} is not supported for provider "${provider}". Fast mode requires the openai-chatgpt provider.`,
     );
   }
 
-  return value === TRUE_ENV_VALUE ? "priority" : undefined;
+  return "priority";
 }
 
 // Caps per-request output tokens for OpenRouter. Without a cap, OpenRouter's
