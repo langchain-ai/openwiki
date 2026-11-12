@@ -570,6 +570,7 @@ describe("resolveRequestTimeoutForProvider", () => {
       "openai-chatgpt",
       "bob",
       "copilot",
+      "mistral",
     ] as const) {
       expect(
         resolveRequestTimeoutForProvider(provider, {
