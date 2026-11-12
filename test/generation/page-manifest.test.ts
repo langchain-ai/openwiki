@@ -111,6 +111,39 @@ describe("repository page-manifest persistence", () => {
     );
   });
 
+  test("drops legacy canonical guide entries without discarding factual page coverage", async () => {
+    const entry = { pageVersion: `sha256:${"c".repeat(64)}`, gitHead: GIT_HEAD };
+    await writeRawManifest({
+      schemaVersion: 1,
+      pages: {
+        "/openwiki/AGENTS.md": entry,
+        "/openwiki/nested/AGENTS.md": entry,
+        "/openwiki/page.md": entry,
+      },
+    });
+    await expect(readRepositoryPageManifest(root)).resolves.toEqual({
+      schemaVersion: 1,
+      pages: { "/openwiki/page.md": entry },
+    });
+  });
+
+  test.each(["agents.md", "Agents.md"])(
+    "retains existing non-exact guide-name coverage for %s",
+    async (name) => {
+      const manifest = {
+        schemaVersion: 1,
+        pages: {
+          [`/openwiki/${name}`]: {
+            pageVersion: `sha256:${"c".repeat(64)}`,
+            gitHead: GIT_HEAD,
+          },
+        },
+      };
+      await writeRawManifest(manifest);
+      await expect(readRepositoryPageManifest(root)).resolves.toEqual(manifest);
+    },
+  );
+
   test("fails closed for malformed JSON and schema extensions", async () => {
     const file = repositoryPageManifestPath(root);
     await mkdir(path.dirname(file), { recursive: true });
@@ -147,6 +180,8 @@ describe("repository page-manifest persistence", () => {
     ["invalid hash", "/openwiki/page.md", "sha256:not-a-hash"],
     ["non-canonical path", "openwiki/page.md", `sha256:${"c".repeat(64)}`],
     ["structural page", "/openwiki/index.md", `sha256:${"c".repeat(64)}`],
+    ["outside guide path", "/outside/AGENTS.md", `sha256:${"c".repeat(64)}`],
+    ["aliased guide path", "/openwiki/nested/../AGENTS.md", `sha256:${"c".repeat(64)}`],
   ])("rejects an %s", async (_label, page, pageVersion) => {
     await writeRawManifest({
       schemaVersion: 1,

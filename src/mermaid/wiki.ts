@@ -1,6 +1,7 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "../agent/types.js";
+import { isWikiAgentGuide } from "../claims/brains/code/paths.js";
 import { extractMermaidFences } from "./fences.js";
 import { degradeInvalidMermaidFences } from "./validate.js";
 
@@ -104,7 +105,8 @@ async function listMarkdownFiles(
       files.push(...(await listMarkdownFiles(backend, entryPath)));
     } else if (
       path.posix.extname(name).toLowerCase() === ".md" &&
-      !EXCLUDED_FILES.has(name)
+      !EXCLUDED_FILES.has(name) &&
+      !isWikiAgentGuide(name)
     ) {
       files.push(entryPath);
     }

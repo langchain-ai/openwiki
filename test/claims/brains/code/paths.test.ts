@@ -63,6 +63,8 @@ describe("code-brain claim paths", () => {
     "/openwiki/nested/Index.md",
     "/openwiki/log.md",
     "/openwiki/INSTRUCTIONS.md",
+    "/openwiki/AGENTS.md",
+    "/openwiki/nested/AGENTS.md",
     "/openwiki/.claims/page.md",
     "/openwiki/.CLAIMS/page.md",
     "/openwiki/nested/.claims/page.md",
@@ -86,6 +88,33 @@ describe("code-brain claim paths", () => {
     (page) => {
       expect(() => normalizeClaimsToolPagePath(page)).toThrow(
         ClaimSessionError,
+      );
+    },
+  );
+
+  test.each(["AGENTS.md", "nested/AGENTS.md", "openwiki\\nested\\AGENTS.md"])(
+    "rejects user-owned guide tool path %s",
+    (page) => {
+      expect(() => normalizeWikiToolPagePath(page)).toThrow(ClaimSessionError);
+      expect(() => normalizeClaimsToolPagePath(page)).toThrow(ClaimSessionError);
+    },
+  );
+
+  test.each(["agents.md", "Agents.md", "nested/agents.md", "nested/Agents.md"])(
+    "rejects case-insensitive guide alias %s at mutation boundaries",
+    (page) => {
+      expect(() => normalizeWikiToolPagePath(page)).toThrow(ClaimSessionError);
+      expect(() => normalizeClaimsToolPagePath(page)).toThrow(ClaimSessionError);
+      expect(normalizeWikiPagePath(`/openwiki/${page}`)).toBe(`/openwiki/${page}`);
+    },
+  );
+
+  test.each(["agents.md", "Agents.md", "my-AGENTS.md"])(
+    "keeps non-exact guide name %s factual",
+    (name) => {
+      expect(isGroundedWikiPage(`/openwiki/nested/${name}`)).toBe(true);
+      expect(normalizeWikiPagePath(`/openwiki/nested/${name}`)).toBe(
+        `/openwiki/nested/${name}`,
       );
     },
   );

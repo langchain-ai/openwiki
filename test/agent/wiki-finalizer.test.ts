@@ -88,6 +88,35 @@ describe("prepareWikiForAuthoring", () => {
 });
 
 describe("finalizeWikiArtifacts", () => {
+  test("preserves root and nested folder guides without indexing or repairing them", async () => {
+    const { backend, rootDir } = await setupWiki();
+    const content = `# Folder instructions\r\n\r\n${BROKEN_MERMAID}\n\n[missing](missing.md)\n`;
+    const guides = ["AGENTS.md", "nested/AGENTS.md"];
+    for (const guide of guides) {
+      await backend.write(`/openwiki/${guide}`, content);
+    }
+    const prepared = await prepareWikiForAuthoring({
+      backend,
+      outputMode: "repository",
+    });
+    expect(prepared.generatedProvenance.size).toBe(0);
+    await finalizeWikiArtifacts({
+      backend,
+      outputMode: "repository",
+      prepared,
+      at: RUN_TIMESTAMP,
+    });
+    for (const guide of guides) {
+      expect(await readFile(path.join(rootDir, "openwiki", guide), "utf8")).toBe(content);
+      const index = await readFile(
+        path.join(rootDir, "openwiki", path.posix.dirname(guide), "index.md"),
+        "utf8",
+      );
+      expect(index).not.toContain("AGENTS.md");
+      expect(index).not.toContain("Folder instructions");
+    }
+  });
+
   test("rejects an empty producer before running finalization operations", async () => {
     const { backend } = await setupWiki();
     const prepared = await prepareWikiForAuthoring({

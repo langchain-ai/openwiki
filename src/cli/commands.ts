@@ -1303,7 +1303,7 @@ export const helpContent: HelpContent = {
     {
       label: "--init",
       description:
-        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md. Defaults to code mode; use personal to initialize the local personal brain.",
+        "Generate repository documentation from scratch, replacing an existing generated wiki while preserving openwiki/INSTRUCTIONS.md and root or nested AGENTS.md folder guides. Defaults to code mode; use personal to initialize the local personal brain.",
     },
     {
       label: "--update",
