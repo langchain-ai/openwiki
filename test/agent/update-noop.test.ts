@@ -188,6 +188,38 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("skips update when untracked openwiki/ page names are quoted by git", async () => {
+    // git C-quotes a short-status path with a space or, under the default
+    // core.quotePath, a non-ASCII byte: `?? "openwiki/caf\303\251.md"`.
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await writeFile(
+      path.join(repo, "openwiki", "my page.md"),
+      "# My page\n",
+      "utf8",
+    );
+    await writeFile(path.join(repo, "openwiki", "café.md"), "# Café\n", "utf8");
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
+  test("does not skip update when a quoted path lies outside openwiki/", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await writeFile(path.join(repo, "my notes.md"), "# Notes\n", "utf8");
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status).toEqual({
+      shouldSkip: false,
+      reason: "worktree has changes",
+    });
+  });
+
   test("does not skip update when the previous run was interrupted", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);
