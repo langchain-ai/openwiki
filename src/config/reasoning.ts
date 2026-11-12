@@ -12,6 +12,7 @@ export const REASONING_EFFORT_VALUES = [
   "high",
   "xhigh",
   "max",
+  "ultra",
 ] as const;
 
 export type ReasoningEffort = (typeof REASONING_EFFORT_VALUES)[number];
@@ -35,9 +36,47 @@ export type ResolveReasoningConfigOptions = {
   useResponsesApi?: boolean;
 };
 
-const OPENAI_GPT_56_REASONING_CAPABILITY = {
+/**
+ * Efforts every Responses-API model accepts. `ultra` is deliberately absent:
+ * only the GPT-6 models expose it, so their capabilities list it explicitly
+ * instead of widening this shared set.
+ */
+const OPENAI_RESPONSES_REASONING_VALUES = [
+  "none",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const satisfies readonly ReasoningEffort[];
+
+/** Levels the GPT-6 models advertise, per the Codex model catalog. */
+const OPENAI_GPT_6_REASONING_VALUES = [
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const satisfies readonly ReasoningEffort[];
+
+const OPENAI_GPT_6_ULTRA_REASONING_VALUES = [
+  ...OPENAI_GPT_6_REASONING_VALUES,
+  "ultra",
+] as const satisfies readonly ReasoningEffort[];
+
+const OPENAI_RESPONSES_REASONING_CAPABILITY = {
   transport: "responses-reasoning",
-  values: REASONING_EFFORT_VALUES,
+  values: OPENAI_RESPONSES_REASONING_VALUES,
+} as const satisfies ReasoningCapability;
+
+const OPENAI_GPT_6_REASONING_CAPABILITY = {
+  transport: "responses-reasoning",
+  values: OPENAI_GPT_6_REASONING_VALUES,
+} as const satisfies ReasoningCapability;
+
+const OPENAI_GPT_6_ULTRA_REASONING_CAPABILITY = {
+  transport: "responses-reasoning",
+  values: OPENAI_GPT_6_ULTRA_REASONING_VALUES,
 } as const satisfies ReasoningCapability;
 
 const GEMINI_THINKING_LEVEL_REASONING_CAPABILITY = {
@@ -49,14 +88,17 @@ const REASONING_CAPABILITIES: Partial<
   Record<OpenWikiProvider, Readonly<Record<string, ReasoningCapability>>>
 > = {
   openai: {
-    "gpt-5.6-terra": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-luna": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-sol": OPENAI_GPT_56_REASONING_CAPABILITY,
+    "gpt-5.6-terra": OPENAI_RESPONSES_REASONING_CAPABILITY,
+    "gpt-5.6-luna": OPENAI_RESPONSES_REASONING_CAPABILITY,
+    "gpt-5.6-sol": OPENAI_RESPONSES_REASONING_CAPABILITY,
   },
   "openai-chatgpt": {
-    "gpt-5.6-terra": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-luna": OPENAI_GPT_56_REASONING_CAPABILITY,
-    "gpt-5.6-sol": OPENAI_GPT_56_REASONING_CAPABILITY,
+    "gpt-5.6-terra": OPENAI_RESPONSES_REASONING_CAPABILITY,
+    "gpt-5.6-luna": OPENAI_RESPONSES_REASONING_CAPABILITY,
+    "gpt-5.6-sol": OPENAI_RESPONSES_REASONING_CAPABILITY,
+    "gpt-6-astra": OPENAI_GPT_6_ULTRA_REASONING_CAPABILITY,
+    "gpt-6-luna": OPENAI_GPT_6_REASONING_CAPABILITY,
+    "gpt-6-sol": OPENAI_GPT_6_ULTRA_REASONING_CAPABILITY,
   },
   nvidia: {
     "nvidia/nemotron-3-super-120b-a12b": {
@@ -142,6 +184,6 @@ function getOpenAiCompatibleReasoningCapability(
     transport: useResponsesApi
       ? "responses-reasoning"
       : "chat-completions-reasoning-effort",
-    values: REASONING_EFFORT_VALUES,
+    values: OPENAI_RESPONSES_REASONING_VALUES,
   };
 }
