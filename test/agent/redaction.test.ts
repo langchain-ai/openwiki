@@ -60,6 +60,7 @@ describe("sanitizeOpenRouterResponseBody", () => {
 });
 
 describe("sanitizeDiagnosticText", () => {
+  const originalAtlasCloudKey = process.env.ATLASCLOUD_API_KEY;
   const originalNebiusKey = process.env.NEBIUS_API_KEY;
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   const originalOpenAiCompatibleKey = process.env.OPENAI_COMPATIBLE_API_KEY;
@@ -68,6 +69,7 @@ describe("sanitizeDiagnosticText", () => {
   const originalMistralKey = process.env.MISTRAL_API_KEY;
 
   beforeEach(() => {
+    delete process.env.ATLASCLOUD_API_KEY;
     delete process.env.NEBIUS_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_COMPATIBLE_API_KEY;
@@ -77,6 +79,12 @@ describe("sanitizeDiagnosticText", () => {
   });
 
   afterEach(() => {
+    if (originalAtlasCloudKey === undefined) {
+      delete process.env.ATLASCLOUD_API_KEY;
+    } else {
+      process.env.ATLASCLOUD_API_KEY = originalAtlasCloudKey;
+    }
+
     if (originalNebiusKey === undefined) {
       delete process.env.NEBIUS_API_KEY;
     } else {
@@ -133,6 +141,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("ghu_secret-value-67890");
     expect(result).toContain("[REDACTED:COPILOT_API_KEY]");
+  });
+
+  test("redacts the Atlas Cloud API key when set in the environment", () => {
+    process.env.ATLASCLOUD_API_KEY = "atlas-secret-value-12345";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key atlas-secret-value-12345 attached",
+    );
+
+    expect(result).not.toContain("atlas-secret-value-12345");
+    expect(result).toContain("[REDACTED:ATLASCLOUD_API_KEY]");
   });
 
   test("redacts the Nebius API key when set in the environment", () => {
