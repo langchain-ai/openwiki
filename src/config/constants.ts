@@ -178,11 +178,11 @@ export type ProviderModelOption = {
 };
 
 /**
- * Model options offered by OpenAI. Shared by the `openai` (API key) and
- * `openai-chatgpt` (OAuth login) providers so the two always expose an
- * identical model list.
+ * Model options offered by OpenAI. The `openai-chatgpt` (OAuth login) provider
+ * offers this list; the `openai` (API key) provider extends it with models the
+ * ChatGPT-backed Codex endpoint rejects for ChatGPT accounts.
  */
-const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
+const OPENAI_CHATGPT_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-5.6-terra", label: "5.6 Terra" },
   { id: "gpt-5.6-luna", label: "5.6 Luna" },
   { id: "gpt-5.6-sol", label: "5.6 Sol" },
@@ -191,6 +191,10 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
   { id: "gpt-6-astra", label: "6 Astra" },
   { id: "gpt-6-sol", label: "6 Sol" },
   { id: "gpt-6-luna", label: "6 Luna" },
+];
+
+const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
+  ...OPENAI_CHATGPT_MODEL_OPTIONS,
   { id: "gpt-5.5", label: "5.5" },
   { id: "gpt-5.4-mini", label: "5.4 mini" },
 ];
@@ -202,11 +206,12 @@ const OPENAI_MODEL_OPTIONS: ProviderModelOption[] = [
  * partner/open-weight Model Garden models by pasting those model IDs directly.
  */
 const GEMINI_MODELS: ProviderModelOption[] = [
+  { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+  { id: "gemini-4-argon", label: "Gemini 4 Argon" },
+  { id: "gemini-4-carbon", label: "Gemini 4 Carbon" },
   { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
   { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
-  { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
-  { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
-  { id: "gemini-3-flash", label: "Gemini 3 Flash" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
   { id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
 ];
 
@@ -306,8 +311,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     baseUrlEnvKey: BASETEN_BASE_URL_ENV_KEY,
     label: "Baseten",
     modelOptions: [
+      { id: "zai-org/GLM-5.3", label: "GLM 5.3" },
       { id: "zai-org/GLM-5.2", label: "GLM 5.2" },
-      { id: "moonshotai/Kimi-K2.7-Code", label: "Kimi K2.7 Code" },
+      { id: "moonshotai/Kimi-K3", label: "Kimi K3" },
     ],
   },
   bob: {
@@ -348,8 +354,6 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "gpt-6-astra", label: "GPT 6 Astra" },
       { id: "gpt-6-sol", label: "GPT 6 Sol" },
       { id: "gpt-6-luna", label: "GPT 6 Luna" },
-      { id: "gpt-5.5", label: "GPT 5.5" },
-      { id: "gpt-5.4-mini", label: "GPT 5.4 mini" },
       { id: "claude-opus-5.5", label: "Claude Opus 5.5" },
       { id: "claude-opus-5", label: "Claude Opus 5" },
       { id: "claude-opus-4.8", label: "Claude Opus 4.8" },
@@ -358,9 +362,11 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
       { id: "claude-haiku-5.5", label: "Claude Haiku 5.5" },
       { id: "claude-haiku-4.5", label: "Claude Haiku 4.5" },
-      { id: "claude-fable-5.1", label: "Claude Fable 5.1" },
+      { id: "claude-fable-5.2", label: "Claude Fable 5.2" },
       { id: "claude-fable-5", label: "Claude Fable 5" },
-      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+      { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+      { id: "gemini-4-argon", label: "Gemini 4 Argon" },
+      { id: "gemini-4-carbon", label: "Gemini 4 Carbon" },
     ],
     responsesApi: /^gpt-[56]/u,
   },
@@ -370,11 +376,8 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     baseUrlEnvKey: FIREWORKS_BASE_URL_ENV_KEY,
     label: "Fireworks",
     modelOptions: [
-      { id: "accounts/fireworks/models/glm-5p2", label: "GLM 5.2" },
-      {
-        id: "accounts/fireworks/models/kimi-k2p7-code",
-        label: "Kimi K2.7 Code",
-      },
+      { id: "accounts/fireworks/models/glm-5p3", label: "GLM 5.3" },
+      { id: "accounts/fireworks/models/kimi-k3", label: "Kimi K3" },
     ],
   },
   mistral: {
@@ -397,7 +400,10 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: NEBIUS_API_KEY_ENV_KEY,
     baseURL: NEBIUS_BASE_URL,
     label: "Nebius Token Factory",
-    modelOptions: [{ id: "moonshotai/Kimi-K2.6", label: "Kimi K2.6" }],
+    modelOptions: [
+      { id: "moonshotai/Kimi-K3", label: "Kimi K3" },
+      { id: "zai-org/GLM-5.3", label: "GLM 5.3" },
+    ],
   },
   nvidia: {
     apiKeyEnvKey: NVIDIA_API_KEY_ENV_KEY,
@@ -417,8 +423,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
         id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         label: "Nemotron 3 Nano Omni 30B A3B",
       },
-      { id: "deepseek-ai/deepseek-v4-pro", label: "DeepSeek V4 Pro" },
-      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
+      { id: "deepseek-ai/deepseek-v4.1-flash", label: "DeepSeek V4.1 Flash" },
       { id: "moonshotai/kimi-k2.6", label: "Kimi K2.6" },
     ],
   },
@@ -433,7 +438,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: OPENAI_CHATGPT_ACCESS_TOKEN_ENV_KEY,
     authMethod: "oauth",
     label: "OpenAI (ChatGPT login)",
-    modelOptions: OPENAI_MODEL_OPTIONS,
+    modelOptions: OPENAI_CHATGPT_MODEL_OPTIONS,
   },
   "openai-compatible": {
     apiKeyEnvKey: OPENAI_COMPATIBLE_API_KEY_ENV_KEY,
@@ -454,7 +459,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-5-5", label: "Opus 5.5" },
       { id: "claude-sonnet-5-5", label: "Sonnet 5.5" },
       { id: "claude-haiku-5-5", label: "Haiku 5.5" },
-      { id: "claude-fable-5-1", label: "Fable 5.1" },
+      { id: "claude-fable-5-2", label: "Fable 5.2" },
     ],
   },
   gemini: {
@@ -482,7 +487,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-opus-5-5", label: "Claude Opus 5.5" },
       { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
       { id: "claude-haiku-5-5", label: "Claude Haiku 5.5" },
-      { id: "claude-fable-5-1", label: "Claude Fable 5.1" },
+      { id: "claude-fable-5-2", label: "Claude Fable 5.2" },
     ],
   },
   openrouter: {
@@ -494,12 +499,12 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "z-ai/glm-5.2", label: "GLM 5.2" },
       { id: "openrouter/fusion", label: "OpenRouter Fusion" },
       { id: "moonshotai/kimi-k2.7-code", label: "Kimi K2.7 Code" },
-      { id: "anthropic/claude-opus-4-8", label: "Claude Opus" },
+      { id: "anthropic/claude-opus-4.8", label: "Claude Opus" },
       { id: "anthropic/claude-sonnet-5", label: "Claude Sonnet" },
       { id: "anthropic/claude-opus-5.5", label: "Claude Opus 5.5" },
       { id: "anthropic/claude-sonnet-5.5", label: "Claude Sonnet 5.5" },
       { id: "anthropic/claude-haiku-5.5", label: "Claude Haiku 5.5" },
-      { id: "anthropic/claude-fable-5.1", label: "Claude Fable 5.1" },
+      { id: "anthropic/claude-fable-5.2", label: "Claude Fable 5.2" },
       { id: "openai/gpt-6.1-sol", label: "GPT 6.1 Sol" },
       { id: "openai/gpt-6.1-terra", label: "GPT 6.1 Terra" },
       { id: "openai/gpt-6-astra", label: "GPT 6 Astra" },

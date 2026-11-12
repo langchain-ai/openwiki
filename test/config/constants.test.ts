@@ -546,6 +546,16 @@ describe("reasoning capabilities", () => {
       transport: "gemini-thinking-level",
       values: GEMINI_REASONING_VALUES,
     });
+    for (const modelId of [
+      "gemini-3.8-flash",
+      "gemini-4-argon",
+      "gemini-4-carbon",
+    ]) {
+      expect(getReasoningCapability("gemini", modelId)).toEqual({
+        transport: "gemini-thinking-level",
+        values: GEMINI_REASONING_VALUES,
+      });
+    }
     expect(
       getReasoningCapability("nvidia", "nvidia/nemotron-3-super-120b-a12b"),
     ).toEqual({
@@ -1303,7 +1313,7 @@ describe("resolveProviderLocation", () => {
 });
 
 describe("getProviderModelOptions", () => {
-  test("gemini-enterprise offers the Claude 5.5 and Fable 5.1 Model Garden IDs", () => {
+  test("gemini-enterprise offers the Claude 5.5 and Fable 5.2 Model Garden IDs", () => {
     const ids = getProviderModelOptions("gemini-enterprise").map(
       (model) => model.id,
     );
@@ -1312,12 +1322,12 @@ describe("getProviderModelOptions", () => {
         "claude-opus-5-5",
         "claude-sonnet-5-5",
         "claude-haiku-5-5",
-        "claude-fable-5-1",
+        "claude-fable-5-2",
       ]),
     );
   });
 
-  test("offers the Claude 5.5, Fable 5.1, and GPT-6 models on the providers that serve them", () => {
+  test("offers the Claude 5.5, Fable 5.2, and GPT-6 models on the providers that serve them", () => {
     const idsOf = (provider: Parameters<typeof getProviderModelOptions>[0]) =>
       getProviderModelOptions(provider).map((model) => model.id);
 
@@ -1326,7 +1336,7 @@ describe("getProviderModelOptions", () => {
         "claude-opus-5-5",
         "claude-sonnet-5-5",
         "claude-haiku-5-5",
-        "claude-fable-5-1",
+        "claude-fable-5-2",
       ]),
     );
     expect(idsOf("copilot")).toEqual(
@@ -1339,8 +1349,14 @@ describe("getProviderModelOptions", () => {
         "claude-opus-5.5",
         "claude-sonnet-5.5",
         "claude-haiku-5.5",
-        "claude-fable-5.1",
+        "claude-fable-5.2",
+        "gemini-4-argon",
+        "gemini-4-carbon",
       ]),
+    );
+    expect(idsOf("copilot")).not.toEqual(expect.arrayContaining(["gpt-5.5"]));
+    expect(idsOf("copilot")).not.toEqual(
+      expect.arrayContaining(["gemini-2.5-pro"]),
     );
     expect(idsOf("openrouter")).toEqual(
       expect.arrayContaining([
@@ -1352,15 +1368,18 @@ describe("getProviderModelOptions", () => {
         "anthropic/claude-opus-5.5",
         "anthropic/claude-sonnet-5.5",
         "anthropic/claude-haiku-5.5",
-        "anthropic/claude-fable-5.1",
+        "anthropic/claude-fable-5.2",
       ]),
     );
   });
 
-  test("offers the latest Gemini Flash models on both Gemini providers", () => {
+  test("offers the latest Gemini models on both Gemini providers", () => {
     const expectedModels = [
+      { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+      { id: "gemini-4-argon", label: "Gemini 4 Argon" },
+      { id: "gemini-4-carbon", label: "Gemini 4 Carbon" },
       { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
-      { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+      { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
     ];
 
     for (const provider of ["gemini", "gemini-enterprise"] as const) {
@@ -1375,13 +1394,13 @@ describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
     expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
-    expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
+    expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K3");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
     expect(getDefaultModelId("mistral")).toBe("mistral-small-2603");
-    expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
-    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
+    expect(getDefaultModelId("gemini")).toBe("gemini-3.8-flash");
+    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.8-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
@@ -1418,10 +1437,13 @@ describe("getProvidersForKnownModelId", () => {
     // Anthropic's bare "claude-opus-4-8" must not match OpenRouter's
     // namespaced "anthropic/claude-opus-4-8" or vice versa.
     expect(
-      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openai"),
+      getProvidersForKnownModelId("anthropic/claude-opus-4.8", "openai"),
     ).toEqual(["openrouter"]);
     expect(
-      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openrouter"),
+      getProvidersForKnownModelId("anthropic/claude-opus-4.8", "openrouter"),
+    ).toEqual([]);
+    expect(
+      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openai"),
     ).toEqual([]);
   });
 
