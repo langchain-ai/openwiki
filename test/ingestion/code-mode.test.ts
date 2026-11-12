@@ -164,6 +164,24 @@ afterEach(async () => {
 });
 
 describe("ensureCodeModeRepoSetup agent files", () => {
+  test.each([false, true])(
+    "does not assume scheduled maintenance is active (createWorkflow=%s)",
+    async (createWorkflow) => {
+      const repo = await createTempRepo();
+      const authored = "Repository maintenance is managed externally.\n\n";
+      await writeFile(path.join(repo, "AGENTS.md"), authored, "utf8");
+      await ensureCodeModeRepoSetup(repo, { createWorkflow });
+      const first = await readFile(path.join(repo, "AGENTS.md"), "utf8");
+      expect(first.startsWith(authored)).toBe(true);
+      expect(first).not.toContain(
+        "The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki.",
+      );
+      expect(first).toContain("Check its configuration and completed runs");
+      await ensureCodeModeRepoSetup(repo, { createWorkflow });
+      expect(await readFile(path.join(repo, "AGENTS.md"), "utf8")).toBe(first);
+    },
+  );
+
   test("creates AGENTS.md but not CLAUDE.md when neither exists", async () => {
     const repo = await createTempRepo();
 
@@ -297,6 +315,21 @@ Trailing notes that must survive.
     // Appended after the original content, not prepended over it.
     expect(content?.indexOf("Do not lose this line.")).toBeLessThan(
       content?.indexOf(SNIPPET_START) ?? -1,
+    );
+  });
+
+  test("does not claim a scheduled update exists in repository guidance", async () => {
+    const repo = await createTempRepo();
+    await writeFile(
+      path.join(repo, "AGENTS.md"),
+      "No scheduled wiki workflow is installed.\n",
+      "utf8",
+    );
+    await ensureCodeModeRepoSetup(repo);
+    const content = await readIfPresent(path.join(repo, "AGENTS.md"));
+    expect(content).toContain("No scheduled wiki workflow is installed.");
+    expect(content).not.toContain(
+      "The scheduled OpenWiki GitHub Actions workflow refreshes",
     );
   });
 

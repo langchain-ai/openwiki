@@ -3,9 +3,6 @@ type: integration
 title: Interactive Visualizer
 description: How the `openwiki visualize` command builds a link graph from wiki Markdown and OKF frontmatter, serves a live single-page reader over loopback HTTP, and exports a self-contained static site for hosting.
 tags: [visualizer, graph, static-export, cli, server, markdown-reader]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -19,6 +16,8 @@ sources:
     resource: repo://src/visualize/client-lib.ts
   - id: openwiki-source-610ff51ff8da46ab065496a5
     resource: repo://src/visualize/client.ts
+  - id: openwiki-source-37e0e714b8257069ec052301
+    resource: repo://src/visualize/graph-types.ts
   - id: openwiki-source-d92f623adbf6b31c3542d58d
     resource: repo://src/visualize/graph.ts
   - id: openwiki-source-b0d5ccee7e5f7532bd8ed3f5
@@ -39,7 +38,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
+verified:
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Interactive Visualizer
@@ -238,7 +240,45 @@ computes a stable fingerprint of the graph topology (node ids plus directed edge
 when a reload leaves the topology unchanged the scene and viewport are left
 completely untouched, and when it changes the client re-feeds data while reusing
 persisted per-id node objects so layout and camera stay put. Node colors are
-assigned by `colorsForTypes`, mapping each distinct type to a palette entry by
+assigned by `colorsForTypes`,
+
+## Deep-linking and entry-page selection
+
+A URL fragment lets a link open the visualizer on a specific page instead of the
+default entry. A URL such as `http://host:port/#page=architecture/overview` is
+parsed client-side by `requestedPageId`, which reads `location.hash` as
+`URLSearchParams`, extracts the `page` key, and returns it only if `byId(raw)`
+resolves it to a node that exists in the loaded graph. The fragment is never sent
+to the server — it is pure client state — so there are no route changes and the
+loopback server never sees it. An unknown or malformed id (no `page` key, or an
+id not present in the graph) is ignored, so the default entry page opens instead.
+
+`load(firstTime)` drives both the initial render and every reload. On each call it
+picks a default entry page: the first node whose id matches `quickstart`, else the
+first matching `index`/`overview`/`home` (anchored at a path segment boundary),
+else simply `graph.nodes[0]`; that id becomes `anchorId`. The fragment is honored
+only on the first load: `const requested = firstTime ? requestedPageId() : null;`
+— if a requested page exists it is selected (and highlighted) via
+`selectNode(requested)`, overriding the entry default; otherwise the reader falls
+back to the currently open page if still present, then to `anchorId` on the first
+load. Subsequent reloads never re-apply the fragment, so an edit-triggered refresh
+keeps the page you are reading rather than jumping back to the deep-linked target.
+
+```mermaid
+flowchart TD
+  L["load(firstTime)"] --> E["pick entry: quickstart, else index/overview/home, else nodes[0]"]
+  L --> R{"firstTime and #page=id resolves<br/>to an existing node?"}
+  R -- "yes" --> S["selectNode(requested): open + highlight that page"]
+  R -- "no" --> C{"current page still present?"}
+  C -- "yes" --> RC["renderReader(current)"]
+  C -- "no" --> F{"firstTime and anchorId?"}
+  F -- "yes" --> A["renderReader(anchorId)"]
+  F -- "no" --> N["no reader change"]
+```
+
+Entry-page and `#page=<id>` fragment resolution in `load`; the fragment is consulted only on the first load.
+
+Node colors are assigned by `colorsForTypes`, mapping each distinct type to a palette entry by
 position so the graph canvas and legend always agree. The client detects its mode
 from the `data-static-export` attribute on the document element: static exports read
 `./graph.json` and never open an SSE connection, while live mode reads `/api/graph`
@@ -247,12 +287,21 @@ and subscribes to `/events`.
 The pure, DOM-independent helpers used by the client — `escapeHtml`,
 `colorsForTypes`, `nodeRadius`, `signature`, `matchesFilter`, `normalize`,
 `stripFrontmatter`, `hexA`, and `shouldShowNodeLabel` (with its
-`NodeLabelContext` interface) — live in `src/visualize/client-lib.ts` so they can
-be unit-tested directly without a browser. `shouldShowNodeLabel` decides whether
-a node label should be painted on the canvas based on interaction context: when
-nothing is selected, only the hovered node's label shows; when a node is
-selected, the selected node plus its immediate neighbours show labels; unrelated
-nodes never show labels.
+`NodeLabelContext` interface) — live in `src/visualize/client-lib.ts`, a pure,
+DOM-independent module so they can be unit-tested directly without a browser
+and reused by a React 19-compatible CLI renderer without pulling in Node
+filesystem APIs. `shouldShowNodeLabel` decides whether a node label should be
+painted on the canvas based on interaction context: when nothing is selected,
+only the hovered node's label shows; when a node is selected, the selected node
+plus its immediate neighbours show labels; unrelated nodes never show labels.
+
+The shared browser/Node graph data model lives in
+`src/visualize/graph-types.ts` and defines `WikiMeta`, `WikiNode`, `WikiEdge`,
+and `WikiGraph` plus the client `FilterableNode` and `PALETTE`. It has no
+runtime dependencies and is imported by both `client-lib.ts` (for the browser
+side) and `graph.ts` (the Node loader that reads files off disk), so the two
+sides share one typed shape without the browser bundle dragging in Node's
+`fs`/`path` loader.
 
 ## Static export
 
@@ -279,10 +328,14 @@ Markdown and rendering in its shipped typeface.
 ## Build pipeline and assets
 
 The client TypeScript is compiled separately from the server code. The `build`
-script in `package.json` runs `tsc -p tsconfig.json`, then `tsc -p
+script in `package.json` runs `node ./node_modules/typescript7/bin/tsc -p
+tsconfig.json`, then `node ./node_modules/typescript7/bin/tsc -p
 tsconfig.client.json` (which compiles `client.ts` and its imported `client-lib.ts`
-with DOM libs enabled), and finally `node scripts/copy-visualize-assets.cjs`. That
-last step exists because `styles.css` is a hand-authored asset TypeScript does not
+with DOM libs enabled), and finally `node scripts/copy-visualize-assets.cjs`. Both
+`tsc` invocations go through the locally pinned `typescript7` package rather than
+the project's default `typescript`, so the build uses an exact toolchain the rest
+of the repo does not have to depend on. That last step exists because `styles.css`
+is a hand-authored asset TypeScript does not
 emit: the copy script explicitly copies `src/visualize/styles.css` into
 `dist/visualize/styles.css` and fails the build if the source is missing, the
 `dist/visualize` directory does not exist (a sign the build did not run first), or
