@@ -47,9 +47,10 @@ export const OPENWIKI_TRANSLATION_PENDING_FIELD =
   "openwiki_translation_pending";
 
 /**
- * Matches a leading YAML front-matter block and captures its inner text.
+ * Matches a leading YAML front-matter block and captures its inner text. A UTF-8
+ * byte order mark, which some Windows editors write, may precede the opening `---`.
  */
-const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u;
+const FRONTMATTER_BLOCK = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u;
 
 /**
  * Minimal OKF fields OpenWiki can derive from a page body. Only `type` (the sole
@@ -116,7 +117,8 @@ export interface PersistedFrontmatterRepair {
  * Parses and validates OKF front matter while tolerating producer extensions.
  */
 export function validateOkfFrontmatter(content: string): FrontmatterValidation {
-  const lines = content.split(/\r?\n/u);
+  // A leading byte order mark is encoding, not content, so it must not hide `---`.
+  const lines = content.replace(/^\uFEFF/u, "").split(/\r?\n/u);
   if (lines[0] !== "---") {
     return invalid(
       "missing_opening_delimiter",
