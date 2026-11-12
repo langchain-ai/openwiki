@@ -8,11 +8,7 @@ import {
 import { lstat, open, readdir, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import {
-  OPEN_WIKI_DIR,
-  PAGE_MANIFEST_PATH,
-  UPDATE_METADATA_PATH,
-} from "../config/constants.js";
+import { OPEN_WIKI_DIR, UPDATE_METADATA_PATH } from "../config/constants.js";
 import { writeTextAtomic } from "../integrations/install/atomic-file.js";
 import {
   isExpectedSnapshotRaceError,
@@ -155,7 +151,7 @@ export async function getUpdateNoopStatus(
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
-    .filter((line) => !isUpdateMetadataStatusLine(line))
+    .filter((line) => !isOpenWikiStatusLine(line))
     .filter((line) => !lineReferencesIgnoredPath(line, openWikiIgnore));
 
   if (meaningfulStatus.length > 0) {
@@ -889,22 +885,14 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
 }
 
 /**
- * Matches the two-character status field `git status --short` puts in front of
- * each path. The field is only one character wide on the first line of a
- * trimmed run, because `runGit` strips the leading space of an unstaged-only
- * status such as " M openwiki/.last-update.json".
+ * Whether every path on one line of `git status --short` output lives under
+ * `openwiki/`. A rename into or out of the wiki keeps its other path and stays
+ * meaningful; a line with no extractable path is left meaningful too.
  */
-const GIT_STATUS_LINE_PATTERN = /^[ !?ACDMRTU]{1,2} (.+)$/u;
+function isOpenWikiStatusLine(line: string): boolean {
+  const paths = extractGitPaths(line);
 
-function isUpdateMetadataStatusLine(line: string): boolean {
-  const statusPath = (GIT_STATUS_LINE_PATTERN.exec(line)?.[1] ?? line).trim();
-  const normalizedPath = statusPath.replace(/\\/gu, "/");
-
-  return [PAGE_MANIFEST_PATH, UPDATE_METADATA_PATH].some(
-    (metadataPath) =>
-      normalizedPath === metadataPath ||
-      normalizedPath.endsWith(` -> ${metadataPath}`),
-  );
+  return paths.length > 0 && paths.every(isOpenWikiPath);
 }
 
 /**
@@ -1143,8 +1131,62 @@ function isOpenWikiPath(changedPath: string): boolean {
   );
 }
 
+/**
+ * Trims one path from git output, decodes the C-style quoting git applies to a
+ * path with a space, a quote, a backslash, a control character, or (with the
+ * default `core.quotePath`) a non-ASCII byte, such as
+ * `"openwiki/caf\303\251.md"`, and converts backslashes to forward slashes.
+ */
 function normalizeGitPath(value: string): string {
-  return value.trim().replace(/\\/gu, "/");
+  const trimmed = value.trim();
+  const unquoted =
+    trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')
+      ? unquoteGitPath(trimmed.slice(1, -1))
+      : trimmed;
+
+  return unquoted.replace(/\\/gu, "/");
+}
+
+const GIT_PATH_ESCAPES: Readonly<Record<string, string>> = {
+  a: "\u0007",
+  b: "\b",
+  f: "\f",
+  n: "\n",
+  r: "\r",
+  t: "\t",
+  v: "\v",
+};
+
+/**
+ * Decodes the body of a C-quoted git path. Octal escapes are raw bytes of the
+ * UTF-8 name, so they are collected and decoded together.
+ */
+function unquoteGitPath(quoted: string): string {
+  const bytes: number[] = [];
+  let index = 0;
+
+  while (index < quoted.length) {
+    const char = quoted[index] ?? "";
+
+    if (char !== "\\") {
+      bytes.push(...Buffer.from(char, "utf8"));
+      index += 1;
+      continue;
+    }
+
+    const octal = /^[0-7]{1,3}/u.exec(quoted.slice(index + 1, index + 4));
+    if (octal) {
+      bytes.push(Number.parseInt(octal[0], 8) & 0xff);
+      index += 1 + octal[0].length;
+      continue;
+    }
+
+    const escaped = quoted[index + 1] ?? "";
+    bytes.push(...Buffer.from(GIT_PATH_ESCAPES[escaped] ?? escaped, "utf8"));
+    index += 2;
+  }
+
+  return Buffer.from(bytes).toString("utf8");
 }
 
 /**
@@ -1169,7 +1211,7 @@ function lineReferencesIgnoredPath(
  * paths so that either side matching a rule excludes the line.
  */
 function extractGitPaths(line: string): string[] {
-  const shortStatusMatch = /^(?:[ MARCUD?!]{2})\s+(.+)$/u.exec(line);
+  const shortStatusMatch = /^(?:[ MARCDTU?!]{2})\s+(.+)$/u.exec(line);
   const nameStatusMatch = /^(?:[ACDMRTUXB]\d*)\s+(.+)$/u.exec(line.trim());
   const pathsText = shortStatusMatch?.[1] ?? nameStatusMatch?.[1];
 
