@@ -328,11 +328,19 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
     apiKeyEnvKey: BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
     authMethod: "aws-sdk",
     label: "AWS Bedrock",
-    // Available model IDs are account- and region-specific (they depend on
-    // which foundation models are enabled in Bedrock), so there is no safe
-    // preset list here; paste the Bedrock model ID directly, for example
-    // anthropic.claude-sonnet-5-20260101-v1:0.
-    modelOptions: [],
+    // Global cross-Region inference profiles are callable from every commercial
+    // Region, unlike bare model IDs; GovCloud and data-residency setups paste a
+    // geo profile ID instead, for example us-gov.anthropic.claude-sonnet-5-5.
+    modelOptions: [
+      { id: "global.anthropic.claude-haiku-5-5", label: "Claude Haiku 5.5" },
+      { id: "global.anthropic.claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
+      { id: "global.anthropic.claude-opus-5-5", label: "Claude Opus 5.5" },
+      { id: "global.anthropic.claude-fable-5-2", label: "Claude Fable 5.2" },
+      { id: "global.anthropic.claude-sonnet-5", label: "Claude Sonnet 5" },
+      { id: "global.anthropic.claude-opus-5", label: "Claude Opus 5" },
+      { id: "global.moonshotai.kimi-k3", label: "Kimi K3" },
+      { id: "global.zai.glm-5.3", label: "GLM 5.3" },
+    ],
     secretKeyEnvKey: BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
     regionEnvKey: BEDROCK_AWS_REGION_ENV_KEY,
     regionFallbackEnvKeys: [AWS_REGION_ENV_KEY, AWS_DEFAULT_REGION_ENV_KEY],

@@ -978,9 +978,9 @@ describe("ensureCodeModeRepoSetup workflow provider block", () => {
     expect(workflow).toContain(
       "BEDROCK_AWS_REGION: ${{ vars.BEDROCK_AWS_REGION }}",
     );
-    // Bedrock model availability is account- and region-specific, so there is
-    // no preset to suggest and a guessed ID would fail at runtime.
-    expect(workflow).not.toContain("OPENWIKI_MODEL_ID");
+    expect(workflow).toContain(
+      'OPENWIKI_MODEL_ID: "global.anthropic.claude-haiku-5-5"',
+    );
   });
 
   test("does not pin a rotating browser-login token as a secret", async () => {

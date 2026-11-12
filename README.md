@@ -510,12 +510,12 @@ OPENWIKI_PROVIDER=bedrock
 BEDROCK_AWS_ACCESS_KEY_ID=your-access-key-id
 BEDROCK_AWS_SECRET_ACCESS_KEY=your-secret-access-key
 BEDROCK_AWS_REGION=us-east-1
-OPENWIKI_MODEL_ID=anthropic.claude-sonnet-5
+OPENWIKI_MODEL_ID=global.anthropic.claude-sonnet-5-5
 ```
 
-When explicit Bedrock credentials are not set, OpenWiki uses the AWS SDK default credential provider chain (OIDC/web identity, IAM roles, AWS profiles, ECS/EC2). The region resolves from `BEDROCK_AWS_REGION`, `AWS_REGION`, or `AWS_DEFAULT_REGION`. Available model IDs depend on which foundation models you have enabled in your account and region, so there is no preset list; paste the Bedrock model ID directly.
+When explicit Bedrock credentials are not set, OpenWiki uses the AWS SDK default credential provider chain (OIDC/web identity, IAM roles, AWS profiles, ECS/EC2). The region resolves from `BEDROCK_AWS_REGION`, `AWS_REGION`, or `AWS_DEFAULT_REGION`. The preset list uses global cross-Region inference profile IDs (`global.anthropic.claude-haiku-5-5` is the default), which work from every commercial region; any other Bedrock model ID or inference profile can be pasted directly.
 
-Some newer models only accept on-demand invocation through a cross-region inference profile. If you see `ValidationException: Invocation of model ID ... with on-demand throughput isn't supported`, prefix the model ID with the profile's region code, for example `us.anthropic.claude-sonnet-5`. Your IAM policy then also needs `bedrock:InvokeModel` / `InvokeModelWithResponseStream` on both the `foundation-model` and `inference-profile` resource types.
+Some newer models only accept on-demand invocation through a cross-region inference profile. If you see `ValidationException: Invocation of model ID ... with on-demand throughput isn't supported`, prefix the model ID with the profile's region code, for example `us.anthropic.claude-sonnet-5`. Global profiles are not offered in GovCloud, and they route outside your geography; for data residency use a geo profile such as `eu.anthropic.claude-sonnet-5-5`. Your IAM policy then also needs `bedrock:InvokeModel` / `InvokeModelWithResponseStream` on both the `foundation-model` and `inference-profile` resource types.
 
 </details>
 

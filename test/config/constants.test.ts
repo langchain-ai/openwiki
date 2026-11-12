@@ -1060,8 +1060,15 @@ describe("bedrock provider (AWS SDK credentials + region)", () => {
     expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
   });
 
-  test("has no preset model list (Bedrock model availability is account/region specific)", () => {
-    expect(getProviderModelOptions("bedrock")).toEqual([]);
+  test("offers only global cross-Region inference profile IDs, defaulting to Haiku 5.5", () => {
+    const ids = getProviderModelOptions("bedrock").map((option) => option.id);
+
+    expect(getDefaultModelId("bedrock")).toBe(
+      "global.anthropic.claude-haiku-5-5",
+    );
+    expect(ids).toContain("global.anthropic.claude-fable-5-2");
+    expect(ids).toContain("global.anthropic.claude-opus-5-5");
+    expect(ids.every((id) => id.startsWith("global."))).toBe(true);
   });
 });
 
