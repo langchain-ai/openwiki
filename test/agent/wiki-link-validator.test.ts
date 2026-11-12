@@ -304,6 +304,28 @@ describe("validateWikiInternalLinks", () => {
     expect(report.issuesFound).toBe(0);
   });
 
+  test("skips a duplicate suffix already taken by another heading", async () => {
+    const { backend, rootDir } = await setupWiki();
+    const content = [
+      "## Setup",
+      "",
+      "## Setup 1",
+      "",
+      "## Setup",
+      "",
+      "See [first](#setup), [numbered](#setup-1), and [repeat](#setup-2).",
+      "",
+    ].join("\n");
+    await backend.write("/openwiki/quickstart.md", content);
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(0);
+    await expect(
+      readFile(path.join(rootDir, "openwiki/quickstart.md"), "utf8"),
+    ).resolves.toBe(content);
+  });
+
   test("accepts double-hyphen anchors from stripped punctuation between words", async () => {
     const { backend } = await setupWiki();
     await backend.write(
