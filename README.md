@@ -685,6 +685,8 @@ OPENWIKI_MAX_OUTPUT_TOKENS=16384
 
 OpenWiki maps this setting to the selected provider's request shape. Custom models otherwise retain their provider or SDK default, since their supported output windows are not known to OpenWiki.
 
+**Input-token budget.** On `code --init` and `code --update`, each planner and page worker resends every file it has read on every model turn. Set `OPENWIKI_MAX_INPUT_TOKENS` to a positive integer, for example `OPENWIKI_MAX_INPUT_TOKENS=60000`, to bound that transcript: tool results from earlier turns are cut to their first 2,000 characters, and shorter when the estimated transcript still exceeds the budget, while the current turn's results stay complete. A worker that needs an earlier file again has to read it again, so leave the variable unset to keep full transcripts.
+
 **OpenRouter output-token cap.** By default no `max_tokens` is sent, so OpenRouter's credit pre-check budgets for the model's full advertised output ceiling — on a low credit balance every request can fail with a 402 error. Existing installations can keep an OpenRouter-specific cap with:
 
 ```bash

@@ -551,6 +551,9 @@ vi.mock("../../src/generation/repository-run.js", () => ({
 }));
 
 import {
+  boundTranscriptMessages,
+  createTranscriptBoundingMiddleware,
+  DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT,
   isRateLimitError,
   parseWorkerToolEvent,
   PLANNER_AGENT_NAME,
@@ -985,6 +988,231 @@ describe("runNativeRepositoryGeneration", () => {
 
     expect(response).toBe(genericUserResponse);
     expect(AIMessage.isInstance(response)).toBe(false);
+  });
+
+  function mountedTranscriptBounding(): string[][] {
+    return harness.agentOptions.map(({ middleware }) =>
+      middleware
+        .map(({ name }) => name)
+        .filter((name) => name === "OpenWikiTranscriptBounding"),
+    );
+  }
+
+  test("keeps every tool result in full when no prompt budget is set", async () => {
+    await runHarness();
+
+    expect(mountedTranscriptBounding()).toEqual([[], [], []]);
+  });
+
+  test("mounts transcript bounding on planning and page workers when OPENWIKI_MAX_INPUT_TOKENS is set", async () => {
+    vi.stubEnv("OPENWIKI_MAX_INPUT_TOKENS", "60000");
+    try {
+      await runHarness();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    expect(mountedTranscriptBounding()).toEqual([
+      ["OpenWikiTranscriptBounding"],
+      ["OpenWikiTranscriptBounding"],
+      ["OpenWikiTranscriptBounding"],
+    ]);
+  });
+
+  test("bounds historical tool results strictly before the latest AIMessage", () => {
+    const historicalLargeResult = "A".repeat(5000);
+    const freshLargeResult = "B".repeat(5000);
+
+    const messages = [
+      new ChatMessage({ role: "user", content: "Document page" }),
+      new AIMessage({
+        content: "",
+        tool_calls: [
+          {
+            id: "call_read_1",
+            name: "read_file",
+            args: { path: "src/a.ts" },
+          },
+        ],
+      }),
+      new ToolMessage({
+        tool_call_id: "call_read_1",
+        name: "read_file",
+        content: historicalLargeResult,
+      }),
+      new AIMessage({
+        content: "",
+        tool_calls: [
+          {
+            id: "call_read_2",
+            name: "read_file",
+            args: { path: "src/b.ts" },
+          },
+        ],
+      }),
+      new ToolMessage({
+        tool_call_id: "call_read_2",
+        name: "read_file",
+        content: freshLargeResult,
+      }),
+    ];
+
+    const bounded = boundTranscriptMessages(messages);
+
+    expect(bounded).toHaveLength(5);
+    // Historical tool message is bounded
+    const historicalBounded = bounded[2] as ToolMessage;
+    expect(historicalBounded.name).toBe("read_file");
+    expect(historicalBounded.tool_call_id).toBe("call_read_1");
+    expect(historicalBounded.content).toBe(
+      `${"A".repeat(DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT)}\n\n[... Omitted 3000 characters of this earlier tool result to keep the prompt within OPENWIKI_MAX_INPUT_TOKENS.]`,
+    );
+
+    // Fresh tool message for active turn is preserved in full
+    const freshToolMsg = bounded[4] as ToolMessage;
+    expect(freshToolMsg.content).toBe(freshLargeResult);
+  });
+
+  test("preserves tool results smaller than the threshold untouched", () => {
+    const smallContent = "Small file content: 123";
+    const messages = [
+      new ChatMessage({ role: "user", content: "Document page" }),
+      new AIMessage({
+        content: "",
+        tool_calls: [
+          {
+            id: "call_read_1",
+            name: "read_file",
+            args: { path: "src/a.ts" },
+          },
+        ],
+      }),
+      new ToolMessage({
+        tool_call_id: "call_read_1",
+        name: "read_file",
+        content: smallContent,
+      }),
+      new AIMessage({ content: "Next step" }),
+    ];
+
+    const bounded = boundTranscriptMessages(messages);
+    expect(bounded[2]).toBe(messages[2]);
+    expect((bounded[2] as ToolMessage).content).toBe(smallContent);
+  });
+
+  test("leaves initial messages untouched when no AIMessage exists yet", () => {
+    const messages = [
+      new ChatMessage({ role: "user", content: "Initial user prompt" }),
+    ];
+    const bounded = boundTranscriptMessages(messages);
+    expect(bounded).toEqual(messages);
+  });
+
+  test("bounds historical tool results with array content blocks", () => {
+    const largeBlockText = "C".repeat(4000);
+    const messages = [
+      new ChatMessage({ role: "user", content: "Document page" }),
+      new AIMessage({
+        content: "",
+        tool_calls: [
+          {
+            id: "call_read_1",
+            name: "read_file",
+            args: { path: "src/c.ts" },
+          },
+        ],
+      }),
+      new ToolMessage({
+        tool_call_id: "call_read_1",
+        name: "read_file",
+        content: [{ type: "text", text: largeBlockText }],
+      }),
+      new AIMessage({ content: "Working..." }),
+    ];
+
+    const bounded = boundTranscriptMessages(messages);
+    const boundedTool = bounded[2] as ToolMessage;
+    expect(boundedTool.content).toContain(
+      `Omitted ${4000 - DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT} characters`,
+    );
+  });
+
+  test("tightens bounding when maxInputTokens budget is exceeded", () => {
+    const result1 = "X".repeat(3000);
+    const result2 = "Y".repeat(3000);
+
+    const messages = [
+      new ChatMessage({ role: "user", content: "Document page" }),
+      new AIMessage({
+        content: "",
+        tool_calls: [{ id: "call_1", name: "read_file", args: {} }],
+      }),
+      new ToolMessage({
+        tool_call_id: "call_1",
+        name: "read_file",
+        content: result1,
+      }),
+      new AIMessage({
+        content: "",
+        tool_calls: [{ id: "call_2", name: "read_file", args: {} }],
+      }),
+      new ToolMessage({
+        tool_call_id: "call_2",
+        name: "read_file",
+        content: result2,
+      }),
+      new AIMessage({ content: "Final turn" }),
+    ];
+
+    // Total content is > 6000 chars. Setting maxInputTokens = 500 (~2000 chars target)
+    // tightens the per-tool char limit below DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT (2000).
+    const bounded = boundTranscriptMessages(messages, { maxInputTokens: 500 });
+    const tool1 = bounded[2] as ToolMessage;
+    const tool2 = bounded[4] as ToolMessage;
+
+    expect(tool1.content).toContain("Omitted");
+    expect(tool2.content).toContain("Omitted");
+    // Both should be tightened to targetPerTool = Math.floor(2000 / (2 * 2)) = 500 chars
+    expect((tool1.content as string).startsWith("X".repeat(500))).toBe(true);
+    expect((tool2.content as string).startsWith("Y".repeat(500))).toBe(true);
+  });
+
+  test("createTranscriptBoundingMiddleware intercepts model calls and bounds transcript", async () => {
+    const middleware = createTranscriptBoundingMiddleware();
+    const historicalLarge = "Z".repeat(3500);
+
+    const request = {
+      messages: [
+        new ChatMessage({ role: "user", content: "start" }),
+        new AIMessage({
+          content: "",
+          tool_calls: [{ id: "c1", name: "read_file", args: {} }],
+        }),
+        new ToolMessage({
+          tool_call_id: "c1",
+          name: "read_file",
+          content: historicalLarge,
+        }),
+        new AIMessage({ content: "step 2" }),
+      ],
+      tools: [],
+    };
+
+    const wrapModelCall = middleware.wrapModelCall;
+    expect(wrapModelCall).toBeDefined();
+
+    let seenMessages: unknown[] = [];
+    await wrapModelCall!(
+      request as unknown as Parameters<NonNullable<typeof wrapModelCall>>[0],
+      (nextRequest) => {
+        seenMessages = nextRequest.messages;
+        return Promise.resolve(new AIMessage({ content: "done" }));
+      },
+    );
+
+    expect(seenMessages).toHaveLength(4);
+    const boundedTool = seenMessages[2] as ToolMessage;
+    expect(boundedTool.content).toContain("Omitted 1500 characters");
   });
 
   test("resumes a durable queue without recreating the planner", async () => {

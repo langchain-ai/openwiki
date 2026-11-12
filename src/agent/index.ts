@@ -117,6 +117,7 @@ import {
   OPENROUTER_BASE_URL,
   OPENROUTER_BASE_URL_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
+  OPENWIKI_MAX_INPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
@@ -132,6 +133,7 @@ import {
   providerUsesStreaming,
   resolveConfiguredMaxOutputTokens,
   resolveConfiguredProvider,
+  resolveMaxInputTokens,
   resolveOpenAiCompatibleStreamMessages,
   resolveOpenAICompatibleEntraScope,
   resolveOpenRouterMaxTokens,
@@ -223,6 +225,7 @@ export async function runOpenWikiAgent(
             modelId: config.modelId,
             model,
             pageConcurrency: config.pageConcurrency,
+            maxInputTokens: config.maxInputTokens,
             onEvent: options.onEvent,
           }),
         { errorClass: "agent_error" },
@@ -306,6 +309,7 @@ async function resolveRunConfig(
   providerRetryAttempts: number;
   pageConcurrency: number;
   maxOutputTokens: number | undefined;
+  maxInputTokens: number | undefined;
   streamIdleTimeout: number | undefined;
 }> {
   try {
@@ -374,6 +378,8 @@ async function resolveRunConfig(
       options,
       `model.maxOutputTokens=${maxOutputTokens ?? "provider-default"}`,
     );
+    const maxInputTokens = resolveMaxInputTokens();
+    emitDebug(options, `model.maxInputTokens=${maxInputTokens ?? "default"}`);
     const streamIdleTimeout = resolveStreamIdleTimeoutForProvider(provider);
     emitDebug(
       options,
@@ -386,6 +392,7 @@ async function resolveRunConfig(
       providerRetryAttempts,
       pageConcurrency,
       maxOutputTokens,
+      maxInputTokens,
       streamIdleTimeout,
     };
   } catch (error) {
@@ -2794,6 +2801,7 @@ export function formatEnvironmentDebugValue(
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
+    key === OPENWIKI_MAX_INPUT_TOKENS_ENV_KEY ||
     key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY ||
