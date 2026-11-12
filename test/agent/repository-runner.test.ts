@@ -990,16 +990,29 @@ describe("runNativeRepositoryGeneration", () => {
     expect(AIMessage.isInstance(response)).toBe(false);
   });
 
-  test("mounts transcript bounding middleware on planning and page workers", async () => {
+  function mountedTranscriptBounding(): string[][] {
+    return harness.agentOptions.map(({ middleware }) =>
+      middleware
+        .map(({ name }) => name)
+        .filter((name) => name === "OpenWikiTranscriptBounding"),
+    );
+  }
+
+  test("keeps every tool result in full when no prompt budget is set", async () => {
     await runHarness();
 
-    expect(
-      harness.agentOptions.map(({ middleware }) =>
-        middleware
-          .map(({ name }) => name)
-          .filter((name) => name === "OpenWikiTranscriptBounding"),
-      ),
-    ).toEqual([
+    expect(mountedTranscriptBounding()).toEqual([[], [], []]);
+  });
+
+  test("mounts transcript bounding on planning and page workers when OPENWIKI_MAX_INPUT_TOKENS is set", async () => {
+    vi.stubEnv("OPENWIKI_MAX_INPUT_TOKENS", "60000");
+    try {
+      await runHarness();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    expect(mountedTranscriptBounding()).toEqual([
       ["OpenWikiTranscriptBounding"],
       ["OpenWikiTranscriptBounding"],
       ["OpenWikiTranscriptBounding"],
@@ -1051,13 +1064,8 @@ describe("runNativeRepositoryGeneration", () => {
     const historicalBounded = bounded[2] as ToolMessage;
     expect(historicalBounded.name).toBe("read_file");
     expect(historicalBounded.tool_call_id).toBe("call_read_1");
-    expect(historicalBounded.content).toHaveLength(
-      DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT +
-        "\n\n[... Omitted 3000 characters of historical tool result for subsequent turns. Full content was provided in the preceding turn. To inspect again, re-run the tool.]"
-          .length,
-    );
-    expect(historicalBounded.content).toContain(
-      "Omitted 3000 characters of historical tool result",
+    expect(historicalBounded.content).toBe(
+      `${"A".repeat(DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT)}\n\n[... Omitted 3000 characters of this earlier tool result to keep the prompt within OPENWIKI_MAX_INPUT_TOKENS.]`,
     );
 
     // Fresh tool message for active turn is preserved in full

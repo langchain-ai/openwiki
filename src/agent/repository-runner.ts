@@ -157,7 +157,7 @@ export interface TranscriptBoundingOptions {
 }
 
 function createHistoricalToolOmissionNotice(omittedChars: number): string {
-  return `\n\n[... Omitted ${omittedChars} characters of historical tool result for subsequent turns. Full content was provided in the preceding turn. To inspect again, re-run the tool.]`;
+  return `\n\n[... Omitted ${omittedChars} characters of this earlier tool result to keep the prompt within OPENWIKI_MAX_INPUT_TOKENS.]`;
 }
 
 /**
@@ -324,6 +324,18 @@ export function createTranscriptBoundingMiddleware(
       });
     },
   });
+}
+
+/**
+ * Mounts transcript bounding only when a prompt budget is configured, so a
+ * worker keeps every earlier tool result in full by default.
+ */
+function transcriptBoundingMiddleware(maxInputTokens?: number) {
+  const budget = maxInputTokens ?? resolveMaxInputTokens();
+
+  return budget === undefined
+    ? []
+    : [createTranscriptBoundingMiddleware({ maxInputTokens: budget })];
 }
 
 type PendingPageJob = Extract<
@@ -729,9 +741,7 @@ async function runPlanningAgent(
         tools: PLANNER_FILESYSTEM_TOOLS,
       }),
       submissionLimit("submit_plan"),
-      createTranscriptBoundingMiddleware({
-        maxInputTokens: maxInputTokens ?? resolveMaxInputTokens(),
-      }),
+      ...transcriptBoundingMiddleware(maxInputTokens),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
@@ -1241,9 +1251,7 @@ async function runPageWorkerAttempt(
         tools: PAGE_FILESYSTEM_TOOLS,
       }),
       submissionLimit("submit_page"),
-      createTranscriptBoundingMiddleware({
-        maxInputTokens: maxInputTokens ?? resolveMaxInputTokens(),
-      }),
+      ...transcriptBoundingMiddleware(maxInputTokens),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
