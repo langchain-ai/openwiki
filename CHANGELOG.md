@@ -1,5 +1,11 @@
 # openwiki
 
+## 0.10.0
+
+### Minor Changes
+
+- [#1122](https://github.com/langchain-ai/openwiki/pull/1122) [`7807d84`](https://github.com/langchain-ai/openwiki/commit/7807d841b034add58afb9f42f76f4159b0e9b0ee) Thanks [@ewellinger](https://github.com/ewellinger)! - The `openrouter` provider honours an `OPENROUTER_BASE_URL` override, so it can target a regional endpoint such as `https://us.openrouter.ai/api/v1`. `--debug` OpenRouter request capture follows the overridden URL. The default endpoint is unchanged.
+
 ## 0.9.0
 
 ### Minor Changes
