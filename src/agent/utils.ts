@@ -19,7 +19,7 @@ import {
   isFileNotFoundError,
 } from "../platform/fs-errors.js";
 import {
-  getPrimaryLanguageSubtag,
+  isMeaningfulLanguageChange,
   requireResolvedLanguage,
 } from "../platform/language.js";
 import {
@@ -134,8 +134,7 @@ export async function getUpdateNoopStatus(
   const resolvedRequestedLanguage = requireResolvedLanguage(requestedLanguage);
   if (
     resolvedRequestedLanguage !== undefined &&
-    getPrimaryLanguageSubtag(resolvedRequestedLanguage) !==
-      getPrimaryLanguageSubtag(lastUpdate.language)
+    isMeaningfulLanguageChange(resolvedRequestedLanguage, lastUpdate.language)
   ) {
     return { shouldSkip: false, reason: "output language changed" };
   }

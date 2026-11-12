@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   requireResolvedLanguage,
   getPrimaryLanguageSubtag,
+  isMeaningfulLanguageChange,
   resolveLanguage,
 } from "../../src/platform/language.ts";
 
@@ -80,5 +81,26 @@ describe("getPrimaryLanguageSubtag", () => {
 
   test("preserves malformed persisted values for a safe mismatch", () => {
     expect(getPrimaryLanguageSubtag("not_a_locale")).toBe("not_a_locale");
+  });
+});
+
+describe("isMeaningfulLanguageChange", () => {
+  test("treats same-script region variants as no change", () => {
+    expect(isMeaningfulLanguageChange("en-GB", "en")).toBe(false);
+    expect(isMeaningfulLanguageChange("en", "en-GB")).toBe(false);
+  });
+
+  test("treats a script change under the same primary as a real change", () => {
+    expect(isMeaningfulLanguageChange("zh-TW", "zh-CN")).toBe(true);
+    expect(isMeaningfulLanguageChange("zh-CN", "zh-TW")).toBe(true);
+  });
+
+  test("treats a different primary subtag as a real change", () => {
+    expect(isMeaningfulLanguageChange("fr", "en")).toBe(true);
+  });
+
+  test("returns false when no language is requested", () => {
+    expect(isMeaningfulLanguageChange(undefined, "zh-CN")).toBe(false);
+    expect(isMeaningfulLanguageChange(null, "en")).toBe(false);
   });
 });
