@@ -451,6 +451,15 @@ describe("parseCommand — --modelId", () => {
   test("invalid model id via equals form is an error", () => {
     expect(parseCommand(["--modelId="]).kind).toBe("error");
   });
+
+  test("equals form keeps everything after the first = in the value", () => {
+    const result = parseCommand(["--model-id=gpt-5.5=extra"]);
+
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toBe("Invalid model ID: gpt-5.5=extra");
+    }
+  });
 });
 
 describe("parseCommand — ingest", () => {
@@ -873,6 +882,12 @@ describe("parseCommand — ingest --modelId", () => {
     );
   });
 
+  test("ingest --model-id= equals form keeps everything after the first =", () => {
+    expect(
+      parseCommand(["ingest", "all", "--model-id=gpt-5.5=extra"]).kind,
+    ).toBe("error");
+  });
+
   test("an unknown ingest flag is reported", () => {
     const result = parseCommand(["ingest", "all", "--nope"]);
 
@@ -919,6 +934,10 @@ describe("parseCommand — --mode option forms and conflicts", () => {
     expect(parseCommand(["--mode=hybrid"]).kind).toBe("error");
   });
 
+  test("a --mode= value with a second = is rejected, not truncated", () => {
+    expect(parseCommand(["--mode=code=personal"]).kind).toBe("error");
+  });
+
   test("--mode that contradicts a positional mode is a conflict", () => {
     // `code` fixes the mode positionally; a later --mode personal cannot
     // silently override it, so the parser reports the conflict.
@@ -962,6 +981,15 @@ describe("parseCommand — --telemetry-file", () => {
       kind: "run",
       command: "init",
       telemetryFile: "/tmp/out.json",
+    });
+  });
+
+  test("--telemetry-file= keeps an = inside the path", () => {
+    expect(
+      parseCommand(["--init", "--telemetry-file=/tmp/run=1/out.json"]),
+    ).toMatchObject({
+      kind: "run",
+      telemetryFile: "/tmp/run=1/out.json",
     });
   });
 
