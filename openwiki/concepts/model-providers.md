@@ -1,8 +1,8 @@
 ---
 type: reference
 title: Model Providers and Credentials
-description: Reference for OpenWiki's supported model providers (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, external CLI, the IBM Bob Apikey adapter, and Microsoft Entra ID for OpenAI-compatible gateways), their environment keys, base URLs, authentication methods, the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
-tags: [model-providers, credentials, oauth, authentication, configuration, env, reasoning, entra-id]
+description: Reference for OpenWiki's supported model providers (API keys, ChatGPT OAuth, Vertex ADC, AWS SDK, external CLI, the IBM Bob Apikey adapter, Mistral, and Microsoft Entra ID for OpenAI-compatible gateways), their environment keys, base URLs, authentication methods, the reasoning-effort transports they support, and where credentials and OAuth tokens are persisted.
+tags: [model-providers, credentials, oauth, authentication, configuration, env, reasoning, entra-id, mistral]
 sources:
   - id: openwiki-source-f8b008ed89162a0e204fc02d
     resource: repo://src/agent/bob.ts
@@ -26,14 +26,18 @@ sources:
     resource: repo://src/model-availability.ts
   - id: openwiki-source-c35800ddf00768a1fa848d13
     resource: repo://src/setup/credentials/persistence.ts
+  - id: openwiki-source-7388b63c6f928737a7109779
+    resource: repo://src/setup/credentials/steps.ts
   - id: openwiki-source-a302ab67124df4839d320111
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+  - id: openwiki-source-5fc87e9739dab52c4e447110
+    resource: repo://test/config/constants.test.ts
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
+  - by: openwiki/0.9.0
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # Model Providers and Credentials
@@ -63,7 +67,12 @@ The active provider is resolved by `resolveConfiguredProvider`: it prefers the
 explicit `OPENWIKI_PROVIDER` value (normalized case-insensitively by
 `normalizeProvider` / `isValidProvider`), and otherwise infers a provider from
 whichever recognized API-key variable is present, finally falling back to
-`DEFAULT_PROVIDER` (`"openai"`). The default model when none is configured is the
+`DEFAULT_PROVIDER` (`"openai"`). The inference chain checks `OPENAI_API_KEY`,
+`OPENAI_COMPATIBLE_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`,
+`BASETEN_API_KEY`, `FIREWORKS_API_KEY`, `NEBIUS_API_KEY`, `NVIDIA_API_KEY`,
+`MISTRAL_API_KEY`, then the Bedrock legacy access/secret pair, before the
+`openai` default — so exporting any one of those keys selects its provider
+without an explicit `OPENWIKI_PROVIDER`. The default model when none is configured is the
 first model option of the default provider (`DEFAULT_MODEL_ID`).
 
 ### Environment keys by provider
@@ -77,16 +86,17 @@ first model option of the default provider (`DEFAULT_MODEL_ID`).
 | `copilot`                      | GitHub Copilot                | external-cli  | `COPILOT_API_KEY`                           | `https://api.githubcopilot.com` / `COPILOT_BASE_URL`           |
 | `gemini`                       | Gemini (AI Studio)            | api-key       | `GEMINI_API_KEY`                            | (SDK default)                                                  |
 | `gemini-enterprise`            | Gemini Enterprise (Vertex AI) | ADC (keyless) | none — `GOOGLE_CLOUD_PROJECT`               | derived from project/location                                  |
-| `openrouter`                   | OpenRouter                    | api-key       | `OPENROUTER_API_KEY`                        | `https://openrouter.ai/api/v1`                                 |
+| `openrouter`                   | OpenRouter                    | api-key       | `OPENROUTER_API_KEY`                        | `https://openrouter.ai/api/v1` / `OPENROUTER_BASE_URL`         |
 | `openai-compatible`            | OpenAI-compatible             | api-key (or Entra ID) | `OPENAI_COMPATIBLE_API_KEY` (skipped in Entra mode) | required via `OPENAI_COMPATIBLE_BASE_URL`                      |
 | `bedrock`                      | AWS Bedrock                   | aws-sdk       | `BEDROCK_AWS_ACCESS_KEY_ID` (legacy pair)   | AWS SDK credential chain                                       |
 | `fireworks`                    | Fireworks                     | api-key       | `FIREWORKS_API_KEY`                         | `https://api.fireworks.ai/inference/v1` / `FIREWORKS_BASE_URL` |
 | `baseten`                      | Baseten                       | api-key       | `BASETEN_API_KEY`                           | `https://inference.baseten.co/v1` / `BASETEN_BASE_URL`         |
 | `nebius`                       | Nebius Token Factory          | api-key       | `NEBIUS_API_KEY`                            | `https://api.tokenfactory.nebius.com/v1/`                      |
 | `nvidia`                       | NVIDIA NIM                    | api-key       | `NVIDIA_API_KEY`                            | `https://integrate.api.nvidia.com/v1` / `NVIDIA_BASE_URL`      |
+| `mistral`                      | Mistral                       | api-key       | `MISTRAL_API_KEY`                           | `https://api.mistral.ai/v1` / `MISTRAL_BASE_URL`               |
 
 `SELECTABLE_OPENWIKI_PROVIDERS` fixes the order these providers appear in the
-setup wizard. The `bob` provider is the only one that sets `fixedModel`
+setup wizard (`mistral` is last, after `nvidia`). The `bob` provider is the
 (`"premium"`): `resolveModelId` returns it verbatim and skips model selection
 entirely, so Bob's model step never appears in the wizard.
 
@@ -134,20 +144,18 @@ guard skips the `apiKeyEnvKey` check), and `providerRequiresApiKey` returns
 `OPENAI_COMPATIBLE_ENTRA_SCOPE`) whenever the missing key is for
 `openai-compatible`.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Parse error on line 7: ... gateway Create->>Entra: build prov Expecting 'participant', 'participant_actor', 'destroy', got 'SOLID_ARROW' -->
-```text
+```mermaid
 sequenceDiagram
-    participant Create as createModel
+    participant Model as createModel
     participant Entra as createEntraTokenProvider
     participant Azure as Azure Identity SDK
-    participant GW as Entra-secured gateway
-
-    Create->>Entra: build provider for baseURL plus scope
-    Entra->>Entra: SSRF guard, HTTPS-only, no metadata hosts
-    Create->>Azure: OpenAI SDK calls token provider per request
+    participant GW as Entra gateway
+    Model->>Entra: build provider for baseURL plus scope
+    Entra->>Entra: SSRF guard HTTPS only no metadata hosts
+    Model->>Azure: OpenAI SDK calls token provider per request
     Azure->>Azure: DefaultAzureCredential or WorkloadIdentityCredential
-    Azure->>Create: bearer token (cached and auto-refreshed)
-    Create->>GW: request with Authorization Bearer token
+    Azure->>Model: bearer token cached and auto refreshed
+    Model->>GW: request with Authorization Bearer token
 ```
 
 Diagram: The Entra ID token-provider lifecycle for an OpenAI-compatible run.
@@ -210,6 +218,37 @@ including tool calls — as it is produced. `createModel` applies the same
 conditional `streaming: true` spread it uses for Copilot (described below) rather
 than assigning `streaming: false`, since LangChain turns an explicit `false` into
 `disableStreaming`.
+
+### Mistral (`mistral`)
+
+`mistral` is an api-key provider that targets Mistral's OpenAI-compatible chat
+completions surface at `https://api.mistral.ai/v1` (overridable via
+`MISTRAL_BASE_URL`). Its built-in model options are `mistral-small-2603`
+(Mistral Small 4), `mistral-large-4` (Mistral Large 4), and `codestral-2508`
+(Codestral); the rolling `*-latest` aliases Mistral publishes can also be pasted
+directly as custom model IDs. Because the surface is OpenAI-compatible, `mistral`
+shares the generic `ChatOpenAI` branch in `createModel` with Fireworks, NVIDIA,
+and the plain `openai` provider — it does not get a dedicated client class.
+
+`createModel` gates the Mistral branch up front with two credential-isolation
+checks before it reaches the shared `ChatOpenAI` construction. First, it requires
+a non-blank `MISTRAL_API_KEY`: if `getProviderApiKey("mistral")` is missing or
+whitespace-only it throws `MISTRAL_API_KEY is required for the Mistral provider.`
+without sending any request, so a missing key fails fast rather than silently
+falling back to an ambient `OPENAI_API_KEY`. Second, it rejects a non-blank
+`OPENAI_CUSTOM_HEADERS` with `Remove OPENAI_CUSTOM_HEADERS when using the Mistral
+provider.` — Mistral's endpoint does not honor the custom-header convention the
+OpenAI provider uses, and a stray header there (which could carry a different
+key) must not leak into a Mistral request. The check trims the value, so an
+absent or blank `OPENAI_CUSTOM_HEADERS` is allowed and left unmutated. After both
+checks pass, control falls through to the shared `ChatOpenAI` branch, which reads
+the Mistral key via `getProviderApiKey(provider)` and resolves the base URL via
+`resolveProviderBaseUrl`.
+
+In the credential setup (`src/setup/credentials/steps.ts`), `getProviderArticle`
+returns `"a"` for `mistral` (alongside `baseten`, `fireworks`, `gemini`,
+`gemini-enterprise`, and `nebius`), so the wizard's prompts read "Enter a Mistral
+API key" rather than "an".
 
 ### ChatGPT OAuth (`openai-chatgpt`)
 
@@ -523,6 +562,7 @@ the request transport always agree.
 All managed settings and credentials are read from and written to
 `~/.openwiki/.env`. `MANAGED_ENV_KEYS` in `src/config/env.ts` is the single
 ordered list of every variable OpenWiki reads or persists — including the
+Mistral `MISTRAL_API_KEY` / `MISTRAL_BASE_URL` pair, the
 `openai-compatible` Entra mode keys `OPENAI_COMPATIBLE_AUTH` and
 `OPENAI_COMPATIBLE_ENTRA_SCOPE`, plus the reasoning/streaming keys — and the
 credential diagnostics list (`CREDENTIAL_DIAGNOSTIC_ENV_KEYS`) and the agent's

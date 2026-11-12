@@ -169,6 +169,11 @@ describe("MANAGED_ENV_KEYS", () => {
     expect(MANAGED_ENV_KEYS).toContain("BOB_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("FIREWORKS_BASE_URL");
     expect(MANAGED_ENV_KEYS).toContain("NVIDIA_BASE_URL");
+    expect(MANAGED_ENV_KEYS).toContain("MISTRAL_BASE_URL");
+  });
+
+  test("manages the OpenRouter base URL", () => {
+    expect(MANAGED_ENV_KEYS).toContain("OPENROUTER_BASE_URL");
   });
 
   test("manages the reasoning effort setting", () => {

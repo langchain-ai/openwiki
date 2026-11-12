@@ -94,7 +94,7 @@ Host-specific locations and notes:
 - Oh My Pi uses `~/.omp/agent` at user scope (the default profile). Use `--project` for named profiles or a relocated `PI_CODING_AGENT_DIR`.
 - Antigravity uses `~/.gemini/antigravity-cli/skills` and `~/.gemini/config/mcp_config.json`.
 - GitHub Copilot CLI uses `~/.copilot/skills` and `~/.copilot/mcp-config.json` at user scope; `.github/skills` and `.github/mcp.json` at the project.
-- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
+- Pi is separate from Oh My Pi. Pi loads OpenWiki's skill, four read-only retrieval tools, and six lifecycle tools from the npm package; use `pi install --local npm:openwiki` for a project-local install. Its extension starts the package's own CLI through Node, so `openwiki` need not be on `PATH`. Pi is not a target of `openwiki integrations install`.
 
 On Windows, install with a Node.js package manager (`npm install -g openwiki` or `pnpm add -g openwiki`). Installing with `bun` can fall back to compiling the `better-sqlite3` native dependency, which needs Visual Studio Build Tools with the Desktop development with C++ workload.
 
@@ -250,7 +250,7 @@ You can also use OpenWiki's own [Deep Agents](https://github.com/langchain-ai/de
 openwiki --init
 ```
 
-The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [fourteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
+The first run walks you through choosing a provider, credentials, and model, then writes docs to `openwiki/`. OpenWiki supports [fifteen model providers](#model-providers), including hosted models and local OpenAI-compatible endpoints.
 
 Update an existing wiki from repository changes since its last successful run and any stale Claims:
 
@@ -359,7 +359,7 @@ OpenWiki tracks the facts behind each repository page as **Grounded Claims**. Ea
 
 Claims cover the truths future agents rely on: behavior, responsibilities, architecture, data flow, invariants, failure semantics, configuration, and security boundaries. Each records the evidence version observed when the claim was established, rather than relying only on when a Markdown file was last generated.
 
-Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
+Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. By default, a stale or unresolved Claim requires work for its owning page even if the planner omits it. A host using `openwiki_submit_plan` may set `deferUnplannedClaimIssues: true` for a focused update; unrelated stale Claim pages remain untouched, and the run metadata remains interrupted so a later full update can reconcile them. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
 
 Page completion is a durability boundary. OpenWiki persists the reconciled Claims, projects verification, synchronizes the sidecar's page version, and proves the complete result before marking that page's job complete. Finalization repeats the whole-run proof before deleting `openwiki/.run.json`.
 
@@ -461,7 +461,7 @@ Locally the setup wizard saves this to `~/.openwiki/.env`. In CI, set it as a re
 
 These settings apply when running OpenWiki directly. Coding-agent integrations use the host's authenticated model session.
 
-OpenWiki supports fourteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
+OpenWiki supports fifteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
 
 | Provider                                                     | Credential                              |
 | ------------------------------------------------------------ | --------------------------------------- |
@@ -474,7 +474,7 @@ OpenWiki supports fourteen providers. The onboarding default is OpenAI with `gpt
 | **AWS Bedrock**                                              | IAM credentials                         |
 | **GitHub Copilot**                                           | GitHub CLI session                      |
 | **OpenRouter**                                               | `OPENROUTER_API_KEY`                    |
-| **Nebius / Fireworks / Baseten / NVIDIA NIM**                | Provider API key                        |
+| **Nebius / Fireworks / Baseten / NVIDIA NIM / Mistral**      | Provider API key                        |
 | **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways) | Base URL + key                          |
 
 <details>
@@ -669,7 +669,7 @@ An unset or blank value sends no extra headers. Malformed JSON, a non-object val
 
 <br/>
 
-**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, or `COPILOT_BASE_URL`. The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
+**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, `MISTRAL_BASE_URL`, `COPILOT_BASE_URL`, or `OPENROUTER_BASE_URL` (for example, OpenRouter's regional `https://us.openrouter.ai/api/v1`). The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
 
 ```bash
 OPENWIKI_PROVIDER=anthropic
