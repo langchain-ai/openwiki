@@ -118,6 +118,7 @@ import {
   captureRepositoryPageSnapshot,
   finishRepositoryRun,
   inspectRepositoryPageClaims,
+  isNotFoundBackendError,
   nextRepositoryPage,
   restoreRepositoryPage,
   skipRepositoryPage,
@@ -542,6 +543,77 @@ test("tolerates a human-readable not-found error from the backend when skipping 
   const deleteSpy = vi
     .spyOn(run.backend, "delete")
     .mockResolvedValue({ error: `Error: File '${page}' not found` });
+
+  await expect(skipRepositoryPage(run, snapshot)).resolves.toBeUndefined();
+  expect(deleteSpy).toHaveBeenCalledWith(page);
+  expect(run.state.plan?.pages[0]?.status).toBe("skipped");
+});
+
+test("isNotFoundBackendError matches error codes, prose, and ENOENT messages", () => {
+  expect(isNotFoundBackendError("file_not_found")).toBe(true);
+  expect(
+    isNotFoundBackendError("Error: File '/openwiki/page.md' not found"),
+  ).toBe(true);
+  expect(isNotFoundBackendError("Error: '/openwiki/page.md' not found")).toBe(
+    true,
+  );
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/operations/environment-setup.md': ENOENT: no such file or directory, lstat '/Users/.../openwiki/operations'",
+    ),
+  ).toBe(true);
+  expect(isNotFoundBackendError("ENOENT: no such file or directory")).toBe(
+    true,
+  );
+  expect(isNotFoundBackendError("EACCES: permission denied")).toBe(false);
+  expect(isNotFoundBackendError("invalid_state")).toBe(false);
+});
+
+test("isNotFoundBackendError ignores a page path that merely contains the error code", () => {
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/troubleshooting/enoent.md': EACCES: permission denied, unlink '/repo/openwiki/troubleshooting/enoent.md'",
+    ),
+  ).toBe(false);
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/ENOENT.md': EACCES: permission denied, unlink '/repo/openwiki/ENOENT.md'",
+    ),
+  ).toBe(false);
+  expect(
+    isNotFoundBackendError(
+      "Error deleting '/openwiki/Not Found Errors.md': EACCES: permission denied, unlink '/repo/openwiki/Not Found Errors.md'",
+    ),
+  ).toBe(false);
+});
+
+test("tolerates an ENOENT missing-directory error from the backend when skipping a never-written page", async () => {
+  // Regression for #871: when a new page belongs to a directory not yet created on disk,
+  // DeepAgents filesystem backend delete() throws ENOENT during lstat traversal:
+  // `Error deleting '<path>': ENOENT: no such file or directory, lstat '<dir>'`.
+  // Rolling back a new page worker must not abort the whole run.
+  const root = await createRepository();
+  const page = "/openwiki/operations/never-written.md";
+  const run = await beginForcedUpdate(root);
+  await submitRepositoryPlan(run, {
+    pages: [
+      {
+        path: page,
+        title: "Never Written",
+        purpose:
+          "Document a page in a new subdirectory whose worker fails before writing anything.",
+      },
+    ],
+  });
+  const next = await nextRepositoryPage(run);
+  if (next.status !== "pending") throw new Error("Expected pending page.");
+
+  const snapshot = await captureRepositoryPageSnapshot(run, next.job.id);
+  expect(snapshot).toMatchObject({ path: page, markdown: null, claims: null });
+
+  const deleteSpy = vi.spyOn(run.backend, "delete").mockResolvedValue({
+    error: `Error deleting '${page}': ENOENT: no such file or directory, lstat '${path.join(root, "openwiki", "operations")}'`,
+  });
 
   await expect(skipRepositoryPage(run, snapshot)).resolves.toBeUndefined();
   expect(deleteSpy).toHaveBeenCalledWith(page);
