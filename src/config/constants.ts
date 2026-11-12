@@ -80,6 +80,8 @@ export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
   "OPENWIKI_STREAM_IDLE_TIMEOUT";
 const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
+export const OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY = "OPENWIKI_CLIENT_TIMEOUT_MS";
+export const MAX_CLIENT_TIMEOUT_MS = 2_147_483_647;
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
@@ -1133,6 +1135,44 @@ export function resolveStreamIdleTimeoutForProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): number | undefined {
   return provider === "bedrock" ? resolveStreamIdleTimeout(env) : undefined;
+}
+
+/**
+ * Resolves the client timeout in milliseconds for API requests.
+ *
+ * @param env - Process environment to read.
+ * @returns Positive integer in milliseconds, or undefined when unset.
+ */
+export function resolveClientTimeout(
+  env: NodeJS.ProcessEnv = process.env,
+): number | undefined {
+  const rawClientTimeout = env[OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY];
+
+  if (rawClientTimeout === undefined) {
+    return undefined;
+  }
+
+  const clientTimeout = rawClientTimeout.trim();
+
+  if (!/^\d+$/u.test(clientTimeout)) {
+    throw new Error(
+      `Invalid ${OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY}. Expected a positive integer in milliseconds.`,
+    );
+  }
+
+  const parsedClientTimeout = Number(clientTimeout);
+
+  if (
+    !Number.isSafeInteger(parsedClientTimeout) ||
+    parsedClientTimeout <= 0 ||
+    parsedClientTimeout > MAX_CLIENT_TIMEOUT_MS
+  ) {
+    throw new Error(
+      `Invalid ${OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY}. Expected a positive integer in milliseconds.`,
+    );
+  }
+
+  return parsedClientTimeout;
 }
 
 /**
