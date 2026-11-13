@@ -22,6 +22,7 @@ export const OPENAI_COMPATIBLE_BASE_URL_ENV_KEY = "OPENAI_COMPATIBLE_BASE_URL";
 export const OPENAI_COMPATIBLE_AUTH_ENV_KEY = "OPENAI_COMPATIBLE_AUTH";
 export const OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY =
   "OPENAI_COMPATIBLE_ENTRA_SCOPE";
+export const OPENAI_COMPATIBLE_HEADERS_ENV_KEY = "OPENAI_COMPATIBLE_HEADERS";
 /**
  * Azure OpenAI's standard Entra scope, used unless a gateway scope is configured.
  */
@@ -566,6 +567,79 @@ export function resolveOpenAICompatibleEntraScope(
     env[OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY]?.trim() ||
     DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE
   );
+}
+
+/**
+ * Resolve extra HTTP headers to send on every OpenAI-compatible request.
+ *
+ * Some gateways (for example Portkey-fronted deployments) authenticate or
+ * route on a custom header rather than (or in addition to) `Authorization` —
+ * `x-portkey-api-key`, `x-portkey-config`, and similar. This accepts a JSON
+ * object of string header names to string values and fails closed on
+ * malformed input (including names or values the Fetch `Headers` class would
+ * reject) so a typo doesn't silently drop the header.
+ */
+export function resolveOpenAiCompatibleHeaders(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> | undefined {
+  const raw = env[OPENAI_COMPATIBLE_HEADERS_ENV_KEY]?.trim();
+
+  if (!raw) {
+    return undefined;
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `${OPENAI_COMPATIBLE_HEADERS_ENV_KEY} must be a JSON object of header ` +
+        `names to string values, for example ` +
+        `'{"x-portkey-config":"pc-..."}'.`,
+    );
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(
+      `${OPENAI_COMPATIBLE_HEADERS_ENV_KEY} must be a JSON object of header ` +
+        `names to string values, for example ` +
+        `'{"x-portkey-config":"pc-..."}'.`,
+    );
+  }
+
+  const headers: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(
+    parsed as Record<string, unknown>,
+  )) {
+    if (typeof value !== "string") {
+      throw new Error(
+        `${OPENAI_COMPATIBLE_HEADERS_ENV_KEY} value for "${key}" must be a ` +
+          `string.`,
+      );
+    }
+
+    headers[key] = value;
+  }
+
+  // Headers.set rejects more than non-string values (empty or whitespace
+  // names, control characters or newlines in values). Validate once here so a
+  // bad value fails at startup instead of surfacing as a TypeError inside
+  // every fetch, where it would look like a transport error and be retried.
+  for (const [key, value] of Object.entries(headers)) {
+    try {
+      new Headers().set(key, value);
+    } catch {
+      // Name the offending key but never echo the value: it may be a secret.
+      throw new Error(
+        `${OPENAI_COMPATIBLE_HEADERS_ENV_KEY} contains an invalid HTTP ` +
+          `header name or value for ${JSON.stringify(key)}.`,
+      );
+    }
+  }
+
+  return headers;
 }
 
 /**
