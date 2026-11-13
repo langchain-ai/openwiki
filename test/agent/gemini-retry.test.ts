@@ -158,6 +158,30 @@ describe("createModel wires runtime options into provider clients", () => {
     }
   });
 
+  test("passes the request timeout only to OpenAI-client providers", () => {
+    vi.stubEnv("OPENWIKI_REQUEST_TIMEOUT", "3600000");
+
+    try {
+      createModel("openai-compatible", "custom-model", 3);
+      createModel("anthropic", "claude-sonnet-4-5", 3);
+      createModel("openrouter", "anthropic/claude-sonnet-4.5", 3);
+
+      expect(chatOpenAIArgs.map((options) => options.timeout)).toEqual([
+        3600000,
+      ]);
+      expect(chatAnthropicArgs[0]?.[1]).not.toHaveProperty("timeout");
+      expect(chatOpenRouterArgs[0]).not.toHaveProperty("timeout");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  test("leaves the OpenAI client timeout at its default when unset", () => {
+    createModel("openai", "gpt-5.6-terra", 3);
+
+    expect(chatOpenAIArgs[0]).not.toHaveProperty("timeout");
+  });
+
   test.each([
     ["gpt-5.5", true],
     ["claude-sonnet-5", false],

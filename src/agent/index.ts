@@ -142,6 +142,7 @@ import {
   resolvePageConcurrency,
   resolveProviderRetryAttempts,
   resolveStreamIdleTimeoutForProvider,
+  resolveRequestTimeoutForProvider,
   type OpenWikiProvider,
 } from "../config/constants.js";
 import { resolveReasoningConfig } from "../config/reasoning.js";
@@ -378,6 +379,13 @@ async function resolveRunConfig(
     emitDebug(
       options,
       `model.streamIdleTimeout=${streamIdleTimeout ?? "provider-default"}`,
+    );
+    // createModel reads this again; resolving it here fails an invalid value
+    // before the run starts.
+    const requestTimeout = resolveRequestTimeoutForProvider(provider);
+    emitDebug(
+      options,
+      `model.requestTimeout=${requestTimeout ?? "provider-default"}`,
     );
 
     return {
@@ -1152,6 +1160,9 @@ export function createModel(
       : { maxOutputTokens: configuredMaxOutputTokens };
   const streamIdleTimeoutOptions =
     streamIdleTimeout === undefined ? {} : { streamIdleTimeout };
+  const requestTimeout = resolveRequestTimeoutForProvider(provider);
+  const requestTimeoutOptions =
+    requestTimeout === undefined ? {} : { timeout: requestTimeout };
   const chatOpenAiUsesResponsesApi = providerUsesResponsesApi(
     provider,
     modelId,
@@ -1263,6 +1274,7 @@ export function createModel(
       streaming: true,
       ...maxTokensOptions,
       ...responsesReasoningOptions,
+      ...requestTimeoutOptions,
       ...retryOptions,
       configuration: {
         baseURL: CODEX_RESPONSES_BASE_URL,
@@ -1329,6 +1341,7 @@ export function createModel(
       model: modelId,
       ...maxTokensOptions,
       ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
+      ...requestTimeoutOptions,
       ...retryOptions,
     });
   }
@@ -1353,6 +1366,7 @@ export function createModel(
     // than assigning a boolean: `streaming: false` is not the same as omitting
     // the key, because LangChain turns it into `disableStreaming`.
     ...(providerUsesStreaming(provider) ? { streaming: true } : {}),
+    ...requestTimeoutOptions,
     ...retryOptions,
   });
 }
