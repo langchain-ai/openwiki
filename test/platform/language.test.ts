@@ -94,6 +94,11 @@ describe("getLanguageScript", () => {
     expect(getLanguageScript("en")).toBe("Latn");
   });
 
+  test("falls back to the primary subtag for languages without script data", () => {
+    expect(getLanguageScript("tlh")).toBe("tlh");
+    expect(getLanguageScript("tlh-US")).toBe("tlh");
+  });
+
   test("treats an absent persisted language as English", () => {
     expect(getLanguageScript(undefined)).toBe("Latn");
     expect(getLanguageScript(null)).toBe("Latn");
@@ -114,5 +119,9 @@ describe("isSameWrittenLanguage", () => {
     expect(isSameWrittenLanguage("zh-TW", "zh-CN")).toBe(false);
     expect(isSameWrittenLanguage("sr-Latn", "sr")).toBe(false);
     expect(isSameWrittenLanguage("az-Arab", "az")).toBe(false);
+  });
+
+  test("matches a region-only change for languages without script data", () => {
+    expect(isSameWrittenLanguage("tlh-US", "tlh")).toBe(true);
   });
 });

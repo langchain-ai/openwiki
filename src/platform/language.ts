@@ -94,15 +94,19 @@ export function getPrimaryLanguageSubtag(
 /**
  * Returns a language tag's likely writing script (for example `Hans` for
  * `zh-CN`), resolved through the `Intl.Locale` likely-subtag data so script
- * variants such as `zh-CN` and `zh-TW` can be told apart. An absent tag is
- * treated as English. Malformed persisted values are returned as written so
- * they cannot accidentally compare equal to a valid requested tag.
+ * variants such as `zh-CN` and `zh-TW` can be told apart. Languages without
+ * likely-subtag script data (for example `tlh`) fall back to their primary
+ * subtag, so a region-only change such as `tlh` to `tlh-US` still compares
+ * equal. An absent tag is treated as English. Malformed persisted values
+ * are returned as written so they cannot accidentally compare equal to a
+ * valid requested tag.
  */
 export function getLanguageScript(tag: string | null | undefined): string {
   if (!tag) return "Latn";
 
   try {
-    return new Intl.Locale(tag).maximize().script ?? tag;
+    const locale = new Intl.Locale(tag);
+    return locale.maximize().script ?? locale.language;
   } catch {
     return tag;
   }
