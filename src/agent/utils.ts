@@ -19,7 +19,7 @@ import {
   isFileNotFoundError,
 } from "../platform/fs-errors.js";
 import {
-  getPrimaryLanguageSubtag,
+  isSameWrittenLanguage,
   requireResolvedLanguage,
 } from "../platform/language.js";
 import {
@@ -103,9 +103,10 @@ async function readRunWikiGoal(
 /**
  * Decides whether an update can skip its model invocation.
  *
- * An explicit request whose primary language differs from the persisted wiki
- * language is meaningful even on a clean tree, because the translation pass
- * must run before the update agent.
+ * An explicit request for a different written language — one whose primary
+ * subtag or likely script differs from the persisted wiki language, such as
+ * `zh-CN` to `zh-TW` — is meaningful even on a clean tree, because the
+ * translation pass must run before the update agent.
  *
  * Working-tree and committed changes that only touch `openwiki/` or paths
  * excluded by `openWikiIgnore` do not count as meaningful, so an ignored path
@@ -134,8 +135,7 @@ export async function getUpdateNoopStatus(
   const resolvedRequestedLanguage = requireResolvedLanguage(requestedLanguage);
   if (
     resolvedRequestedLanguage !== undefined &&
-    getPrimaryLanguageSubtag(resolvedRequestedLanguage) !==
-      getPrimaryLanguageSubtag(lastUpdate.language)
+    !isSameWrittenLanguage(resolvedRequestedLanguage, lastUpdate.language)
   ) {
     return { shouldSkip: false, reason: "output language changed" };
   }

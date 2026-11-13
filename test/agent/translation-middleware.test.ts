@@ -89,16 +89,26 @@ describe("resolveTranslationPlan", () => {
     });
   });
 
-  test("does not switch for a region-only change with the same primary subtag", () => {
+  test("does not switch for a region-only change with the same script", () => {
     expect(resolveTranslationPlan("update", "en-GB", "en")).toEqual({
       target: "en-GB",
       source: "en",
       translateAll: false,
     });
+  });
+
+  test("requests a full pass for a script-variant change with the same primary subtag", () => {
+    // zh-CN and zh-TW share the primary subtag but differ in script
+    // (Simplified vs Traditional), so the switch must retranslate.
     expect(resolveTranslationPlan("update", "zh-TW", "zh-CN")).toEqual({
       target: "zh-TW",
       source: "zh-CN",
-      translateAll: false,
+      translateAll: true,
+    });
+    expect(resolveTranslationPlan("update", "sr-Latn", "sr")).toEqual({
+      target: "sr-Latn",
+      source: "sr",
+      translateAll: true,
     });
   });
 
