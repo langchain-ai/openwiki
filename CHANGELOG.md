@@ -1,5 +1,27 @@
 # openwiki
 
+## 0.9.0
+
+### Minor Changes
+
+- [#1081](https://github.com/langchain-ai/openwiki/pull/1081) [`686fee5`](https://github.com/langchain-ai/openwiki/commit/686fee5d5b976fc1fa3557e31b08268d81c15a03) Thanks [@rstuhlmuller](https://github.com/rstuhlmuller)! - Allow MCP hosts to defer unrelated stale Claim pages during focused updates while preserving their evidence debt. Stop asserting that every repository has a scheduled update workflow.
+
+- [#1069](https://github.com/langchain-ai/openwiki/pull/1069) [`7bff3c6`](https://github.com/langchain-ai/openwiki/commit/7bff3c625836e81d8f7ba7f934c14640199d574b) Thanks [@p4norman](https://github.com/p4norman)! - `openwiki visualize` can open on a specific page: a `#page=<id>` URL fragment (for example `http://localhost:4300/#page=architecture/overview`) selects that page on first load. An unknown id opens the default entry page as before.
+
+## 0.8.0
+
+### Minor Changes
+
+- [#818](https://github.com/langchain-ai/openwiki/pull/818) [`778fec5`](https://github.com/langchain-ai/openwiki/commit/778fec580b93e9cba9af00e31a0beefc5955f7da) Thanks [@alebgl77](https://github.com/alebgl77)! - feat: add Mistral as a model provider (`MISTRAL_API_KEY`, optional `MISTRAL_BASE_URL`)
+
+- [#1103](https://github.com/langchain-ai/openwiki/pull/1103) [`959616e`](https://github.com/langchain-ai/openwiki/commit/959616e3e88e29094fec23903fe0a61d5f3183b4) Thanks [@MohammedAlkindi](https://github.com/MohammedAlkindi)! - Show the update planner the recent commit messages after each page's baseline, as hints about where to look, so it can route a change by its intent and not only by the files it touched.
+
+### Patch Changes
+
+- [#1102](https://github.com/langchain-ai/openwiki/pull/1102) [`aa2eaec`](https://github.com/langchain-ai/openwiki/commit/aa2eaec86ae80829bf919200583b69f9231d9393) Thanks [@MohammedAlkindi](https://github.com/MohammedAlkindi)! - Cap the changed paths and Claims issues in the `openwiki_begin` result, with exact totals and truncated flags, so an update with a lot of drift no longer sends MCP hosts well over 100k characters.
+
+- [#1105](https://github.com/langchain-ai/openwiki/pull/1105) [`7adf35c`](https://github.com/langchain-ai/openwiki/commit/7adf35cc80efaa61bd5b0c6609d9ba83df2b3be9) Thanks [@MohammedAlkindi](https://github.com/MohammedAlkindi)! - Check each page baseline once when fast-forwarding page coverage, so starting an update on a wiki with many pages launches far fewer Git processes.
+
 ## 0.7.3
 
 ### Patch Changes

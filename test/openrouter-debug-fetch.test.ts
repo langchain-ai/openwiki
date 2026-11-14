@@ -282,6 +282,24 @@ describe("installOpenRouterDebugFetch concurrency", () => {
     expect(globalThis.fetch).toBe(original);
   });
 
+  test("captures failures from an overridden OPENROUTER_BASE_URL", async () => {
+    vi.stubEnv("OPENROUTER_BASE_URL", "https://us.openrouter.ai/api/v1");
+    stubFetchSequence([new Response("{}", { status: 429 })]);
+    const capture = installOpenRouterDebugFetch({});
+
+    try {
+      await globalThis.fetch(
+        "https://us.openrouter.ai/api/v1/chat/completions",
+        openRouterFetchInit(false),
+      );
+
+      expect(capture.getLastFailure()?.response?.status).toBe(429);
+    } finally {
+      capture.restore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   test("redundant restore is a no-op and does not disturb an active run", () => {
     const original = stubFetch();
     const runA = installOpenRouterDebugFetch({});

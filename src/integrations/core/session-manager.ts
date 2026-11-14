@@ -8,6 +8,7 @@ import {
   submitRepositoryPlan,
   type ActiveRepositoryRun,
 } from "../../generation/repository-run.js";
+import { toHostActiveBeginView } from "./begin-view.js";
 import { HostIntegrationError } from "./errors.js";
 import {
   BeginInput,
@@ -146,7 +147,7 @@ export class HostSessionManager {
       }
 
       this.active = result.run;
-      return result.view;
+      return toHostActiveBeginView(result.view);
     });
   }
 
@@ -162,6 +163,7 @@ export class HostSessionManager {
       return submitRepositoryPlan(run, {
         pages: input.pages,
         deletePages: input.deletePages,
+        deferUnplannedClaimIssues: input.deferUnplannedClaimIssues,
       });
     });
   }
@@ -226,7 +228,7 @@ export class HostSessionManager {
       {
         name: "openwiki_begin",
         description:
-          "Start or resume OpenWiki repository generation. Returns status=noop for a clean update, otherwise the durable planning/generation run state. An unrecognized `language` fails the call with invalid_input instead of starting a run.",
+          "Start or resume OpenWiki repository generation. Returns status=noop for a clean update, otherwise the durable planning/generation run state. Long lists are capped, with exact changedPathCount and claimIssueCount totals: when a changedPathsTruncated flag is true, find the rest with `git diff --name-only <baseGitHead>..HEAD` (not on a fullReview window), `git diff --name-only HEAD` and `git ls-files --others --exclude-standard`, leaving out openwiki/ and .openwikiignore paths; claimIssuePages names every page with a Claims issue. An unrecognized `language` fails the call with invalid_input instead of starting a run.",
         schema: BeginInput,
         handle: async (input) => this.begin(BeginInput.parse(input)),
       },

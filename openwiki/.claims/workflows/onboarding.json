@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b1368bcf1cd05a784ef2f69b3bc7547e77d270ba774a1c6a8b5145fc85e44e66",
+  "pageVersion": "sha256:6832ae1e1d72f5c9beec8e641b036aa1062783c7d6365e150d20bfd4bdd8775f",
   "claims": [
     {
       "id": "claim_019ff3d6f68b436e8dcedd62adaddc34",
@@ -37,7 +37,7 @@
       "statement": "Provider credentials and model configuration are persisted to ~/.openwiki/.env, where the env directory is the OpenWiki home directory itself.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L88-L89",
+          "resource": "repo://src/config/env.ts#L90-L91",
           "version": "repo-lines-v1:sha256:a2ffa84893c018b2aa12449c6459b02d00e466196c96449c3fd5d87af8809da7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThkYzE3NzY1OGY3ODIwNTg0ZTdjMjczZWI0ZmY2MDMzZTlkYTQ5YmEwZDI2YWQwMDA2MmM4MWRkYTBlYWQ3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxZTM2OWFlM2ZkZGUyYWE4OWRjYjNlYTRhZTYwODkwN2NkOTkzNjkwY2EwZGVlNjRlMTk0MzhjNzcyYjAwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTg2MmVkYzlkMjc0MDU0ZmY3NTExNWI5OGI4YjlkOGQyODI2M2U2YjQ1ZTY3NWIyMmZlZWQ2ZTAzZTIyMWM2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTEzNzZhNGMwOWE3MTU0MmIxNmRiM2ExYzM3ZDc4MTRlZDNlMzg2ZGNhNTQyMTNkODVkZDQ0MTAxNGNlZjliNCJ9"
         }
       ]
@@ -47,7 +47,7 @@
       "statement": "saveOpenWikiEnv serializes writes through an internal queue that is reset after a failed save, writes the credential file to a same-directory temp file at 0o600 and atomically renames it into place to avoid truncation, and drops empty values rather than persisting KEY=\"\".",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L316-L371",
+          "resource": "repo://src/config/env.ts#L320-L375",
           "version": "repo-lines-v1:sha256:fe8878926ca8deb6ed1ad36d717ce5e4328c06d50190af331f2fd9b812096b0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzUxZDljMDg0ZGVkYzJkMGFiNDNmM2QzNWMxMmIwYzY1YjNlN2I3OGJmMzI4YzFmOGYxM2JlMDcxNmY1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OGQwMWQwMmEyZGE3MjNhZjNkOGIzNTc4ZTU1NGIzY2U5NzJjMTJhMTNkNjhjYzlkOTA2OWJhZTIyYzcxOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNWRkNjU0YzU4ZTMyZjE0MjhhODhmZTk3MzA3MmRmOWQ4NGU5YTBjNjhkZmJlYWU0NTJhYjcwY2Q5MGIyMzQifQ"
         }
       ]
@@ -57,7 +57,7 @@
       "statement": "saveOpenWikiEnv does not overwrite a key present in the launch shell environment within process.env, treating the saved value only as a fallback for when the shell variable is unset.",
       "evidence": [
         {
-          "resource": "repo://src/config/env.ts#L373-L378",
+          "resource": "repo://src/config/env.ts#L377-L382",
           "version": "repo-lines-v1:sha256:7e62d6de447e15981c2b8e1a15d8426bacf3d67dac3583431c9f67fe331bac11:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEwMmExMTA0NGEwYWIwZTlkYzVlNDQ4N2I0ZTNhYzRmZTFkMmYwYjAwOWRlMDExNzUxMzBiMzc4NTNlMmY1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgzYzcyOGRkMDYzN2U1MWJmYmM5NmU1MjU4NjM2YjI3MzE3NDA3ZGNjNTE0MjdkMzA0M2JmYTI5YTI1NWZjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRiYWE1YmQ3NTg4YWI2NWY0MTAyOThiZDc5YWIwMzIwMzAwYWIzNzFhYWU1ZGZjNTEzMjhjZjI5YWFmZDA1OCJ9"
         }
       ]
@@ -219,7 +219,7 @@
           "version": "repo-lines-v1:sha256:9743270287998ae1c18d25c03788d6be89d1e15aed480ea98e8bea1f47391d41:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I5NTkyNWUwNjcyNzIzNmMyY2UyNjVlMjA0NDdkNTdhNzU3MzM3Y2RmYmNmZmY3MmY1ZGFiNTAxZDRiOWI2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2NWNkMDg2MTE5YzhiYWI1NGJiNWUzOTU3YjlmYmI5ZjRkMTk3NGU4OTgzODA3OGIwZWZjMWI0ZWMzOWY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y2YTJiZTljZGUzODIzOWJiOGUzYTJmOWNhY2NiNjY0NGIyZTJkNWYwY2Y0ZjRmNDMzNDg1NjIwNmRjYzVjMSJ9"
         },
         {
-          "resource": "repo://src/generation/repository-run.ts#L404-L406",
+          "resource": "repo://src/generation/repository-run.ts#L416-L418",
           "version": "repo-lines-v1:sha256:7139580478dfa8d0eaf197c59cd29eb61d1019dd49604b8425b99a7af85d37a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU0YWNjMWM3YTI3YTM5ODQ5ZTAwNjdhM2ZmOTczNmY3MGQ3ZDY4N2Q4MjNhYjEwY2EwMWM0OTA5ZThkNmM4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY0NzA5Y2ZkMzQ1MTk1N2U5Nzc1NzM5M2RlNDljNWNlN2VlZDczYTIwYjc4NDg4NDMzNzI0MTcxZDQ0YjUwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODMzZGRhNGIwMjRhYTdhMTFjMDY0MjZjZWQxMTEyOTBjYWI1NTYwODkwMDIwOTAxMWRmZmNiYjUxMGFhYzU2MSJ9"
         },
         {
@@ -347,7 +347,7 @@
       "statement": "beginRepositoryRun validates the requested --language value before touching the repository, rejecting an unrecognized BCP-47 tag (via resolveLanguage) rather than silently defaulting to English, because a wrong language would be persisted in durable run state and a later resume refuses to change a started run's language.",
       "evidence": [
         {
-          "resource": "repo://src/generation/repository-run.ts#L393-L402",
+          "resource": "repo://src/generation/repository-run.ts#L405-L414",
           "version": "repo-lines-v1:sha256:e71e280af789945c43573bd42734abfb16a9a67f3e459becb7696b1d6d5dcb11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkNjJkYWU4YTliYTI4MjRlNzBhMzFjZmQxODVlNTI5Y2ZjOTk4MmE2NDU2YTEwOWI4MTI2ZTBmYTVkMTE5ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YmIxNGZiNDYyNWViYjFiODRkODE0NTQzYTU2NGZhMDRiMWIzOGVhZTdjZmYxYjAzMDM4MGQ1NWQ5NDQxNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2YmEzOGEzMTAwZjFmMThiMjZmNWZlODE2MDlhNjY5Y2ZkYWU5YWE4MDgxNjBmNWNjZGM4YmQ4YmNjMmY0ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzOTgwN2E5OTJjYTU4ZWMxMWQxNGQxMDc3NGUzNjEzOGRiMWQ0ODU3Zjg5MTNiM2FmYjU4M2ZlM2QyNWJkYTkifQ"
         },
         {
@@ -361,11 +361,11 @@
       "statement": "A provider with a fixedModel (checked by providerHasFixedModel) always uses that single model ID verbatim and the model-selection step is skipped entirely; the IBM Bob provider pins fixedModel 'premium', authenticates with an API key (BOB_API_KEY via the api-key credential step), and exposes an optional BOB_BASE_URL, so its spine omits the model step.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L303-L310",
+          "resource": "repo://src/config/constants.ts#L307-L314",
           "version": "repo-lines-v1:sha256:443b72749f82e90eec0419c6fc5ed3d2109d026f439c73854feee6af8ff502b1:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVkZTVjMjVlODIyZGI5YjcyYmY0OWMwYTUyYzAzYTZmYWQ2ZDU4ZWEzMmRmNjdjN2U4MmQwZmIyNmQ1MmU0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ2ZjI3MTBlODdjNzI2ZjBmMGFmZTFmZmU4OTA5NjM4NDZmMzljNTNmMDk1YTU1NjZkYWU3MjFjNWY2N2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ExYzViZmFjZmZkMDE5NzU1MDUwM2IxZmI5YzBjMzAyNDk4NGYyNWRhZjFhYjg3ZTIwNzNhZTRhYzViOTc2YiJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L790-L798",
+          "resource": "repo://src/config/constants.ts#L810-L818",
           "version": "repo-lines-v1:sha256:7d891d9d3ac5658ebd1b2581fe72115b139f550154e4f47e4b96beaf85f9a74f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxOWMwZGU4ZmY0NTYzNTRmYzRkODEzZjU5MzM1MjM5NWVjOTdlY2MxNTE3MTNmZmQ0Y2I2YzAxZmUyNWY3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJkMDVjNDE5NjRmODU0OWJhMTU4ZmUzMjc1OWVkOTBlZjQ3ZWNmYTc4Y2JlYTE3OGU1NjE3YzE3YmNmMTc2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZiMDA0YTc1OGM0NzRmNzE0YjY0ZTU4MDkyNTJjZWUwMmE4OWU4OWJjY2ZkYzY3ZjY3YjcyYThhN2QzZDQzMSJ9"
         },
         {
@@ -411,7 +411,7 @@
       "statement": "The openai-compatible provider offers two credential modes chosen in the wizard's auth-mode step (OPENAI_COMPATIBLE_AUTH_OPTIONS): api-key (default) and entra-id, where entra-id delegates authentication to Azure Identity so no API key is collected. resolveOpenAICompatibleAuthMode resolves the mode from OPENAI_COMPATIBLE_AUTH (defaulting to api-key), and providerUsesEntraId reports whether the environment resolves to entra-id, which gates providerRequiresApiKey and makes isCredentialConfigured treat Entra mode as always-credential-satisfied.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L519-L574",
+          "resource": "repo://src/config/constants.ts#L539-L594",
           "version": "repo-lines-v1:sha256:35127fa39b0d5ca4d323c14abe63192e0651ac6b9a42caba71b9ee6a3655669d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkODk2OWU1NmU1MzU2NTkzZmMyODYwNDJkZTBhNGE0ODc5MDAyMzQ2OGU4ZTUwZDdhNWU3NGQxZDU0ZjA5MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhYjhkNDdlMjQzOTJhMjRlYzJjMjYxNzFkOTRlOGE1ZDI0ZGJmYjAzZDJhM2M0YmRmNzRiNjZkNjEyYTcxYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMmE3OGNhOTkzYzZmZjZmODlhODg5NDRhZjFmZWU1MDJiYmQ1NjNjMTVhYmEzYTM5NDEyOTZhYzUxMzRkNjcifQ"
         },
         {
@@ -429,11 +429,11 @@
       "statement": "In entra-id mode the wizard inserts an entra-scope step (after base-url, before region) capturing the Microsoft Entra token scope, persisted as OPENAI_COMPATIBLE_ENTRA_SCOPE and defaulting to Azure OpenAI's Cognitive Services scope https://cognitiveservices.azure.com/.default via DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE; selecting entra-id also clears the wizard's held API key so the persisted update map never carries a key for an Entra run, and switching back to api-key persists the mode and key while omitting the scope. The runtime resolves the scope with resolveOpenAICompatibleEntraScope (saved value, then the Cognitive Services default).",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L21-L27",
+          "resource": "repo://src/config/constants.ts#L23-L29",
           "version": "repo-lines-v1:sha256:8d16e93f5cb84cb6338f7a35a1560179a378935d4f37bc3bd1f00d4a75c5b370:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU1ZDBmNTgxMmE3ODc5ODI5MDNkMTk2MjY5MTRlYzFiNDY5OGU4Y2I1OTVhYWU1ZjYwMzcyNWRmYmNlYmQ5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgzY2UyYmNhNWYzYTRhNGFjODJhNTM4NDJlZDg5NGY1ZjhjNzNmZTE0MjQ0YjU2MDhmNzUxNWExNTUxYTRmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTY1Y2M0OWJlNzAwMTNkMGU2Yzk2NzFjMTIwZGJjNjA3MWEzMGZlMmI4MTgyOGUxYzYzOGE2OWM5N2I2N2E5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU2YjRmMzg0OWNlYzdmMjQ3OGQ4ZDJjYmI2NjQ1NWVkNmY0NDFmMjMyMTE4M2FjNzBkMGM5ZjEwZDVkM2M1YyJ9"
         },
         {
-          "resource": "repo://src/config/constants.ts#L540-L547",
+          "resource": "repo://src/config/constants.ts#L560-L567",
           "version": "repo-lines-v1:sha256:9f5e5cd1004113b25cd12794f85b5bda5b9019ce52734492d0ac77f3065f878f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE2MDNmZmU2NDIyOTEyN2VjNDhkNGRiZjNjMzg4YmUwZjQ4ZTYxMjkyMzg0ZjlmYzU0ODViYzMzMWNkNjcyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFmNjMzY2UxMmIzZGYyZGEyYjIzNTBiMmZmMjAwNGQ4ODhkNjM5YWIwMzc5OWU1OTgwOTMxNDRlMzg1MDc5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjUyNWRlYzY4MjNjYzhjMjVhZmU4ODA1OTVhNWVhY2VmMTdkNDFjY2E4OTA1YmJjMGJkODAzMjgwMWM0N2UwZiJ9"
         },
         {
@@ -451,14 +451,28 @@
       "statement": "getProviderCredentialHint returns an openai-compatible-specific hint telling the operator to set OPENAI_COMPATIBLE_AUTH=entra-id and configure Azure Identity (az login, managed identity, workload identity, or environment credentials) plus set OPENAI_COMPATIBLE_ENTRA_SCOPE to the gateway's token scope, for non-interactive Entra use where the wizard cannot open a browser.",
       "evidence": [
         {
-          "resource": "repo://src/config/constants.ts#L720-L729",
+          "resource": "repo://src/config/constants.ts#L740-L749",
           "version": "repo-lines-v1:sha256:01f84a6c68fb3a1c6d1ca50c17f1f5b2513c65e2d80ef05966ae87d99816a770:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxYTFiMWQ2ZTI5OGIyYWQ2N2FiZDk1ZGRmZDVhMDVlZDc1MDUwOGFkZjQ1NTMyM2IwNzliYTNlMzk3MjNhMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYWRkMTUyYzY3NDMwOGMyNzk2ODRiNDU5ODk5ZDYxNGY4NDY3ZjdhMmM2ZWViNjA0YmM4N2Y1Zjk3MjFiZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YjczOTk2ZjZlY2Q4ZDFhM2M0NWQ0MDQ1Y2VlMTRiYWE4ZWRjODFiYWY4N2U2NjQ4NThmNDQ3NWU5MGQ3ZTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce995c3ac8c744c6976ee76076bb4505",
+      "statement": "The Mistral provider (`mistral`) is an api-key provider offered in the first-run model-provider menu (last in SELECTABLE_OPENWIKI_PROVIDERS, after nvidia): it targets https://api.mistral.ai/v1 (overridable via MISTRAL_BASE_URL), collects MISTRAL_API_KEY via the api-key credential step, and its built-in model options are mistral-small-2603 (Mistral Small 4), mistral-large-4 (Mistral Large 4), and codestral-2508 (Codestral), with rolling *-latest aliases pasteable as custom model IDs. It has no explicit authMethod so defaults to api-key, and getProviderArticle returns \"a\" for it so the wizard prompt reads \"Enter a Mistral API key\".",
+      "evidence": [
+        {
+          "resource": "repo://src/config/constants.ts#L280-L389",
+          "version": "repo-lines-v1:sha256:5abd6c5dc597d6ff454fa56e6603739e99c0ca2b33a992d19e4f3cb199a028ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNmE0N2I5ZDk3ZjM4OTk1M2ZiZGY0ZTE3M2U5MmFiODJmMWRlYzhkNWQ1MWU5Yzg5YTBmYTE1NmRlMGRkMDdhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxMTkxZjFhNjYyYjA3ZmE0Nzk1ZjRkMDJmZGQ1ZGU3MWU4OWMyNTRhNzYyZmI1ZjgzNDA1YWZiNjVjMmYwYzFjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0YzNkZjUyZGQ5MmM2YWE4YmUyNjY0ODVmY2M4YTA3ZTI0NDRmYzAzZTAyYzE2YjFjMWZhZjUzNDk5ZTVmZmZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwNGE4MTI0NGZlN2I1OTkyMWNjNDBiMDczOWE3YjA0ZmM2MGMyZTAxYjNiZWNkNzM4ZGQwNjNjMDcwMTNlNGZkIn0"
+        },
+        {
+          "resource": "repo://src/setup/credentials/steps.ts#L955-L967",
+          "version": "repo-lines-v1:sha256:96b5d986af0f2e9de56221d46031ee59b40abf4470044e5ea8f620e608b0b43b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NWQ3OWU3NzQ5M2VjZDk0Y2NlNmJlMGM2NzY3MWJlMmEzOTViNjRiNGNiYmI2OGM1Yjg0MGIwYmFmOWVjNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3ZGNiOWM3ZmEzM2RiODlhNmM2OTBiMGUwZDdlNDM1ZmM0MTM3YTdkYmI5ZDQ2NWM3NjQzYWJhNGFhMjYxMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4Njc2MGM5NWVkYjkwODE4NGMzYmM2YmY1NjVlMzU2ZmFlYzFkYzQzMzdjODBjZDE3MTA4YzFkMmFiOGYzMDgifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.3",
-    "at": "2026-11-02T08:07:01.639Z"
+    "by": "openwiki/0.8.0",
+    "at": "2026-11-05T08:06:42.707Z"
   }
 }

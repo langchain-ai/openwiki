@@ -359,7 +359,7 @@ OpenWiki tracks the facts behind each repository page as **Grounded Claims**. Ea
 
 Claims cover the truths future agents rely on: behavior, responsibilities, architecture, data flow, invariants, failure semantics, configuration, and security boundaries. Each records the evidence version observed when the claim was established, rather than relying only on when a Markdown file was last generated.
 
-Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. A stale or unresolved Claim requires work for its owning page even if the planner omits it. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
+Before an update, OpenWiki checks every persisted evidence version, before even deciding whether the repository is a no-op. By default, a stale or unresolved Claim requires work for its owning page even if the planner omits it. A host using `openwiki_submit_plan` may set `deferUnplannedClaimIssues: true` for a focused update; unrelated stale Claim pages remain untouched, and the run metadata remains interrupted so a later full update can reconcile them. The page worker receives only Claims requiring attention; current issue-free Claims are retained deterministically without being repeated through every model turn. The worker explicitly confirms rechecked issue Claims, submits only revisions and additions, and names retractions. Complete current Claims remain available through on-demand inspection for broad rewrites. The Markdown stays clean; structured Claim state lives alongside it under `openwiki/.claims/`.
 
 Page completion is a durability boundary. OpenWiki persists the reconciled Claims, projects verification, synchronizes the sidecar's page version, and proves the complete result before marking that page's job complete. Finalization repeats the whole-run proof before deleting `openwiki/.run.json`.
 
@@ -661,7 +661,7 @@ When `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API=true` is also set, the effort
 
 <br/>
 
-**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, `MISTRAL_BASE_URL`, `CRUSOE_BASE_URL`, or `COPILOT_BASE_URL`. The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
+**Alternative base URLs.** Route a provider at a self-hosted or proxied gateway by setting its base URL alongside its key: `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `BASETEN_BASE_URL`, `FIREWORKS_BASE_URL`, `NVIDIA_BASE_URL`, `MISTRAL_BASE_URL`, `CRUSOE_BASE_URL`, `COPILOT_BASE_URL`, or `OPENROUTER_BASE_URL` (for example, OpenRouter's regional `https://us.openrouter.ai/api/v1`). The `openai` provider routes tool calls through the Responses API (`/v1/responses`), which is useful for gateways that expose it.
 
 ```bash
 OPENWIKI_PROVIDER=anthropic

@@ -267,6 +267,11 @@ describe("resolveProviderBaseUrl", () => {
         COPILOT_BASE_URL: "https://tenant.ghe.com/api/copilot",
       }),
     ).toBe("https://tenant.ghe.com/api/copilot");
+    expect(
+      resolveProviderBaseUrl("openrouter", {
+        OPENROUTER_BASE_URL: "https://us.openrouter.ai/api/v1",
+      }),
+    ).toBe("https://us.openrouter.ai/api/v1");
   });
 
   test("prefers hosted OpenAI-compatible provider base URL overrides", () => {
@@ -321,6 +326,9 @@ describe("resolveProviderBaseUrl", () => {
     expect(
       resolveProviderBaseUrl("mistral", { [MISTRAL_BASE_URL_ENV_KEY]: "   " }),
     ).toBe("https://api.mistral.ai/v1");
+    expect(
+      resolveProviderBaseUrl("openrouter", { OPENROUTER_BASE_URL: "   " }),
+    ).toBe("https://openrouter.ai/api/v1");
     expect(
       resolveProviderBaseUrl("crusoe", { [CRUSOE_BASE_URL_ENV_KEY]: "   " }),
     ).toBe("https://api.inference.crusoecloud.com/v1");

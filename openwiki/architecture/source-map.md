@@ -74,6 +74,8 @@ sources:
     resource: repo://src/generation/run-state.ts
   - id: openwiki-source-c6189f89b3f67d0cbf87739f
     resource: repo://src/ingestion/ingestion.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
     resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-3c86ca0bb7fbb79f2be66a2b
@@ -102,6 +104,8 @@ sources:
     resource: repo://src/mermaid/validate.ts
   - id: openwiki-source-54432f9303757678a104d85f
     resource: repo://src/okf/frontmatter.ts
+  - id: openwiki-source-04a008dbe4969919f7141a55
+    resource: repo://src/platform/diagnostics.ts
   - id: openwiki-source-2f1e489d53c52a0582582659
     resource: repo://src/platform/fs-errors.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
@@ -122,10 +126,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+  - by: openwiki/0.9.0
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # Source Map
@@ -165,20 +169,32 @@ before anything else.
   `resolveOpenAICompatibleAuthMode` is `entra-id`, wiring
   `createEntraTokenProvider` (from `agent/entra-auth.ts`) as the OpenAI SDK
   API-key callback so a long-running model uses refreshed Entra tokens without
-  reconstruction.
+  reconstruction. `createModel`'s `mistral` branch requires
+  `MISTRAL_API_KEY` and forbids a non-empty `OPENAI_CUSTOM_HEADERS` (the
+  Mistral endpoint is OpenAI-compatible, so it shares the `ChatOpenAI`
+  configuration). `createModel`'s `openrouter` branch builds a
+  `ChatOpenRouter` whose `baseURL` is `resolveProviderBaseUrl("openrouter")`,
+  which returns an `OPENROUTER_BASE_URL` override when set and non-empty else
+  falls back to the `OPENROUTER_BASE_URL` constant
+  (`https://openrouter.ai/api/v1`), so an override targets a regional endpoint
+  such as `https://us.openrouter.ai/api/v1` rather than the default; the
+  `--debug` OpenRouter request-capture matcher (`isOpenRouterFetchInput`)
+  follows the same resolved base URL.
 - **`src/config/constants.ts`** is the single large registry of stable strings:
   the `openwiki` directory name and the page-manifest/update-metadata paths, plus
   the provider environment-variable key names and defaults for every supported
   provider (`OPENAI_API_KEY_ENV_KEY`, `ANTHROPIC_API_KEY_ENV_KEY`, Bedrock/Vertex,
   Gemini, OpenRouter, Baseten, Copilot, Fireworks, Nebius, NVIDIA, the IBM Bob
-  keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the `openai-compatible`
+  keys (`BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`), the Mistral keys
+  (`MISTRAL_API_KEY_ENV_KEY`, `MISTRAL_BASE_URL_ENV_KEY`), the `openai-compatible`
   keys — including the `OPENAI_COMPATIBLE_AUTH_ENV_KEY` (`api-key`/`entra-id`)
   mode selector, the `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY` scope and its
   `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` Azure Cognitive Services default, the
   `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY` and
   `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` gates — and the
   connector OAuth keys) and the `OpenWikiProvider` union (which includes the
-  `bob` and `gemini-enterprise` providers). It also owns the output-token
+  `bob` and `gemini-enterprise` providers). `resolveConfiguredProvider` now
+  infers the `mistral` provider from a set `MISTRAL_API_KEY_ENV_KEY` value. It also owns the output-token
   ceilings: `resolveConfiguredMaxOutputTokens` picks the right provider-specific
   setting (OpenRouter's legacy `OPENWIKI_OPENROUTER_MAX_TOKENS` first, then
   `OPENWIKI_MAX_OUTPUT_TOKENS`), and `resolveBedrockMaxTokens` falls back to
@@ -233,18 +249,31 @@ before anything else.
   intend to revise or remove otherwise-current content. `submitRepositoryPage`
   takes sparse Claim decisions (`confirmedClaimIds`/`claims`/`retractedClaimIds`)
   which `reconcilePageClaims` turns into confirm/update/add/retract operations,
-  retaining omitted issue-free Claims. The shared-state mutations of
-  `submitRepositoryPage` and `skipRepositoryPage` run under `withRunMutation`, a
-  per-run promise chain keyed by object identity, so concurrent workers never
-  lose a completion while the model-owned work stays outside the lock. It also
-  owns the skip-failed-page-workers path: `captureRepositoryPageSnapshot` records
-  the pending page and its claims sidecar before a worker runs,
-  `restoreRepositoryPage` (also used between worker retries) restores the page
-  markdown and sidecar, `skipRepositoryPage` rolls a failed worker back
-  (restoring the page markdown and sidecar, marking the job `skipped`), and
-  `restoreRepositoryPageMarkdown` re-applies the snapshot during
-  `finishRepositoryRun` for every skipped job, tolerating a not-found page when
-  the snapshot recorded no markdown.
+  retaining omitted issue-free Claims; its page-local finalize excludes other
+  in-flight pending pages and the plan's `deferredClaimPages`, so a concurrent
+  worker or a deferred stale-claim page never records transient bytes. The
+  shared-state mutations of `submitRepositoryPage` and `skipRepositoryPage` run
+  under `withRunMutation`, a per-run promise chain keyed by object identity, so
+  concurrent workers never lose a completion while the model-owned work stays
+  outside the lock. It also owns the skip-failed-page-workers path:
+  `captureRepositoryPageSnapshot` records the pending page and its claims
+  sidecar before a worker runs, `restoreRepositoryPage` (also used between
+  worker retries) restores the page markdown and sidecar, `skipRepositoryPage`
+  rolls a failed worker back (restoring the page markdown and sidecar, marking
+  the job `skipped`), and `restoreRepositoryPageMarkdown` re-applies the
+  snapshot during `finishRepositoryRun` for every skipped job, tolerating a
+  not-found page when the snapshot recorded no markdown. A plan may carry
+  `deferredClaimPages` — stale Claim pages an update deliberately leaves for a
+  later full run: `createRepositoryPlan` (in `page-jobs.ts`) populates the set
+  only when the `deferUnplannedClaimIssues` input (on `protocol.ts`'s
+  `SubmitPlanInput`, threaded through `session-manager.ts`) is set on an
+  `update`, skipping the required-claim-issue jobs it would otherwise insert;
+  the set is part of `RepositoryRunPlan` (`run-state.ts` schema) and is compared
+  by `samePlanIgnoringJobIds`, so a duplicate plan submission matches only when
+  the deferred set agrees. `finishRepositoryRun` folds `deferredClaimPages` into
+  its `skippedPages` set so the strict whole-run finalize excludes both skipped
+  and deferred stale-claim pages, leaving them for reconsideration on the next
+  update.
 
 ## Subsystems
 
@@ -367,7 +396,11 @@ schema-versioned, with `planning`/`generating` phases and `pending`/`skipped`/
 reconciles per-page Claims (`reconcilePageClaims`), turning sparse
 `confirmedClaimIds`/`claims`/`retractedClaimIds` decisions into
 confirm/update/add/retract operations while retaining omitted issue-free
-Claims. `src/generation/page-manifest.ts`
+Claims. `createRepositoryPlan` also emits the plan's `deferredClaimPages`:
+when an `update` carries `deferUnplannedClaimIssues`, it skips the
+required-claim-issue jobs it would otherwise insert and records the affected
+stale-Claim pages for a later full run (an `init` plan cannot defer and is
+rejected if it tries). `src/generation/page-manifest.ts`
 owns the committed page-correctness ledger (`openwiki/.page-manifest.json`,
 schema-versioned via `REPOSITORY_PAGE_MANIFEST_SCHEMA_VERSION`), recording each
 completed page's git head, source fingerprint, page version, and producer
@@ -376,7 +409,12 @@ provenance (`completedBy`, `completedRunId`), and is read and rewritten by
 `src/generation/errors.ts` defines `RepositoryRunError`. The lifecycle exposes a
 six-operation surface (`beginRepositoryRun`, `submitRepositoryPlan`,
 `nextRepositoryPage`, `inspectRepositoryPageClaims`, `submitRepositoryPage`,
-`finishRepositoryRun`). `nextRepositoryPage` returns `claimsRequiringAttention`
+`finishRepositoryRun`); `submitRepositoryPlan` normalizes a proposal via
+`createRepositoryPlan` and persists the `RepositoryRunPlan` (its `pages`,
+`deletePages`, and `deferredClaimPages`), while a duplicate plan submission is
+accepted only when `samePlanIgnoringJobIds` finds the same ordered pages,
+`deletePages`, and `deferredClaimPages` (ignoring generated job ids).
+`nextRepositoryPage` returns `claimsRequiringAttention`
 and `existingClaimCount` rather than the full Claim set;
 `inspectRepositoryPageClaims` returns the complete compact Claim set on demand.
 Its snapshot/skip/restore operations (`captureRepositoryPageSnapshot`,
@@ -387,7 +425,9 @@ between worker retries) restores both the page markdown and its Claims sidecar,
 while `restoreRepositoryPageMarkdown` tolerates a not-found page when the
 snapshot held no markdown, so deleting a newly added page counts as a clean
 restore; `finishRepositoryRun` requires a snapshot for every skipped job
-(matching `jobId` and `path`) and re-applies those snapshots before finalizing.
+(matching `jobId` and `path`) and re-applies those snapshots before finalizing,
+folding `deferredClaimPages` into its `skippedPages` set so the strict
+whole-run finalize excludes both skipped and deferred stale-claim pages.
 
 ### claims — grounded-claim persistence, reconciliation guidance, and evidence resolution
 
@@ -509,13 +549,18 @@ the reasoning capability from `config/reasoning.ts`.
 
 Owns runtime configuration. `src/config/constants.ts` is the central identifier
 registry (path constants, provider env keys — including the IBM Bob
-`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the `bob` and `gemini-enterprise`
-providers in the `OpenWikiProvider` union, and the `openai-compatible`
+`BOB_API_KEY_ENV_KEY`/`BOB_BASE_URL_ENV_KEY`, the Mistral
+`MISTRAL_API_KEY_ENV_KEY`/`MISTRAL_BASE_URL_ENV_KEY`, the `bob` and
+`gemini-enterprise` providers in the `OpenWikiProvider` union, and the
+`openai-compatible`
 streaming/responses-API gates plus `OPENAI_COMPATIBLE_AUTH_ENV_KEY` (the
 `api-key`/`entra-id` mode selector), `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`
 and its `DEFAULT_OPENAI_COMPATIBLE_ENTRA_SCOPE` Azure Cognitive Services
 default, `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`, and
-`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults), and
+`OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY` — provider defaults),
+and `resolveConfiguredProvider` infers the active provider from the first set
+provider credential (including the `mistral` provider from a set
+`MISTRAL_API_KEY_ENV_KEY`); and
 also owns the output-token resolution helpers
 (`resolveConfiguredMaxOutputTokens`, `resolveBedrockMaxTokens`,
 `BEDROCK_DEFAULT_MAX_TOKENS`) plus `resolveOpenAiCompatibleReasoningEffortSupported`,
@@ -539,7 +584,9 @@ workers into one thread). `env.ts`
 loads and saves the OpenWiki `.env` and
 is the single source of truth for the managed-keys list (`MANAGED_ENV_KEYS`,
 including `BOB_API_KEY_ENV_KEY`, `BOB_BASE_URL_ENV_KEY`,
-`OPENAI_COMPATIBLE_AUTH_ENV_KEY`, `OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`,
+`MISTRAL_API_KEY_ENV_KEY`, `MISTRAL_BASE_URL_ENV_KEY`,
+`OPENROUTER_BASE_URL_ENV_KEY`, `OPENAI_COMPATIBLE_AUTH_ENV_KEY`,
+`OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY`,
 `OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY`,
 `OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY`,
 `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY`, and the
@@ -563,7 +610,9 @@ time (`runOperation`, which rejects a concurrent operation with `invalid_state` 
 maps `RepositoryRunError` codes into stable `HostIntegrationError`s at the
 boundary). Its `begin`, `submitPlan`, `nextPage`, `inspectPageClaims`,
 `submitPage`, and `finish` methods delegate to the `generation/repository-run.ts`
-lifecycle, while `tools()` returns the read-only retrieval tools first followed by
+lifecycle — `begin` bounds the active begin view for a host transport via
+`toHostActiveBeginView` (from `integrations/core/begin-view.ts`) — while
+`tools()` returns the read-only retrieval tools first followed by
 the six OpenWiki lifecycle tools (`openwiki_begin`, `openwiki_submit_plan`,
 `openwiki_next_page`, `openwiki_inspect_page_claims`, `openwiki_submit_page`,
 `openwiki_finish`) for an MCP transport to expose. The lifecycle tool descriptions
@@ -586,13 +635,23 @@ lowercase/digit/hyphen pattern). The retrieval tools themselves are built by
 read-only tool definitions and delegates each handler to `retrieval/wiki.ts` and
 `linking/wiki-workspaces.ts` via `resolveRepositoryRoot`; `runRetrieval` maps
 expected `WikiRetrievalError`/`WikiWorkspaceError`/`ClaimsError` failures into
-bounded `HostIntegrationError`s. `src/integrations/mcp/server.ts` exposes OpenWiki
+bounded `HostIntegrationError`s. `src/integrations/core/begin-view.ts` owns
+the host begin-view bounds (`HOST_BEGIN_PATH_LIMIT`, `HOST_BEGIN_CLAIM_ISSUE_LIMIT`)
+and `toHostActiveBeginView`, which caps the `changedPaths` and `pageUpdateWindows`
+path lists (preserving exact `changedPathCount`/`changedPathsTruncated` and
+`claimIssueCount`/`claimIssuesTruncated`/`claimIssuePages` totals) so an MCP
+begin result stays inside a model context while the host recovers the omitted
+paths from its own Git. `src/integrations/mcp/server.ts` exposes OpenWiki
 over MCP: `createOpenWikiMcpServer` registers each transport-neutral tool with an
 `McpServer` and bounds transport-visible errors (mapping `HostIntegrationError` to
 a safe MCP error, swallowing unknown exceptions), advertising an `INSTRUCTIONS`
 preamble (L11–L49) that incorporates `CLAIMS_RECONCILIATION_GUIDANCE` from
 `claims/guidance.ts` so the host model follows the same sparse-reconciliation
-standard as the native page-worker prompt (stdio transport in `stdio.ts`).
+standard as the native page-worker prompt, and carries the begin-view recovery
+guidance — when a `changedPathsTruncated`/`claimIssuesTruncated` flag is true,
+the host is told to find the rest with `git diff --name-only` (against the base
+head and `HEAD`, plus `git ls-files --others --exclude-standard`) — capped by
+`changedPathCount` and `claimIssueCount` (stdio transport in `stdio.ts`).
 
 `src/integrations/install/` is the host-integration install layer that
 installs, upgrades, inspects, and removes the OpenWiki skill bundle and MCP
@@ -658,8 +717,11 @@ maps each (class, detail, stage) triple to the owner responsible for the fix.
 ### platform — OS and filesystem primitives
 
 Owns cross-platform helpers shared by other subsystems: `fs-errors.ts`
-(`isFileNotFoundError`), `diagnostics.ts` (secret redaction), `language.ts`
-(language resolution), `windows-acl.ts`, and `utils.ts`.
+(`isFileNotFoundError`), `diagnostics.ts` (secret redaction —
+`sanitizeDiagnosticText` redacts the exact value of every set credential key,
+including `MISTRAL_API_KEY`, before any error/header/response text reaches the
+user or a log), `language.ts` (language resolution), `windows-acl.ts`, and
+`utils.ts`.
 
 ### mermaid — diagram validation for generated pages
 

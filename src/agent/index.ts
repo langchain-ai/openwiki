@@ -116,6 +116,7 @@ import {
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
+  OPENROUTER_BASE_URL_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
@@ -1283,7 +1284,7 @@ export function createModel(
 
     return new ChatOpenRouter({
       apiKey: process.env[OPENROUTER_API_KEY_ENV_KEY],
-      baseURL: OPENROUTER_BASE_URL,
+      baseURL: resolveProviderBaseUrl(provider),
       model: modelId,
       ...(effectiveMaxTokens !== undefined
         ? { maxTokens: effectiveMaxTokens }
@@ -2569,7 +2570,9 @@ function isOpenRouterFetchInput(input: Parameters<typeof fetch>[0]): boolean {
 
   return (
     url !== null &&
-    url.startsWith(OPENROUTER_BASE_URL) &&
+    url.startsWith(
+      resolveProviderBaseUrl("openrouter") ?? OPENROUTER_BASE_URL,
+    ) &&
     url.includes("/chat/completions")
   );
 }
@@ -2774,7 +2777,8 @@ export function formatEnvironmentDebugValue(
     key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
     key === OPENAI_BASE_URL_ENV_KEY ||
-    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY
+    key === OPENAI_COMPATIBLE_BASE_URL_ENV_KEY ||
+    key === OPENROUTER_BASE_URL_ENV_KEY
   ) {
     return formatUrlDebugValue(value);
   }

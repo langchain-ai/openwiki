@@ -34,10 +34,10 @@ sources:
     resource: repo://src/setup/onboarding.ts
   - id: openwiki-source-224b03172757408e1b558fa7
     resource: repo://test/ingestion/code-mode.test.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
+generated: { by: "openwiki/0.8.0", at: "2026-11-05T08:06:42.707Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+  - by: openwiki/0.8.0
+    at: 2026-11-05T08:06:42.707Z
 ---
 
 # Onboarding and Setup
@@ -185,6 +185,24 @@ case: it pins `fixedModel: "premium"`, authenticates with an API key
 (`BOB_API_KEY`, via the `api-key` credential step), and exposes an optional
 `BOB_BASE_URL`, so its spine runs provider → api-key → langsmith →
 (code-repo-confirm in code mode) with no model step.
+
+### API-key providers and Mistral
+
+Most selectable providers are plain `api-key` providers (default
+`authMethod` when a config omits it): the wizard collects a pasted key via the
+`api-key` step and, where applicable, an optional base URL, then the model. The
+Mistral provider (`mistral`) is one such provider and is now offered in the
+first-run model-provider menu (it is last in `SELECTABLE_OPENWIKI_PROVIDERS`,
+after `nvidia`). It targets Mistral's OpenAI-compatible chat completions surface
+at `https://api.mistral.ai/v1` (overridable via `MISTRAL_BASE_URL`), collects
+`MISTRAL_API_KEY` through the `api-key` credential step, and its built-in model
+options are `mistral-small-2603` (Mistral Small 4), `mistral-large-4` (Mistral
+Large 4), and `codestral-2508` (Codestral); the rolling `*-latest` aliases
+Mistral publishes can also be pasted directly as custom model IDs. See
+[Model Providers](../concepts/model-providers.md) for the full provider table,
+Mistral's credential-isolation checks in `createModel`, and the other API-key
+providers. Because `getProviderArticle` returns `"a"` for `mistral`, the
+wizard's prompts read "Enter a Mistral API key" rather than "an".
 
 ### Entra ID (Microsoft Entra) setup flow
 

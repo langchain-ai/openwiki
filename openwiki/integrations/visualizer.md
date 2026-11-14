@@ -38,10 +38,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.7.2", at: "2026-11-01T08:05:43.330Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Interactive Visualizer
@@ -240,7 +240,45 @@ computes a stable fingerprint of the graph topology (node ids plus directed edge
 when a reload leaves the topology unchanged the scene and viewport are left
 completely untouched, and when it changes the client re-feeds data while reusing
 persisted per-id node objects so layout and camera stay put. Node colors are
-assigned by `colorsForTypes`, mapping each distinct type to a palette entry by
+assigned by `colorsForTypes`,
+
+## Deep-linking and entry-page selection
+
+A URL fragment lets a link open the visualizer on a specific page instead of the
+default entry. A URL such as `http://host:port/#page=architecture/overview` is
+parsed client-side by `requestedPageId`, which reads `location.hash` as
+`URLSearchParams`, extracts the `page` key, and returns it only if `byId(raw)`
+resolves it to a node that exists in the loaded graph. The fragment is never sent
+to the server — it is pure client state — so there are no route changes and the
+loopback server never sees it. An unknown or malformed id (no `page` key, or an
+id not present in the graph) is ignored, so the default entry page opens instead.
+
+`load(firstTime)` drives both the initial render and every reload. On each call it
+picks a default entry page: the first node whose id matches `quickstart`, else the
+first matching `index`/`overview`/`home` (anchored at a path segment boundary),
+else simply `graph.nodes[0]`; that id becomes `anchorId`. The fragment is honored
+only on the first load: `const requested = firstTime ? requestedPageId() : null;`
+— if a requested page exists it is selected (and highlighted) via
+`selectNode(requested)`, overriding the entry default; otherwise the reader falls
+back to the currently open page if still present, then to `anchorId` on the first
+load. Subsequent reloads never re-apply the fragment, so an edit-triggered refresh
+keeps the page you are reading rather than jumping back to the deep-linked target.
+
+```mermaid
+flowchart TD
+  L["load(firstTime)"] --> E["pick entry: quickstart, else index/overview/home, else nodes[0]"]
+  L --> R{"firstTime and #page=id resolves<br/>to an existing node?"}
+  R -- "yes" --> S["selectNode(requested): open + highlight that page"]
+  R -- "no" --> C{"current page still present?"}
+  C -- "yes" --> RC["renderReader(current)"]
+  C -- "no" --> F{"firstTime and anchorId?"}
+  F -- "yes" --> A["renderReader(anchorId)"]
+  F -- "no" --> N["no reader change"]
+```
+
+Entry-page and `#page=<id>` fragment resolution in `load`; the fragment is consulted only on the first load.
+
+Node colors are assigned by `colorsForTypes`, mapping each distinct type to a palette entry by
 position so the graph canvas and legend always agree. The client detects its mode
 from the `data-static-export` attribute on the document element: static exports read
 `./graph.json` and never open an SSE connection, while live mode reads `/api/graph`

@@ -24,6 +24,8 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-85064d6a188fa56bcc282f11
     resource: repo://src/ingestion/code-mode.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
   - id: openwiki-source-5c32d5425e61a6c32d810844
     resource: repo://src/integrations/core/errors.ts
   - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
@@ -58,10 +60,10 @@ sources:
     resource: repo://src/integrations/pi/openwiki.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.7.3", at: "2026-11-02T08:07:01.639Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Coding-Agent Integrations (IBM Bob/Codex/Claude/OpenCode/Cursor/Kiro/Oh My Pi/Antigravity/Copilot)
@@ -103,7 +105,12 @@ guidance — directing the host not to enumerate or preload wikis at task start,
 to use `openwiki_search` only when a concrete architecture or dependency
 uncertainty materially affects the task, and to resolve workspace ambiguity via
 `openwiki_list_workspaces` and `openwiki_list_wikis` — so the four read-only
-tools and the six lifecycle tools share one coherent guidance surface.
+tools and the six lifecycle tools share one coherent guidance surface. The
+instructions also describe the **bounded begin result** — exact
+`changedPathCount`/`claimIssueCount` totals, the `changedPathsTruncated`/
+`claimIssuesTruncated` flags with the `git` recovery commands for omitted
+paths, and the `claimIssuePages` list — so the host knows how to plan from a
+capped view.
 
 ## The MCP tool set
 
@@ -142,10 +149,34 @@ In order, the six lifecycle tools are: `openwiki_begin`,
   It then resolves the root, calls `beginRepositoryRun`, and either records the
   active run or returns a proven update **no-op** (`status=noop`) without an
   active run. A clean update returns no-op so the host reports "no update
-  required" and stops.
+  required" and stops. For an active run the begin result is **bounded** by
+  `toHostActiveBeginView` (`src/integrations/core/begin-view.ts`): `changedPaths`
+  is capped at `HOST_BEGIN_PATH_LIMIT` (200) and `claimIssues` at
+  `HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50), each carrying exact
+  `changedPathCount`/`claimIssueCount` totals and
+  `changedPathsTruncated`/`claimIssuesTruncated` flags, plus a `claimIssuePages`
+  list naming every page with a Claims issue. When a `changedPathsTruncated`
+  flag is true the host recovers omitted paths from its own Git
+  (`git diff --name-only <baseGitHead>..HEAD`, not on a `fullReview` window;
+  `git diff --name-only HEAD` and `git ls-files --others --exclude-standard`),
+  excluding `openwiki/` and `.openwikiignore`. The host loses no required work:
+  planning and page jobs read the run's own state, and each page's Claims come
+  back from `openwiki_next_page`.
 - **`openwiki_submit_plan`** — Persists the run's final canonical page plan.
   `pages` may be empty (a valid update with no page work or only deletions), and
-  `deletePages` is optional.
+  `deletePages` is optional. The optional `deferUnplannedClaimIssues` flag
+  (in `SubmitPlanInput`) is an **update-only** opt-out: when true, the planner
+  skips inserting regeneration jobs for stale/unresolved Claim-issue pages the
+  host did not plan (`createRepositoryPlan` in
+  `src/generation/page-jobs.ts` omits the `addRequiredClaimIssueJobs` step and
+  instead collects those pages into `deferredClaimPages`, excluding pages the
+  plan already generates or deletes). Those deferred pages are left for a later
+  full update. Init rejects the flag with `invalid_input` ("Init cannot defer
+  Claim issues."). The deferred set travels in the durable plan and finalization
+  treats it like skipped work — `finishRepositoryRun` folds
+  `plan.deferredClaimPages` into its `skippedPages` exclusion, so deferred
+  pages are excluded from index/provenance/Claims finalization and their prior
+  source checkpoint and Claims are preserved.
 - **`openwiki_next_page`** — Returns the first pending page job with its Claim
   count and **only the stale or unresolved Claims requiring an explicit
   decision**; current issue-free Claims are retained automatically and stay
@@ -178,7 +209,7 @@ sequenceDiagram
     Host->>SM: openwiki_begin(root, mode)
     SM->>Core: resolve root + beginRepositoryRun
     Core-->>Host: noop OR planning run
-    Host->>SM: openwiki_submit_plan(pages, deletePages)
+    Host->>SM: openwiki_submit_plan(pages, deletePages, deferUnplannedClaimIssues?)
     SM->>Core: submitRepositoryPlan
     loop until complete
         Host->>SM: openwiki_next_page
@@ -219,6 +250,20 @@ several invariants:
   (`conflict`, `invalid_input`, `invalid_state`). The MCP transport further wraps
   any non-`HostIntegrationError` as a generic "OpenWiki MCP operation failed."
   so unexpected exception detail never leaks through the transport.
+
+The begin result is the one place the host-visible view diverges from the
+in-process planner's view. `HostSessionManager.begin` passes an active run
+through `toHostActiveBeginView` (`src/integrations/core/begin-view.ts`), the
+**begin-view bounding layer** that sits between `beginRepositoryRun` and the
+host. It bounds the begin lists for host transports while keeping exact totals:
+`changedPaths` is capped at `HOST_BEGIN_PATH_LIMIT` (200) and `claimIssues` at
+`HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50), each `pageUpdateWindow`'s paths at an equal
+share of the path limit, with `changedPathCount`/`claimIssueCount` totals and
+`changedPathsTruncated`/`claimIssuesTruncated` flags, plus a `claimIssuePages`
+list of every page with a Claims issue. The no-op view is returned unchanged.
+Planning and page jobs read the run's own state, so the host loses no required
+work: omitted paths come from its own Git, and each page's Claims come back from
+`openwiki_next_page`.
 
 `HostSessionManager.create` validates the host identity against a lowercase
 `[a-z0-9-]{1,64}` pattern (`isValidHostId`) and derives the metadata model

@@ -48,6 +48,7 @@ export const OPENAI_CHATGPT_PLAN_ENV_KEY = "OPENAI_CHATGPT_PLAN";
 export const ANTHROPIC_API_KEY_ENV_KEY = "ANTHROPIC_API_KEY";
 export const ANTHROPIC_BASE_URL_ENV_KEY = "ANTHROPIC_BASE_URL";
 export const OPENROUTER_API_KEY_ENV_KEY = "OPENROUTER_API_KEY";
+export const OPENROUTER_BASE_URL_ENV_KEY = "OPENROUTER_BASE_URL";
 export const OPENWIKI_OPENROUTER_PROVIDER_ONLY_ENV_KEY =
   "OPENWIKI_OPENROUTER_PROVIDER_ONLY";
 export const OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY =
@@ -485,6 +486,7 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
   openrouter: {
     apiKeyEnvKey: OPENROUTER_API_KEY_ENV_KEY,
     baseURL: OPENROUTER_BASE_URL,
+    baseUrlEnvKey: OPENROUTER_BASE_URL_ENV_KEY,
     label: "OpenRouter",
     modelOptions: [
       { id: "z-ai/glm-5.2", label: "GLM 5.2" },
