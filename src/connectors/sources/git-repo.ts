@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
 import {
@@ -19,6 +19,22 @@ import type {
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Most lines kept from each list-style git command (`status`, `log`, `diff`).
+ * Anything beyond it is dropped and reported through a `*Truncated` flag, so a
+ * huge range or working tree can neither fail the repo nor flood the planner.
+ */
+const GIT_REPO_MANIFEST_LINE_LIMIT = 1000;
+
+/**
+ * Most UTF-8 bytes kept from each list-style git command. It also bounds a
+ * single unterminated line, so a few enormous commit subjects cannot blow up
+ * the manifest even when the line count is small.
+ */
+const GIT_REPO_MANIFEST_BYTE_LIMIT = 256 * 1024;
+
+const GIT_STDERR_LIMIT = 64 * 1024;
+
 type GitRepoConfig = {
   repos: {
     id: string;
@@ -29,12 +45,15 @@ type GitRepoConfig = {
 type GitRepoManifest = {
   branch: string;
   changedFiles: string[];
+  changedFilesTruncated?: true;
   head: string;
   id: string;
   path: string;
   previousHead?: string;
   recentCommits: string[];
+  recentCommitsTruncated?: true;
   status: string;
+  statusTruncated?: true;
 };
 
 const definition: ConnectorDefinition = {
@@ -140,7 +159,7 @@ async function createRepoManifest(
 ): Promise<GitRepoManifest> {
   const branch = await runGit(repoPath, ["rev-parse", "--abbrev-ref", "HEAD"]);
   const head = await runGit(repoPath, ["rev-parse", "HEAD"]);
-  const status = await runGit(repoPath, ["status", "--short"]);
+  const statusOutput = await runGitCapped(repoPath, ["status", "--short"]);
 
   // On repeat runs, describe what landed since the last ingestion by diffing
   // against the recorded head. `previousHead` is unusable on the first run
@@ -153,46 +172,41 @@ async function createRepoManifest(
       ? await resolveReachableHead(repoPath, previousHead)
       : undefined;
 
-  const recentCommits = (
-    usablePreviousHead
-      ? await runGit(repoPath, [
-          "log",
-          "--name-status",
-          "--oneline",
-          `${usablePreviousHead}..HEAD`,
-        ])
-      : await runGit(repoPath, [
-          "log",
-          "--max-count=20",
-          "--name-status",
-          "--oneline",
-        ])
-  )
-    .split(/\r?\n/u)
-    .filter(Boolean);
+  const recentCommitsOutput = usablePreviousHead
+    ? await runGitCapped(repoPath, [
+        "log",
+        "--name-status",
+        "--oneline",
+        `${usablePreviousHead}..HEAD`,
+      ])
+    : await runGitCapped(repoPath, [
+        "log",
+        "--max-count=20",
+        "--name-status",
+        "--oneline",
+      ]);
 
-  const changedFiles = (
-    usablePreviousHead
-      ? await runGit(repoPath, [
-          "diff",
-          "--name-status",
-          usablePreviousHead,
-          "HEAD",
-        ])
-      : await runGit(repoPath, ["diff", "--name-status", "HEAD"])
-  )
-    .split(/\r?\n/u)
-    .filter(Boolean);
+  const changedFilesOutput = usablePreviousHead
+    ? await runGitCapped(repoPath, [
+        "diff",
+        "--name-status",
+        usablePreviousHead,
+        "HEAD",
+      ])
+    : await runGitCapped(repoPath, ["diff", "--name-status", "HEAD"]);
 
   return {
     branch,
-    changedFiles,
+    changedFiles: changedFilesOutput.lines,
+    ...(changedFilesOutput.truncated ? { changedFilesTruncated: true } : {}),
     head,
     id,
     path: repoPath,
     ...(usablePreviousHead ? { previousHead: usablePreviousHead } : {}),
-    recentCommits,
-    status,
+    recentCommits: recentCommitsOutput.lines,
+    ...(recentCommitsOutput.truncated ? { recentCommitsTruncated: true } : {}),
+    status: statusOutput.lines.join("\n").trim(),
+    ...(statusOutput.truncated ? { statusTruncated: true } : {}),
   };
 }
 
@@ -225,6 +239,91 @@ async function runGit(cwd: string, args: string[]): Promise<string> {
   });
 
   return stdout.trim();
+}
+
+/**
+ * Runs git and keeps at most `GIT_REPO_MANIFEST_LINE_LIMIT` non-empty lines
+ * and `GIT_REPO_MANIFEST_BYTE_LIMIT` bytes. Output is streamed, so a range that prints far more than a buffer can hold
+ * does not fail the command: once the limit is passed git is stopped and the
+ * result is marked truncated.
+ */
+async function runGitCapped(
+  cwd: string,
+  args: string[],
+): Promise<{ lines: string[]; truncated: boolean }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("git", args, {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const lines: string[] = [];
+    let pending = "";
+    let stderr = "";
+    let keptBytes = 0;
+    let truncated = false;
+
+    const truncate = (): void => {
+      truncated = true;
+      pending = "";
+      child.kill();
+    };
+
+    const pushLine = (raw: string): void => {
+      const line = raw.replace(/\r$/u, "");
+      if (line.length === 0 || truncated) {
+        return;
+      }
+      const lineBytes = Buffer.byteLength(line, "utf8") + 1;
+      if (
+        lines.length >= GIT_REPO_MANIFEST_LINE_LIMIT ||
+        keptBytes + lineBytes > GIT_REPO_MANIFEST_BYTE_LIMIT
+      ) {
+        truncate();
+        return;
+      }
+      keptBytes += lineBytes;
+      lines.push(line);
+    };
+
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      if (truncated) {
+        return;
+      }
+      pending += chunk;
+      const parts = pending.split("\n");
+      pending = parts.pop() ?? "";
+      for (const part of parts) {
+        pushLine(part);
+      }
+      if (!truncated && pending.length > GIT_REPO_MANIFEST_BYTE_LIMIT) {
+        truncate();
+      }
+    });
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk: string) => {
+      if (stderr.length < GIT_STDERR_LIMIT) {
+        stderr += chunk;
+      }
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (truncated) {
+        resolve({ lines, truncated });
+        return;
+      }
+      pushLine(pending);
+      if (code !== 0) {
+        reject(
+          new Error(
+            stderr.trim() || `git ${args[0] ?? ""} exited with code ${code}`,
+          ),
+        );
+        return;
+      }
+      resolve({ lines, truncated });
+    });
+  });
 }
 
 function isSafeRepoId(value: string): boolean {

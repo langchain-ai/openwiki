@@ -17,8 +17,11 @@ type GitRepoManifest = {
   head: string;
   id: string;
   path: string;
+  changedFilesTruncated?: boolean;
   recentCommits: string[];
+  recentCommitsTruncated?: boolean;
   status: string;
+  statusTruncated?: boolean;
 };
 
 type ManifestDump = {
@@ -218,5 +221,130 @@ describe("git-repo connector manifest building", () => {
     expect(result.status).toBe("success");
     const dump = await readManifest(result.rawFiles[0] ?? "");
     expect(dump.repos.map((repo) => repo.id)).toEqual(["first-repo"]);
+  });
+});
+
+describe("git-repo connector oversized git output", () => {
+  test("advances the recorded head and bounds the manifest when a range prints over 1 MiB", async () => {
+    const home = await createTempDir("openwiki-git-home-");
+    const repoPath = await initRepo("huge-range");
+    await writeGitRepoConfig(home, {
+      repos: [{ id: "huge-repo", path: repoPath }],
+    });
+    const connector = await loadGitRepoConnector(home);
+
+    const first = await connector.ingest();
+    expect(first.status).toBe("success");
+
+    // One commit adding 30,000 files makes both the `log` and `diff` output
+    // for previousHead..HEAD larger than 1 MiB. fast-import keeps it quick.
+    const branch = await runGit(repoPath, [
+      "rev-parse",
+      "--abbrev-ref",
+      "HEAD",
+    ]);
+    const parent = await runGit(repoPath, ["rev-parse", "HEAD"]);
+    const NL = String.fromCharCode(10);
+    const lines = [
+      "blob",
+      "mark :1",
+      "data 0",
+      "",
+      `commit refs/heads/${branch}`,
+      "committer t <t@t.dev> 1700000000 +0000",
+      "data 3",
+      "big",
+      `from ${parent}`,
+    ];
+    for (let index = 0; index < 30000; index += 1) {
+      lines.push(
+        `M 100644 :1 vendor/some-package-name/src/module-file-${index}.js`,
+      );
+    }
+    const input = lines.join(NL) + NL;
+    const fastImport = execFileAsync("git", ["fast-import", "--quiet"], {
+      cwd: repoPath,
+    });
+    fastImport.child.stdin?.end(input);
+    await fastImport;
+    const head = await runGit(repoPath, ["rev-parse", "HEAD"]);
+    expect(head).not.toBe(parent);
+
+    const second = await connector.ingest();
+
+    expect(second.warnings).toEqual([]);
+    expect(second.status).toBe("success");
+
+    const manifest = (await readManifest(second.rawFiles[0] ?? "")).repos[0];
+    expect(manifest.head).toBe(head);
+    expect(manifest.changedFiles.length).toBeGreaterThan(0);
+    expect(manifest.changedFiles.length).toBeLessThan(30000);
+    expect(manifest.recentCommits.length).toBeLessThan(30000);
+    expect(manifest.changedFilesTruncated).toBe(true);
+    expect(manifest.recentCommitsTruncated).toBe(true);
+
+    // The recorded head moved, so the next run diffs from the new head
+    // instead of re-failing on the same growing range.
+    const state = JSON.parse(
+      await readFile(
+        path.join(home, ".openwiki", "connectors", "git-repo", "state.json"),
+        "utf8",
+      ),
+    ) as { latestIds?: Record<string, string> };
+    expect(state.latestIds?.["huge-repo"]).toBe(head);
+  });
+
+  test("bounds the manifest by bytes when commit subjects are enormous", async () => {
+    const home = await createTempDir("openwiki-git-home-");
+    const repoPath = await initRepo("huge-subject");
+    await writeGitRepoConfig(home, {
+      repos: [{ id: "subject-repo", path: repoPath }],
+    });
+    const connector = await loadGitRepoConnector(home);
+    expect((await connector.ingest()).status).toBe("success");
+
+    // Three commits with 2 MB single-line subjects: few lines, many bytes.
+    const branch = await runGit(repoPath, [
+      "rev-parse",
+      "--abbrev-ref",
+      "HEAD",
+    ]);
+    let parent = await runGit(repoPath, ["rev-parse", "HEAD"]);
+    const subject = "x".repeat(2 * 1024 * 1024);
+    const NL = String.fromCharCode(10);
+    const lines: string[] = [];
+    for (let index = 0; index < 3; index += 1) {
+      lines.push(
+        `commit refs/heads/${branch}`,
+        `mark :${index + 1}`,
+        "committer t <t@t.dev> 1700000000 +0000",
+        `data ${subject.length + 1}`,
+        subject,
+        `from ${parent}`,
+        `M 100644 inline file-${index}.txt`,
+        "data 1",
+        "a",
+        "",
+      );
+      parent = `:${index + 1}`;
+    }
+    const input = lines.join(NL) + NL;
+    const fastImport = execFileAsync("git", ["fast-import", "--quiet"], {
+      cwd: repoPath,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    fastImport.child.stdin?.end(input);
+    await fastImport;
+    const head = await runGit(repoPath, ["rev-parse", "HEAD"]);
+
+    const second = await connector.ingest();
+
+    expect(second.warnings).toEqual([]);
+    expect(second.status).toBe("success");
+    const manifest = (await readManifest(second.rawFiles[0] ?? "")).repos[0];
+    expect(manifest.head).toBe(head);
+    expect(manifest.recentCommitsTruncated).toBe(true);
+    const bytes = Buffer.byteLength(manifest.recentCommits.join(NL), "utf8");
+    expect(bytes).toBeLessThan(256 * 1024);
   });
 });
