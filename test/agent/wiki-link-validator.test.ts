@@ -342,6 +342,38 @@ describe("validateWikiInternalLinks", () => {
     expect(report.stampedFiles).toEqual([]);
   });
 
+  test("builds heading anchors from rendered text, not link or emphasis syntax", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await mkdir(path.join(rootDir, "src"), { recursive: true });
+    await writeFile(path.join(rootDir, "src/agent.ts"), "export {};\n");
+    await backend.write(
+      "/openwiki/quickstart.md",
+      [
+        "See [agent](./overview.md#createagent).",
+        "See [note](./overview.md#note-on-caching).",
+        "See [keys](./overview.md#press-ctrl-c).",
+      ].join("\n"),
+    );
+    await backend.write(
+      "/openwiki/overview.md",
+      [
+        "# Overview",
+        "",
+        "## [`createAgent`](../src/agent.ts)",
+        "",
+        "## _Note_ on caching",
+        "",
+        "## Press <kbd>Ctrl</kbd>-C",
+        "",
+      ].join("\n"),
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(0);
+    expect(report.stampedFiles).toEqual([]);
+  });
+
   test("accepts anchors on non-ASCII (unicode) headings", async () => {
     const { backend } = await setupWiki();
     await backend.write(
