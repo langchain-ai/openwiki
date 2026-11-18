@@ -87,6 +87,21 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("does not skip a script-variant request such as zh-TW over zh-CN", async () => {
+    // Same primary subtag, different script (Simplified vs Traditional): a
+    // clean worktree must still count this as a language change.
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head, { language: "zh-CN" });
+
+    const status = await getUpdateNoopStatus(repo, undefined, "zh-TW");
+
+    expect(status).toEqual({
+      shouldSkip: false,
+      reason: "output language changed",
+    });
+  });
+
   test("detects a no-op when only the committed run metadata is dirty", async () => {
     // A committed wiki leaves openwiki/.last-update.json tracked, so the next
     // run sees it as an unstaged modification: " M openwiki/.last-update.json".
