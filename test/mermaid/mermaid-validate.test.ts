@@ -191,6 +191,26 @@ describe("heuristicError (fallback when mermaid is not installed)", () => {
     expect(
       heuristicError("flowchart TD\n  A[returns Promise<User>] --> B"),
     ).toMatch(/angle bracket/u);
+    expect(
+      heuristicError("flowchart LR\n  raw[raw/<run-id>/*.json] --> B"),
+    ).toMatch(/angle bracket/u);
+    expect(heuristicError("flowchart TD\n  A[emit </div>] --> B")).toMatch(
+      /angle bracket/u,
+    );
+  });
+
+  test("does not flag `<br>` line breaks, arrows, or comparisons inside a label", () => {
+    for (const body of [
+      "flowchart LR\n  reg[registry.ts<br/>createConnectorRegistry] --> rt",
+      'flowchart TD\n  Q{"selected node<br>or a neighbour?"} --> A',
+      "flowchart TD\n  A[load<br />config] --> B[parse<BR>pages] --> C[write</br>index]",
+      'flowchart TD\n  Q{"elapsed <<br>timeout?"} --> A',
+      'flowchart TD\n  A["captureArtifact -> immutable snapshot"] --> B',
+      "sequenceDiagram\n  Run->>Queue: persist queue (phase -> generating)",
+      "flowchart TD\n  A[retry while n < 3] --> B",
+    ]) {
+      expect(heuristicError(body)).toBeUndefined();
+    }
   });
 
   test("passes all four valid diagram types", () => {
