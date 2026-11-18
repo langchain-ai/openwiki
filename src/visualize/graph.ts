@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { parse } from "yaml";
 
 import type { WikiEdge, WikiGraph, WikiMeta, WikiNode } from "./graph-types.js";
 
@@ -21,10 +22,21 @@ const EXCLUDED_FILES = new Set(["INSTRUCTIONS.md", "log.md"]);
 const MARKDOWN_LINK = /\]\(([^)\s]+\.md)(?:#[^)]*)?\)/g;
 
 /**
- * Strip a single pair of surrounding single or double quotes.
+ * Read a frontmatter scalar the way YAML does. OpenWiki writes JSON-quoted
+ * values (`"say \"hi\""`), so quoted scalars are unescaped by the YAML parser;
+ * plain scalars are returned as written.
  */
-function stripQuotes(value: string): string {
-  return value.replace(/^['"]|['"]$/g, "");
+function unquoteScalar(value: string): string {
+  const quote = value[0];
+  if (value.length < 2 || (quote !== '"' && quote !== "'")) return value;
+  if (!value.endsWith(quote)) return value;
+  try {
+    const parsed: unknown = parse(value);
+    if (typeof parsed === "string") return parsed;
+  } catch {
+    // Malformed quoting: fall back to dropping the outer quotes.
+  }
+  return value.slice(1, -1);
 }
 
 /**
@@ -49,7 +61,9 @@ export function splitFrontmatter(raw: string): { meta: RawMeta; body: string } {
   for (const line of block.split(/\r?\n/)) {
     const listItem = line.match(/^\s*-\s+(.*)$/);
     if (listItem && pendingListKey) {
-      (meta[pendingListKey] as string[]).push(stripQuotes(listItem[1].trim()));
+      (meta[pendingListKey] as string[]).push(
+        unquoteScalar(listItem[1].trim()),
+      );
       continue;
     }
     const kv = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
@@ -64,11 +78,11 @@ export function splitFrontmatter(raw: string): { meta: RawMeta; body: string } {
       meta[key] = value
         .slice(1, -1)
         .split(",")
-        .map((item) => stripQuotes(item.trim()))
+        .map((item) => unquoteScalar(item.trim()))
         .filter(Boolean);
     } else {
       pendingListKey = undefined;
-      meta[key] = stripQuotes(value);
+      meta[key] = unquoteScalar(value);
     }
   }
   return { meta, body };
