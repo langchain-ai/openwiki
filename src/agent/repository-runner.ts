@@ -3,6 +3,7 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import {
   AIMessage,
   AIMessageChunk,
+  BaseMessage,
   ChatMessage,
   ChatMessageChunk,
   ToolMessage,
@@ -20,7 +21,10 @@ import {
 } from "deepagents";
 import { createMiddleware, toolCallLimitMiddleware } from "langchain";
 import { z } from "zod";
-import { resolveTraceThreadId } from "../config/constants.js";
+import {
+  resolveMaxInputTokens,
+  resolveTraceThreadId,
+} from "../config/constants.js";
 import { RepositoryRunError } from "../generation/errors.js";
 import {
   beginRepositoryRun,
@@ -127,6 +131,211 @@ function submissionLimit(toolName: "submit_plan" | "submit_page") {
     runLimit: MAX_SUBMISSIONS_PER_WORKER,
     exitBehavior: "error",
   });
+}
+
+/**
+ * Default maximum character length retained for a single tool result from a previous turn.
+ * Subsequent turns keep up to this limit plus an omission notice. Fresh tool results
+ * from the active turn are always preserved in full.
+ */
+export const DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT = 2_000;
+
+export interface TranscriptBoundingOptions {
+  /**
+   * Maximum characters allowed for a tool result from a previous turn.
+   *
+   * @default 2000
+   */
+  maxHistoricalToolResultChars?: number;
+
+  /**
+   * Optional upper bound on estimated total prompt input tokens across messages.
+   * When specified and the estimated transcript token count exceeds this budget,
+   * historical tool results are compacted further to fit within budget.
+   */
+  maxInputTokens?: number;
+}
+
+function createHistoricalToolOmissionNotice(omittedChars: number): string {
+  return `\n\n[... Omitted ${omittedChars} characters of this earlier tool result to keep the prompt within OPENWIKI_MAX_INPUT_TOKENS.]`;
+}
+
+/**
+ * Bounds historical tool results in a worker transcript so subsequent model turns
+ * do not resend full source file bodies and tool transcripts.
+ *
+ * A ToolMessage is considered historical if it precedes the latest AIMessage in
+ * the transcript (meaning the model already received and processed it in a prior
+ * turn). ToolMessages following the latest AIMessage are fresh results for the
+ * active turn and are preserved in full.
+ */
+export function boundTranscriptMessages(
+  messages: readonly BaseMessage[],
+  options?: TranscriptBoundingOptions,
+): BaseMessage[] {
+  if (messages.length === 0) {
+    return [];
+  }
+
+  let lastAiIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
+    if (
+      AIMessage.isInstance(msg) ||
+      (msg as { _getType?: () => string })._getType?.() === "ai"
+    ) {
+      lastAiIndex = i;
+      break;
+    }
+  }
+
+  if (lastAiIndex === -1) {
+    return [...messages];
+  }
+
+  let charLimit =
+    options?.maxHistoricalToolResultChars ??
+    DEFAULT_HISTORICAL_TOOL_RESULT_CHAR_LIMIT;
+
+  if (options?.maxInputTokens && options.maxInputTokens > 0) {
+    const targetChars = options.maxInputTokens * 4;
+    let totalChars = 0;
+    let historicalToolCount = 0;
+
+    for (let i = 0; i < messages.length; i += 1) {
+      const msg = messages[i];
+      const len =
+        typeof msg.content === "string"
+          ? msg.content.length
+          : JSON.stringify(msg.content ?? "").length;
+      totalChars += len;
+      if (
+        i < lastAiIndex &&
+        (ToolMessage.isInstance(msg) ||
+          (msg as { _getType?: () => string })._getType?.() === "tool")
+      ) {
+        historicalToolCount += 1;
+      }
+    }
+
+    if (totalChars > targetChars && historicalToolCount > 0) {
+      const targetPerTool = Math.floor(targetChars / (historicalToolCount * 2));
+      charLimit = Math.max(200, Math.min(charLimit, targetPerTool));
+    }
+  }
+
+  let modified = false;
+  const bounded: BaseMessage[] = [];
+
+  for (let i = 0; i < messages.length; i += 1) {
+    const msg = messages[i];
+    const isHistorical =
+      i < lastAiIndex &&
+      (ToolMessage.isInstance(msg) ||
+        (msg as { _getType?: () => string })._getType?.() === "tool");
+
+    if (!isHistorical) {
+      bounded.push(msg);
+      continue;
+    }
+
+    const toolMsg = msg as ToolMessage;
+
+    if (typeof toolMsg.content === "string") {
+      if (toolMsg.content.length > charLimit) {
+        const omittedChars = toolMsg.content.length - charLimit;
+        const boundedContent =
+          toolMsg.content.slice(0, charLimit) +
+          createHistoricalToolOmissionNotice(omittedChars);
+
+        bounded.push(
+          new ToolMessage({
+            content: boundedContent,
+            name: toolMsg.name,
+            tool_call_id: toolMsg.tool_call_id,
+            additional_kwargs: toolMsg.additional_kwargs,
+            response_metadata: toolMsg.response_metadata,
+            id: toolMsg.id,
+            status: toolMsg.status,
+          }),
+        );
+        modified = true;
+        continue;
+      }
+    } else if (Array.isArray(toolMsg.content)) {
+      let combinedText = "";
+      for (const block of toolMsg.content as readonly unknown[]) {
+        if (typeof block === "string") {
+          combinedText = `${combinedText}${block}`;
+        } else if (
+          block !== null &&
+          typeof block === "object" &&
+          "text" in block &&
+          typeof block.text === "string"
+        ) {
+          combinedText = `${combinedText}${block.text}`;
+        }
+      }
+
+      if (combinedText.length > charLimit) {
+        const omittedChars = combinedText.length - charLimit;
+        const boundedText =
+          combinedText.slice(0, charLimit) +
+          createHistoricalToolOmissionNotice(omittedChars);
+
+        bounded.push(
+          new ToolMessage({
+            content: boundedText,
+            name: toolMsg.name,
+            tool_call_id: toolMsg.tool_call_id,
+            additional_kwargs: toolMsg.additional_kwargs,
+            response_metadata: toolMsg.response_metadata,
+            id: toolMsg.id,
+            status: toolMsg.status,
+          }),
+        );
+        modified = true;
+        continue;
+      }
+    }
+
+    bounded.push(msg);
+  }
+
+  return modified ? bounded : [...messages];
+}
+
+/**
+ * Intercepts repository worker model calls to bound accumulated historical tool results
+ * before the messages are sent to the provider.
+ */
+export function createTranscriptBoundingMiddleware(
+  options?: TranscriptBoundingOptions,
+) {
+  return createMiddleware({
+    name: "OpenWikiTranscriptBounding",
+    wrapModelCall: async (request, handler) => {
+      const messages = request.messages ?? [];
+      const boundedMessages = boundTranscriptMessages(messages, options);
+
+      return handler({
+        ...request,
+        messages: boundedMessages,
+      });
+    },
+  });
+}
+
+/**
+ * Mounts transcript bounding only when a prompt budget is configured, so a
+ * worker keeps every earlier tool result in full by default.
+ */
+function transcriptBoundingMiddleware(maxInputTokens?: number) {
+  const budget = maxInputTokens ?? resolveMaxInputTokens();
+
+  return budget === undefined
+    ? []
+    : [createTranscriptBoundingMiddleware({ maxInputTokens: budget })];
 }
 
 type PendingPageJob = Extract<
@@ -334,6 +543,13 @@ export interface NativeRepositoryGenerationOptions {
    * Optional lifecycle and bounded worker-tool event consumer.
    */
   onEvent?: (event: OpenWikiRunEvent) => void;
+
+  /**
+   * Maximum prompt input tokens budgeted for page and planner workers.
+   * When set, historical tool results and message transcripts are bounded
+   * to keep the per-turn prompt size within this budget.
+   */
+  maxInputTokens?: number;
 }
 
 /**
@@ -382,6 +598,7 @@ export async function runNativeRepositoryGeneration(
       options.model,
       run.state.planningContext,
       options.onEvent,
+      options.maxInputTokens,
     );
   }
 
@@ -392,6 +609,7 @@ export async function runNativeRepositoryGeneration(
     view,
     options.pageConcurrency ?? 1,
     options.workerStartStaggerMs ?? DEFAULT_WORKER_START_STAGGER_MS,
+    options.maxInputTokens,
   );
   options.onEvent?.({
     type: "repository_progress",
@@ -453,6 +671,7 @@ async function runPlanningAgent(
   model: BaseChatModel,
   planningContext?: string,
   onEvent?: (event: OpenWikiRunEvent) => void,
+  maxInputTokens?: number,
 ): Promise<void> {
   const ignore = await OpenWikiIgnore.load(run.root);
   const wikiBackend = new OpenWikiLocalShellBackend({
@@ -522,6 +741,7 @@ async function runPlanningAgent(
         tools: PLANNER_FILESYSTEM_TOOLS,
       }),
       submissionLimit("submit_plan"),
+      ...transcriptBoundingMiddleware(maxInputTokens),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
@@ -637,6 +857,7 @@ async function runPendingPageAgents(
   view: ActiveBeginView,
   pageConcurrency: number,
   workerStartStaggerMs: number,
+  maxInputTokens?: number,
 ): Promise<RepositoryPageSnapshot[]> {
   const size = Math.max(1, Math.floor(pageConcurrency));
   const pool: PageWorkerPool = {
@@ -665,10 +886,20 @@ async function runPendingPageAgents(
     pool,
     heldBack,
     workerStartStaggerMs,
+    maxInputTokens,
   );
   if (!pool.fatal && heldBack.size > 0) {
     pool.size = 1;
-    await runWorkerLoops(run, model, onEvent, view, pool, new Set(), 0);
+    await runWorkerLoops(
+      run,
+      model,
+      onEvent,
+      view,
+      pool,
+      new Set(),
+      0,
+      maxInputTokens,
+    );
   }
 
   if (pool.fatal) throw pool.fatal.error;
@@ -686,6 +917,7 @@ async function runWorkerLoops(
   pool: PageWorkerPool,
   heldBack: ReadonlySet<string>,
   workerStartStaggerMs: number,
+  maxInputTokens?: number,
 ): Promise<void> {
   await Promise.all(
     Array.from({ length: pool.size }, (_, slot) =>
@@ -698,6 +930,7 @@ async function runWorkerLoops(
         pool,
         heldBack,
         workerStartStaggerMs,
+        maxInputTokens,
       ),
     ),
   );
@@ -717,6 +950,7 @@ async function runWorkerLoop(
   pool: PageWorkerPool,
   heldBack: ReadonlySet<string>,
   workerStartStaggerMs: number,
+  maxInputTokens?: number,
 ): Promise<void> {
   if (slot > 0 && workerStartStaggerMs > 0) {
     await scheduler.wait(slot * workerStartStaggerMs);
@@ -734,7 +968,13 @@ async function runWorkerLoop(
 
     let outcome: PageAgentOutcome;
     try {
-      outcome = await runPageAgent(run, next.job, model, onEvent);
+      outcome = await runPageAgent(
+        run,
+        next.job,
+        model,
+        onEvent,
+        maxInputTokens,
+      );
     } catch (error) {
       pool.fatal ??= { error };
       removeInFlightPage(pool, next.job.path);
@@ -886,6 +1126,7 @@ async function runPageAgent(
   job: PendingPageJob,
   model: BaseChatModel,
   onEvent?: (event: OpenWikiRunEvent) => void,
+  maxInputTokens?: number,
 ): Promise<PageAgentOutcome> {
   const snapshot = await captureRepositoryPageSnapshot(run, job.id);
   let skipped: PageAgentOutcome = { status: "skipped", snapshot };
@@ -897,6 +1138,7 @@ async function runPageAgent(
       snapshot,
       model,
       onEvent,
+      maxInputTokens,
     );
     if (outcome.status === "submitted") return outcome;
     skipped = outcome;
@@ -937,6 +1179,7 @@ async function runPageWorkerAttempt(
   snapshot: RepositoryPageSnapshot,
   model: BaseChatModel,
   onEvent?: (event: OpenWikiRunEvent) => void,
+  maxInputTokens?: number,
 ): Promise<PageAgentOutcome> {
   const ignore = await OpenWikiIgnore.load(run.root);
   const wikiBackend = new OpenWikiLocalShellBackend({
@@ -1008,6 +1251,7 @@ async function runPageWorkerAttempt(
         tools: PAGE_FILESYSTEM_TOOLS,
       }),
       submissionLimit("submit_page"),
+      ...transcriptBoundingMiddleware(maxInputTokens),
       NO_DELEGATION_MIDDLEWARE,
     ],
     skills: ["/skills/"],
