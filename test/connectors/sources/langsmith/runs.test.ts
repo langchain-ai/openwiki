@@ -26,6 +26,13 @@ function root(id: string, latencyMs: number, tokens?: number): Run {
   });
 }
 
+/**
+ * A root run whose latency cannot be computed (no end_time yet).
+ */
+function unmeasured(id: string): Run {
+  return run({ id, start_time: BASE });
+}
+
 describe("compactTrace", () => {
   test("orders root-first then by start time and sets the trace fields", () => {
     const runs = [
@@ -188,10 +195,11 @@ describe("selectSampleBuckets", () => {
     expect(selected).toHaveLength(3);
   });
 
-  test("caps outliers at a quarter of the non-errored pool on a small sample", () => {
-    // 8 non-error runs with a generous flat cap (5): the proportional cap
-    // (floor(8/4)=2) wins, so only the 2 slowest are outliers and the rest stay
-    // baseline instead of the bucket swallowing the small pull.
+  test("caps outliers at a quarter of the measurable pool on a small sample", () => {
+    // 8 measurable non-error runs with a generous flat cap (5): the
+    // proportional cap (floor(8/4)=2) wins, so only the 2 slowest are outliers
+    // and the rest stay baseline instead of the bucket swallowing the small
+    // pull.
     const nonErrorRuns = Array.from({ length: 8 }, (_, i) =>
       root(`n${i}`, i * 10),
     );
@@ -209,6 +217,115 @@ describe("selectSampleBuckets", () => {
     // The 2 slowest (n7=70ms, n6=60ms) are the outliers.
     expect(outliers.map((s) => s.run.id).sort()).toEqual(["n6", "n7"]);
     expect(selected).toHaveLength(8);
+  });
+
+  test("never labels runs without measurable latency as outliers", () => {
+    // All four runs have a start but no end time, so no latency evidence
+    // exists — none of them can be presented as a latency tail.
+    const nonErrorRuns = [
+      unmeasured("u1"),
+      unmeasured("u2"),
+      unmeasured("u3"),
+      unmeasured("u4"),
+    ];
+
+    const selected = selectSampleBuckets([], nonErrorRuns, {
+      errorCap: 2,
+      outlierCap: 1,
+      total: 8,
+    });
+
+    expect(selected.map((s) => [s.run.id, s.bucket])).toEqual([
+      ["u1", "baseline"],
+      ["u2", "baseline"],
+      ["u3", "baseline"],
+      ["u4", "baseline"],
+    ]);
+  });
+
+  test("keeps the outlier bucket empty when measurable runs are too few to have a tail", () => {
+    // 8 candidates but only one with measurable latency: floor(1/4) = 0, so a
+    // run that IS the whole measurable distribution is never called its tail,
+    // and no unmeasurable run backfills the freed slots as an outlier.
+    const nonErrorRuns = [
+      unmeasured("u1"),
+      root("m1", 500),
+      unmeasured("u2"),
+      unmeasured("u3"),
+      unmeasured("u4"),
+      unmeasured("u5"),
+      unmeasured("u6"),
+      unmeasured("u7"),
+    ];
+
+    const selected = selectSampleBuckets([], nonErrorRuns, {
+      errorCap: 0,
+      outlierCap: 2,
+      total: 20,
+    });
+
+    expect(selected.filter((s) => s.bucket === "outlier")).toHaveLength(0);
+    expect(selected.find((s) => s.run.id === "m1")?.bucket).toBe("baseline");
+    expect(selected).toHaveLength(8);
+  });
+
+  test("computes the quarter-of-pool outlier cap over measurable runs only", () => {
+    // 4 measurable + 4 unmeasurable runs: the proportional cap is
+    // floor(4/4) = 1 over the measurable pool (not floor(8/4) = 2 over the
+    // whole pool), so exactly the slowest measurable run is the outlier and
+    // unmeasurable runs stay baseline.
+    const nonErrorRuns = [
+      root("m1", 10),
+      unmeasured("u1"),
+      root("m2", 40),
+      unmeasured("u2"),
+      root("m3", 20),
+      unmeasured("u3"),
+      root("m4", 30),
+      unmeasured("u4"),
+    ];
+
+    const selected = selectSampleBuckets([], nonErrorRuns, {
+      errorCap: 0,
+      outlierCap: 5,
+      total: 20,
+    });
+
+    const outliers = selected.filter((s) => s.bucket === "outlier");
+    expect(outliers.map((s) => s.run.id)).toEqual(["m2"]);
+    expect(
+      selected
+        .filter((s) => s.run.id.startsWith("u"))
+        .every((s) => s.bucket === "baseline"),
+    ).toBe(true);
+    expect(selected).toHaveLength(8);
+  });
+
+  test("a run with a negative latency is not outlier-eligible", () => {
+    // An end time before the start time yields no usable latency, so the run
+    // is treated like any other unmeasurable run.
+    const negative = run({
+      end_time: new Date(Date.parse(BASE) - 1_000).toISOString(),
+      id: "neg",
+      start_time: BASE,
+    });
+    const nonErrorRuns = [
+      negative,
+      root("m1", 10),
+      root("m2", 40),
+      root("m3", 20),
+      root("m4", 30),
+    ];
+
+    const selected = selectSampleBuckets([], nonErrorRuns, {
+      errorCap: 0,
+      outlierCap: 5,
+      total: 20,
+    });
+
+    const outliers = selected.filter((s) => s.bucket === "outlier");
+    expect(outliers.map((s) => s.run.id)).toEqual(["m2"]);
+    expect(selected.find((s) => s.run.id === "neg")?.bucket).toBe("baseline");
   });
 });
 
