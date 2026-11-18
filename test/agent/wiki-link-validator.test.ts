@@ -51,6 +51,59 @@ describe("validateWikiInternalLinks", () => {
     ).resolves.toBe(before);
   });
 
+  test("accepts percent-encoded and angle-bracket link destinations", async () => {
+    const { backend } = await setupWiki();
+    await backend.write("/openwiki/release notes.md", "# Release notes\n");
+    await backend.write("/openwiki/café.md", "# Café\n\n## Menu\n");
+    await backend.write(
+      "/openwiki/quickstart.md",
+      [
+        "# Quickstart",
+        "",
+        "See [notes](release%20notes.md).",
+        "See [menu](caf%C3%A9.md#menu).",
+        "See [notes](<release notes.md>).",
+        'See [notes](<./release notes.md> "Release notes").',
+        "See [site](<https://example.com/a b>).",
+        "",
+      ].join("\n"),
+    );
+    const edit = vi.spyOn(backend, "edit");
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report).toMatchObject({ issuesFound: 0, stampedFiles: [] });
+    expect(edit).not.toHaveBeenCalled();
+  });
+
+  test("stamps percent-encoded links whose decoded target is missing", async () => {
+    const { backend, rootDir } = await setupWiki();
+    await backend.write(
+      "/openwiki/quickstart.md",
+      "# Quickstart\n\nSee [gone](missing%20page.md) and [odd](100%-done.md).\n",
+    );
+
+    const report = await validateWikiInternalLinks(backend, "repository");
+
+    expect(report.issuesFound).toBe(2);
+    const content = await readFile(
+      path.join(rootDir, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(content).toContain(
+      formatBrokenLinkStamp(
+        "missing%20page.md",
+        'file "missing page.md" does not exist',
+      ),
+    );
+    expect(content).toContain(
+      formatBrokenLinkStamp(
+        "100%-done.md",
+        'file "100%-done.md" does not exist',
+      ),
+    );
+  });
+
   test("flags repo-root-absolute links carrying the /openwiki prefix", async () => {
     const { backend, rootDir } = await setupWiki();
     await backend.write(
