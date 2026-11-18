@@ -95,11 +95,33 @@ async function ingestMcpConnector(
   }
 
   const execution = await executeMcpReadOnlyOperations(config);
+  // MCP reports a failed tool call (expired credentials, bad arguments) as a
+  // normal result with isError, so keep it out of the dump and surface it.
+  const operations = execution.operations.filter((operation) => {
+    if (!isMcpToolError(operation.result)) return true;
+    warnings.push(
+      `${operation.name}: ${getMcpToolErrorText(operation.result)}`,
+    );
+    return false;
+  });
+
+  if (operations.length === 0) {
+    return await finishMcpRun({
+      connectorId,
+      message: `All ${execution.operations.length} read-only MCP operation(s) failed.`,
+      rawFiles: [],
+      runId,
+      state,
+      status: "error",
+      warnings,
+    });
+  }
+
   const rawFile = await writeRawJson(connectorId, runId, "mcp-results.json", {
     connectorId,
     generatedAt: new Date().toISOString(),
     mode: config.mode ?? "mcp-stdio",
-    operations: execution.operations,
+    operations,
     readOnlyOperations: config.readOnlyOperations.map((operation) => ({
       args: operation.args,
       name: operation.name,
@@ -110,13 +132,43 @@ async function ingestMcpConnector(
 
   return await finishMcpRun({
     connectorId,
-    message: `Executed ${execution.operations.length} read-only MCP operation(s).`,
+    message: `Executed ${operations.length} read-only MCP operation(s).`,
     rawFiles: [rawFile],
     runId,
     state,
     status: "success",
     warnings,
   });
+}
+
+/**
+ * Whether an MCP operation result is a tool execution error (`isError: true`).
+ */
+function isMcpToolError(result: unknown): result is { content?: unknown } {
+  return (
+    typeof result === "object" &&
+    result !== null &&
+    (result as { isError?: unknown }).isError === true
+  );
+}
+
+/**
+ * Joins the text content of a failed MCP tool result for a warning line.
+ */
+function getMcpToolErrorText(result: { content?: unknown }): string {
+  const text = (Array.isArray(result.content) ? result.content : [])
+    .map((item: unknown) =>
+      typeof item === "object" &&
+      item !== null &&
+      (item as { type?: unknown }).type === "text" &&
+      typeof (item as { text?: unknown }).text === "string"
+        ? (item as { text: string }).text
+        : "",
+    )
+    .filter((value) => value.length > 0)
+    .join(" ");
+
+  return text || "MCP tool returned an error.";
 }
 
 /**
