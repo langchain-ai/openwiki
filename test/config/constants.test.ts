@@ -530,16 +530,75 @@ describe("reasoning capabilities", () => {
       transport: "responses-reasoning",
       values: ["none", "low", "medium", "high", "xhigh", "max"],
     });
+    expect(getReasoningCapability("openai", "gpt-6-astra")).toEqual({
+      transport: "responses-reasoning",
+      values: ["low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("openai", "gpt-6.1-terra")).toEqual({
+      transport: "responses-reasoning",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
+    expect(getReasoningCapability("openai", "gpt-6-luna")).toEqual({
+      transport: "responses-reasoning",
+      values: ["none", "low", "medium", "high", "xhigh", "max"],
+    });
     expect(getReasoningCapability("gemini", GEMINI_REASONING_MODEL)).toEqual({
       transport: "gemini-thinking-level",
       values: GEMINI_REASONING_VALUES,
     });
+    for (const modelId of [
+      "gemini-3.8-flash",
+      "gemini-4-argon",
+      "gemini-4-carbon",
+    ]) {
+      expect(getReasoningCapability("gemini", modelId)).toEqual({
+        transport: "gemini-thinking-level",
+        values: GEMINI_REASONING_VALUES,
+      });
+    }
     expect(
       getReasoningCapability("nvidia", "nvidia/nemotron-3-super-120b-a12b"),
     ).toEqual({
       transport: "chat-completions-reasoning-effort",
       values: ["none", "low", "high"],
     });
+  });
+
+  test("shares one reasoning capability table between openai and openai-chatgpt", () => {
+    for (const modelId of [
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-6-astra",
+      "gpt-6-sol",
+      "gpt-6-luna",
+    ]) {
+      expect(getReasoningCapability("openai-chatgpt", modelId)).toEqual(
+        getReasoningCapability("openai", modelId),
+      );
+    }
+  });
+
+  test("omits the none effort only for gpt-6.1-sol and gpt-6-astra", () => {
+    for (const provider of ["openai", "openai-chatgpt"] as const) {
+      for (const modelId of ["gpt-6.1-sol", "gpt-6-astra"]) {
+        expect(getReasoningCapability(provider, modelId)?.values).not.toContain(
+          "none",
+        );
+        expect(() =>
+          resolveReasoningConfig(provider, modelId, {
+            OPENWIKI_REASONING_EFFORT: "none",
+          }),
+        ).toThrow(/Supported values: low, medium, high, xhigh, max/u);
+      }
+
+      for (const modelId of ["gpt-6.1-terra", "gpt-6-sol", "gpt-6-luna"]) {
+        expect(
+          resolveReasoningConfig(provider, modelId, {
+            OPENWIKI_REASONING_EFFORT: "none",
+          }),
+        ).toEqual({ effort: "none", transport: "responses-reasoning" });
+      }
+    }
   });
 
   test("leaves reasoning unset when the environment variable is absent", () => {
@@ -944,6 +1003,11 @@ describe("getProviderModelOptions", () => {
       { id: "gpt-5.6-terra", label: "5.6 Terra" },
       { id: "gpt-5.6-luna", label: "5.6 Luna" },
       { id: "gpt-5.6-sol", label: "5.6 Sol" },
+      { id: "gpt-6.1-sol", label: "6.1 Sol" },
+      { id: "gpt-6.1-terra", label: "6.1 Terra" },
+      { id: "gpt-6-astra", label: "6 Astra" },
+      { id: "gpt-6-sol", label: "6 Sol" },
+      { id: "gpt-6-luna", label: "6 Luna" },
       { id: "gpt-5.5", label: "5.5" },
       { id: "gpt-5.4-mini", label: "5.4 mini" },
     ]);
@@ -996,8 +1060,15 @@ describe("bedrock provider (AWS SDK credentials + region)", () => {
     expect(resolveProviderRegion("bedrock", {})).toBeUndefined();
   });
 
-  test("has no preset model list (Bedrock model availability is account/region specific)", () => {
-    expect(getProviderModelOptions("bedrock")).toEqual([]);
+  test("offers only global cross-Region inference profile IDs, defaulting to Haiku 5.5", () => {
+    const ids = getProviderModelOptions("bedrock").map((option) => option.id);
+
+    expect(getDefaultModelId("bedrock")).toBe(
+      "global.anthropic.claude-haiku-5-5",
+    );
+    expect(ids).toContain("global.anthropic.claude-fable-5-2");
+    expect(ids).toContain("global.anthropic.claude-opus-5-5");
+    expect(ids.every((id) => id.startsWith("global."))).toBe(true);
   });
 });
 
@@ -1249,10 +1320,73 @@ describe("resolveProviderLocation", () => {
 });
 
 describe("getProviderModelOptions", () => {
-  test("offers the latest Gemini Flash models on both Gemini providers", () => {
+  test("gemini-enterprise offers the Claude 5.5 and Fable 5.2 Model Garden IDs", () => {
+    const ids = getProviderModelOptions("gemini-enterprise").map(
+      (model) => model.id,
+    );
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "claude-opus-5-5",
+        "claude-sonnet-5-5",
+        "claude-haiku-5-5",
+        "claude-fable-5-2",
+      ]),
+    );
+  });
+
+  test("offers the Claude 5.5, Fable 5.2, and GPT-6 models on the providers that serve them", () => {
+    const idsOf = (provider: Parameters<typeof getProviderModelOptions>[0]) =>
+      getProviderModelOptions(provider).map((model) => model.id);
+
+    expect(idsOf("anthropic")).toEqual(
+      expect.arrayContaining([
+        "claude-opus-5-5",
+        "claude-sonnet-5-5",
+        "claude-haiku-5-5",
+        "claude-fable-5-2",
+      ]),
+    );
+    expect(idsOf("copilot")).toEqual(
+      expect.arrayContaining([
+        "gpt-6.1-sol",
+        "gpt-6.1-terra",
+        "gpt-6-astra",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "claude-opus-5.5",
+        "claude-sonnet-5.5",
+        "claude-haiku-5.5",
+        "claude-fable-5.2",
+        "gemini-4-argon",
+        "gemini-4-carbon",
+      ]),
+    );
+    expect(idsOf("copilot")).not.toEqual(expect.arrayContaining(["gpt-5.5"]));
+    expect(idsOf("copilot")).not.toEqual(
+      expect.arrayContaining(["gemini-2.5-pro"]),
+    );
+    expect(idsOf("openrouter")).toEqual(
+      expect.arrayContaining([
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6.1-terra",
+        "openai/gpt-6-astra",
+        "openai/gpt-6-sol",
+        "openai/gpt-6-luna",
+        "anthropic/claude-opus-5.5",
+        "anthropic/claude-sonnet-5.5",
+        "anthropic/claude-haiku-5.5",
+        "anthropic/claude-fable-5.2",
+      ]),
+    );
+  });
+
+  test("offers the latest Gemini models on both Gemini providers", () => {
     const expectedModels = [
+      { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+      { id: "gemini-4-argon", label: "Gemini 4 Argon" },
+      { id: "gemini-4-carbon", label: "Gemini 4 Carbon" },
       { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
-      { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+      { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview" },
     ];
 
     for (const provider of ["gemini", "gemini-enterprise"] as const) {
@@ -1267,13 +1401,13 @@ describe("getDefaultModelId", () => {
   test("returns the first model option for a provider", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
     expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
-    expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
+    expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K3");
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
     expect(getDefaultModelId("mistral")).toBe("mistral-small-2603");
-    expect(getDefaultModelId("gemini")).toBe("gemini-3.6-flash");
-    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.6-flash");
+    expect(getDefaultModelId("gemini")).toBe("gemini-3.8-flash");
+    expect(getDefaultModelId("gemini-enterprise")).toBe("gemini-3.8-flash");
     expect(getDefaultModelId(DEFAULT_PROVIDER)).toBe(DEFAULT_MODEL_ID);
   });
 
@@ -1310,10 +1444,13 @@ describe("getProvidersForKnownModelId", () => {
     // Anthropic's bare "claude-opus-4-8" must not match OpenRouter's
     // namespaced "anthropic/claude-opus-4-8" or vice versa.
     expect(
-      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openai"),
+      getProvidersForKnownModelId("anthropic/claude-opus-4.8", "openai"),
     ).toEqual(["openrouter"]);
     expect(
-      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openrouter"),
+      getProvidersForKnownModelId("anthropic/claude-opus-4.8", "openrouter"),
+    ).toEqual([]);
+    expect(
+      getProvidersForKnownModelId("anthropic/claude-opus-4-8", "openai"),
     ).toEqual([]);
   });
 

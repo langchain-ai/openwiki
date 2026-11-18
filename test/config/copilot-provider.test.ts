@@ -21,9 +21,19 @@ describe("GitHub Copilot provider config", () => {
     expect(COPILOT_API_KEY_ENV_KEY).toBe("COPILOT_API_KEY");
   });
 
-  test("uses the Responses API only for Copilot GPT-5 models", () => {
+  test("uses the Responses API only for Copilot GPT-5 and GPT-6 models", () => {
     expect(providerUsesResponsesApi("copilot", "gpt-5.5")).toBe(true);
+    expect(providerUsesResponsesApi("copilot", "gpt-6-astra")).toBe(true);
+    expect(providerUsesResponsesApi("copilot", "gpt-6.1-sol")).toBe(true);
+    expect(providerUsesResponsesApi("copilot", "gpt-6.1-terra")).toBe(true);
+    expect(providerUsesResponsesApi("copilot", "gpt-6-sol")).toBe(true);
+    expect(providerUsesResponsesApi("copilot", "gpt-6-luna")).toBe(true);
+    expect(providerUsesResponsesApi("copilot", "gemini-3.6-flash")).toBe(false);
+    expect(providerUsesResponsesApi("copilot", "claude-fable-5.1")).toBe(false);
     expect(providerUsesResponsesApi("copilot", "claude-sonnet-5")).toBe(false);
+    expect(providerUsesResponsesApi("copilot", "claude-sonnet-5.5")).toBe(
+      false,
+    );
   });
 
   test("always forces streaming transport for all Copilot models", () => {

@@ -132,6 +132,20 @@ describe("createModel wires runtime options into provider clients", () => {
     expect(chatOpenAIArgs[0]?.maxTokens).toBe(8192);
   });
 
+  test.each([
+    ["claude-fable-5", 16_384],
+    ["claude-fable-5-1", 16_384],
+    ["claude-opus-5-5", 16_384],
+    ["claude-fable-3", undefined],
+  ])(
+    "defaults Anthropic maxTokens for %s when none is configured",
+    (modelId, expectedMaxTokens) => {
+      createModel("anthropic", modelId, 3);
+
+      expect(chatAnthropicArgs[0]?.[1].maxTokens).toBe(expectedMaxTokens);
+    },
+  );
+
   test("passes maxTokens to direct non-Google clients", () => {
     createModel("anthropic", "claude-sonnet-4-5", 3, 8192);
     createModel("openai", "gpt-5.6-terra", 3, 8192);
@@ -160,7 +174,9 @@ describe("createModel wires runtime options into provider clients", () => {
 
   test.each([
     ["gpt-5.5", true],
+    ["gpt-6-sol", true],
     ["claude-sonnet-5", false],
+    ["claude-fable-5.1", false],
   ])(
     "passes maxTokens to Copilot model %s while preserving its transport",
     (modelId, useResponsesApi) => {
