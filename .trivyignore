@@ -3,3 +3,9 @@
 # retains a RangeError fallback in src/agent/agent-backend.ts. Remove this
 # exception and the temporary boundary workaround once a fixed version exists.
 CVE-2026-93687
+
+# No patched picomatch release exists for this repeated-extglob ReDoS.
+# src/agent/agent-backend.ts rejects all parentheses in glob patterns and grep
+# file filters before routing to any backend, including skills/history mounts.
+# Remove this exception and the syntax restriction when a fixed release exists.
+CVE-2026-112366

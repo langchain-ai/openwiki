@@ -3,6 +3,7 @@ import {
   FilesystemBackend,
   type FilesystemPermission,
   type GlobResult,
+  type GrepResult,
 } from "deepagents";
 import {
   openWikiConversationHistoryDir,
@@ -45,6 +46,17 @@ function exceedsGlobBraceNesting(pattern: string): boolean {
   }
 
   return false;
+}
+
+/** Rejects unsafe glob syntax before routing to dependency matchers. */
+function globPatternError(pattern: string): string | undefined {
+  if (/[()]/.test(pattern)) {
+    return "Parenthesized glob patterns are disabled for safety. Retry with simple wildcards or separate searches.";
+  }
+  if (exceedsGlobBraceNesting(pattern)) {
+    return "Glob pattern nesting is too deep. Retry with a simpler pattern.";
+  }
+  return undefined;
 }
 
 /**
@@ -105,6 +117,18 @@ export function createAgentBackend(
  * bounded model-facing error.
  */
 class OpenWikiCompositeBackend extends CompositeBackend {
+  /** Validates file filters before searching any mounted backend. */
+  override async grep(
+    pattern: string,
+    path: string | null = "/",
+    glob: string | null = null,
+    maxCount: number | null = null,
+  ): Promise<GrepResult> {
+    const error = globPatternError(glob ?? "");
+    if (error) return { error };
+    return super.grep(pattern, path, glob, maxCount);
+  }
+
   /**
    * Expands a glob while handling DeepAgents' recoverable recursion overflow.
    *
@@ -113,12 +137,8 @@ class OpenWikiCompositeBackend extends CompositeBackend {
    * @returns Normal glob results or a bounded retry instruction.
    */
   override async glob(pattern: string, path = "/"): Promise<GlobResult> {
-    if (exceedsGlobBraceNesting(pattern)) {
-      return {
-        error:
-          "Glob pattern nesting is too deep. Retry with a simpler pattern.",
-      };
-    }
+    const patternError = globPatternError(pattern);
+    if (patternError) return { error: patternError };
 
     try {
       return await super.glob(pattern, path);
