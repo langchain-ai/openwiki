@@ -936,6 +936,20 @@ describe("http MCP transport (stubbed fetch)", () => {
 
     expect(calls[0].url).toBe("http://localhost:8080/rpc");
   });
+
+  test("the IPv6 loopback address may use plain http", async () => {
+    // URL.hostname brackets IPv6 literals, so http://[::1] must still count as
+    // loopback.
+    const { calls } = installMcpFetch();
+
+    await executeMcpTool(
+      { transport: { type: "http", url: "http://[::1]:8080/rpc" } },
+      "search",
+      {},
+    );
+
+    expect(calls[0].url).toBe("http://[::1]:8080/rpc");
+  });
 });
 
 describe("http MCP header resolution", () => {
