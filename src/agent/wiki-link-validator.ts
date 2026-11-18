@@ -1,6 +1,7 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "./types.js";
+import { isWikiAgentGuide } from "../claims/brains/code/paths.js";
 
 /**
  * Reserved or control files that never carry agent-authored concept links.
@@ -355,7 +356,8 @@ async function collectMarkdownFiles(
 
     if (
       path.posix.extname(name).toLowerCase() === ".md" &&
-      !EXCLUDED_FILES.has(name)
+      !EXCLUDED_FILES.has(name) &&
+      !isWikiAgentGuide(name)
     ) {
       files.push(entryPath);
     }

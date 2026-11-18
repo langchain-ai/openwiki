@@ -1,6 +1,7 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "../agent/types.js";
+import { isWikiAgentGuide } from "../claims/brains/code/paths.js";
 import {
   ENGLISH_CONCEPT_TYPE,
   ENGLISH_INDEX_LABELS,
@@ -141,7 +142,8 @@ export async function listWikiConceptPaths(
           name &&
           !name.startsWith(".") &&
           path.posix.extname(name).toLowerCase() === ".md" &&
-          !EXCLUDED_FILES.has(name)
+          !EXCLUDED_FILES.has(name) &&
+          !isWikiAgentGuide(name)
           ? [path.posix.join(directory.path, name)]
           : [];
       }),
@@ -225,7 +227,8 @@ async function synchronizeDirectory(
     }
     if (
       path.posix.extname(name).toLowerCase() !== ".md" ||
-      EXCLUDED_FILES.has(name)
+      EXCLUDED_FILES.has(name) ||
+      isWikiAgentGuide(name)
     ) {
       continue;
     }

@@ -2,6 +2,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   symlink,
   writeFile,
@@ -51,6 +52,57 @@ describe("repository wiki replacement", () => {
     ).rejects.toMatchObject({ code: "ENOENT" });
 
     await replacement.commit();
+  });
+
+  test("preserves root and deeply nested guide bytes and parent directories on init", async () => {
+    const root = await createRepository();
+    const guides = ["AGENTS.md", "guides/nested/AGENTS.md"];
+    const bytes = Buffer.from("# User instructions\r\n\r\nExact bytes: \u0000 é\r\n");
+    await mkdir(path.join(root, "openwiki/guides/nested"), { recursive: true });
+    for (const guide of guides) {
+      await writeFile(path.join(root, "openwiki", guide), bytes);
+    }
+    await writeFile(path.join(root, "openwiki/guides/nested/old.md"), "old\n");
+    await mkdir(path.join(root, "openwiki/obsolete"));
+    const replacement = await beginRepositoryWikiReplacement(root);
+    await replacement.commit();
+    for (const guide of guides) {
+      expect(await readFile(path.join(root, "openwiki", guide))).toEqual(bytes);
+    }
+    expect(await readdir(path.join(root, "openwiki"))).toEqual(["AGENTS.md", "guides"]);
+    expect(await readdir(path.join(root, "openwiki/guides/nested"))).toEqual(["AGENTS.md"]);
+  });
+
+  test("rollback restores original root and nested guides after partial authoring", async () => {
+    const root = await createRepository();
+    await mkdir(path.join(root, "openwiki/nested"), { recursive: true });
+    const guides = ["AGENTS.md", "nested/AGENTS.md"];
+    const bytes = Buffer.from("# Original instructions\r\n\u0000\r\n");
+    for (const guide of guides) {
+      await writeFile(path.join(root, "openwiki", guide), bytes);
+    }
+    const replacement = await beginRepositoryWikiReplacement(root);
+    await writeFile(path.join(root, "openwiki/AGENTS.md"), "changed\n");
+    await rm(path.join(root, "openwiki/nested"), { recursive: true });
+    await writeFile(path.join(root, "openwiki/partial.md"), "partial\n");
+    await replacement.rollback();
+    for (const guide of guides) {
+      expect(await readFile(path.join(root, "openwiki", guide))).toEqual(bytes);
+    }
+    await expect(readFile(path.join(root, "openwiki/partial.md"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("rolls back when a nested guide is not a regular file", async () => {
+    const root = await createRepository();
+    await mkdir(path.join(root, "openwiki/nested"), { recursive: true });
+    await writeFile(path.join(root, "outside.md"), "outside\n");
+    await writeFile(path.join(root, "openwiki/AGENTS.md"), "root guide\n");
+    await writeFile(path.join(root, "openwiki/old.md"), "old page\n");
+    await symlink("../../outside.md", path.join(root, "openwiki/nested/AGENTS.md"));
+    await expect(beginRepositoryWikiReplacement(root)).rejects.toThrow("expected a regular file");
+    await expect(readFile(path.join(root, "openwiki/old.md"), "utf8")).resolves.toBe("old page\n");
+    await expect(readFile(path.join(root, "openwiki/AGENTS.md"), "utf8")).resolves.toBe("root guide\n");
+    await expect(readFile(path.join(root, "openwiki/nested/AGENTS.md"), "utf8")).resolves.toBe("outside\n");
   });
 
   test("restores the exact previous wiki after replacement failure", async () => {

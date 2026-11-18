@@ -4,6 +4,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { BackendProtocolV2, FileInfo } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
+import { isWikiAgentGuide } from "../claims/brains/code/paths.js";
 import { getErrorMessage } from "../platform/diagnostics.js";
 import { getPrimaryLanguageSubtag } from "../platform/language.js";
 import {
@@ -493,7 +494,8 @@ async function collectMarkdownFiles(
     }
     if (
       path.posix.extname(name).toLowerCase() === ".md" &&
-      !EXCLUDED_FILES.has(name)
+      !EXCLUDED_FILES.has(name) &&
+      !isWikiAgentGuide(name)
     ) {
       files.push(entryPath);
     }

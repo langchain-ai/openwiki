@@ -878,6 +878,51 @@ describe("repository wiki retrieval", () => {
     ).rejects.toThrow("non-structural Markdown path");
   });
 
+  test("excludes root and nested folder guides from search and direct reads", async () => {
+    const root = await createRoot();
+    for (const guide of ["AGENTS.md", "architecture/AGENTS.md"]) {
+      await writeFile(
+        path.join(root, "openwiki", guide),
+        "# Guideonlytoken\n\n## Instructions\n\nGuideonlytoken instructions.\n",
+      );
+      await expect(
+        readWikiSections(root, {
+          page: `openwiki/${guide}`,
+          sections: ["instructions"],
+        }),
+      ).rejects.toThrow("non-structural Markdown path");
+    }
+    await expect(searchWiki(root, { query: "Guideonlytoken" })).resolves.toEqual({
+      results: [],
+    });
+  });
+
+  test.each(["agents.md", "Agents.md"])(
+    "searches and reads existing factual page %s without treating it as a guide",
+    async (name) => {
+      const root = await createRoot();
+      await writeFile(
+        path.join(root, "openwiki", name),
+        page({
+          title: "Existingcasepage",
+          description: "Existing factual documentation.",
+          source: "src/runtime.ts",
+          body: "## Behavior\n\nExistingcasepage remains searchable.",
+        }),
+      );
+      const results = requireSearchResults(
+        await searchWiki(root, { query: "Existingcasepage" }),
+      );
+      expect(results.results.length).toBeGreaterThan(0);
+      await expect(
+        readWikiSections(root, {
+          page: `openwiki/${name}`,
+          sections: ["behavior"],
+        }),
+      ).resolves.toBeDefined();
+    },
+  );
+
   test("read rejects structural pages and unknown sections", async () => {
     const root = await createRoot();
     await writeFile(path.join(root, "openwiki/index.md"), "# Index\n", "utf8");
