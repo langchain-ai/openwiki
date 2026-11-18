@@ -1,4 +1,5 @@
 import type { BackendProtocolV2, FileInfo } from "deepagents";
+import { marked, type Token } from "marked";
 import path from "node:path";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -26,8 +27,8 @@ const FENCE_PATTERN = /^\s*(`{3,}|~{3,})/u;
 const INLINE_CODE_PATTERN = /(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/gu;
 
 /**
- * Matches an ATX heading, capturing its hashes and trimmed title text. The
- * title feeds anchor-slug generation.
+ * Matches an ATX heading, capturing its hashes and trimmed title source. The
+ * title's rendered text feeds anchor-slug generation.
  */
 const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
 
@@ -421,17 +422,40 @@ function extractMarkdownLinks(
 }
 
 /**
- * Extracts the trimmed title text of every ATX heading in a document.
+ * Extracts the rendered title text of every ATX heading in a document. Inline
+ * Markdown in the title is resolved first, so a heading such as
+ * ``## [`createAgent`](../src/agent.ts)`` yields `createAgent`, matching the
+ * anchor GitHub derives from the heading's visible text.
  */
 function extractHeadings(content: string): string[] {
   const headings: string[] = [];
   for (const line of maskMarkdownCode(content, false)) {
     const match = HEADING_PATTERN.exec(line);
     if (match) {
-      headings.push(match[2]);
+      headings.push(inlineText(marked.Lexer.lexInline(match[2])));
     }
   }
   return headings;
+}
+
+/**
+ * Concatenates the visible text of inline Markdown tokens: link and emphasis
+ * tokens contribute their inner text, and raw HTML tags are dropped. Mirrors
+ * the heading slugger in `src/retrieval/wiki.ts`.
+ */
+function inlineText(tokens: readonly Token[]): string {
+  return tokens
+    .map((token) => {
+      if (token.type === "html") return "";
+      if ("tokens" in token && Array.isArray(token.tokens)) {
+        return inlineText(token.tokens);
+      }
+      if ("text" in token && typeof token.text === "string") {
+        return token.text;
+      }
+      return token.type === "br" ? " " : "";
+    })
+    .join("");
 }
 
 /**
