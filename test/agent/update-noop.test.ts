@@ -87,6 +87,19 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("does not skip when the requested language changes writing script", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head, { language: "zh-CN" });
+
+    const status = await getUpdateNoopStatus(repo, undefined, "zh-TW");
+
+    expect(status).toEqual({
+      shouldSkip: false,
+      reason: "output language changed",
+    });
+  });
+
   test("detects a no-op when only the committed run metadata is dirty", async () => {
     // A committed wiki leaves openwiki/.last-update.json tracked, so the next
     // run sees it as an unstaged modification: " M openwiki/.last-update.json".
