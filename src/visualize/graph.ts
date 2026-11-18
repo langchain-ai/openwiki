@@ -46,7 +46,7 @@ export function splitFrontmatter(raw: string): { meta: RawMeta; body: string } {
   const body = newlineAfterClose === -1 ? "" : raw.slice(newlineAfterClose + 1);
   const meta: RawMeta = {};
   let pendingListKey: string | undefined;
-  for (const line of block.split("\n")) {
+  for (const line of block.split(/\r?\n/)) {
     const listItem = line.match(/^\s*-\s+(.*)$/);
     if (listItem && pendingListKey) {
       (meta[pendingListKey] as string[]).push(stripQuotes(listItem[1].trim()));

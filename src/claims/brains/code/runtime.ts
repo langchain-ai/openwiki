@@ -138,6 +138,7 @@ function buildClaimsRuntime(
           session,
           store,
           result.verificationByPage,
+          excludedPages,
         )),
       );
       for (const warning of warnings) onWarning(warning);
@@ -162,10 +163,12 @@ async function finalizeVerificationProjection(
   session: ClaimSession,
   store: ClaimsStore,
   verificationByPage: Parameters<typeof synchronizeClaimsVerification>[1],
+  excludedPages: ReadonlySet<string>,
 ): Promise<string[]> {
   const originals = await synchronizeClaimsVerification(
     store,
     verificationByPage,
+    excludedPages,
   );
   // Deterministic finalizers may have changed code-owned frontmatter without
   // changing the verification event. Refresh every represented page so Claims

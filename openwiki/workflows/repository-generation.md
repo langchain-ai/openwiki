@@ -34,6 +34,10 @@ sources:
     resource: repo://src/generation/repository-run.ts
   - id: openwiki-source-080c4525024a9b689e361cbb
     resource: repo://src/generation/run-state.ts
+  - id: openwiki-source-ada7fcb0bef11e183302d637
+    resource: repo://src/integrations/core/begin-view.ts
+  - id: openwiki-source-410e7efbe6dee8c4d43e9b4d
+    resource: repo://src/integrations/core/protocol.ts
   - id: openwiki-source-58835b77ce38a0dd1fed8d09
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-5835357b69a5869be210533b
@@ -44,10 +48,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.7.2", at: "2026-10-13T08:15:00.712Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-06T08:06:02.348Z" }
 verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-13T08:15:00.712Z
+  - by: openwiki/0.9.0
+    at: 2026-11-06T08:06:02.348Z
 ---
 
 # Repository Generation Lifecycle
@@ -140,18 +144,30 @@ and must include `/openwiki/quickstart.md`, and `/openwiki/quickstart.md` can
 never be deleted. Each page becomes a `PageJob` with a fresh UUID `id` and
 `status: "pending"`.
 
-For update runs, the plan is augmented with jobs the planner omitted:
-`addRequiredClaimIssueJobs` inserts reconciliation jobs for pages with unresolved
-grounding issues, and `addRequiredRewriteJobs` inserts rewrite jobs for pages that
-must change language. The queue is then deterministically sorted by code-unit
-path order, with `/openwiki/quickstart.md` placed last so the navigation page is
-generated after the domain pages it routes to.
+For update runs, the plan is augmented with jobs the planner omitted.
+`addRequiredRewriteJobs` always inserts rewrite jobs for pages that must change
+language. Claim-issue reconciliation is conditional on the planner's
+`deferUnplannedClaimIssues` flag (an update-only option; `init` rejects it):
+
+- When `deferUnplannedClaimIssues` is false (the default),
+  `addRequiredClaimIssueJobs` inserts a reconciliation job for every page with
+  unresolved grounding issues that the planner neither generated nor deleted.
+- When `deferUnplannedClaimIssues` is true, those unplanned Claim-issue jobs are
+  _not_ added to the queue. Instead `createRepositoryPlan` records the affected
+  page paths in `deferredClaimPages` — the issue pages filtered to those neither
+  generated nor deleted — so a focused update can leave stale-Claim pages for a
+  later full update rather than forcing the planner to enumerate them.
+
+`deferredClaimPages` is an optional string array persisted on the plan and
+schema-validated in the run-state checkpoint. The queue is then deterministically
+sorted by code-unit path order, with `/openwiki/quickstart.md` placed last so the
+navigation page is generated after the domain pages it routes to.
 
 The installed plan is the run's persisted ordered queue: jobs are consumed in
 order, and completion is tracked per job. A duplicated `submit_plan` is tolerated
 only if it describes the same semantic plan (compared while ignoring generated
-job IDs and progress); a different plan against an already-installed queue is
-rejected with `invalid_state`.
+job IDs and progress, but _including_ `deferredClaimPages`); a different plan
+against an already-installed queue is rejected with `invalid_state`.
 
 ## Page completion is the durability boundary
 
@@ -175,7 +191,9 @@ then deterministically repairs its front matter via `repairPersistedFile` (using
 the run's resolved concept-type label) and rejects with `invalid_input` if the
 repair cannot produce valid front matter. It then reconciles the page's sparse
 Claim decisions into the process-local Claims session via `reconcilePageClaims`,
-finalizes (persists) that Claim state, proves durability via
+finalizes (persists) that Claim state while excluding other pending pages owned
+by concurrent workers _and_ `deferredClaimPages` (so a concurrent or deferred
+page's transient bytes are never stamped), proves durability via
 `assertPageClaimsDurable`, records the page completion in the manifest, and only
 then writes a new checkpoint marking the job `complete`. Persisting the page's
 Claims _before_ marking the job complete is what makes each page a self-contained
@@ -360,10 +378,15 @@ must match and every snapshot's path must match its job's path — and rejects w
 After deleting abandoned pages, applying planned deletions, reconciling sidecars,
 and finalizing wiki artifacts, finish restores each skipped page's Markdown from
 its snapshot, so the finalized wiki reflects the pre-worker page rather than
-partial worker output. It then finalizes Claims while excluding the skipped page
-set and runs the whole-repository durability proof excluding those pages, so a
-skipped page is never required to have durable Claims. If at least one page was
-skipped or source changed during the finish window, finish writes `interrupted`
+partial worker output. It then finalizes Claims while excluding the `skippedPages`
+set — the union of formally skipped job paths and `deferredClaimPages` — and runs
+the whole-repository durability proof excluding that same set, so a skipped or
+deferred-claim page is never required to have durable Claims. Deferred-claim pages
+are also excluded from producer-actor restamping: because `skippedPages` feeds
+both the Claims-finalization exclusion and the `preserveSourcePages` computation,
+a deferred page retains its prior source checkpoint and prior coverage rather
+than being restamped with this run's baseline. If at least one page was skipped
+or source changed during the finish window, finish writes `interrupted`
 metadata instead of `complete` metadata, and then removes `openwiki/.run.json`
 last as usual. The run therefore completes deterministically, but the persisted
 `interrupted` status tells a later `begin` that work remains.
@@ -379,8 +402,11 @@ into three sets:
 
 - **Regenerated pages** (`producerActorsByPage` keys) are restamped with this run's
   source checkpoint — they earned new coverage by completing a job.
-- **Skipped pages** are restored from their snapshots and, like other excluded
-  pages, are not required to carry durable Claims; they keep their prior coverage.
+- **Skipped and deferred-claim pages** are excluded from the
+  `producerActorsByPage`/regenerated set via `skippedPages`; skipped pages are
+  restored from their snapshots and deferred-claim pages keep their prior
+  content, so like other excluded pages neither is required to carry durable
+  Claims and both keep their prior coverage.
 - **Untouched pages** — pages outside this run's plan, or already durable from an
   earlier run — keep their prior source checkpoint via `preserveSourcePages`, so a
   disjoint run that touched an unrelated page never advances a neighbor's baseline.
@@ -481,15 +507,16 @@ checks the source fingerprint before and after finalization to close the
 check/use race. It then deletes pages abandoned by a superseded plan (never
 touching `initialPages`), applies the plan's explicit deletions, reconciles
 Claims sidecars for deleted pages, finalizes wiki artifacts (indexes and
-provenance), restores any skipped pages, finalizes Claims (excluding skipped
-pages), and proves the whole repository has no orphaned or partially durable
-Claims via `assertRepositoryClaimsDurable` (also excluding skipped pages).
+provenance), restores any skipped pages, finalizes Claims (excluding the
+`skippedPages` union of skipped job paths and `deferredClaimPages`), and proves
+the whole repository has no orphaned or partially durable Claims via
+`assertRepositoryClaimsDurable` (excluding that same union).
 During the deterministic index-sync pass finish also captures a
 `WikiFrontmatterReport` — which pages still carry code-derived
 `openwiki_generated: true` front matter and which indexed pages have no usable
 `description`. It then rebuilds the page manifest so that only pages this run
 actually regenerated are restamped with this run's source checkpoint, while
-skipped and untouched pages retain their prior checkpoint via
+skipped, deferred-claim, and untouched pages retain their prior checkpoint via
 `preserveSourcePages` (a deterministic-finalization rewrite still refreshes
 `pageVersion`). It then persists completion metadata — `interrupted` when any
 page was skipped or source changed during the finish window, otherwise
@@ -525,13 +552,55 @@ as the OpenWiki MCP tools, including `openwiki_inspect_page_claims`. It holds on
 active `ActiveRepositoryRun`, requires the caller's `runId` to match before every
 operation, serializes operations with a single-operation guard, and maps
 lifecycle `RepositoryRunError` codes onto stable host-integration errors.
-Because both drivers call `beginRepositoryRun`, `submitRepositoryPlan`,
-`nextRepositoryPage`, `inspectRepositoryPageClaims`, `submitRepositoryPage`, and
-`finishRepositoryRun`, they share the exact same ordering, durability boundary,
-and source-fingerprint invalidation semantics. The host adapter does not, however,
+`submitPlan` passes the host's `pages`, `deletePages`, and the update-only
+`deferUnplannedClaimIssues` flag straight through to `submitRepositoryPlan`, so a
+host-driven update may defer unplanned Claim-issue pages exactly as the native
+runner does. Because both drivers call `beginRepositoryRun`,
+`submitRepositoryPlan`, `nextRepositoryPage`, `inspectRepositoryPageClaims`,
+`submitRepositoryPage`, and `finishRepositoryRun`, they share the exact same
+ordering, durability boundary, and source-fingerprint invalidation semantics. The host adapter does not, however,
 participate in skipped-page handling: it calls `finishRepositoryRun` without
 `skippedPageSnapshots`, so a skipped job in a host-driven run makes finish report
 the missing-snapshot `invalid_state` unless the host supplies snapshots itself.
+
+### Host begin view capping
+
+A host transport (MCP) cannot stream arbitrarily large begin views to a model the
+way the in-process native runner can. The adapter therefore routes every active
+begin view through `toHostActiveBeginView` (in
+`src/integrations/core/begin-view.ts`) before returning it. Capping keeps totals
+exact while bounding only the lists a model must read:
+
+- `changedPaths` is capped to `HOST_BEGIN_PATH_LIMIT` (200), split evenly across
+  update windows (`Math.floor(200 / pageUpdateWindows.length)` per window). The
+  view still carries the exact `changedPathCount` and a per-window
+  `changedPathCount`, plus `changedPathsTruncated` flags (top-level and per
+  window) that are true when the corresponding list was trimmed.
+- `claimIssues` is capped to `HOST_BEGIN_CLAIM_ISSUE_LIMIT` (50), while the exact
+  `claimIssueCount`, `claimIssuesTruncated`, and `claimIssuePages` (every page
+  with a Claims issue, including pages whose issues were omitted) are preserved.
+
+The host loses no required work from the trimming: omitted changed paths come
+from its own Git, and each page's Claims come back from `openwiki_next_page`.
+Planning and page jobs read the run's own durable state, not the capped view, so
+the cap affects only what the model sees.
+
+### The `tools()` block and tool descriptions
+
+`HostSessionManager.tools()` returns the read-only retrieval tools followed by
+the six generation lifecycle tools, each with a model-facing description and a
+strict Zod input schema. The `openwiki_begin` description records the begin-view
+capping contract: it states that long lists are capped with exact
+`changedPathCount` and `claimIssueCount` totals, and gives the recovery commands
+for a truncated `changedPathsTruncated` flag — `git diff --name-only
+<baseGitHead>..HEAD` (not on a fullReview window), `git diff --name-only HEAD`,
+and `git ls-files --others --exclude-standard`, excluding `openwiki/` and
+`.openwikiignore` paths. It names `claimIssuePages` as every page with a Claims
+issue, and notes that an unrecognized `language` fails the call with
+`invalid_input` instead of starting a run. The other five tool descriptions
+(`openwiki_submit_plan`, `openwiki_next_page`, `openwiki_inspect_page_claims`,
+`openwiki_submit_page`, `openwiki_finish`) describe their operation contracts and
+are unchanged across the capping work.
 
 ## Parallel page workers
 

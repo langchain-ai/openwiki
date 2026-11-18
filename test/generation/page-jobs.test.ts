@@ -200,6 +200,34 @@ describe("createRepositoryPlan", () => {
     expect(plan.pages[0]?.purpose).toContain("Reconcile stale or unresolved");
   });
 
+  test("defers unplanned Claim issues only when explicitly requested", () => {
+    const issue = {
+      page: "/openwiki/unrelated.md",
+      kind: "stale" as const,
+      claimId: "claim_unrelated",
+      resources: ["repo://src/unrelated.ts"],
+    };
+    const plan = createRepositoryPlan(
+      "update",
+      { pages: [proposedPage("focused.md")], deferUnplannedClaimIssues: true },
+      [issue],
+    );
+    expect(plan.pages.map(({ path }) => path)).toEqual([
+      "/openwiki/focused.md",
+    ]);
+    expect(plan.deferredClaimPages).toEqual(["/openwiki/unrelated.md"]);
+    expect(() =>
+      createRepositoryPlan(
+        "init",
+        {
+          pages: [proposedPage("quickstart.md")],
+          deferUnplannedClaimIssues: true,
+        },
+        [],
+      ),
+    ).toThrow("Init cannot defer Claim issues");
+  });
+
   test("adds required language rewrites without duplicating planned or deleted pages", () => {
     const plan = createRepositoryPlan(
       "update",

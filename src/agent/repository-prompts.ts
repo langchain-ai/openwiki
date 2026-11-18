@@ -253,11 +253,23 @@ function formatPageUpdateWindows(
       const baseline = window.fullReview
         ? "unknown (full review required)"
         : window.baseGitHead;
-      return [
+      const lines = [
         `- Baseline ${baseline}:`,
         `  - Pages: ${window.pages.join(", ") || "(none)"}`,
         `  - Changed paths: ${window.changedPaths.join(", ") || "(none)"}`,
-      ].join("\n");
+      ];
+      if (window.commits.length > 0) {
+        lines.push(
+          "  - Commit messages since this baseline, newest first and possibly truncated. They are hints about where to look; current code remains the evidence, so do not state anything from a message that the code does not support:",
+          // JSON keeps each message on one line, so its text cannot start a
+          // new prompt section.
+          ...window.commits.map(
+            ({ sha, subject, body }) =>
+              `    - ${JSON.stringify({ sha: sha.slice(0, 12), subject, body })}`,
+          ),
+        );
+      }
+      return lines.join("\n");
     })
     .join("\n");
 }

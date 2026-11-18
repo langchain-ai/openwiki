@@ -13,10 +13,9 @@ tags:
     entra-id,
     operations,
   ]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-07T08:10:39.081Z
 sources:
+  - id: openwiki-source-fe40bdf5ac5a95cc1c252b13
+    resource: repo://.changeset/openrouter-base-url.md
   - id: openwiki-source-049f71d42424ecd8987d5e9f
     resource: repo://src/agent/entra-auth.ts
   - id: openwiki-source-a953060a04ccefcf777de48e
@@ -43,7 +42,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
+verified:
+  - by: openwiki/0.9.0
+    at: 2026-11-11T08:06:00.631Z
 ---
 
 # Configuration and Environment
@@ -99,8 +101,14 @@ other OpenAI-compatible settings (`OPENAI_COMPATIBLE_STREAM_MESSAGES`,
 `OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`, and the streaming/Responses-API
 toggles) in the managed list, and the newer `OPENWIKI_PAGE_CONCURRENCY` and
 `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` keys are also present. The Bob keys
-(`BOB_API_KEY`, `BOB_BASE_URL`) and Copilot keys (`COPILOT_API_KEY`,
-`COPILOT_BASE_URL`) are managed too. LangChain project/tracing settings
+(`BOB_API_KEY`, `BOB_BASE_URL`), Copilot keys (`COPILOT_API_KEY`,
+`COPILOT_BASE_URL`), and Mistral keys (`MISTRAL_API_KEY`, `MISTRAL_BASE_URL`)
+are managed too, so they appear in the credential diagnostics panel and are
+written to `~/.openwiki/.env` like every other provider pair. The OpenRouter
+pair (`OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`) is likewise managed, with
+`OPENROUTER_BASE_URL` sitting alongside the other hosted-provider base-URL
+override keys (Anthropic, Baseten, Bob, Copilot, Fireworks, Mistral, NVIDIA,
+OpenAI, and OpenAI-compatible) in the list. LangChain project/tracing settings
 (`LANGCHAIN_PROJECT`, `LANGCHAIN_TRACING_V2`) are managed but are not
 credentials, so they are excluded from the diagnostics panel via
 `NON_CREDENTIAL_ENV_KEYS`.
@@ -196,10 +204,19 @@ unescaped output is ever re-scanned.
 model. When `OPENWIKI_PROVIDER` is unset, `resolveConfiguredProvider` infers the
 provider from whichever credential is present, checking API keys in a fixed order
 (`OPENAI_API_KEY`, then OpenAI-compatible, OpenRouter, Anthropic, Baseten,
-Fireworks, Nebius, NVIDIA, then Bedrock access/secret keys) and falling back to
-`DEFAULT_PROVIDER` (`openai`). Each provider declares its own credential env
+Fireworks, Nebius, NVIDIA, Mistral, then Bedrock access/secret keys) and falling
+back to `DEFAULT_PROVIDER` (`openai`). Each provider declares its own credential env
 variables and optional base-URL override in `PROVIDER_CONFIGS`; see
 [Model providers](../concepts/model-providers.md) for the full registry.
+
+Each hosted provider exposes a `baseUrlEnvKey`: setting it trims and overrides
+the provider's default `baseURL` (`resolveProviderBaseUrl`), so an installation
+can retarget a provider without code changes. The `openrouter` provider honours
+`OPENROUTER_BASE_URL`, so it can target a regional endpoint such as
+`https://us.openrouter.ai/api/v1` while leaving the default endpoint unchanged;
+`--debug` OpenRouter request capture then follows the overridden URL. The same
+override mechanism covers Anthropic, Baseten, Bob, Copilot, Fireworks, Mistral,
+NVIDIA, OpenAI, and the OpenAI-compatible base URL.
 
 ### OpenAI-compatible authentication and Entra ID
 
@@ -372,7 +389,7 @@ for those models even though it is valid for OpenAI GPT-5.6.
 path, "process.env over <file>" when both are set, or `unset` — and a
 masked preview. Non-secret settings (provider, model, token limits, page concurrency, retry
 attempts, base URLs, region, Google project/location, OpenRouter provider-only filter, the
-Entra auth mode and scope, and the boolean toggles, including
+Entra auth mode and scope, the Mistral base URL, and the boolean toggles, including
 `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES` and
 `OPENWIKI_OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED`) are shown verbatim;
 true secrets are previewed as a short masked fragment (or all-asterisks for short
@@ -382,9 +399,9 @@ Diagnostics surface per-key warnings through a dedicated validator per key:
 invalid provider, invalid model ID, invalid token limits (neutral, Bedrock, and
 OpenRouter each have their own validator), invalid boolean, invalid reasoning
 effort, invalid retry attempts, invalid page concurrency, invalid stream idle
-timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks,
-NVIDIA, OpenAI, and the OpenAI-compatible base URL each validated through
-`getProviderBaseUrlWarnings`), credential
+timeout, base-URL provider mismatches (Anthropic, Baseten, Bob, Fireworks, Mistral,
+NVIDIA, OpenAI, the OpenAI-compatible base URL, and OpenRouter — each validated
+through `getProviderBaseUrlWarnings`), credential
 whitespace/newline/quote issues, and a warning that the Bedrock stream watchdog
 is disabled when the idle timeout is `0`. The boolean validator
 `getBooleanWarnings` covers all four `openai-compatible` toggles —
@@ -401,6 +418,16 @@ and reports "invalid output token limit" on failure), distinct from the neutral
 `getMaxOutputTokensWarnings` and the OpenRouter `getOpenRouterMaxTokensWarnings`
 validators.
 
+The base-URL override keys — including `OPENROUTER_BASE_URL` — are likewise
+non-secret diagnostic keys: their values are shown verbatim (via
+`isNonSecretDiagnosticKey`, which lists every hosted-provider base URL
+alongside the provider/model/token settings and the Entra ID keys), and the
+`getBaseUrlDiagnosticWarnings` dispatcher routes each to the matching
+`getProviderBaseUrlWarnings` branch. The env-behavior test "validates the
+OpenRouter base URL as a non-secret setting" pins this: a saved
+`OPENROUTER_BASE_URL=not-a-url` shows up verbatim with an "invalid base URL"
+warning.
+
 ## Secret sanitization
 
 `sanitizeDiagnosticText` is the security boundary for anything shown to the user
@@ -408,7 +435,7 @@ or written to a log: every error message, header value, or provider response bod
 that could contain a credential must pass through it first. It redacts (1) the
 exact values of secrets currently set in the environment — iterated over a fixed
 list of credential env keys (provider API keys, AWS/Bedrock credentials, the
-OpenAI-compatible key, `LANGSMITH_API_KEY`, and Azure client
+OpenAI-compatible key, `LANGSMITH_API_KEY`, the Mistral key, and Azure client
 secret/certificate-password keys), replacing each with `[REDACTED:<KEY>]` — and
 (2) anything matching known key/token shapes — OpenAI and OpenRouter `sk-…`
 keys, `Bearer …` headers, LangSmith `ls…` tokens, and the

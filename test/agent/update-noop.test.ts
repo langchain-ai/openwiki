@@ -286,6 +286,39 @@ describe("no-op metadata refresh", () => {
   });
 });
 
+describe("writeLastUpdateMetadata gitHead", () => {
+  async function readPersistedMetadata(
+    repo: string,
+  ): Promise<Record<string, unknown>> {
+    const raw = await readFile(
+      path.join(repo, "openwiki", ".last-update.json"),
+      "utf8",
+    );
+    return JSON.parse(raw) as Record<string, unknown>;
+  }
+
+  test("records the commit id of the current HEAD", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+
+    await writeLastUpdateMetadata("init", repo, "model", "repository");
+
+    const metadata = await readPersistedMetadata(repo);
+    expect(metadata.gitHead).toBe(head);
+  });
+
+  test("omits gitHead for a repository with no commits", async () => {
+    const repo = await mkdtemp(path.join(tmpdir(), "openwiki-empty-repo-"));
+    await git(repo, ["init"]);
+    await mkdir(path.join(repo, "openwiki"));
+
+    await writeLastUpdateMetadata("init", repo, "model", "repository");
+
+    const metadata = await readPersistedMetadata(repo);
+    expect(metadata).not.toHaveProperty("gitHead");
+  });
+});
+
 describe("writeLastUpdateMetadata atomicity", () => {
   // Mirrors the analogous ~/.openwiki/.env fix (#407): a failed write must
   // not leave .last-update.json truncated. A torn/empty file here reads back
