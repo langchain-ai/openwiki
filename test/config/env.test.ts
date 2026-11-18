@@ -104,6 +104,7 @@ describe("formatEnv", () => {
       ZZZ_CUSTOM: "z",
       AAA_CUSTOM: "a",
       NEBIUS_API_KEY: "n",
+      ATLASCLOUD_API_KEY: "a",
       OPENWIKI_PROVIDER_RETRY_ATTEMPTS: "3",
       OPENWIKI_PROVIDER: "anthropic",
       GOOGLE_CLOUD_PROJECT: "proj",
@@ -118,6 +119,7 @@ describe("formatEnv", () => {
     // GOOGLE_CLOUD_PROJECT before PROVIDER), and the two unknown keys follow,
     // sorted.
     expect(keys).toEqual([
+      "ATLASCLOUD_API_KEY",
       "NEBIUS_API_KEY",
       "ANTHROPIC_API_KEY",
       "GOOGLE_CLOUD_PROJECT",

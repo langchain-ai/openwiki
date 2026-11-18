@@ -119,6 +119,7 @@ describe("normalizeProvider / isValidProvider", () => {
     expect(normalizeProvider("  Anthropic ")).toBe("anthropic");
     expect(normalizeProvider("OPENROUTER")).toBe("openrouter");
     expect(normalizeProvider(" Nebius ")).toBe("nebius");
+    expect(normalizeProvider(" AtlasCloud ")).toBe("atlascloud");
     expect(normalizeProvider(" Gemini-Enterprise ")).toBe("gemini-enterprise");
   });
 
@@ -131,6 +132,7 @@ describe("normalizeProvider / isValidProvider", () => {
   test("isValidProvider is a type guard over the known set", () => {
     expect(isValidProvider("anthropic")).toBe(true);
     expect(isValidProvider("nebius")).toBe(true);
+    expect(isValidProvider("atlascloud")).toBe(true);
     expect(isValidProvider("openai-compatible")).toBe(true);
     expect(isValidProvider("copilot")).toBe(true);
     expect(isValidProvider("nvidia")).toBe(true);
@@ -169,6 +171,12 @@ describe("resolveConfiguredProvider", () => {
   test("falls back to openrouter when only an OpenRouter key is present", () => {
     expect(resolveConfiguredProvider({ OPENROUTER_API_KEY: "x" })).toBe(
       "openrouter",
+    );
+  });
+
+  test("falls back to atlascloud when only an Atlas Cloud key is present", () => {
+    expect(resolveConfiguredProvider({ ATLASCLOUD_API_KEY: "x" })).toBe(
+      "atlascloud",
     );
   });
 
@@ -227,6 +235,9 @@ describe("resolveProviderBaseUrl", () => {
       "https://api.githubcopilot.com",
     );
     expect(resolveProviderBaseUrl("nebius", {})).toBe(NEBIUS_BASE_URL);
+    expect(resolveProviderBaseUrl("atlascloud", {})).toBe(
+      "https://api.atlascloud.ai/v1",
+    );
     expect(resolveProviderBaseUrl("nvidia", {})).toBe(
       "https://integrate.api.nvidia.com/v1",
     );
@@ -775,6 +786,7 @@ describe("providerUsesStreaming", () => {
         "openai",
         "baseten",
         "fireworks",
+        "atlascloud",
         "mistral",
         "nebius",
         "nvidia",
@@ -1268,6 +1280,9 @@ describe("getDefaultModelId", () => {
     expect(getDefaultModelId("anthropic")).toBe("claude-haiku-4-5");
     expect(getDefaultModelId("copilot")).toBe("gpt-5.6-terra");
     expect(getDefaultModelId("nebius")).toBe("moonshotai/Kimi-K2.6");
+    expect(getDefaultModelId("atlascloud")).toBe(
+      "deepseek-ai/deepseek-v4-flash",
+    );
     expect(getDefaultModelId("nvidia")).toBe(
       "nvidia/nemotron-3-super-120b-a12b",
     );
