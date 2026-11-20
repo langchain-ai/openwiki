@@ -2,7 +2,7 @@ import { mkdtemp, readFile, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { createSummarizationMiddleware } from "deepagents";
+import { CompositeBackend, createSummarizationMiddleware } from "deepagents";
 import { describe, expect, test, vi } from "vitest";
 import { OpenWikiLocalShellBackend } from "../../src/agent/docs-only-backend.ts";
 import {
@@ -51,6 +51,74 @@ describe("createAgentBackend conversation history offload", () => {
     });
     expect(glob).toHaveBeenCalledOnce();
     glob.mockRestore();
+  });
+
+  test.each([true, false])(
+    "rejects parenthesized file patterns before routing (docsOnly=%s)",
+    async (docsOnly) => {
+      const { backend } = await createBackendFixture({ docsOnly });
+      const glob = vi.spyOn(CompositeBackend.prototype, "glob");
+      const grep = vi.spyOn(CompositeBackend.prototype, "grep");
+      try {
+        for (const root of ["/", "/skills/", CONVERSATION_HISTORY_MOUNT]) {
+          for (const pattern of [
+            "+(*)",
+            "+(*a)",
+            "*(a*)",
+            "**/+(*a).ts",
+            "{+(*a),*.ts}",
+            "+{(}*a{)}",
+            "\\+\\(*a\\)",
+            "[+](a+)+$",
+          ]) {
+            expect((await backend.glob(pattern, root)).error).toContain(
+              "disabled for safety",
+            );
+            expect(
+              (await backend.grep("needle", root, pattern)).error,
+            ).toContain("disabled for safety");
+          }
+        }
+        expect(glob).not.toHaveBeenCalled();
+        expect(grep).not.toHaveBeenCalled();
+      } finally {
+        glob.mockRestore();
+        grep.mockRestore();
+      }
+    },
+  );
+
+  test("preserves ordinary file filters and literal grep queries", async () => {
+    const { backend } = await createBackendFixture({ docsOnly: false });
+    const glob = vi
+      .spyOn(CompositeBackend.prototype, "glob")
+      .mockResolvedValue({ files: [] });
+    const grep = vi
+      .spyOn(CompositeBackend.prototype, "grep")
+      .mockResolvedValue({ matches: [] });
+    try {
+      await expect(backend.glob("src/**/*.{ts,tsx}", "/")).resolves.toEqual({
+        files: [],
+      });
+      expect(glob).toHaveBeenCalledWith("src/**/*.{ts,tsx}", "/");
+      await expect(
+        backend.grep("+(*a)", "/skills/", "*.{ts,tsx}", 5),
+      ).resolves.toEqual({ matches: [] });
+      expect(grep).toHaveBeenCalledWith("+(*a)", "/skills/", "*.{ts,tsx}", 5);
+      await expect(backend.grep("needle")).resolves.toEqual({ matches: [] });
+      expect(grep).toHaveBeenLastCalledWith("needle", "/", null, null);
+      grep.mockClear();
+      await expect(
+        backend.grep("needle", "/", "{".repeat(101)),
+      ).resolves.toEqual({
+        error:
+          "Glob pattern nesting is too deep. Retry with a simpler pattern.",
+      });
+      expect(grep).not.toHaveBeenCalled();
+    } finally {
+      glob.mockRestore();
+      grep.mockRestore();
+    }
   });
 
   test("returns a tool error when a glob exceeds the call stack", async () => {
