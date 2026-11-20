@@ -35,6 +35,28 @@ async function createRepoWithOpenWiki(): Promise<string> {
   return repo;
 }
 
+/**
+ * Repository whose generated wiki was never committed, matching a worktree
+ * where the whole `openwiki/` tree shows up as untracked.
+ */
+async function createRepoWithUntrackedWiki(): Promise<string> {
+  const repo = await mkdtemp(path.join(tmpdir(), "openwiki-noop-"));
+  await git(repo, ["init"]);
+  await git(repo, ["config", "user.email", "test@example.com"]);
+  await git(repo, ["config", "user.name", "OpenWiki Test"]);
+  await writeFile(path.join(repo, "README.md"), "# Test Repo\n", "utf8");
+  await git(repo, ["add", "."]);
+  await git(repo, ["commit", "-m", "initial"]);
+  await mkdir(path.join(repo, "openwiki"));
+  await writeFile(
+    path.join(repo, "openwiki", "quickstart.md"),
+    "# Quickstart\n",
+    "utf8",
+  );
+  await writeFile(path.join(repo, "openwiki", "page.md"), "# Page\n", "utf8");
+  return repo;
+}
+
 async function writeLastUpdate(
   repo: string,
   gitHead: string,
@@ -166,6 +188,69 @@ describe("getUpdateNoopStatus", () => {
     const status = await getUpdateNoopStatus(repo);
 
     expect(status.shouldSkip).toBe(true);
+  });
+
+  test("skips update when the worktree only carries an untracked wiki", async () => {
+    // A repo that never committed its generated wiki sees one status line per
+    // generated file. None of them is an input the wiki is derived from, so the
+    // update must still skip instead of re-running the whole agent.
+    const repo = await createRepoWithUntrackedWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
+  test("skips update when an untracked wiki page name makes git quote the path", async () => {
+    // `git status --short` C-quotes a path holding a space or a non-ASCII byte,
+    // so the status lines read `?? "openwiki/my page.md"` and
+    // `?? "openwiki/caf\303\251.md"`. The quotes and escapes are git's, not part
+    // of the name: reading them literally leaves the path outside `openwiki/`
+    // and the update runs the whole agent again for an uncommitted wiki whose
+    // pages were named by the translation path.
+    const repo = await createRepoWithUntrackedWiki();
+    await writeFile(
+      path.join(repo, "openwiki", "my page.md"),
+      "# Page\n",
+      "utf8",
+    );
+    await writeFile(path.join(repo, "openwiki", "café.md"), "# Page\n", "utf8");
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
+  test("skips update when the worktree only modifies generated pages", async () => {
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await writeFile(
+      path.join(repo, "openwiki", "quickstart.md"),
+      "# Quickstart\nEdited in place\n",
+      "utf8",
+    );
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
+  test("does not skip update when a page moves out of the wiki directory", async () => {
+    // Only a line whose every path is OpenWiki-owned is ignored, so a rename
+    // that leaves the wiki still counts as a worktree change.
+    const repo = await createRepoWithOpenWiki();
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+    await git(repo, ["mv", "openwiki/quickstart.md", "quickstart.md"]);
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(false);
   });
 
   test("does not skip update when the previous run was interrupted", async () => {
