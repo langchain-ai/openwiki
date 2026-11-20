@@ -40,6 +40,7 @@ import {
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_AUTH_ENV_KEY,
   OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
+  OPENAI_COMPATIBLE_HEADERS_ENV_KEY,
   OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY,
@@ -77,6 +78,7 @@ import {
   resolveConfiguredProvider,
   resolveBedrockMaxTokens,
   resolveMaxOutputTokens,
+  resolveOpenAiCompatibleHeaders,
   resolveOpenRouterMaxTokens,
   resolvePageConcurrency,
   resolveProviderRetryAttempts,
@@ -135,6 +137,7 @@ export const MANAGED_ENV_KEYS = [
   OPENAI_COMPATIBLE_BASE_URL_ENV_KEY,
   OPENAI_COMPATIBLE_AUTH_ENV_KEY,
   OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
+  OPENAI_COMPATIBLE_HEADERS_ENV_KEY,
   OPENAI_COMPATIBLE_STREAMING_ENV_KEY,
   OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY,
   OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY,
@@ -445,8 +448,10 @@ function createCredentialDiagnostic(
                         ? getPageConcurrencyWarnings(value)
                         : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
                           ? getReasoningEffortWarnings(value)
-                          : (getBaseUrlDiagnosticWarnings(key, value) ??
-                            getCredentialWarnings(value)),
+                          : key === OPENAI_COMPATIBLE_HEADERS_ENV_KEY
+                            ? getOpenAiCompatibleHeadersWarnings(value)
+                            : (getBaseUrlDiagnosticWarnings(key, value) ??
+                              getCredentialWarnings(value)),
   };
 }
 
@@ -600,6 +605,18 @@ function getPageConcurrencyWarnings(value: string): string[] {
     return [];
   } catch {
     return ["invalid page concurrency"];
+  }
+}
+
+function getOpenAiCompatibleHeadersWarnings(value: string): string[] {
+  try {
+    resolveOpenAiCompatibleHeaders({
+      [OPENAI_COMPATIBLE_HEADERS_ENV_KEY]: value,
+    });
+
+    return [];
+  } catch {
+    return ["invalid headers"];
   }
 }
 

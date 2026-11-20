@@ -58,9 +58,8 @@ describe("createModel OpenAI-compatible Entra authentication", () => {
     expect(fields.apiKey).not.toBe("stale-static-key");
     expect(fields.useResponsesApi).toBe(responsesApi === "true");
     expect(fields.clientConfig.baseURL).toBe(BASE_URL);
-    expect(fields.clientConfig.fetch).toBeTypeOf(
-      responsesApi === "true" ? "undefined" : "function",
-    );
+    // The wrapper is installed on both transports so custom headers apply.
+    expect(fields.clientConfig.fetch).toBeTypeOf("function");
   });
 
   test("rejects an unsafe endpoint before model construction", () => {
