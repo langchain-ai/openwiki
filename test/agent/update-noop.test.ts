@@ -203,6 +203,28 @@ describe("getUpdateNoopStatus", () => {
     expect(status.shouldSkip).toBe(true);
   });
 
+  test("skips update when an untracked wiki page name makes git quote the path", async () => {
+    // `git status --short` C-quotes a path holding a space or a non-ASCII byte,
+    // so the status lines read `?? "openwiki/my page.md"` and
+    // `?? "openwiki/caf\303\251.md"`. The quotes and escapes are git's, not part
+    // of the name: reading them literally leaves the path outside `openwiki/`
+    // and the update runs the whole agent again for an uncommitted wiki whose
+    // pages were named by the translation path.
+    const repo = await createRepoWithUntrackedWiki();
+    await writeFile(
+      path.join(repo, "openwiki", "my page.md"),
+      "# Page\n",
+      "utf8",
+    );
+    await writeFile(path.join(repo, "openwiki", "café.md"), "# Page\n", "utf8");
+    const head = await git(repo, ["rev-parse", "HEAD"]);
+    await writeLastUpdate(repo, head);
+
+    const status = await getUpdateNoopStatus(repo);
+
+    expect(status.shouldSkip).toBe(true);
+  });
+
   test("skips update when the worktree only modifies generated pages", async () => {
     const repo = await createRepoWithOpenWiki();
     const head = await git(repo, ["rev-parse", "HEAD"]);

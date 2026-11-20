@@ -975,8 +975,76 @@ function isOpenWikiPath(changedPath: string): boolean {
   );
 }
 
+/**
+ * Undoes git's C-style quoting of a path.
+ *
+ * `git status --short` and `git diff --name-only` quote a path that carries a
+ * space, a non-ASCII byte (`core.quotePath`) or another special character, and
+ * write the offending octets as `\NNN` escapes:
+ *
+ * ```text
+ * ?? "openwiki/my page.md"
+ * ?? "openwiki/caf\303\251.md"
+ * ```
+ *
+ * Read as written, the surrounding quotes keep the path from matching
+ * `openwiki/`, and an uncommitted wiki whose pages have such names would keep
+ * re-running the whole agent — the same failure this filter exists to stop, for
+ * the page names the translation path produces.
+ */
+function unquoteGitPath(value: string): string {
+  if (value.length < 2 || !value.startsWith('"') || !value.endsWith('"')) {
+    return value;
+  }
+
+  const inner = value.slice(1, -1);
+  const bytes: number[] = [];
+  const escapes: Record<string, number> = {
+    a: 0x07,
+    b: 0x08,
+    t: 0x09,
+    n: 0x0a,
+    v: 0x0b,
+    f: 0x0c,
+    r: 0x0d,
+    '"': 0x22,
+    "\\": 0x5c,
+  };
+
+  for (let index = 0; index < inner.length; index += 1) {
+    const char = inner[index];
+
+    if (char !== "\\") {
+      bytes.push(...Buffer.from(char, "utf8"));
+      continue;
+    }
+
+    // A quoted path spells a non-ASCII byte as three octal digits, one UTF-8
+    // octet each, so the bytes are accumulated and decoded once at the end.
+    const octal = /^[0-7]{3}/u.exec(inner.slice(index + 1));
+
+    if (octal) {
+      bytes.push(Number.parseInt(octal[0], 8));
+      index += 3;
+      continue;
+    }
+
+    const escaped = escapes[inner[index + 1] ?? ""];
+
+    if (escaped !== undefined) {
+      bytes.push(escaped);
+      index += 1;
+      continue;
+    }
+
+    bytes.push(0x5c);
+  }
+
+  return Buffer.from(bytes).toString("utf8");
+}
+
 function normalizeGitPath(value: string): string {
-  return value.trim().replace(/\\/gu, "/");
+  return unquoteGitPath(value.trim()).replace(/\\/gu, "/");
 }
 
 /**
