@@ -50,7 +50,13 @@ const OPENAI_RESPONSES_REASONING_VALUES = [
   "max",
 ] as const satisfies readonly ReasoningEffort[];
 
-/** Levels the GPT-6 models advertise, per the Codex model catalog. */
+/**
+ * Levels the GPT-6 models advertise, per the Codex model catalog
+ * (https://developers.openai.com/codex/models, "Pick a reasoning effort"): the
+ * app's Light / Medium / High / Extra High are `low` / `medium` / `high` /
+ * `xhigh` in the CLI, and Astra and Sol add `max` and `ultra`. That page is the
+ * only source for the per-model split, so re-read it when this table is updated.
+ */
 const OPENAI_GPT_6_REASONING_VALUES = [
   "low",
   "medium",
