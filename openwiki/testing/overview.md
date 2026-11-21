@@ -16,8 +16,14 @@ sources:
     resource: repo://evals/ledger/run/runner.test.ts
   - id: openwiki-source-33844b1c2c98eca457fd6142
     resource: repo://evals/ledger/tsconfig.json
+  - id: openwiki-source-d9da31b32fa9d32e1fa4564b
+    resource: repo://examples/openwiki-update.gitlab-ci.yml
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
+  - id: openwiki-source-0ad86abe7202c4e4d6897f34
+    resource: repo://src/agent/agent-backend.ts
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
     resource: repo://src/agent/repository-runner.ts
   - id: openwiki-source-69abc6f0f641147820a274bc
@@ -32,6 +38,8 @@ sources:
     resource: repo://src/integrations/core/session-manager.ts
   - id: openwiki-source-eab9328975981f427c4218d0
     resource: repo://src/integrations/mcp/server.ts
+  - id: openwiki-source-0770fdf80fcdcaa96b06ee77
+    resource: repo://test/agent/conversation-history-offload.test.ts
   - id: openwiki-source-76702f01df0808033c14cf17
     resource: repo://test/agent/create-model-entra.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
@@ -110,6 +118,8 @@ sources:
     resource: repo://test/generation/run-state.test.ts
   - id: openwiki-source-a0cec66bd3bed0c13c668ff0
     resource: repo://test/git-repo-connector.test.ts
+  - id: openwiki-source-619574be5673e1bc96e66fd0
+    resource: repo://test/gitlab-example-security.test.ts
   - id: openwiki-source-caa199fea0a0f4f89151a0c8
     resource: repo://test/ingest-all-connectors.test.ts
   - id: openwiki-source-224b03172757408e1b558fa7
@@ -150,10 +160,10 @@ sources:
     resource: repo://tsconfig.json
   - id: openwiki-source-fbadcd8591b65031efaaedce
     resource: repo://vitest.config.ts
-generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-21T08:05:45.527Z" }
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-11T08:06:00.631Z
+    at: 2026-11-21T08:05:45.527Z
 ---
 
 # Testing Guide
@@ -301,7 +311,7 @@ matching path. The most important mappings:
 
 | Test directory                                                                                                                                            | Source subsystem it validates                                                                                 |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `test/agent/`                                                                                                                                             | `src/agent/` — model creation (incl. the Mistral createModel branch), middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction (incl. `MISTRAL_API_KEY`), the repository runner (including parallel page workers, retry-before-skip, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, the wiki translation middleware, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, and the wiki internal-link validator plus its dogfood test |
+| `test/agent/`                                                                                                                                             | `src/agent/` — model creation (incl. the Mistral createModel branch), middleware, prompts (planner/page-worker and system prompts), Vertex AI surface dispatch, streaming, redaction (incl. `MISTRAL_API_KEY`), the repository runner (including parallel page workers, retry-before-skip, and worker-response coercion), update-noop fast-skip, repository source fingerprinting, OKF middleware, frontmatter validation, the wiki finalizer, the wiki translation middleware, OpenAI-compatible Entra (Microsoft Entra ID) token-provider and model-auth wiring, the wiki internal-link validator plus its dogfood test, and the conversation-history-offload safety boundaries (glob/grep guard, brace-nesting cap, docs-only guard, history/skills mount write-deny) |
 | `test/claims/`                                                                                                                                            | `src/claims/` — grounded-claim core, the code claim brain, and evidence resolution                            |
 | `test/connectors/`                                                                                                                                        | `src/connectors/` — connector config, resilient fetch, MCP client/runtime, and per-source ingestion           |
 | `test/generation/`                                                                                                                                        | `src/generation/` — repository run lifecycle (including per-baseline fast-forward caching, the commit-messages-since-baseline planner context, and begin-view bounding), page planning, page-manifest persistence, and run-state persistence                                 |
@@ -637,6 +647,21 @@ working tree cannot be rewritten by `pnpm test`) and asserts the real
 checked-in content passes validation — `filesScanned` and `linksChecked` are
 both greater than zero and `issuesFound` is `0`.
 
+`test/agent/conversation-history-offload.test.ts` exercises
+`createAgentBackend` and the `OpenWikiCompositeBackend` safety boundaries
+from `src/agent/agent-backend.ts` and `src/agent/index.ts`. It rejects
+parenthesized glob patterns and grep file filters before routing (across
+`/`, `/skills/`, and `/conversation_history/` mounts), rejects excessive
+brace nesting (>100) before glob expansion, preserves ordinary file filters
+and literal grep queries, converts a `RangeError` 'Maximum call stack size
+exceeded' into a bounded tool error, permits DeepAgents summarization
+history offload through the `/conversation_history/` mount on both
+docs-only and chat runs (landing outside the repo dir), keeps the docs-only
+guard intact for non-offload writes, denies agent-layer tool writes to the
+history and skills mounts via `AGENT_FILESYSTEM_PERMISSIONS`, and pins
+that `CONVERSATION_HISTORY_MOUNT` stays in sync with deepagents'
+summarization middleware default `historyPathPrefix`.
+
 `test/agent/translation-middleware.test.ts` exercises the wiki translation
 middleware (`resolveTranslationPlan` and `createWikiTranslationMiddleware` from
 `src/agent/translation-middleware.ts`) against a real `OpenWikiLocalShellBackend`
@@ -718,6 +743,12 @@ streams:
   `previousHead`, and a second run against an unreachable recorded head (as
   after a force-push or garbage-collected rewrite) falls back to the
   working-tree diff rather than throwing.
+- `test/gitlab-example-security.test.ts` is a root-level test that parses
+  `examples/openwiki-update.gitlab-ci.yml` as YAML and asserts the GitLab CI
+  example keeps Git credentials out of remote URLs and traced commands: no
+  `http(s)://...@` URL, `set +x` present, `credential.helper="$credential_helper"`
+  present, `<<'EOF'` heredoc present, `"$OPENWIKI_GITLAB_TOKEN"` present,
+  and the push URL uses `CI_SERVER_HOST/CI_PROJECT_PATH`.
 - `test/ingest-all-connectors.test.ts` pins `openwiki_ingest_all_connectors`
   failure isolation (issue #412): it mocks the connector registry with two
   fake connectors — one that resolves and one that rejects — and asserts the
@@ -1339,6 +1370,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **A single connector source:** `pnpm exec vitest run test/connectors/sources/slack.test.ts`.
 - **MCP client child-env (incl. empty-string var):** `pnpm exec vitest run test/connectors/mcp-client.test.ts -t "buildChildEnv"`.
 - **Git-repo connector incremental diff:** `pnpm exec vitest run test/git-repo-connector.test.ts`.
+- **GitLab CI example credential hygiene:** `pnpm exec vitest run test/gitlab-example-security.test.ts` (parses `examples/openwiki-update.gitlab-ci.yml` and asserts no credentials in remote URLs, `set +x`/`credential.helper`/`<<'EOF'` heredoc/`$OPENWIKI_GITLAB_TOKEN` present, and push URL uses `CI_SERVER_HOST/CI_PROJECT_PATH`).
 - **Connector failure isolation (ingest-all):** `pnpm exec vitest run test/ingest-all-connectors.test.ts`.
 - **X connector stream isolation:** `pnpm exec vitest run test/x-connector-stream-isolation.test.ts`.
 - **OpenRouter debug-fetch concurrency (incl. override-aware capture):** `pnpm exec vitest run test/openrouter-debug-fetch.test.ts` (global-fetch patching, reference-counted restore, per-run failure capture, the `captures failures from an overridden OPENROUTER_BASE_URL` override-aware case, transient-404 retry, and malformed-success classification).
@@ -1382,6 +1414,7 @@ file or directory, or `-t "<name>"` to scope by test name.
 - **Mistral API-key redaction:** `pnpm exec vitest run test/agent/redaction.test.ts -t "redacts the exact value of MISTRAL_API_KEY when set"` (`sanitizeDiagnosticText` replaces the secret with `[REDACTED:MISTRAL_API_KEY]`).
 - **Mistral setup-wizard provider article:** `pnpm exec vitest run test/setup/credentials/steps.test.ts -t "orderedSetupSteps"` (the `mistral` provider's `provider` → `api-key` → `model` → `langsmith` step order).
 - **Wiki internal-link validator (dogfood):** `pnpm exec vitest run test/agent/wiki-link-validator-dogfood.test.ts` (checks the checked-in `openwiki/` tree passes validation) or `pnpm exec vitest run test/agent/wiki-link-validator.test.ts` (scoped unit cases).
+- **Conversation-history offload safety boundaries:** `pnpm exec vitest run test/agent/conversation-history-offload.test.ts` (glob/grep guard before routing across `/`/`/skills/`/`/conversation_history/` mounts, brace-nesting cap, docs-only guard for non-offload writes, history/skills mount write-deny via `AGENT_FILESYSTEM_PERMISSIONS`, and `CONVERSATION_HISTORY_MOUNT` sync with deepagents' summarization middleware default `historyPathPrefix`).
 - **Wiki translation middleware:** `pnpm exec vitest run test/agent/translation-middleware.test.ts` (resolveTranslationPlan switching/sweep rules, beforeAgent full-pass translation, pending-marker retry on model failure/output-limit truncation, per-page failure isolation, and array/structured content flattening).
 - **CLI error diagnostics (`--debug`):** `pnpm exec vitest run test/cli/diagnostics/error-diagnostics.test.ts` (stack extraction/redaction/truncation, HTTP status, OpenRouter metadata, `previous_errors` cap).
 - **Env parsing/formatting:** `pnpm exec vitest run test/config/env.test.ts` (double-quoted unescaping, carriage returns, Windows-path regression, the OpenAI-compatible Entra auth round-trip, `MANAGED_ENV_KEYS` membership including `OPENAI_COMPATIBLE_AUTH`/`OPENAI_COMPATIBLE_ENTRA_SCOPE`, `OPENWIKI_PAGE_CONCURRENCY`, `BOB_BASE_URL`, `MISTRAL_BASE_URL`, `OPENROUTER_BASE_URL`, and the hosted OpenAI-compatible base URLs).

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e1821469c61ed43277dacbb584b7ab336f674d3b82932b9f99eba5fad64913b5",
+  "pageVersion": "sha256:a15d6fed805f6a4fd6aa6d5fd73e03518f560e33a4c6100f22b7aa72c28d0967",
   "claims": [
     {
       "id": "claim_fe4e1fc83ccd4d9290e42536a6e48032",
@@ -1167,10 +1167,42 @@
           "version": "repo-lines-v1:sha256:a81e4abfa91a7d642230f877cd7e17db7dde0d58fd5521c9a608caed35e27200:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNDcwNmNjMWU0M2E1NGE4NDM0ZjA4OWM2NzhiMmIzYjY5OTRjNGM5MmEyNjdmNzg4YWI3ZjAzNWY4Y2MyNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMGEwY2NiN2QyNWI1NmVlNzdjYTQzZjAxOTBkMDVhZjhhOTUyYzNjNWVjNDQ2Y2ZlZThjMzY5NDc1YzliMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNmI5MTY1MzQwOTU5ODIwZDZmYjQ4OTZlYjlmYjNhNTYyMzIxZjUwZDdmOGZkMTcxNjIzM2RmMDRjZDhiMjAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b3840270861b4139bd0bd70e466504d3",
+      "statement": "test/agent/conversation-history-offload.test.ts exercises createAgentBackend and the OpenWikiCompositeBackend safety boundaries from src/agent/agent-backend.ts and src/agent/index.ts: it rejects parenthesized glob patterns and grep file filters before routing (across /, /skills/, and /conversation_history/ mounts), rejects excessive brace nesting (>100) before glob expansion, preserves ordinary file filters and literal grep queries, converts a RangeError 'Maximum call stack size exceeded' into a bounded tool error, permits DeepAgents summarization history offload through the /conversation_history/ mount on both docs-only and chat runs (landing outside the repo dir), keeps the docs-only guard intact for non-offload writes, denies agent-layer tool writes to the history and skills mounts via AGENT_FILESYSTEM_PERMISSIONS, and pins that CONVERSATION_HISTORY_MOUNT stays in sync with deepagents' summarization middleware default historyPathPrefix.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/agent-backend.ts#L17-L158",
+          "version": "repo-lines-v1:sha256:45db1169825ac2ffe5279abfc0574cf4147f469a1e4cf235f8ba4ea89e3195ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNDQ0MzUxNzIzMWEyNmIxYTBlNGQ5MTY4ZDQ1N2RkODMyNGI5YjcwZjc5NmVkODYyOWVmNmU3ZDIzMTQ2NDZhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMmFjNDIyM2Y3YTNkYmExMmEwYTMwMzMwODAxZjU1ODAwZDg1YzQ1ZGJhYWVhNTZkYTRiNDFmYTVjMmJkMjA4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L60-L62",
+          "version": "repo-lines-v1:sha256:431e8494c629acb04cdddb3236ffeb01ad9ca7ffffe4454d9f56edc91e78bc4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUwNjNmYjVjYWZiNzZjYTJkZDMyYmYyNmQ1MTg1NzcxZGEwNTE4M2M3NWVhYmE5Y2Q1ZDRhOGQ5NWFjZDlhNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTYxM2IwYTM2ZmFjYmUxMjUyMmI3NTE2NGE2YTNlMWQ0MTY5ZDZkNjlhMDliMTNkMTc5ZDgzMTNkMjcyMGU5NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTQ2NDczOGI2NDRjYjI3N2I2ZDBkZDZhMGRkMTdhYmQ1NmE0ODJjZjYyNmEzZjI2OGFlMmNiYzJhOWU3YjgzNiJ9"
+        },
+        {
+          "resource": "repo://test/agent/conversation-history-offload.test.ts#L1-L261",
+          "version": "repo-lines-v1:sha256:877acaa4e06433a455c41bb5fa39b1de77c02a246547c4e614077f9afa04798f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMzU1NWNjYWFkMDE2MTA3ZTc4NGZmNzdlYjAzMDk0N2U2NTY0ZmJmYzA4ZmZiZDg0NTNlMGFhOTljYWMzYmJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bebdb033609944d0bacaeb7f6122ce43",
+      "statement": "test/gitlab-example-security.test.ts is a root-level test that parses examples/openwiki-update.gitlab-ci.yml as YAML and asserts the GitLab CI example keeps Git credentials out of remote URLs and traced commands: no http(s)://...@ URL, set +x present, credential.helper=\"$credential_helper\" present, <<'EOF' heredoc present, \"$OPENWIKI_GITLAB_TOKEN\" present, and the push URL uses CI_SERVER_HOST/CI_PROJECT_PATH.",
+      "evidence": [
+        {
+          "resource": "repo://examples/openwiki-update.gitlab-ci.yml#L1-L60",
+          "version": "repo-lines-v1:sha256:8e04d35a75403fd5cc2f307d74253b2d725be8e574c2ce494bec7247fda5107c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NTUwZGI5ZGQ2MDc1Mjg2OTdlNjFkNjg1ODcxOWEyMzk5NzQ4ODEzMWU1MTU2YmYwYTRlYTlmMTZjNTQ5YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNTgxMjJlNjNhNGJjZTc5Njk5YjYyODU4NjhlYTkwZGI5YmVkZDJjNDBlMWJkODUxZDU2YjA3MDM2ZjJiNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/gitlab-example-security.test.ts#L1-L27",
+          "version": "repo-lines-v1:sha256:3f18612241bbc244a8c82eef7d1ce17d14e1ac194934f1c796f45b8a557ab5b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYmFiYTYzODM0OWFiMGU5MGQ0Yzc5OTY4Nzc3ZDk4YTE3YjMwNTU1MmI1NjhlYzA3YzM2MmFhMjA5N2U3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-11T08:06:00.631Z"
+    "at": "2026-11-21T08:05:45.527Z"
   }
 }
