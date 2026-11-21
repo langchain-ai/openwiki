@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:16a5b271de28114ef64db7b8801b6ff09fb5c40342d7936d7027d8069287b919",
+  "pageVersion": "sha256:97b9c7b0dec97f4f81cfcb6f394e99520c0a3be8c2e0fa35aeb4f7cc627413f1",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -268,11 +268,11 @@
     },
     {
       "id": "claim_87cc3f5537bc499b9868678a5fdb4c26",
-      "statement": "createAgentBackend wraps the wiki backend in an OpenWikiCompositeBackend that adds two read-only virtual mounts, /conversation_history/ for DeepAgents history offload and /skills/ for bundled skills, and converts DeepAgents' recoverable broad-glob recursion overflow into a bounded model-facing narrow-your-search error.",
+      "statement": "createAgentBackend wraps the wiki backend in an OpenWikiCompositeBackend that adds two read-only virtual mounts, /conversation_history/ for DeepAgents history offload and /skills/ for bundled skills, converts DeepAgents' recoverable broad-glob recursion overflow into a bounded model-facing narrow-your-search error, and overrides both glob and grep to reject unsafe patterns before routing to any mounted backend.",
       "evidence": [
         {
-          "resource": "repo://src/agent/agent-backend.ts#L84-L138",
-          "version": "repo-lines-v1:sha256:011aeee1a5001cdba35f6a6e2488762450632f5cacc9046ed0af8f282b2304c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmE4Yjg3ZTBmYjM0ODIwZDY0NTY5ODQzYmE1YzNhMWRlMjZkNGE4Y2Y4MTU4OWEzYTliYzQxNWFlOTgwNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMGIxNjkyZTQ2ZmI4ODA0YmQ3N2QyNjczYzk0ODQ2MjJmZjdjNGFmYWNiOGVjOTIzNjkwYzliNzRlZGVhOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/agent/agent-backend.ts#L96-L156",
+          "version": "repo-lines-v1:sha256:8ab5815b0123da602d6cbe1783fdb03d53950aaf3faff9b1fcf12a67b5e1666b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmE4Yjg3ZTBmYjM0ODIwZDY0NTY5ODQzYmE1YzNhMWRlMjZkNGE4Y2Y4MTU4OWEzYTliYzQxNWFlOTgwNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMGIxNjkyZTQ2ZmI4ODA0YmQ3N2QyNjczYzk0ODQ2MjJmZjdjNGFmYWNiOGVjOTIzNjkwYzliNzRlZGVhOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
         }
       ]
     },
@@ -281,7 +281,7 @@
       "statement": "AGENT_FILESYSTEM_PERMISSIONS deny writes under /skills/** and the conversation-history mount, and these permissions are passed to createDeepAgent so the agent cannot mutate the bundled skills or offloaded history.",
       "evidence": [
         {
-          "resource": "repo://src/agent/agent-backend.ts#L53-L60",
+          "resource": "repo://src/agent/agent-backend.ts#L65-L72",
           "version": "repo-lines-v1:sha256:4ecdbd7235f075582b17776050ba8c5edae5fc6d3ed1c10a92bc7fecb4879fbc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzNjVmZThlMmQ0ZWM0ZTYzZmM4MjY1NmJlOTZkNzE0NzgyMWMxM2UxMmRjNjRhNzgyMTI0YTMyMzEzOTIzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNhMzYzOGU5ZmQ4ZGI1OGUyZmIyNTg5YWZjNmJhMDAxOTBjZjYwMTM0NDI3MjM4MmJmMmY0ODVhYzk5MjkxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDE2MTU4ZTU0ODk2NDRkNzFlYjJmYjdiNWFjYTJhYTU0MmE0NTJlYmEyNmVjMjFjNzA0Y2M3OWQzMjc3OTRjMyJ9"
         },
         {
@@ -853,10 +853,56 @@
           "version": "repo-lines-v1:sha256:e348e69b33c72978be5d01b8299a77a316d8173ba0c3ae9959ee0a27bb4d1be5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDg2ZGNlNjIzMTc2NzVmY2NiOWJiMzZjY2Y2OWQwYTU5N2IzYjMyOWI1MWEzM2ZmOTA5OGQ5NGJiZGFjZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYTUzYTZiOTgyOWU3YjFiMjI3NjVmZDMxZmQ2NjEyNGY0ZWNmNmM3ODE3ZmQwODFhNGFlYzBhOTA4ZjcxMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmVmODRmNzQ1ZDlkNjVhYTkxYzk2NmM1MzQyODk1YTk5ZThkY2FjYThiYzRiMTNhMmRkOTdmY2Y3MDRmYTEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_cceafa41482442fa8dc84a42d5c67afe",
+      "statement": "OpenWikiCompositeBackend validates glob patterns and grep file filters before routing to any mounted backend, including the /skills/ and /conversation_history/ mounts: globPatternError rejects any pattern containing parentheses (preventing an unpatched picomatch repeated-extglob ReDoS, CVE-2026-112366), and exceedsGlobBraceNesting rejects patterns with unescaped brace nesting deeper than MAX_GLOB_BRACE_NESTING = 100 (preventing a stack-exhaustion DoS, CVE-2026-93687), while ordinary patterns like src/**/*.{ts,tsx} and literal grep queries pass through unchanged.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/agent-backend.ts#L20-L61",
+          "version": "repo-lines-v1:sha256:6e67e0def56a3accbfa4e0b5e14c432098df4663c5c9745b03bfd7090b054338:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczOGQ0OGM2ZjRmODJmODJkYzJkMjNkMDZlNzMwNTI1NTFkNjc5MDhlYjZmN2UyNGIyYmYxMmVkYzAyODlhZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwZTBiNjI4NTQ5NmY1M2VkZGYxMGU1N2JiYmU0MTNiNTcyZmNkZGIxMTM3MmQ3ZDI2MWU1N2U5YTA3ZDQ3YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjYTM2MzhlOWZkOGRiNThlMmZiMjU4OWFmYzZiYTAwMTkwY2Y2MDEzNDQyNzIzODJiZjJmNDg1YWM5OTI5MWUifQ"
+        },
+        {
+          "resource": "repo://test/agent/conversation-history-offload.test.ts#L32-L119",
+          "version": "repo-lines-v1:sha256:9661db017b862e019ad7ebb711f0e1313584fea33b129a450f1d776593c26593:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZjYxNjFiMzdlN2NiZjk2NDUxOTgzMDcwNTViMTBjZGY0YWI2YzYyODIzYzBiMzYxOTlmMGQzYTBkZjZkYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5N2FhNDZjMDYwODZhMTAzOTRmOGU1YWFjYWVhZjAxZWUyYWYzMWEzZjEzYjhjZmEwZWU5ZGJkZDg1ZmY1ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NmVjOTNlZGI5NWQ4N2VlZjA1NzY4Mzk3NDI2NzI5NWZhNDVmZjQ4MmIwMGUzMmZlNzI5N2EyNTU4ODhmZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhNTFlNjQ3NGY0Nzg4NWE2ZDE0ZmVmZmIxNGU1Y2E0ZTViMmVkMGQwMWI1YWIwNzJhMWUzNWFmOTQ1ZTU4YmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a9e02274e71480987732e2ee6b2923a",
+      "statement": "The glob/grep pattern restrictions in OpenWikiCompositeBackend are temporary workarounds: .trivyignore carries exception entries for CVE-2026-93687 and CVE-2026-112366 with comments pointing at src/agent/agent-backend.ts, and both the trivy exceptions and the syntax restrictions are to be removed once patched dependency releases exist; the parenthesized-pattern rejection was shipped in the safe-file-glob-patterns changeset.",
+      "evidence": [
+        {
+          "resource": "repo://.changeset/safe-file-glob-patterns.md#L1-L5",
+          "version": "repo-lines-v1:sha256:ea3880f49dced795fff54dc89544e2378c90e6d8fd1b77716ea5c6ec867137d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlNTI5OTA2YTE2NjdiNWVmNmRkZTZiNTk3MGI0NzJmY2I0MDcwNWRmYWI2OTQ1NDgxNDhhNWIwOWI4YmYwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://.trivyignore#L1-L11",
+          "version": "repo-lines-v1:sha256:9354ffe4bb274f4ee9795f85911fd0c8a7176dacb029c6bc93abe53059107f2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNDlmM2EyZjM1NjZkMWI0YmM5ZTE3ZmYyZDkzOWNlMTQyNjQ4ZmIwMTA3OTc5MTY0YjVhYmY3ODE2NzdiNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMjQ0NDVlODUyZjk1MDE5ZWVhZjA1NGU5MzhlNGE1NzRjMDMyZWJjZGM5NjMzYWU2MDMzYTc2OTk2MTRlMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/agent/agent-backend.ts#L49-L61",
+          "version": "repo-lines-v1:sha256:1bcad40726793f012a90e1c33f71f19b079cd9323b97aef9e327d24497e8a070:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1YThlYjYyODMwNjY0ZDUxYWZiZDU0OWIwNmNkMGI1MzBmNzM1NTk5ZDM2NGI4OTliNjcwNTMzZjM0Yzg5ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjYTM2MzhlOWZkOGRiNThlMmZiMjU4OWFmYzZiYTAwMTkwY2Y2MDEzNDQyNzIzODJiZjJmNDg1YWM5OTI5MWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_183e74a299c84067bf439617e1f5c71b",
+      "statement": "AGENT_FILESYSTEM_PERMISSIONS denies write operations under both /skills/** and the CONVERSATION_HISTORY_MOUNT so model-driven filesystem tools cannot write into the virtual mounts, while DeepAgents' summarization middleware (which writes through the backend directly) can still offload history into the mount.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/agent-backend.ts#L63-L72",
+          "version": "repo-lines-v1:sha256:bd3ce462f7e1942d79cf2814931faeca01632351336c0d9fd30f1390e6609cce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwYmRjODkzOTRlOTc5ODQyZGVmYjlmNmMzN2RiNTRlOWM5ZWFiNTQ0M2MyNjk1NTY2YTE2YWMyYTZkYTA3Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxNjE1OGU1NDg5NjQ0ZDcxZWIyZmI3YjVhY2EyYWE1NDJhNDUyZWJhMjZlYzIxYzcwNGNjNzlkMzI3Nzk0YzMifQ"
+        },
+        {
+          "resource": "repo://test/agent/conversation-history-offload.test.ts#L200-L218",
+          "version": "repo-lines-v1:sha256:20537fce6f1e61847e6c42e1d242616a0ac2d810686489698c6216f123b4d2bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMTM0NDFkNjk5ZTcyMzBlY2RiYTgzNjNlZGE4NDljNTYxYWYzZDQ2NmI5NDllZmE1MzBjMWE4MThkZmFjMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MGI3Y2U5YjY0MDdmOTQ4ZTE3NmJjNjg5ZDMzZjc1NWIxODZlNzQzNDA3YTgzNDcyOWNlOTQwOTlhNGQxYjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmMDk1YTA3MjAyMDU5MjU4ZTk4ZTUwNTI1Mjk4NTI1ZDZlYWFhODBjMDhjMDU4OTA3NWViOWVhOTFmMDJmZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NGJmNTM5Y2FhZTA1ZmU4ZDA3ZDk2ZTkyN2Y3YmRkMTVkYTRhMzE2ZGQ3MjZiZDlhNzUyZjhjZDc1MjMwMmYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-11T08:06:00.631Z"
+    "at": "2026-11-21T08:05:45.527Z"
   }
 }

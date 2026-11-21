@@ -1,19 +1,15 @@
 ---
-type: architecture
-title: Agent Runtime, Models, and Middleware
-description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, running the OKF, translation, and crash-guard middleware, and parsing the agent graph stream into display events.
-tags:
-  - agent-runtime
-  - model-providers
-  - middleware
-  - stream-parsing
-  - deepagents
-  - filesystem-sandbox
-  - langchain
+type: "Reference"
+title: "Agent Runtime, Models, and Middleware"
+openwiki_generated: true
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-11T08:06:00.631Z
+    at: 2026-11-21T08:05:45.527Z
 sources:
+  - id: openwiki-source-34a5e30966a238b15ae701a9
+    resource: repo://.changeset/safe-file-glob-patterns.md
+  - id: openwiki-source-03e6ffdf1f1f34d1be5951da
+    resource: repo://.trivyignore
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
   - id: openwiki-source-f8b008ed89162a0e204fc02d
@@ -50,14 +46,17 @@ sources:
     resource: repo://src/integrations/mcp/stdio.ts
   - id: openwiki-source-ebe194cbeaa2594a6699f9a1
     resource: repo://src/model-availability.ts
+  - id: openwiki-source-0770fdf80fcdcaa96b06ee77
+    resource: repo://test/agent/conversation-history-offload.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-6e76d6023798412a72871e94
     resource: repo://test/agent/entra-auth.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.9.0", at: "2026-11-11T08:06:00.631Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-21T08:05:45.527Z" }
 ---
+
 
 # Agent Runtime, Models, and Middleware
 
@@ -169,7 +168,16 @@ For `gemini-enterprise`, the API surface is a function of the model id, not the 
 
 `createOpenWikiAgentGraph` constructs the DeepAgent from the initialized model. It creates an `OpenWikiLocalShellBackend` rooted at the run cwd (with `docsOnly` enabled for every command except chat), wraps it in a composite backend that adds fixed virtual mounts, and passes the middleware pipeline, connector tools, filesystem permissions, and command-specific system prompt to `createDeepAgent`. Before assembling the middleware it also resolves three pieces of localized runtime state: a translation plan (`resolveTranslationPlan`, defined for `update` runs only), the localized index heading labels (`resolveIndexLabels`) used by the deterministic directory indexes, and the localized fallback `conceptType` stamped on pages the OKF pass has to repair — both label maps fall back to English for languages not in the static tables.
 
-The composite backend (`createAgentBackend`) mounts two additional read-only virtual filesystems alongside the wiki backend: `/conversation_history/` for DeepAgents' history offload and `/skills/` for the bundled skills. A shared filesystem permission set additionally denies writes under both `/skills/**` and the conversation-history mount, and the composite backend converts a known upstream broad-glob recursion overflow into a bounded, model-facing "narrow your search" error instead of crashing the run.
+The composite backend (`createAgentBackend`) mounts two additional read-only virtual filesystems alongside the wiki backend: `/conversation_history/` for DeepAgents' history offload and `/skills/` for the bundled skills. A shared filesystem permission set additionally denies writes under both `/skills/**` and the conversation-history mount, so a prompt injection in analyzed content cannot persist attacker text into a mount that later summarization turns read back.
+
+On top of the mounts, `OpenWikiCompositeBackend` adds a glob and grep pattern validation layer that runs before any pattern is routed to a mounted backend — including the `/skills/` and `/conversation_history/` mounts — closing two unpatched dependency vulnerabilities in the picomatch-based glob expansion:
+
+- **Parentheses are rejected outright** (`globPatternError`): any glob pattern, or any `grep` file filter, containing `(` or `)` returns a bounded tool error ("Parenthesized glob patterns are disabled for safety. Retry with simple wildcards or separate searches.") before dependency matchers ever see it. Extglob constructs like `+(*a)` are the input to an unpatched picomatch repeated-extglob regular-expression denial of service (CVE-2026-112366); literal grep queries are unaffected, only file *filters* are validated.
+- **Brace nesting is capped** (`exceedsGlobBraceNesting`): a pattern with unescaped `{` nesting deeper than `MAX_GLOB_BRACE_NESTING` (100) returns "Glob pattern nesting is too deep." instead of reaching the recursive brace-expansion parsers, which can exhaust the call stack on adversarial input (a stack-exhaustion DoS, CVE-2026-93687). Ordinary shallow alternations like `src/**/*.{ts,tsx}` pass through unchanged.
+
+If a validated pattern still overflows during expansion, the pre-existing catch converts DeepAgents' recoverable broad-glob recursion overflow (`RangeError: Maximum call stack size exceeded`) into a bounded, model-facing "Glob search was too broad. Retry with a narrower path or pattern." error instead of crashing the run — that catch remains as a fallback behind the new validation layer.
+
+Both restrictions are **temporary workarounds**, not permanent policy. The repository's `.trivyignore` carries exception entries for CVE-2026-93687 and CVE-2026-112366, each with a comment pointing at `src/agent/agent-backend.ts`; both the trivy exceptions and the syntax restrictions are to be removed once patched dependency releases exist (the parenthesized-pattern rejection was shipped in the `safe-file-glob-patterns` changeset). The validation layer is exercised by `test/agent/conversation-history-offload.test.ts`, which spies on the underlying backend methods to assert that unsafe patterns are rejected before any mounted backend — wiki, skills, or history — is consulted, while ordinary patterns and literal grep queries route through unchanged.
 
 The middleware array is assembled conditionally. Personal (`local-wiki`) runs mount a filesystem middleware first — `createFilesystemMiddleware` over the composite backend with `AGENT_FILESYSTEM_PERMISSIONS` and the six `ls`/`read_file`/`glob`/`grep`/`write_file`/`edit_file` tools — because personal runs expose no shell tool regardless of command. Chat runs then mount nothing else. Non-chat runs append the optional translation middleware (when a plan resolved) followed by the OKF index middleware.
 
@@ -181,6 +189,7 @@ sequenceDiagram
   participant DA as createDeepAgent
   Opts->>Wiki: new backend docsOnly openWikiIgnore outputMode
   Wiki->>Composite: createAgentBackend mounts history and skills
+  Composite->>Composite: validate glob and grep patterns before routing
   Opts->>Opts: resolveTranslationPlan update only
   Opts->>Opts: resolveIndexLabels and resolveConceptTypeLabel
   Opts->>DA: model, connector tools, backend, permissions, systemPrompt
@@ -196,7 +205,7 @@ sequenceDiagram
   DA-->>Opts: agent graph
 ```
 
-Agent graph creation: backend and composite assembly, localized runtime state resolution, and the conditional middleware stack passed to `createDeepAgent`.
+Agent graph creation: backend and composite assembly (including the composite's glob/grep pattern validation), localized runtime state resolution, and the conditional middleware stack passed to `createDeepAgent`.
 
 The agent is streamed with `subgraphs: true`. Stream mode is normally `messages` + `tools`, but the `openai-compatible` provider defaults to the safer `updates` + `tools` mode because arbitrary endpoints (e.g. GLM emitting reasoning deltas before the first assistant delta) can aggregate to a chunk the agent loop rejects; a known-good endpoint can opt back into `messages` mode with `OPENWIKI_OPENAI_COMPATIBLE_STREAM_MESSAGES`. Regardless of mode, every raw LangGraph chunk emitted by `agent.stream` is reduced to a display event by the stream parsing pipeline described next.
 
@@ -324,7 +333,7 @@ The six lifecycle tools exposed by the host session manager (preceded by read-on
 4. **Claims ownership.** Repository `openwiki/.claims` state is hidden from generic filesystem discovery and read/write tools, and is also refused when a shell command references it, because those sidecars are owned by OpenWiki's own persistence layer, not the agent.
 5. **Personal-mode shell denial.** In `local-wiki` mode shell `execute` is always denied — including delegated or stale tool calls — because personal agents consume untrusted connector content; the agent is steered to wiki filesystem tools and `openwiki_read_raw_item` for connector evidence.
 
-The backend also refuses unbounded root globs and globs that target `.git` metadata, steering the agent toward `ls` at the root followed by targeted searches. Every successful write/edit/delete records the mutated path in the tool-result metadata (`openwikiMutationPath`) so downstream validation knows which page changed.
+The backend also refuses unbounded root globs and globs that target `.git` metadata, steering the agent toward `ls` at the root followed by targeted searches. On top of these backend-local guards, the `OpenWikiCompositeBackend` wrapper described above validates glob patterns and `grep` file filters (parentheses and brace-nesting depth) before the pattern reaches this backend at all, closing two unpatched picomatch vulnerabilities; the two layers are complementary — this backend constrains *which* parts of the tree a safe pattern may search, the composite constrains *which* patterns are safe to expand. Every successful write/edit/delete records the mutated path in the tool-result metadata (`openwikiMutationPath`) so downstream validation knows which page changed.
 
 These boundaries exist because the agent may be prompt-injected via untrusted repository content, so they are treated as security controls rather than mere conveniences.
 
