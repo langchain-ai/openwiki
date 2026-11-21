@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   constants as fsConstants,
@@ -908,6 +908,58 @@ function isUpdateMetadataStatusLine(line: string): boolean {
 }
 
 /**
+ * Returns whether recorded baselines name commits this clone can read.
+ *
+ * Checks all candidates in one `git cat-file --batch-check` process.
+ *
+ * @param cwd - Repository root.
+ * @param gitHeads - Candidate baseline commit ids.
+ * @returns Set containing the readable full commit ids.
+ */
+export async function getReadableGitCommits(
+  cwd: string,
+  gitHeads: readonly string[],
+): Promise<Set<string>> {
+  const validHeads = [
+    ...new Set(
+      gitHeads.filter((head) => /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(head)),
+    ),
+  ];
+  if (validHeads.length === 0) return new Set();
+
+  return new Promise<Set<string>>((resolve) => {
+    try {
+      const child = spawn("git", ["--no-pager", "cat-file", "--batch-check"], {
+        cwd,
+        stdio: ["pipe", "pipe", "ignore"],
+      });
+      const chunks: Buffer[] = [];
+      child.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+      child.on("error", () => resolve(new Set()));
+      child.on("close", (code) => {
+        if (code !== 0) {
+          resolve(new Set());
+          return;
+        }
+        const readable = new Set<string>();
+        const lines = Buffer.concat(chunks).toString("utf8").split("\n");
+        for (let i = 0; i < validHeads.length && i < lines.length; i++) {
+          const line = lines[i]?.trim();
+          const head = validHeads[i];
+          if (line && head && /\scommit\s+\d+$/u.test(line)) {
+            readable.add(head);
+          }
+        }
+        resolve(readable);
+      });
+      child.stdin.end(validHeads.map((head) => `${head}^{commit}\n`).join(""));
+    } catch {
+      resolve(new Set());
+    }
+  });
+}
+
+/**
  * Returns whether a recorded baseline names a commit this clone can read.
  *
  * A shallow clone or rewritten history can leave a page's recorded baseline
@@ -923,42 +975,20 @@ export async function isReadableGitCommit(
   cwd: string,
   gitHead: string,
 ): Promise<boolean> {
-  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(gitHead)) return false;
-
-  try {
-    await execFileAsync(
-      "git",
-      ["--no-pager", "cat-file", "-e", `${gitHead}^{commit}`],
-      { cwd, maxBuffer: 1024 * 1024 },
-    );
-    return true;
-  } catch {
-    return false;
-  }
+  const readable = await getReadableGitCommits(cwd, [gitHead]);
+  return readable.has(gitHead);
 }
 
 /**
- * Returns best-effort repository-relative paths for planner context.
+ * Returns uncommitted (staged, unstaged, and untracked) repository paths.
  *
- * Unlike the source fingerprint, history lookup failures intentionally produce
- * an empty list and do not weaken lifecycle correctness.
+ * @param cwd - Repository root.
+ * @returns List of normalized uncommitted paths.
  */
-export async function getRepositoryChangedPaths(
+export async function getRepositoryUncommittedPaths(
   cwd: string,
-  openWikiIgnore: OpenWikiIgnore,
-  baseGitHead?: string,
 ): Promise<string[]> {
   const paths = new Set<string>();
-
-  if (baseGitHead) {
-    for (const candidate of await runGitLines(cwd, [
-      "diff",
-      "--name-only",
-      `${baseGitHead}..HEAD`,
-    ])) {
-      paths.add(normalizeGitPath(candidate));
-    }
-  }
 
   // Staged + unstaged tracked changes relative to HEAD.
   for (const candidate of await runGitLines(cwd, [
@@ -976,6 +1006,39 @@ export async function getRepositoryChangedPaths(
     "--exclude-standard",
   ])) {
     paths.add(normalizeGitPath(candidate));
+  }
+
+  return [...paths].filter(Boolean);
+}
+
+/**
+ * Returns best-effort repository-relative paths for planner context.
+ *
+ * Unlike the source fingerprint, history lookup failures intentionally produce
+ * an empty list and do not weaken lifecycle correctness.
+ */
+export async function getRepositoryChangedPaths(
+  cwd: string,
+  openWikiIgnore: OpenWikiIgnore,
+  baseGitHead?: string,
+  uncommittedPaths?: readonly string[],
+): Promise<string[]> {
+  const paths = new Set<string>();
+
+  if (baseGitHead) {
+    for (const candidate of await runGitLines(cwd, [
+      "diff",
+      "--name-only",
+      `${baseGitHead}..HEAD`,
+    ])) {
+      paths.add(normalizeGitPath(candidate));
+    }
+  }
+
+  const uncommitted =
+    uncommittedPaths ?? (await getRepositoryUncommittedPaths(cwd));
+  for (const candidate of uncommitted) {
+    paths.add(candidate);
   }
 
   return [...paths]

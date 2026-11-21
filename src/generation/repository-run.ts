@@ -10,8 +10,10 @@ import {
   createOpenWikiContentSnapshot,
   createRepositorySourceSnapshot,
   createRunContext,
+  getReadableGitCommits,
   getRepositoryChangedPaths,
   getRepositoryCommitContext,
+  getRepositoryUncommittedPaths,
   isReadableGitCommit,
   getUpdateNoopStatus,
   persistRunMetadataIfChanged,
@@ -900,25 +902,36 @@ async function getRepositoryPageUpdateWindows(
     pagesByBaseline.set(baseline, group);
   }
 
-  const windows: RepositoryPageUpdateWindow[] = [];
   const baselines = [...pagesByBaseline.keys()].sort(compareCodeUnits);
-  for (const baseline of baselines) {
-    const fullReview =
-      baseline.length === 0 || !(await isReadableGitCommit(root, baseline));
-    windows.push({
-      ...(baseline ? { baseGitHead: baseline } : {}),
-      pages: [...(pagesByBaseline.get(baseline) ?? [])].sort(compareCodeUnits),
-      changedPaths: await getRepositoryChangedPaths(
+  const uncommittedPaths = await getRepositoryUncommittedPaths(root);
+  const readableCommits = await getReadableGitCommits(
+    root,
+    baselines.filter(Boolean),
+  );
+
+  const windows = await Promise.all(
+    baselines.map(async (baseline) => {
+      const isReadable = baseline.length > 0 && readableCommits.has(baseline);
+      const changedPaths = await getRepositoryChangedPaths(
         root,
         ignore,
         baseline || undefined,
-      ),
-      commits: fullReview
+        uncommittedPaths,
+      );
+      const commits = !isReadable
         ? []
-        : await getRepositoryCommitContext(root, ignore, baseline),
-      fullReview,
-    });
-  }
+        : await getRepositoryCommitContext(root, ignore, baseline);
+      return {
+        ...(baseline ? { baseGitHead: baseline } : {}),
+        pages: [...(pagesByBaseline.get(baseline) ?? [])].sort(
+          compareCodeUnits,
+        ),
+        changedPaths,
+        commits,
+        fullReview: !isReadable,
+      };
+    }),
+  );
   return windows;
 }
 
@@ -941,6 +954,7 @@ async function fastForwardUnchangedRepositoryPageCoverage(
   const manifest = await readRepositoryPageManifest(root);
   // Pages usually share a baseline, and every Git lookup starts a process.
   const unchangedByBaseline = new Map<string, boolean>();
+  const uncommittedPaths = await getRepositoryUncommittedPaths(root);
   for (const page of [...pages].sort(compareCodeUnits)) {
     const entry = manifest.pages[page];
     if (!entry?.gitHead || entry.gitHead === source.gitHead) continue;
@@ -951,8 +965,14 @@ async function fastForwardUnchangedRepositoryPageCoverage(
       // paths changed, so the page keeps its checkpoint and gets reviewed.
       unchanged =
         (await isReadableGitCommit(root, entry.gitHead)) &&
-        (await getRepositoryChangedPaths(root, ignore, entry.gitHead))
-          .length === 0;
+        (
+          await getRepositoryChangedPaths(
+            root,
+            ignore,
+            entry.gitHead,
+            uncommittedPaths,
+          )
+        ).length === 0;
       unchangedByBaseline.set(entry.gitHead, unchanged);
     }
     if (!unchanged) continue;
