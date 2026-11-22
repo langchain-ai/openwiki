@@ -368,6 +368,42 @@ describe("repository wiki retrieval", () => {
     ]);
   });
 
+  test("source hints match percent-encoded source resources", async () => {
+    const root = await createRoot();
+    await writeFile(
+      path.join(root, "openwiki/architecture/plain.md"),
+      page({
+        title: "Plain Validation",
+        description: "Request validation.",
+        source: "src/plain/validate.ts",
+        body: "## Validation\n\nValidation rejects malformed requests.",
+      }),
+      "utf8",
+    );
+    await writeFile(
+      path.join(root, "openwiki/architecture/scoped.md"),
+      page({
+        title: "Scoped Validation",
+        description: "Scoped package validation.",
+        source: "packages/%40acme/ui/validate.ts",
+        body: "## Validation\n\nValidation rejects malformed requests.",
+      }),
+      "utf8",
+    );
+
+    const result = requireSearchResults(
+      await searchWiki(root, {
+        query: "validation rejects malformed requests",
+        paths: ["packages/@acme/ui/validate.ts"],
+        limit: 1,
+      }),
+    );
+
+    expect(result.results[0]?.ref).toEqual([
+      "openwiki/architecture/scoped.md#validation",
+    ]);
+  });
+
   test("read returns exact complete sections in request order", async () => {
     const root = await createRoot();
     await writeFile(
