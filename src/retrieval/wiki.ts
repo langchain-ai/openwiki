@@ -1098,12 +1098,27 @@ function normalizeRepositoryPathHint(value: string): string {
  * @returns Lowercase repository-relative source path.
  */
 function repositoryPathFromResource(value: string): string {
-  return value
-    .replace(/^repo:\/\//u, "")
-    .split("#", 1)[0]
+  return decodeResourcePath(value.replace(/^repo:\/\//u, "").split("#", 1)[0])
     .replaceAll("\\", "/")
     .replace(/^\.\//u, "")
     .toLowerCase();
+}
+
+/**
+ * Decodes the percent-encoding that canonical `repo://` resources apply to each
+ * path segment (for example `@` becomes `%40`), so the path compares equal to a
+ * caller-supplied source hint. Legacy values with a malformed escape are kept as
+ * written.
+ *
+ * @param encoded - Path portion of a `repo://` resource.
+ * @returns Decoded path, or the input when it is not valid percent-encoding.
+ */
+function decodeResourcePath(encoded: string): string {
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
 }
 
 /**
