@@ -348,7 +348,9 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "claude-fable-5", label: "Claude Fable 5" },
       { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
     ],
-    responsesApi: /^gpt-5/u,
+    // Copilot GPT-6 text models require Responses, like GPT-5. Match the
+    // complete major version so newer GPT families use the same transport.
+    responsesApi: /^gpt-(?:[5-9]|[1-9]\d+)(?=[.-]|$)/u,
   },
   fireworks: {
     apiKeyEnvKey: FIREWORKS_API_KEY_ENV_KEY,
@@ -616,12 +618,12 @@ export function providerUsesStreaming(provider: OpenWikiProvider): boolean {
     return resolveOpenAiCompatibleStreaming();
   }
 
-  // The Copilot API serves non-GPT-5 models (Claude, Gemini) over the chat
+  // The Copilot API serves Claude and Gemini models over the chat
   // completions transport. Like the Codex backend for openai-chatgpt, it
   // rejects or returns empty responses for non-streaming requests, which
   // causes repository workers to exit without calling submit_plan/submit_page.
-  // Force the streaming transport for all Copilot models. For GPT-5 models
-  // that use the Responses API (useResponsesApi: true), streaming: true is
+  // Force the streaming transport for all Copilot models. For GPT-5 and newer
+  // models that use the Responses API (useResponsesApi: true), streaming: true is
   // redundant but harmless, matching the openai-chatgpt provider pattern.
   if (provider === "copilot") {
     return true;
