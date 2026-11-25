@@ -1,13 +1,15 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
 import {
   createOpenWikiContentSnapshot,
+  getRepositoryChangedPaths,
   getUpdateNoopStatus,
 } from "../../src/agent/utils.ts";
+import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 
 // These cover the branches of utils.ts that the sibling run-context,
 // run-metadata, and update-noop suites do not reach: the degenerate no-op
@@ -82,6 +84,48 @@ describe("getUpdateNoopStatus degenerate cases", () => {
         shouldSkip: false,
         reason: "missing previous update git head",
       });
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("git option injection through a recorded gitHead", () => {
+  test("ignores a .last-update.json gitHead that is a git option", async () => {
+    const repo = await createGitRepo();
+    const injected = path.join(repo, "injected");
+    const target = `${injected}..HEAD`;
+
+    try {
+      await writeMetadata(repo, {
+        updatedAt: new Date().toISOString(),
+        command: "update",
+        model: "test-model",
+        gitHead: `--output=${injected}`,
+      });
+
+      expect(await getUpdateNoopStatus(repo)).toEqual({
+        shouldSkip: false,
+        reason: "missing previous update git head",
+      });
+      await expect(access(target)).rejects.toThrow();
+    } finally {
+      await rm(repo, { recursive: true, force: true });
+    }
+  });
+
+  test("never passes a non-object-id baseline to git diff", async () => {
+    const repo = await createGitRepo();
+    const injected = path.join(repo, "injected");
+    const target = `${injected}..HEAD`;
+
+    try {
+      await getRepositoryChangedPaths(
+        repo,
+        new OpenWikiIgnore([]),
+        `--output=${injected}`,
+      );
+      await expect(access(target)).rejects.toThrow();
     } finally {
       await rm(repo, { recursive: true, force: true });
     }

@@ -72,7 +72,13 @@ const SourceFingerprintSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/u);
 const PageVersionSchema = z.string().regex(/^sha256:[a-f0-9]{64}$/u);
 const ManifestEntrySchema = z
   .object({
-    gitHead: z.string().min(1).optional(),
+    // Only a full object id may reach `git diff`; anything else (such as a
+    // value starting with `--`) is treated as a missing baseline.
+    gitHead: z
+      .string()
+      .regex(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u)
+      .optional()
+      .catch(undefined),
     sourceFingerprint: SourceFingerprintSchema.optional(),
     pageVersion: PageVersionSchema,
     completedBy: z.string().trim().min(1).optional(),

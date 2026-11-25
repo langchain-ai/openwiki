@@ -908,10 +908,11 @@ async function getRepositoryPageUpdateWindows(
     windows.push({
       ...(baseline ? { baseGitHead: baseline } : {}),
       pages: [...(pagesByBaseline.get(baseline) ?? [])].sort(compareCodeUnits),
+      // An unreadable baseline is never passed to Git.
       changedPaths: await getRepositoryChangedPaths(
         root,
         ignore,
-        baseline || undefined,
+        fullReview ? undefined : baseline,
       ),
       commits: fullReview
         ? []
