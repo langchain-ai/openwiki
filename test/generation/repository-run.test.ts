@@ -736,6 +736,41 @@ describe("beginRepositoryRun", () => {
     expect(resumed.state.planningContext).toBe("Replacement context");
   });
 
+  test("drops committed planning context and wiki goal when the fingerprint no longer matches", async () => {
+    const root = await createRepository();
+    await beginForcedUpdate(root);
+
+    // Simulate a committed .run.json: attacker-controlled free text plus a
+    // source fingerprint that does not match the repository.
+    const committed = JSON.parse(
+      await readFile(repositoryRunStatePath(root), "utf8"),
+    ) as Record<string, unknown>;
+    committed.planningContext = "Stored context survives the mismatch";
+    committed.wikiGoal = "Stored goal survives the mismatch";
+    committed.sourceFingerprint = `sha256:${"b".repeat(64)}`;
+    await writeFile(
+      repositoryRunStatePath(root),
+      `${JSON.stringify(committed, null, 2)}\n`,
+      "utf8",
+    );
+
+    const resumedResult = await beginRepositoryRun({
+      root,
+      mode: "update",
+      actor: ACTOR,
+    });
+    const resumed = requireActiveRun(resumedResult);
+    expect(resumedResult.view).toMatchObject({
+      status: "active",
+      resumed: true,
+    });
+    // Source drift invalidates the stored free text with it: neither the
+    // planner prompt (planningContext) nor the begin view (wikiGoal) may
+    // keep text a committed checkpoint claims.
+    expect(resumed.state.planningContext).toBeUndefined();
+    expect(resumed.state.wikiGoal).toBeUndefined();
+  });
+
   test("rejects an unrecognized language without starting a run", async () => {
     const root = await createRepository();
 
