@@ -783,6 +783,7 @@ function toggleTheme(): void {
   root.setAttribute("data-theme", next);
   mermaid.initialize({
     startOnLoad: false,
+    securityLevel: "strict",
     theme: next === "dark" ? "dark" : "neutral",
   });
   if (G) G.backgroundColor(graphBg()); // node/label colors are read live each frame
@@ -983,7 +984,16 @@ function initGraphPanelControls(): void {
 // Wire the theme toggle and load the graph. Only the live server supplies SSE reloads.
 $("#theme").addEventListener("click", toggleTheme);
 initGraphPanelControls();
-mermaid.initialize({ startOnLoad: false, theme: "dark" });
+// The visualizer renders repository-controlled diagram source, so mermaid is
+// pinned to securityLevel "strict": directives inside a diagram must not be
+// able to reconfigure htmlLabels, themeCSS, or fonts away from the safe
+// defaults. Relying on the library default would let a mermaid version bump
+// silently change the security posture.
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: "strict",
+  theme: "dark",
+});
 marked.setOptions({ breaks: false, gfm: true });
 void load(true).then(() => {
   if (!isStaticExport) connectSSE();
