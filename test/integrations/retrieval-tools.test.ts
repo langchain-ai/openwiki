@@ -95,4 +95,15 @@ describe("repository retrieval tool contracts", () => {
       "does not assert freshness or verification",
     );
   });
+
+  test("every retrieval tool is marked read-only", () => {
+    expect(
+      createRetrievalTools().map((tool) => [tool.name, tool.readOnly]),
+    ).toEqual([
+      ["openwiki_list_workspaces", true],
+      ["openwiki_list_wikis", true],
+      ["openwiki_search", true],
+      ["openwiki_read", true],
+    ]);
+  });
 });

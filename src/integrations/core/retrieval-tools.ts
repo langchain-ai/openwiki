@@ -135,6 +135,7 @@ export function createRetrievalTools(): ProtocolTool[] {
         "Returns the persistent active workspace when configured.",
       ].join(" "),
       schema: ListWorkspacesInput,
+      readOnly: true,
       handle: async (input) => {
         const request = ListWorkspacesInput.parse(input);
         return runRetrieval("list", async () => {
@@ -150,6 +151,7 @@ export function createRetrievalTools(): ProtocolTool[] {
         "Pass a workspace ID or unique name returned by openwiki_list_workspaces.",
       ].join(" "),
       schema: ListWikisInput,
+      readOnly: true,
       handle: async (input) => {
         const request = ListWikisInput.parse(input);
         return runRetrieval("list", async () => {
@@ -170,6 +172,7 @@ export function createRetrievalTools(): ProtocolTool[] {
         "Empty results are valid.",
       ].join(" "),
       schema: SearchInput,
+      readOnly: true,
       handle: async (input) => {
         const request = SearchInput.parse(input);
         return runRetrieval("search", async () => {
@@ -187,6 +190,7 @@ export function createRetrievalTools(): ProtocolTool[] {
         "No model call or generation run is required.",
       ].join(" "),
       schema: ReadInput,
+      readOnly: true,
       handle: async (input) => {
         const request = ReadInput.parse(input);
         return runRetrieval("read", async () => {
