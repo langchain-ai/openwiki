@@ -8,6 +8,7 @@ import {
   MUTATION_PATH_METADATA_KEY,
   OpenWikiLocalShellBackend,
 } from "../../src/agent/docs-only-backend.ts";
+import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 
 describe("OpenWikiLocalShellBackend", () => {
   test("recognizes canonical Claims state paths without reserving lookalikes", () => {
@@ -462,5 +463,185 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(backend.write("/openwiki/new.md", "ok")).resolves.toEqual(
       expect.objectContaining({ path: "/openwiki/new.md" }),
     );
+  });
+
+  test("denies agent access to Git internals and credential files", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, ".git"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, ".git", "config"),
+      "[remote]\n  url = https://ci-token@github.com\n",
+      "utf8",
+    );
+    await writeFile(path.join(rootDir, ".env"), "API_TOKEN=secret\n", "utf8");
+    await writeFile(
+      path.join(rootDir, ".env.local"),
+      "API_TOKEN=local-secret\n",
+      "utf8",
+    );
+    await mkdir(path.join(rootDir, "keys"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "keys", "server.pem"),
+      "PRIVATE\n",
+      "utf8",
+    );
+    await writeFile(path.join(rootDir, "keys", "id_rsa"), "PRIVATE\n", "utf8");
+    await mkdir(path.join(rootDir, "src"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "src", "index.ts"),
+      "export const example = 1;\n",
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    for (const deniedPath of [
+      "/.git/config",
+      "/.git",
+      "/.env",
+      "/.env.local",
+      "/keys/server.pem",
+      "/keys/id_rsa",
+      "/src/../.env",
+    ]) {
+      const read = await backend.read(deniedPath);
+      expect(read.error, deniedPath).toContain("unavailable to the agent");
+    }
+    const readRaw = await backend.readRaw("/.git/config");
+    expect(readRaw.error).toContain("unavailable to the agent");
+    const sourceRead = await backend.read("/src/index.ts");
+    expect(sourceRead.error).toBeUndefined();
+
+    await expect(backend.downloadFiles(["/.git/config"])).resolves.toEqual([
+      expect.objectContaining({ error: "permission_denied", content: null }),
+    ]);
+    await expect(
+      backend.uploadFiles([["/.env", new TextEncoder().encode("injected")]]),
+    ).resolves.toEqual([
+      expect.objectContaining({ error: "permission_denied" }),
+    ]);
+
+    const gitListing = await backend.ls("/.git");
+    expect(gitListing.error).toContain("unavailable to the agent");
+    const rootListing = await backend.ls("/");
+    expect(rootListing.files?.map((file) => file.path)).toEqual([
+      "/keys/",
+      "/src/",
+    ]);
+    const grep = await backend.grep("secret");
+    expect(grep.matches ?? []).toEqual([]);
+    const gitGlob = await backend.glob("**/*", "/.git");
+    expect(gitGlob.error ?? gitGlob.files).toBeTruthy();
+  });
+
+  test("confines glob search paths and patterns to the repository root", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "src"));
+    await writeFile(
+      path.join(rootDir, "src", "index.ts"),
+      "export const example = 1;\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(path.dirname(rootDir), "outside-secret.txt"),
+      "outside the repository root\n",
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const searchEscape = await backend.glob("**/*.txt", "/..");
+    expect(searchEscape.error ?? "").toContain("repository root");
+    expect(searchEscape.files ?? []).toEqual([]);
+    const patternEscape = await backend.glob("../**/*.txt", "/src");
+    expect(patternEscape.error ?? "").toContain("repository root");
+    expect(patternEscape.files ?? []).toEqual([]);
+    const braceEscape = await backend.glob("{../,src/}**/*.txt", "/src");
+    expect(braceEscape.error ?? "").toContain("repository root");
+    expect(braceEscape.files ?? []).toEqual([]);
+
+    const inside = await backend.glob("**/*.ts", "/src");
+    expect(inside.files?.map((file) => file.path)).toEqual(["/index.ts"]);
+  });
+
+  test("keeps alternate Git spellings out of glob and grep results", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, ".git"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, ".git", "config"),
+      "ci-token-secret\n",
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+    });
+
+    const charClass = await backend.glob(".gi[t]/config");
+    expect(charClass.files ?? []).toEqual([]);
+    const brace = await backend.glob("{.git,.env}/**");
+    expect(brace.error ?? "").toContain("Git metadata");
+    const grep = await backend.grep("ci-token-secret");
+    expect(grep.matches ?? []).toEqual([]);
+  });
+
+  test("filters glob results against repository-absolute paths", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "openwiki"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "openwiki", "secret.md"),
+      "ignored secret page\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(rootDir, "openwiki", "page.md"),
+      "# Page\n",
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+      openWikiIgnore: new OpenWikiIgnore(["/openwiki/secret.md"]),
+    });
+
+    const glob = await backend.glob("**/*", "/openwiki");
+    expect(glob.files?.map((file) => file.path)).toEqual(["/page.md"]);
+    const grep = await backend.grep("ignored secret page", "/openwiki");
+    expect(grep.matches ?? []).toEqual([]);
+  });
+
+  test("normalizes paths before the ignore check", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await mkdir(path.join(rootDir, "secrets"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "secrets", "token.txt"),
+      "ignored secret material\n",
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      rootDir,
+      virtualMode: true,
+      openWikiIgnore: new OpenWikiIgnore(["/secrets/"]),
+    });
+
+    const leadingSpaceWrite = await backend.write(
+      " /secrets/token.txt",
+      "injected",
+    );
+    expect(leadingSpaceWrite.error).toContain("excluded by");
+    const leadingSpaceDelete = await backend.delete(" /secrets/token.txt");
+    expect(leadingSpaceDelete.error).toContain("excluded by");
+    await expect(
+      readFile(path.join(rootDir, "secrets", "token.txt"), "utf8"),
+    ).resolves.toContain("ignored secret material");
   });
 });
