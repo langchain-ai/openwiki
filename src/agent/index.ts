@@ -25,6 +25,7 @@ import {
 } from "../config/env.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 import {
+  isSecretLikeKey,
   sanitizeDiagnosticText,
   SECRET_KEY_PATTERN_SOURCE,
 } from "../platform/diagnostics.js";
@@ -116,6 +117,7 @@ import {
   OPENROUTER_API_KEY_ENV_KEY,
   OPENROUTER_BASE_URL,
   OPENROUTER_BASE_URL_ENV_KEY,
+  OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY,
@@ -2758,6 +2760,17 @@ function formatEnvironmentDebug(): string {
   ).join(" ");
 }
 
+function isSecretEnvironmentKey(key: string): boolean {
+  return (
+    key.endsWith("_API_KEY") ||
+    key === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
+    key === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY ||
+    key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY ||
+    /(?:^|_)(?:access|private)[-_]?key(?:$|_)/iu.test(key) ||
+    isSecretLikeKey(key)
+  );
+}
+
 export function formatEnvironmentDebugValue(
   key: string,
   value: string | undefined,
@@ -2782,18 +2795,10 @@ export function formatEnvironmentDebugValue(
   }
 
   if (
-    key.endsWith("_API_KEY") ||
-    key === BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY ||
-    key === BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY ||
-    key === BEDROCK_AWS_SESSION_TOKEN_ENV_KEY
-  ) {
-    return `set(length=${value.length})`;
-  }
-
-  if (
     key === OPENWIKI_MODEL_ID_ENV_KEY ||
     key === OPENWIKI_PROVIDER_ENV_KEY ||
     key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
+    key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY ||
     key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_OPENROUTER_MAX_TOKENS_ENV_KEY ||
@@ -2803,6 +2808,10 @@ export function formatEnvironmentDebugValue(
     key === BEDROCK_AWS_REGION_ENV_KEY
   ) {
     return `set(value=${JSON.stringify(value)})`;
+  }
+
+  if (isSecretEnvironmentKey(key)) {
+    return `set(length=${value.length})`;
   }
 
   if (value.length <= 10) {
