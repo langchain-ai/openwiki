@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -53,6 +61,30 @@ afterEach(async () => {
 });
 
 describe("host integration CLI dogfood", () => {
+  test("lists other hosts when the Cursor config is a symbolic link", async () => {
+    const config = path.join(".cursor", "mcp.json");
+    await mkdir(path.join(projectRoot, ".cursor"));
+    await symlink("../missing.json", path.join(projectRoot, config), "file");
+
+    await runIntegrationsCommand({
+      kind: "integrations",
+      action: "list",
+      exitCode: 0,
+      target: null,
+      scope: "project",
+      projectRoot,
+      force: false,
+    });
+
+    const rows = stdout.join("").trimEnd().split("\n");
+    expect(rows.map((row) => row.split("\t")[0])).toEqual(
+      listHostTargets().map((target) => target.id),
+    );
+    expect(rows).toContain(`cursor\tskipped\tCursor\tSymbolic link: ${config}`);
+    expect(rows).toContain("copilot\tnot-installed\tGitHub Copilot CLI");
+    expect(process.exitCode).toBe(1);
+  });
+
   test("installs, lists, reinstalls, and uninstalls in a disposable repository", async () => {
     await runIntegrationsCommand({
       kind: "integrations",
