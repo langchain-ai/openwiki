@@ -6,7 +6,7 @@ import {
   type GrepResult,
 } from "deepagents";
 import {
-  openWikiConversationHistoryDir,
+  getConversationHistoryDirForRoot,
   openWikiSkillsDir,
 } from "../config/openwiki-home.js";
 import { OpenWikiLocalShellBackend } from "./docs-only-backend.js";
@@ -76,7 +76,9 @@ export const AGENT_FILESYSTEM_PERMISSIONS: FilesystemPermission[] = [
  */
 interface AgentBackendMountOptions {
   /**
-   * Directory used for DeepAgents conversation-history offload.
+   * Directory used for DeepAgents conversation-history offload. Defaults to a
+   * directory scoped to the backend's repository root so history from one
+   * repository is never readable from another, untrusted one.
    */
   historyDir?: string;
 
@@ -89,6 +91,10 @@ interface AgentBackendMountOptions {
 /**
  * Mounts generated docs, conversation history, and bundled skills for an agent.
  *
+ * The history mount is scoped per repository root by default: conversation
+ * offload from one root (personal runs contain mail and chat content) must not
+ * be readable by an agent working on another, untrusted repository.
+ *
  * @param wikiBackend - Worker-specific repository or local-wiki backend.
  * @param options - Optional mount overrides used by tests and isolated hosts.
  * @returns Composite backend with OpenWiki's fixed virtual mounts.
@@ -96,7 +102,7 @@ interface AgentBackendMountOptions {
 export function createAgentBackend(
   wikiBackend: OpenWikiLocalShellBackend,
   {
-    historyDir = openWikiConversationHistoryDir,
+    historyDir = getConversationHistoryDirForRoot(wikiBackend.rootDir),
     skillsDir = openWikiSkillsDir,
   }: AgentBackendMountOptions = {},
 ): CompositeBackend {

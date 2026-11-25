@@ -250,6 +250,16 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
+   * Absolute host root this backend confines filesystem operations to.
+   *
+   * Used to scope per-root mounts, such as the conversation-history offload
+   * directory, so agents on different repositories never share state.
+   */
+  get rootDir(): string {
+    return this.cwd;
+  }
+
+  /**
    * Read a file, hard-denying the read if the path is excluded by `.openwikiignore`.
    */
   override async read(

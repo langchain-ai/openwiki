@@ -1,4 +1,5 @@
 import { chmod, mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { restrictDirToCurrentUser } from "../platform/windows-acl.js";
@@ -43,6 +44,23 @@ export const openWikiConversationHistoryDir = path.join(
   openWikiHomeDir,
   "conversation_history",
 );
+
+/**
+ * Resolves the conversation-history offload directory scoped to one root.
+ *
+ * DeepAgents mounts one history directory per backend, so an agent confined to
+ * one repository must never share it with an agent working on another,
+ * potentially untrusted repository. The absolute root is hashed because it is
+ * an arbitrary host path, and the digest keeps the directory name filesystem-
+ * safe and collision-resistant.
+ *
+ * @param root - Absolute repository or wiki root the agent is confined to.
+ * @returns Per-root history directory below the shared history parent.
+ */
+export function getConversationHistoryDirForRoot(root: string): string {
+  const digest = createHash("sha256").update(path.resolve(root)).digest("hex");
+  return path.join(openWikiConversationHistoryDir, digest);
+}
 export const openWikiLocalWikiDir = path.join(openWikiHomeDir, "wiki");
 export const openWikiSkillsDir = path.join(openWikiHomeDir, "skills");
 export const openWikiConnectorsDisplayPath = `${openWikiHomeDisplayPath}/connectors`;
