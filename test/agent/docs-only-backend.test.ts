@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
@@ -462,5 +462,123 @@ describe("OpenWikiLocalShellBackend", () => {
     await expect(backend.write("/openwiki/new.md", "ok")).resolves.toEqual(
       expect.objectContaining({ path: "/openwiki/new.md" }),
     );
+  });
+
+  test("keeps repository control state read-only for the agent", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const wikiDir = path.join(rootDir, "openwiki");
+    await mkdir(wikiDir, { recursive: true });
+    for (const [name, contents] of [
+      ["INSTRUCTIONS.md", "# User-authored brief\n"],
+      [".run.json", '{"status":"running"}\n'],
+      [".page-manifest.json", '{"pages":[]}\n'],
+      [".last-update.json", '{"gitHead":"abc"}\n'],
+      ["page.md", "# Page\n"],
+    ] as const) {
+      await writeFile(path.join(wikiDir, name), contents, "utf8");
+    }
+    // Chat-mode backend: docs-only confinement is active, but no page is
+    // explicitly assigned, so control files are otherwise writable today.
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: false,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    for (const controlPath of [
+      "/openwiki/INSTRUCTIONS.md",
+      "/openwiki/.run.json",
+      "/openwiki/.page-manifest.json",
+      "/openwiki/.last-update.json",
+    ]) {
+      const write = await backend.write(controlPath, "prompt-injected");
+      expect(write.error, controlPath).toContain("control state");
+      const edit = await backend.edit(controlPath, "#", "prompt-injected");
+      expect(edit.error, controlPath).toContain("control state");
+      const deletion = await backend.delete(controlPath);
+      expect(deletion.error, controlPath).toContain("control state");
+    }
+
+    const rootDeletion = await backend.delete("/openwiki");
+    expect(rootDeletion.error).toContain("control state");
+    await expect(
+      readFile(path.join(wikiDir, "INSTRUCTIONS.md"), "utf8"),
+    ).resolves.toBe("# User-authored brief\n");
+
+    await expect(
+      backend.uploadFiles([
+        [
+          "/openwiki/INSTRUCTIONS.md",
+          new TextEncoder().encode("prompt-injected"),
+        ],
+      ]),
+    ).resolves.toEqual([
+      expect.objectContaining({ error: "permission_denied" }),
+    ]);
+
+    // Ordinary generated pages stay writable, and the brief stays readable.
+    const pageWrite = await backend.write("/openwiki/page.md", "updated");
+    expect(pageWrite.error).toBeUndefined();
+    const briefRead = await backend.read("/openwiki/INSTRUCTIONS.md");
+    expect(briefRead.error).toBeUndefined();
+    expect(briefRead.content).toContain("User-authored brief");
+  });
+
+  test("keeps local-wiki update metadata read-only for the agent", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    await writeFile(
+      path.join(rootDir, ".last-update.json"),
+      '{"gitHead":"abc"}\n',
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: false,
+      outputMode: "local-wiki",
+      rootDir,
+      virtualMode: true,
+    });
+
+    const write = await backend.write("/.last-update.json", "injected");
+    expect(write.error).toContain("control state");
+    const deletion = await backend.delete("/.last-update.json");
+    expect(deletion.error).toContain("control state");
+    const noteWrite = await backend.write("/note.md", "ok");
+    expect(noteWrite.error).toBeUndefined();
+  });
+
+  test("normalizes claims paths before the ownership check", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "openwiki-backend-"));
+    const claimsDir = path.join(rootDir, "openwiki/.claims");
+    await mkdir(claimsDir, { recursive: true });
+    await writeFile(
+      path.join(claimsDir, "page.json"),
+      '{"private":"claims-marker"}\n',
+      "utf8",
+    );
+    const backend = new OpenWikiLocalShellBackend({
+      docsOnly: true,
+      outputMode: "repository",
+      rootDir,
+      virtualMode: true,
+    });
+
+    // A trailing or leading space must not slip the path past the Claims
+    // check while the normalized operation still reaches Claims state.
+    const trailingSpaceDelete = await backend.delete("/openwiki/.claims ");
+    expect(trailingSpaceDelete.error).toContain("Claims state");
+    const leadingSpaceDelete = await backend.delete(
+      " /openwiki/.claims/page.json",
+    );
+    expect(leadingSpaceDelete.error).toContain("Claims state");
+    const trailingSpaceWrite = await backend.write(
+      "/openwiki/.claims/injected.json ",
+      "bad",
+    );
+    expect(trailingSpaceWrite.error).toContain("Claims state");
+    await expect(
+      readFile(path.join(claimsDir, "page.json"), "utf8"),
+    ).resolves.toContain("claims-marker");
+    await expect(readdir(claimsDir)).resolves.toEqual(["page.json"]);
   });
 });

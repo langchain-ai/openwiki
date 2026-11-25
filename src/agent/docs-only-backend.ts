@@ -14,7 +14,11 @@ import {
   type ReadResult,
   type WriteResult,
 } from "deepagents";
-import { OPEN_WIKI_DIR } from "../config/constants.js";
+import {
+  OPEN_WIKI_DIR,
+  PAGE_MANIFEST_PATH,
+  UPDATE_METADATA_PATH,
+} from "../config/constants.js";
 import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 import type { OpenWikiOutputMode } from "./types.js";
 
@@ -208,7 +212,10 @@ async function withPathOperation<T>(
  *    to the `openwiki/` tree via {@link isOpenWikiDocsPath}.
  * 4. Claims ownership: repository `.claims` sidecars are hidden from generic
  *    tools and may only be accessed by OpenWiki's direct persistence layer.
- * 5. Personal mode: shell execution is always denied, including delegated calls.
+ * 5. Control-state ownership: OpenWiki's own control files (the instructions
+ *    brief, run state, page manifest, and update metadata) are read-only to the
+ *    agent; only the implementation's lifecycle may rewrite them.
+ * 6. Personal mode: shell execution is always denied, including delegated calls.
  *
  * These boundaries constrain an agent that may be prompt-injected via
  * untrusted repository content, so path checks canonicalize before matching.
@@ -298,6 +305,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
+      this.getControlStateWriteError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
 
     if (error) {
@@ -323,6 +331,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
+      this.getControlStateWriteError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
 
     if (error) {
@@ -348,6 +357,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
+      this.getControlStateWriteError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
     if (error) {
       return { error };
@@ -629,6 +639,26 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   }
 
   /**
+   * Returns a refusal when an agent mutation targets OpenWiki control state.
+   *
+   * Control files steer every later run (the instructions brief is injected
+   * into prompts; the manifest and update metadata drive incremental
+   * updates), so a prompt-injected agent rewriting one would persist its own
+   * instructions. They are read-only to the agent and rewritten only by the
+   * implementation's own lifecycle, which uses direct filesystem access.
+   *
+   * @param filePath - Candidate virtual repository path.
+   * @returns Ownership error, or `null` when the mutation is allowed.
+   */
+  private getControlStateWriteError(filePath: string): string | null {
+    if (!isControlStatePath(filePath, this.outputMode)) {
+      return null;
+    }
+
+    return `OpenWiki control state is implementation-owned and read-only for the agent: ${filePath}`;
+  }
+
+  /**
    * Determines whether a path is reserved Claims state for this output mode.
    *
    * @param filePath - Candidate virtual path.
@@ -671,6 +701,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return (
       this.openWikiIgnore.ignores(filePath) ||
       this.isClaimsPath(filePath) ||
+      isControlStatePath(filePath, this.outputMode) ||
       this.getDocsOnlyWriteError(filePath) !== null
     );
   }
@@ -702,8 +733,11 @@ function markMutation<Result extends WriteResult | EditResult | DeleteResult>(
  * @returns Whether the normalized path is the Claims directory or its descendant.
  */
 export function isClaimsStatePath(filePath: string): boolean {
+  // Trim outer whitespace so an alternate spelling such as a trailing or
+  // leading space cannot slip past this check while the normalized operation
+  // still reaches Claims state.
   const normalized = path.posix
-    .normalize(filePath.replaceAll("\\", "/"))
+    .normalize(filePath.replaceAll("\\", "/").trim())
     .toLowerCase();
   const absolute = normalized.startsWith("/") ? normalized : `/${normalized}`;
 
@@ -711,6 +745,53 @@ export function isClaimsStatePath(filePath: string): boolean {
     absolute === "/openwiki/.claims" ||
     absolute.startsWith("/openwiki/.claims/")
   );
+}
+
+/**
+ * OpenWiki control files that steer later runs and are therefore read-only to
+ * the agent: the user-authored instructions brief (see
+ * `REPOSITORY_INSTRUCTIONS_FILE` in `src/setup/onboarding.ts`), the durable run
+ * state (see `REPOSITORY_RUN_STATE_BASENAME` in
+ * `src/generation/run-state.ts`), the page manifest, and the update metadata.
+ * The `openwiki/` root itself is included so one delete call cannot wipe the
+ * wiki and its control state wholesale.
+ */
+const REPOSITORY_CONTROL_PATHS: ReadonlySet<string> = new Set(
+  [
+    OPEN_WIKI_DIR,
+    `${OPEN_WIKI_DIR}/instructions.md`,
+    `${OPEN_WIKI_DIR}/.run.json`,
+    PAGE_MANIFEST_PATH,
+    UPDATE_METADATA_PATH,
+  ].map((controlPath) => `/${controlPath}`.toLowerCase()),
+);
+
+/**
+ * The local-wiki run's update metadata, written directly by the lifecycle at
+ * the virtual root (see `LOCAL_WIKI_METADATA_PATH` in `src/agent/utils.ts`).
+ */
+const LOCAL_WIKI_CONTROL_PATH = "/.last-update.json";
+
+/**
+ * Determines whether a path is OpenWiki control state for this output mode.
+ *
+ * Control files are normal reads for the agent (the brief is part of its
+ * prompt context) but never valid agent mutations: only the implementation's
+ * own lifecycle may create or rewrite them.
+ *
+ * @param filePath - Candidate virtual repository path.
+ * @param outputMode - Active output mode, selecting which files are control state.
+ * @returns Whether the path is implementation-owned control state.
+ */
+export function isControlStatePath(
+  filePath: string,
+  outputMode: OpenWikiOutputMode,
+): boolean {
+  const normalized = normalizeVirtualPath(filePath).toLowerCase();
+
+  return outputMode === "repository"
+    ? REPOSITORY_CONTROL_PATHS.has(normalized)
+    : normalized === LOCAL_WIKI_CONTROL_PATH;
 }
 
 /**
