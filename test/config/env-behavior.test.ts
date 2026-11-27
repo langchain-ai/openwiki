@@ -28,6 +28,7 @@ import {
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REQUEST_TIMEOUT_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
 } from "../../src/config/constants.ts";
 
@@ -77,6 +78,7 @@ const KEYS_UNDER_TEST = [
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
+  OPENWIKI_REQUEST_TIMEOUT_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
   // Deprecated / recently un-deprecated OpenAI keys. Cleared in each hook so the
   // developer's ambient shell (which may export OPENAI_BASE_URL) cannot leak
@@ -614,6 +616,36 @@ describe("getCredentialDiagnostics", () => {
     const diagnostics = await env.getCredentialDiagnostics();
     const entry = diagnostics.find(
       (item) => item.key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toEqual([]);
+  });
+
+  test("surfaces and validates the request timeout as non-secret", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "openai-compatible",
+      [OPENWIKI_REQUEST_TIMEOUT_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_REQUEST_TIMEOUT_ENV_KEY,
+    );
+
+    expect(entry?.preview).toBe('"0"');
+    expect(entry?.warnings).toContain("invalid request timeout");
+  });
+
+  test("does not warn about a request timeout the provider ignores", async () => {
+    await env.saveOpenWikiEnv({
+      [OPENWIKI_PROVIDER_ENV_KEY]: "anthropic",
+      [OPENWIKI_REQUEST_TIMEOUT_ENV_KEY]: "0",
+    });
+
+    const diagnostics = await env.getCredentialDiagnostics();
+    const entry = diagnostics.find(
+      (item) => item.key === OPENWIKI_REQUEST_TIMEOUT_ENV_KEY,
     );
 
     expect(entry?.preview).toBe('"0"');
