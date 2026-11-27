@@ -463,19 +463,19 @@ These settings apply when running OpenWiki directly. Coding-agent integrations u
 
 OpenWiki supports fifteen providers. The onboarding default is OpenAI with `gpt-5.6-terra`. Choose from preset models where available or supply a custom model ID. Provider credentials are stored in `~/.openwiki/.env`.
 
-| Provider                                                     | Credential                              |
-| ------------------------------------------------------------ | --------------------------------------- |
-| **OpenAI** _(default)_                                       | `OPENAI_API_KEY`                        |
-| **OpenAI (ChatGPT login)**                                   | Browser sign-in, uses your ChatGPT plan |
-| **Anthropic**                                                | `ANTHROPIC_API_KEY`                     |
-| **IBM Bob**                                                  | `BOB_API_KEY`                           |
-| **Gemini** (AI Studio)                                       | `GEMINI_API_KEY`                        |
-| **Gemini Enterprise** (Vertex AI)                            | Google ADC, keyless                     |
-| **AWS Bedrock**                                              | IAM credentials                         |
-| **GitHub Copilot**                                           | GitHub CLI session                      |
-| **OpenRouter**                                               | `OPENROUTER_API_KEY`                    |
-| **Nebius / Fireworks / Baseten / NVIDIA NIM / Mistral**      | Provider API key                        |
-| **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways) | Base URL + key                          |
+| Provider                                                              | Credential                              |
+| --------------------------------------------------------------------- | --------------------------------------- |
+| **OpenAI** _(default)_                                                | `OPENAI_API_KEY`                        |
+| **OpenAI (ChatGPT login)**                                            | Browser sign-in, uses your ChatGPT plan |
+| **Anthropic**                                                         | `ANTHROPIC_API_KEY`                     |
+| **IBM Bob**                                                           | `BOB_API_KEY`                           |
+| **Gemini** (AI Studio)                                                | `GEMINI_API_KEY`                        |
+| **Gemini Enterprise** (Vertex AI)                                     | Google ADC, keyless                     |
+| **AWS Bedrock**                                                       | IAM credentials                         |
+| **GitHub Copilot**                                                    | GitHub CLI session                      |
+| **OpenRouter**                                                        | `OPENROUTER_API_KEY`                    |
+| **Atlas Cloud / Nebius / Fireworks / Baseten / NVIDIA NIM / Mistral** | Provider API key                        |
+| **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways)          | Base URL + key                          |
 
 <details>
 <summary><b>GitHub Copilot</b></summary>

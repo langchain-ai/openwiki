@@ -2,6 +2,7 @@ export const OPEN_WIKI_DIR = "openwiki";
 export const PAGE_MANIFEST_PATH = `${OPEN_WIKI_DIR}/.page-manifest.json`;
 export const UPDATE_METADATA_PATH = `${OPEN_WIKI_DIR}/.last-update.json`;
 
+export const ATLASCLOUD_API_KEY_ENV_KEY = "ATLASCLOUD_API_KEY";
 export const BASETEN_API_KEY_ENV_KEY = "BASETEN_API_KEY";
 export const BASETEN_BASE_URL_ENV_KEY = "BASETEN_BASE_URL";
 export const BOB_API_KEY_ENV_KEY = "BOB_API_KEY";
@@ -80,6 +81,7 @@ export const OPENWIKI_MODEL_ID_ENV_KEY = "OPENWIKI_MODEL_ID";
 export const OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY =
   "OPENWIKI_STREAM_IDLE_TIMEOUT";
 const MAX_STREAM_IDLE_TIMEOUT_MS = 2_147_483_647;
+export const ATLASCLOUD_BASE_URL = "https://api.atlascloud.ai/v1";
 export const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/";
 export const OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY =
   "OPENWIKI_PROVIDER_RETRY_ATTEMPTS";
@@ -139,6 +141,7 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type OpenWikiProvider =
   | "anthropic"
+  | "atlascloud"
   | "baseten"
   | "bedrock"
   | "bob"
@@ -289,6 +292,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "bedrock",
   "fireworks",
   "baseten",
+  "atlascloud",
   "nebius",
   "nvidia",
   "mistral",
@@ -363,20 +367,14 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       },
     ],
   },
-  mistral: {
-    apiKeyEnvKey: MISTRAL_API_KEY_ENV_KEY,
-    baseURL: "https://api.mistral.ai/v1",
-    baseUrlEnvKey: MISTRAL_BASE_URL_ENV_KEY,
-    label: "Mistral",
-    // Mistral serves chat completions with tool calling on an OpenAI-compatible
-    // surface, so it shares the ChatOpenAI branch with Fireworks and NVIDIA.
-    // IDs are the active releases from docs.mistral.ai/models (Medium 3.5 and
-    // Large 3 were deprecated on 2026-10-31); Mistral also exposes rolling
-    // "*-latest" aliases that can be pasted directly as custom model IDs.
+  atlascloud: {
+    apiKeyEnvKey: ATLASCLOUD_API_KEY_ENV_KEY,
+    baseURL: ATLASCLOUD_BASE_URL,
+    label: "Atlas Cloud",
     modelOptions: [
-      { id: "mistral-small-2603", label: "Mistral Small 4" },
-      { id: "mistral-large-4", label: "Mistral Large 4" },
-      { id: "codestral-2508", label: "Codestral" },
+      { id: "deepseek-ai/deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+      { id: "deepseek-ai/deepseek-v3.2", label: "DeepSeek V3.2" },
+      { id: "qwen/qwen3.7-plus", label: "Qwen3.7 Plus" },
     ],
   },
   nebius: {
@@ -406,6 +404,22 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "deepseek-ai/deepseek-v4-pro", label: "DeepSeek V4 Pro" },
       { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
       { id: "moonshotai/kimi-k2.6", label: "Kimi K2.6" },
+    ],
+  },
+  mistral: {
+    apiKeyEnvKey: MISTRAL_API_KEY_ENV_KEY,
+    baseURL: "https://api.mistral.ai/v1",
+    baseUrlEnvKey: MISTRAL_BASE_URL_ENV_KEY,
+    label: "Mistral",
+    // Mistral serves chat completions with tool calling on an OpenAI-compatible
+    // surface, so it shares the ChatOpenAI branch with Fireworks and NVIDIA.
+    // IDs are the active releases from docs.mistral.ai/models (Medium 3.5 and
+    // Large 3 were deprecated on 2026-10-31); Mistral also exposes rolling
+    // "*-latest" aliases that can be pasted directly as custom model IDs.
+    modelOptions: [
+      { id: "mistral-small-2603", label: "Mistral Small 4" },
+      { id: "mistral-large-4", label: "Mistral Large 4" },
+      { id: "codestral-2508", label: "Codestral" },
     ],
   },
   openai: {
@@ -1009,22 +1023,24 @@ export function resolveConfiguredProvider(
               ? "baseten"
               : env[FIREWORKS_API_KEY_ENV_KEY]
                 ? "fireworks"
-                : env[NEBIUS_API_KEY_ENV_KEY]
-                  ? "nebius"
-                  : env[NVIDIA_API_KEY_ENV_KEY]
-                    ? "nvidia"
-                    : env[MISTRAL_API_KEY_ENV_KEY]
-                      ? "mistral"
-                      : hasNonEmptyEnvValue(
-                            env,
-                            BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
-                          ) ||
-                          hasNonEmptyEnvValue(
-                            env,
-                            BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
-                          )
-                        ? "bedrock"
-                        : DEFAULT_PROVIDER)
+                : env[ATLASCLOUD_API_KEY_ENV_KEY]
+                  ? "atlascloud"
+                  : env[NEBIUS_API_KEY_ENV_KEY]
+                    ? "nebius"
+                    : env[NVIDIA_API_KEY_ENV_KEY]
+                      ? "nvidia"
+                      : env[MISTRAL_API_KEY_ENV_KEY]
+                        ? "mistral"
+                        : hasNonEmptyEnvValue(
+                              env,
+                              BEDROCK_AWS_ACCESS_KEY_ID_ENV_KEY,
+                            ) ||
+                            hasNonEmptyEnvValue(
+                              env,
+                              BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
+                            )
+                          ? "bedrock"
+                          : DEFAULT_PROVIDER)
   );
 }
 
