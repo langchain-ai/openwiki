@@ -16,7 +16,9 @@ import { OpenWikiIgnore } from "../../src/agent/openwiki-ignore.ts";
 import {
   createRepositorySourceFingerprint,
   createRepositorySourceSnapshot,
+  getReadableGitCommits,
   getRepositoryChangedPaths,
+  getRepositoryUncommittedPaths,
 } from "../../src/agent/utils.ts";
 
 const fingerprintRace = vi.hoisted(() => ({
@@ -500,5 +502,43 @@ describe("getRepositoryChangedPaths", () => {
       "src/tracked.ts",
       "visible.txt",
     ]);
+
+    const uncommitted = await getRepositoryUncommittedPaths(repositoryRoot);
+    expect(uncommitted.sort()).toEqual([
+      ".openwikiignore",
+      "ignored.txt",
+      "openwiki/generated.md",
+      "src/tracked.ts",
+      "visible.txt",
+    ]);
+
+    const changedWithUncommitted = await getRepositoryChangedPaths(
+      repositoryRoot,
+      await OpenWikiIgnore.load(repositoryRoot),
+      baseGitHead,
+      uncommitted,
+    );
+    expect(changedWithUncommitted).toEqual(changed);
+  });
+});
+
+describe("getReadableGitCommits", () => {
+  test("identifies readable commit objects and filters out missing or invalid ones", async () => {
+    const head = await git(["rev-parse", "HEAD"]);
+    const tree = await git(["rev-parse", "HEAD^{tree}"]);
+    const missing = "0000000000000000000000000000000000000000";
+
+    const readable = await getReadableGitCommits(repositoryRoot, [
+      head,
+      tree,
+      missing,
+      "not-a-sha",
+      "",
+    ]);
+
+    expect(readable.has(head)).toBe(true);
+    expect(readable.has(tree)).toBe(false);
+    expect(readable.has(missing)).toBe(false);
+    expect(readable.size).toBe(1);
   });
 });
