@@ -46,6 +46,16 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toBe(content);
   });
 
+  test("leaves a valid page saved with a UTF-8 byte order mark untouched", () => {
+    const content =
+      "\uFEFF---\ntype: Guide\ntitle: Setup\ndescription: How to set up.\n---\n\n# Setup\n";
+    const result = normalizeConceptContent(content, PATH);
+
+    expect(validateOkfFrontmatter(content)).toEqual({ valid: true });
+    expect(result.changed).toBe(false);
+    expect(result.content).toBe(content);
+  });
+
   test("repairs optional fields while preserving producer extensions", () => {
     const content =
       "---\ntype: Domain\ntitle: 123\ndescription: [one, two]\ncustom_ext: keep-me\n---\n\n# Orders\n";
@@ -286,6 +296,18 @@ describe("repairOkfFrontmatter", () => {
       type: "Reference",
     });
     expect(repaired.content).toContain("# Page\n\nBody.\n");
+    expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
+  });
+
+  test("repairs a page saved with a UTF-8 byte order mark in place", () => {
+    const repaired = repairOkfFrontmatter(
+      "\uFEFF---\ntype: Guide\ntitle: My Guide\nstatus: retired\n---\n\n# Page\n\nBody.\n",
+      PATH,
+    );
+
+    expect(repaired.content).toBe(
+      "---\ntype: Guide\ntitle: My Guide\n---\n\n# Page\n\nBody.\n",
+    );
     expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
   });
 
