@@ -716,7 +716,8 @@ async function readLastUpdate(
         updatedAt: parsedMetadata.updatedAt,
         command: parsedMetadata.command === "init" ? "init" : "update",
         gitHead:
-          typeof parsedMetadata.gitHead === "string"
+          typeof parsedMetadata.gitHead === "string" &&
+          GIT_OBJECT_ID_PATTERN.test(parsedMetadata.gitHead)
             ? parsedMetadata.gitHead
             : undefined,
         model: parsedMetadata.model,
@@ -950,10 +951,11 @@ export async function getRepositoryChangedPaths(
 ): Promise<string[]> {
   const paths = new Set<string>();
 
-  if (baseGitHead) {
+  if (baseGitHead && GIT_OBJECT_ID_PATTERN.test(baseGitHead)) {
     for (const candidate of await runGitLines(cwd, [
       "diff",
       "--name-only",
+      "--end-of-options",
       `${baseGitHead}..HEAD`,
     ])) {
       paths.add(normalizeGitPath(candidate));
@@ -1026,7 +1028,13 @@ export async function getRepositoryCommitContext(
   openWikiIgnore: OpenWikiIgnore,
   baseGitHead?: string,
 ): Promise<RepositoryCommitContext[]> {
-  if (!baseGitHead || openWikiIgnore.isActive) return [];
+  if (
+    !baseGitHead ||
+    !GIT_OBJECT_ID_PATTERN.test(baseGitHead) ||
+    openWikiIgnore.isActive
+  ) {
+    return [];
+  }
 
   let stdout: string;
   try {
@@ -1042,6 +1050,7 @@ export async function getRepositoryCommitContext(
         "--no-show-signature",
         `--max-count=${COMMIT_CONTEXT_MAX_COMMITS}`,
         "--format=%H%n%s%n%b",
+        "--end-of-options",
         `${baseGitHead}..HEAD`,
         // Generated wiki commits are not source intent and would use up the cap.
         "--",
@@ -1129,7 +1138,14 @@ async function getChangedPathsSinceLastUpdate(
   cwd: string,
   gitHead: string,
 ): Promise<string[]> {
-  const diff = await runGit(cwd, ["diff", "--name-only", `${gitHead}..HEAD`]);
+  if (!GIT_OBJECT_ID_PATTERN.test(gitHead)) return [];
+
+  const diff = await runGit(cwd, [
+    "diff",
+    "--name-only",
+    "--end-of-options",
+    `${gitHead}..HEAD`,
+  ]);
 
   return diff
     .split("\n")

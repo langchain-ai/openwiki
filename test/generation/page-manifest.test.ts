@@ -47,8 +47,8 @@ import {
 
 const SOURCE_FINGERPRINT = `sha256:${"a".repeat(64)}`;
 const OTHER_SOURCE_FINGERPRINT = `sha256:${"b".repeat(64)}`;
-const GIT_HEAD = "0123456789abcdef";
-const OTHER_GIT_HEAD = "fedcba9876543210";
+const GIT_HEAD = "0123456789abcdef".repeat(2) + "01234567";
+const OTHER_GIT_HEAD = "fedcba9876543210".repeat(2) + "fedcba98";
 const VERIFICATION = {
   by: "openwiki/test",
   at: "2026-08-25T00:00:00.000Z",
@@ -141,6 +141,24 @@ describe("repository page-manifest persistence", () => {
     await expect(readRepositoryPageManifest(root)).rejects.toMatchObject({
       code: "invalid_state",
     } satisfies Partial<RepositoryRunError>);
+  });
+
+  test("treats a gitHead that is not a full object id as missing", async () => {
+    const pageVersion = `sha256:${"c".repeat(64)}`;
+    await writeRawManifest({
+      schemaVersion: 1,
+      pages: {
+        "/openwiki/page.md": {
+          gitHead: `--output=${root}/injected..HEAD`,
+          pageVersion,
+        },
+        "/openwiki/short.md": { gitHead: "0123456789abcdef", pageVersion },
+      },
+    });
+
+    const manifest = await readRepositoryPageManifest(root);
+    expect(manifest.pages["/openwiki/page.md"]?.gitHead).toBeUndefined();
+    expect(manifest.pages["/openwiki/short.md"]?.gitHead).toBeUndefined();
   });
 
   test.each([
