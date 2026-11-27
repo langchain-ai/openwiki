@@ -475,7 +475,7 @@ OpenWiki supports sixteen providers. The onboarding default is OpenAI with `gpt-
 | **GitHub Copilot**                                           | GitHub CLI session                      |
 | **OpenRouter**                                               | `OPENROUTER_API_KEY`                    |
 | **Nebius / Fireworks / Baseten / NVIDIA NIM / Mistral**      | Provider API key                        |
-| **EXAONE**                                                  | `EXAONE_API_KEY`                        |
+| **EXAONE**                                                   | `EXAONE_API_KEY`                        |
 | **OpenAI-compatible** (LiteLLM, Ollama, LM Studio, gateways) | Base URL + key                          |
 
 <details>
