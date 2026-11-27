@@ -214,6 +214,39 @@ describe("OpenWiki MCP adapter", () => {
     }
   });
 
+  test("annotates only read-only tools with readOnlyHint", async () => {
+    const schema = z.object({}).strict();
+    const handle = () => Promise.resolve({ status: "ok" });
+    const fixture = await connect(
+      provider(
+        {
+          name: "openwiki_search",
+          description: "Search.",
+          schema,
+          readOnly: true,
+          handle,
+        },
+        {
+          name: "openwiki_begin",
+          description: "Begin.",
+          schema,
+          handle,
+        },
+      ),
+    );
+
+    try {
+      const { tools } = await fixture.client.listTools();
+      const hints = tools.map(({ name, annotations }) => [name, annotations]);
+      expect(hints).toEqual([
+        ["openwiki_search", { readOnlyHint: true }],
+        ["openwiki_begin", undefined],
+      ]);
+    } finally {
+      await close(fixture);
+    }
+  });
+
   test("returns text JSON and structured content for successful calls", async () => {
     const fixture = await connect(
       provider({

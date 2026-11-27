@@ -200,6 +200,12 @@ export interface ProtocolTool {
   schema: z.ZodType;
 
   /**
+   * True when the tool only reads existing wiki state. Transports advertise
+   * it so hosts can tell the tool apart from one that writes.
+   */
+  readOnly?: boolean;
+
+  /**
    * Validates and executes one lifecycle operation.
    *
    * @param input - Untrusted transport input.

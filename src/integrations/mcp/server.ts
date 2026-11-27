@@ -85,6 +85,7 @@ export function createOpenWikiMcpServer(provider: HostToolProvider): McpServer {
       {
         description: tool.description,
         inputSchema: tool.schema,
+        ...(tool.readOnly ? { annotations: { readOnlyHint: true } } : {}),
       },
       async (input): Promise<CallToolResult> => executeTool(tool, input),
     );
