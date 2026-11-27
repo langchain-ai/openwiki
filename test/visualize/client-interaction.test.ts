@@ -102,6 +102,11 @@ function mountDom(): void {
     <div class="toast" id="toast"></div>`;
 }
 
+/**
+ * Every mermaid.initialize() config the client passes, in call order.
+ */
+const mermaidInitializations: Array<Record<string, unknown>> = [];
+
 function stubGlobals(): void {
   // The force-graph instance is itself callable: ForceGraph()(element) mounts.
   const instance = (() => instance) as unknown as Record<string, unknown> &
@@ -171,7 +176,13 @@ function stubGlobals(): void {
     setOptions: () => {},
   });
   vi.stubGlobal("DOMPurify", { sanitize: (dirty: string) => dirty });
-  vi.stubGlobal("mermaid", { initialize: () => {}, run: () => {} });
+  mermaidInitializations.length = 0;
+  vi.stubGlobal("mermaid", {
+    initialize: (config: Record<string, unknown>) => {
+      mermaidInitializations.push(config);
+    },
+    run: () => {},
+  });
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -355,5 +366,28 @@ describe("visualizer client graph interaction", () => {
     )!;
     handlers.onNodeClick!(quickstart);
     expect(paintLabels()).toEqual(["Quickstart", "Overview"]);
+  });
+
+  test("pins mermaid securityLevel to strict on init and re-theme", async () => {
+    await importClient();
+
+    // The wiki viewer renders repository-controlled diagram source. Mermaid
+    // directives inside that source may reconfigure htmlLabels, themeCSS and
+    // fonts unless the security level is pinned explicitly, so both the
+    // bootstrap initialize and every theme toggle must set securityLevel.
+    expect(mermaidInitializations.length).toBeGreaterThan(0);
+    for (const config of mermaidInitializations) {
+      expect(config.securityLevel).toBe("strict");
+      expect(config.startOnLoad).toBe(false);
+    }
+
+    // Start from the dark theme so the toggle demonstrably re-initializes
+    // mermaid with the light (neutral) theme.
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.getElementById("theme")!.dispatchEvent(new MouseEvent("click"));
+
+    const reTheme = mermaidInitializations[mermaidInitializations.length - 1];
+    expect(reTheme.securityLevel).toBe("strict");
+    expect(reTheme.theme).toBe("neutral");
   });
 });
