@@ -626,14 +626,27 @@ export async function beginRepositoryRun(
 }
 
 /**
- * True when a backend result error indicates a file does not exist.
- *
- * Matches both the standard `"file_not_found"` error code used by some backends
- * and the human-readable `"Error: File '...' not found"` string returned by
- * DeepAgents' filesystem backends (see #765).
+ * Matches Node's `ENOENT` code where a filesystem backend places it: at the
+ * start of the message or right after the backend's own `'<path>':` prefix.
+ * Anchoring it there keeps a page whose name contains "enoent" from matching.
  */
-function isNotFoundBackendError(error: string): boolean {
-  return error === "file_not_found" || error.includes("not found");
+const ENOENT_ERROR_PATTERN = /(?:^|:\s)ENOENT:/u;
+
+/**
+ * True when a backend result error indicates a file or directory does not exist.
+ *
+ * Matches:
+ * - Standard `"file_not_found"` error code used by some backends
+ * - Human-readable `"Error: File '...' not found"` string (see #765)
+ * - Filesystem backend ENOENT messages when a file or its parent directory is missing:
+ *   e.g. `"Error deleting '...': ENOENT: no such file or directory, lstat '...'"` (see #871)
+ */
+export function isNotFoundBackendError(error: string): boolean {
+  return (
+    error === "file_not_found" ||
+    error.includes("not found") ||
+    ENOENT_ERROR_PATTERN.test(error)
+  );
 }
 
 /**
