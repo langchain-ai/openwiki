@@ -11,6 +11,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { RepositoryRunError } from "../../src/generation/errors.ts";
 import {
+  REPOSITORY_RUN_STATE_MAX_TEXT_LENGTH,
   readRepositoryRunState,
   removeRepositoryRunState,
   repositoryRunStatePath,
@@ -118,6 +119,40 @@ describe("repository run-state persistence", () => {
 
     await expect(writeRepositoryRunState(root, invalid)).rejects.toThrow();
     expect(await readRepositoryRunState(root)).toEqual(state);
+  });
+
+  test("rejects oversized free text committed to the checkpoint", async () => {
+    // A committed .run.json is untrusted repository content: without a size
+    // cap, arbitrarily large planningContext or wikiGoal strings survive the
+    // schema and reach the planner prompt.
+    const oversizedContext = createRunState();
+    oversizedContext.planningContext = "x".repeat(
+      REPOSITORY_RUN_STATE_MAX_TEXT_LENGTH + 1,
+    );
+    await mkdir(path.dirname(repositoryRunStatePath(root)), {
+      recursive: true,
+    });
+    await writeFile(
+      repositoryRunStatePath(root),
+      JSON.stringify(oversizedContext, null, 2),
+      "utf8",
+    );
+    await expect(readRepositoryRunState(root)).rejects.toMatchObject({
+      code: "invalid_state",
+    });
+
+    const oversizedGoal = createRunState();
+    oversizedGoal.wikiGoal = "x".repeat(
+      REPOSITORY_RUN_STATE_MAX_TEXT_LENGTH + 1,
+    );
+    await writeFile(
+      repositoryRunStatePath(root),
+      JSON.stringify(oversizedGoal, null, 2),
+      "utf8",
+    );
+    await expect(readRepositoryRunState(root)).rejects.toMatchObject({
+      code: "invalid_state",
+    });
   });
 
   test("preserves the target and removes its temporary file when rename fails", async () => {

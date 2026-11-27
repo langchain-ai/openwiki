@@ -696,6 +696,12 @@ async function resumeRepositoryRun(
       delete nextState.targetGitHead;
     }
     delete nextState.plan;
+    // Free text persisted in a committed .run.json is untrusted repository
+    // content. Once the fingerprint no longer matches, the stored planning
+    // context and wiki goal are stale with nothing left to validate them
+    // against, so they are dropped instead of reaching the prompts.
+    delete nextState.planningContext;
+    delete nextState.wikiGoal;
   } else {
     if (!nextState.targetGitHead && currentSource.gitHead) {
       nextState.targetGitHead = currentSource.gitHead;

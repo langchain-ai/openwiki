@@ -19,6 +19,15 @@ export const REPOSITORY_RUN_STATE_BASENAME = ".run.json";
 export const REPOSITORY_RUN_STATE_SCHEMA_VERSION = 1 as const;
 
 /**
+ * Maximum length accepted for each free-text field persisted in a run state.
+ *
+ * A committed `.run.json` is untrusted repository content, so persisted free
+ * text (planning context, wiki goal) is size-capped to keep a hostile
+ * checkpoint from stuffing arbitrarily large text into the planner prompt.
+ */
+export const REPOSITORY_RUN_STATE_MAX_TEXT_LENGTH = 100_000 as const;
+
+/**
  * Repository generation commands supported by the durable lifecycle.
  */
 export type RepositoryRunMode = "init" | "update";
@@ -278,7 +287,11 @@ const RepositoryRunStateSchema = z
     initialPages: z.array(z.string().min(1)),
     sourceFingerprint: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
     targetGitHead: z.string().min(1).optional(),
-    planningContext: z.string().min(1).optional(),
+    planningContext: z
+      .string()
+      .min(1)
+      .max(REPOSITORY_RUN_STATE_MAX_TEXT_LENGTH)
+      .optional(),
     actor: z
       .object({
         producerActor: z.string().trim().min(1),
@@ -287,7 +300,7 @@ const RepositoryRunStateSchema = z
       .strict(),
     previousLastUpdate: UpdateMetadataSchema.nullable(),
     baseGitHead: z.string().min(1).optional(),
-    wikiGoal: z.string().optional(),
+    wikiGoal: z.string().max(REPOSITORY_RUN_STATE_MAX_TEXT_LENGTH).optional(),
     beforeContentSnapshot: z.string(),
     preparedWiki: PersistedPreparedWikiStateSchema,
     plan: z
