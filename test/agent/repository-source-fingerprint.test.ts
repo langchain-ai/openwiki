@@ -501,4 +501,61 @@ describe("getRepositoryChangedPaths", () => {
       "visible.txt",
     ]);
   });
+
+  test("decodes non-ASCII paths before filtering and returning them", async () => {
+    // Pin Git's default so a developer's global core.quotePath=false cannot
+    // hide the octal-escaped output this test guards against.
+    await git(["config", "core.quotePath", "true"]);
+    await mkdir(path.join(repositoryRoot, "docs"), { recursive: true });
+    await writeFile(
+      path.join(repositoryRoot, "docs", "设计.md"),
+      "# 设计\n",
+      "utf8",
+    );
+    await git(["add", "--", "docs/设计.md"]);
+    await git(["commit", "--quiet", "-m", "add design notes"]);
+    const baseGitHead = await git(["rev-parse", "HEAD"]);
+
+    await writeFile(
+      path.join(repositoryRoot, "src", "überblick.ts"),
+      "export const overview = true;\n",
+      "utf8",
+    );
+    await git(["add", "--", "src/überblick.ts"]);
+    await git(["commit", "--quiet", "-m", "add overview"]);
+    await writeFile(
+      path.join(repositoryRoot, "docs", "设计.md"),
+      "# 设计\nUpdated\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(repositoryRoot, "src", "café.ts"),
+      "export const cafe = true;\n",
+      "utf8",
+    );
+    await mkdir(path.join(repositoryRoot, "私有"), { recursive: true });
+    await writeFile(
+      path.join(repositoryRoot, "私有", "笔记.md"),
+      "ignored\n",
+      "utf8",
+    );
+    await mkdir(path.join(repositoryRoot, "openwiki"), { recursive: true });
+    await writeFile(
+      path.join(repositoryRoot, "openwiki", "架构.md"),
+      "generated\n",
+      "utf8",
+    );
+
+    const changed = await getRepositoryChangedPaths(
+      repositoryRoot,
+      OpenWikiIgnore.parse("私有/\n"),
+      baseGitHead,
+    );
+
+    expect(changed).toEqual([
+      "docs/设计.md",
+      "src/café.ts",
+      "src/überblick.ts",
+    ]);
+  });
 });

@@ -862,13 +862,21 @@ async function getGitHead(cwd: string): Promise<string | undefined> {
 }
 
 /**
+ * Leading Git options for line-oriented path output. Git octal-escapes and
+ * double-quotes non-ASCII paths by default (`core.quotePath`), which would
+ * defeat OpenWiki path and ignore matching and show the planner unreadable
+ * paths. NUL-delimited fingerprint queries are not affected.
+ */
+const GIT_LINE_OUTPUT_OPTIONS = ["--no-pager", "-c", "core.quotePath=false"];
+
+/**
  * Runs git commands without failing the whole run for normal git command errors.
  */
 async function runGit(cwd: string, args: string[]): Promise<string> {
   try {
     const { stdout, stderr } = await execFileAsync(
       "git",
-      ["--no-pager", ...args],
+      [...GIT_LINE_OUTPUT_OPTIONS, ...args],
       {
         cwd,
         maxBuffer: 1024 * 1024,
@@ -1110,10 +1118,14 @@ function truncateCodePoints(value: string, limit: number): string {
  */
 async function runGitLines(cwd: string, args: string[]): Promise<string[]> {
   try {
-    const { stdout } = await execFileAsync("git", ["--no-pager", ...args], {
-      cwd,
-      maxBuffer: 1024 * 1024,
-    });
+    const { stdout } = await execFileAsync(
+      "git",
+      [...GIT_LINE_OUTPUT_OPTIONS, ...args],
+      {
+        cwd,
+        maxBuffer: 1024 * 1024,
+      },
+    );
     return stdout
       .split("\n")
       .map((line) => line.trim())
