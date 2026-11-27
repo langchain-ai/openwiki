@@ -277,6 +277,151 @@ describe("Codex Responses requests", () => {
   });
 });
 
+describe("Codex refused reasoning items (#921)", () => {
+  const CODEX_URL = "https://chatgpt.com/backend-api/codex/responses";
+
+  function refusal(itemId: string): Response {
+    return new Response(
+      JSON.stringify({
+        error: {
+          message: `The encrypted content for item ${itemId} could not be verified. Reason: Encrypted content could not be decrypted or parsed.`,
+          type: "invalid_request_error",
+        },
+      }),
+      { status: 400 },
+    );
+  }
+
+  function turnBody(...reasoningIds: string[]): string {
+    return JSON.stringify({
+      model: "gpt-5.6-terra",
+      input: [
+        { role: "user", content: "document the page" },
+        ...reasoningIds.map((id) => ({
+          type: "reasoning",
+          id,
+          encrypted_content: `enc-${id}`,
+          summary: [],
+        })),
+        {
+          type: "function_call",
+          call_id: "call_1",
+          name: "ls",
+          arguments: "{}",
+        },
+      ],
+    });
+  }
+
+  function sentReasoningIds(fetchMock: ReturnType<typeof vi.fn>, call: number) {
+    const [, init] = fetchMock.mock.calls[call] as [string, { body: string }];
+    const payload = JSON.parse(init.body) as {
+      input: { type?: string; id?: string }[];
+    };
+    return payload.input
+      .filter((item) => item.type === "reasoning")
+      .map((item) => item.id);
+  }
+
+  test("retries once without the refused item and returns the retry's response", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(refusal("rs_bad"))
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+    const codexFetch = createCodexFetch("gpt-5.6-terra", fetchMock);
+
+    const response = await codexFetch(CODEX_URL, {
+      body: turnBody("rs_good", "rs_bad"),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(sentReasoningIds(fetchMock, 0)).toEqual(["rs_good", "rs_bad"]);
+    expect(sentReasoningIds(fetchMock, 1)).toEqual(["rs_good"]);
+  });
+
+  test("leaves a refused item out of later requests before sending them", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(refusal("rs_bad"))
+      .mockResolvedValue(new Response("ok", { status: 200 }));
+    const codexFetch = createCodexFetch("gpt-5.6-terra", fetchMock);
+
+    await codexFetch(CODEX_URL, { body: turnBody("rs_bad"), method: "POST" });
+    const later = await codexFetch(CODEX_URL, {
+      body: turnBody("rs_bad", "rs_next"),
+      method: "POST",
+    });
+
+    expect(later.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(sentReasoningIds(fetchMock, 2)).toEqual(["rs_next"]);
+  });
+
+  test("recovers from several refused items in one request", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(refusal("rs_a"))
+      .mockResolvedValueOnce(refusal("rs_b"))
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }));
+    const codexFetch = createCodexFetch("gpt-5.6-luna", fetchMock);
+
+    const response = await codexFetch(CODEX_URL, {
+      body: turnBody("rs_a", "rs_b", "rs_c"),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(200);
+    expect(sentReasoningIds(fetchMock, 2)).toEqual(["rs_c"]);
+  });
+
+  test("returns an unrelated 400 without retrying", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response('{"error":"bad input"}', { status: 400 }),
+      );
+    const codexFetch = createCodexFetch("gpt-5.6-terra", fetchMock);
+
+    const response = await codexFetch(CODEX_URL, {
+      body: turnBody("rs_good"),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe('{"error":"bad input"}');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("returns the refusal when the named item is not in the request", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(refusal("rs_elsewhere"));
+    const codexFetch = createCodexFetch("gpt-5.6-terra", fetchMock);
+
+    const response = await codexFetch(CODEX_URL, {
+      body: turnBody("rs_good"),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not retry outside the Codex Responses endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(refusal("rs_bad"));
+    const codexFetch = createCodexFetch("gpt-5.6-terra", fetchMock);
+
+    const response = await codexFetch("https://example.com/responses", {
+      body: turnBody("rs_bad"),
+      method: "POST",
+    });
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("refreshChatGptTokens", () => {
   test("parses tokens and decodes identity from the access JWT", async () => {
     const access = makeAccessToken("acct_abc123", {
