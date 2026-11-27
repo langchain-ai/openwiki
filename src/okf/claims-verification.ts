@@ -24,12 +24,13 @@ export type ClaimsVerificationChanges = ReadonlyMap<string, string>;
  * Reconciles OpenWiki-owned OKF verification events against durable Claims
  * state while retaining human, process, and other producer events.
  *
- * Every grounded concept participates. A page without an active durable event
+ * Every non-excluded grounded concept participates. A page without an active durable event
  * loses only events in the `openwiki/<version>` actor family. Bare verifier
  * mappings are normalized to the canonical list representation when touched.
  *
  * @param store - Contained generated-page storage.
  * @param verificationByPage - Active durable event per Claims page.
+ * @param excludedPages - Pages whose existing Markdown must remain untouched.
  * @returns Original Markdown for changed pages, used for transactional rollback.
  */
 export async function synchronizeClaimsVerification(
