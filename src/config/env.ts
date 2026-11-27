@@ -74,8 +74,10 @@ import {
   OPENWIKI_PAGE_CONCURRENCY_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY,
   resolveConfiguredProvider,
   resolveBedrockMaxTokens,
+  resolveClientTimeout,
   resolveMaxOutputTokens,
   resolveOpenRouterMaxTokens,
   resolvePageConcurrency,
@@ -157,6 +159,7 @@ export const MANAGED_ENV_KEYS = [
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY,
+  OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY,
   OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY,
   OPENWIKI_PAGE_CONCURRENCY_ENV_KEY,
   OPENWIKI_REASONING_EFFORT_ENV_KEY,
@@ -433,20 +436,22 @@ function createCredentialDiagnostic(
                 ? getOpenRouterMaxTokensWarnings(value)
                 : key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY
                   ? getStreamIdleTimeoutWarnings(value, provider)
-                  : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
-                      key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
-                      key === OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY ||
-                      key ===
-                        OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
-                    ? getBooleanWarnings(value)
-                    : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
-                      ? getRetryAttemptsWarnings(value)
-                      : key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY
-                        ? getPageConcurrencyWarnings(value)
-                        : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
-                          ? getReasoningEffortWarnings(value)
-                          : (getBaseUrlDiagnosticWarnings(key, value) ??
-                            getCredentialWarnings(value)),
+                  : key === OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY
+                    ? getClientTimeoutWarnings(value)
+                    : key === OPENAI_COMPATIBLE_USE_RESPONSES_API_ENV_KEY ||
+                        key === OPENAI_COMPATIBLE_STREAMING_ENV_KEY ||
+                        key === OPENAI_COMPATIBLE_STREAM_MESSAGES_ENV_KEY ||
+                        key ===
+                          OPENAI_COMPATIBLE_REASONING_EFFORT_SUPPORTED_ENV_KEY
+                      ? getBooleanWarnings(value)
+                      : key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY
+                        ? getRetryAttemptsWarnings(value)
+                        : key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY
+                          ? getPageConcurrencyWarnings(value)
+                          : key === OPENWIKI_REASONING_EFFORT_ENV_KEY
+                            ? getReasoningEffortWarnings(value)
+                            : (getBaseUrlDiagnosticWarnings(key, value) ??
+                              getCredentialWarnings(value)),
   };
 }
 
@@ -519,6 +524,7 @@ function isNonSecretDiagnosticKey(key: string): boolean {
     key === OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY ||
     key === OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY ||
     key === OPENWIKI_STREAM_IDLE_TIMEOUT_ENV_KEY ||
+    key === OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY ||
     key === OPENWIKI_PROVIDER_RETRY_ATTEMPTS_ENV_KEY ||
     key === OPENWIKI_PAGE_CONCURRENCY_ENV_KEY ||
     key === OPENWIKI_REASONING_EFFORT_ENV_KEY ||
@@ -669,6 +675,17 @@ function getStreamIdleTimeoutWarnings(
       : [];
   } catch {
     return ["invalid stream idle timeout"];
+  }
+}
+
+function getClientTimeoutWarnings(value: string): string[] {
+  try {
+    resolveClientTimeout({
+      [OPENWIKI_CLIENT_TIMEOUT_MS_ENV_KEY]: value,
+    });
+    return [];
+  } catch {
+    return ["invalid client timeout"];
   }
 }
 
