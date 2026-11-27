@@ -1,4 +1,5 @@
 import os from "node:os";
+import { IntegrationSymlinkError } from "../integrations/install/install-paths.js";
 import {
   getHostIntegrationStatus,
   installHostIntegration,
@@ -25,17 +26,24 @@ export async function runIntegrationsCommand(
       command.scope === "user" ? os.homedir() : (command.projectRoot ?? ".");
     if (command.action === "list") {
       const targets = listHostTargets();
+      let skipped = false;
       const rows = await Promise.all(
         targets.map(async (target) => {
-          const status = await getHostIntegrationStatus(target, {
-            scope: command.scope,
-            root,
-          });
-          return `${target.id}\t${status}\t${target.displayName}`;
+          try {
+            const status = await getHostIntegrationStatus(target, {
+              scope: command.scope,
+              root,
+            });
+            return `${target.id}\t${status}\t${target.displayName}`;
+          } catch (error) {
+            if (!(error instanceof IntegrationSymlinkError)) throw error;
+            skipped = true;
+            return `${target.id}\tskipped\t${target.displayName}\tSymbolic link: ${error.relativePath}`;
+          }
         }),
       );
       process.stdout.write(`${rows.join("\n")}\n`);
-      process.exitCode = 0;
+      process.exitCode = skipped ? 1 : 0;
       return;
     }
 

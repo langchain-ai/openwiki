@@ -109,6 +109,16 @@ export async function resolveInstallContext(
   };
 }
 
+/** Identifies the first symlink relative to the integration scope root. */
+export class IntegrationSymlinkError extends HostIntegrationError {
+  constructor(readonly relativePath: string) {
+    super(
+      "invalid_input",
+      `Host integration destination contains a symbolic link: ${relativePath}`,
+    );
+  }
+}
+
 /**
  * Rejects symbolic links in every existing destination component.
  *
@@ -126,10 +136,7 @@ export async function assertNoSymlinkComponents(
     try {
       const entry = await lstat(current);
       if (entry.isSymbolicLink()) {
-        throw new HostIntegrationError(
-          "invalid_input",
-          "Host integration destinations must not contain symbolic links.",
-        );
+        throw new IntegrationSymlinkError(path.relative(root, current));
       }
       if (index < parts.length - 1 && !entry.isDirectory()) {
         throw new HostIntegrationError(
