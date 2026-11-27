@@ -90,3 +90,36 @@ export function getPrimaryLanguageSubtag(
     return tag;
   }
 }
+
+/**
+ * Returns whether a requested output language is a real change from the wiki's
+ * persisted language for retranslation / noop purposes.
+ *
+ * Primary-subtag-only comparison treats `zh-CN` → `zh-TW` (Simplified →
+ * Traditional) as a no-op region tweak, same as `en` → `en-GB`. Comparing the
+ * maximized `Intl.Locale` script keeps the documented same-script skip while
+ * forcing a full retranslation when the writing system changes.
+ *
+ * Malformed tags fall back to a primary-subtag (or raw-string) mismatch so they
+ * cannot accidentally compare equal to a valid requested tag.
+ */
+export function isMeaningfulLanguageChange(
+  requested: string | null | undefined,
+  current: string | null | undefined,
+): boolean {
+  if (!requested) return false;
+
+  const requestedPrimary = getPrimaryLanguageSubtag(requested);
+  const currentPrimary = getPrimaryLanguageSubtag(current);
+  if (requestedPrimary !== currentPrimary) return true;
+
+  try {
+    const requestedScript = new Intl.Locale(requested).maximize().script;
+    const currentScript = new Intl.Locale(current ?? "en").maximize().script;
+    return requestedScript !== currentScript;
+  } catch {
+    // One side was structurally invalid; primary already matched as raw text
+    // or language, so treat as no meaningful change beyond that.
+    return false;
+  }
+}

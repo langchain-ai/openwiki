@@ -5,7 +5,7 @@ import type { BackendProtocolV2, FileInfo } from "deepagents";
 import { createMiddleware } from "langchain";
 import path from "node:path";
 import { getErrorMessage } from "../platform/diagnostics.js";
-import { getPrimaryLanguageSubtag } from "../platform/language.js";
+import { isMeaningfulLanguageChange } from "../platform/language.js";
 import {
   OPENWIKI_TRANSLATION_PENDING_FIELD,
   readFrontmatterField,
@@ -77,9 +77,10 @@ export interface TranslationPlan {
  * OpenWiki treats the wiki's language as persisted state: an `update` inherits
  * it unless `--language` requests a different one. The target is the requested
  * language, else the persisted one, else English. A full translate-all pass is
- * warranted only when a language is explicitly requested whose primary subtag
- * differs from the persisted one; comparing primary subtags avoids a needless
- * retranslation for a region-only change such as `en` to `en-GB`. Even without a
+ * warranted only when a language is explicitly requested that differs in
+ * primary subtag or writing script from the persisted one; same-script region
+ * variants such as `en` to `en-GB` stay a no-op, while `zh-CN` to `zh-TW` forces
+ * a full retranslation. Even without a
  * switch the plan is returned for every update so the middleware can still sweep
  * pages a prior run left pending.
  */
@@ -96,10 +97,10 @@ export function resolveTranslationPlan(
   return {
     target: requestedLanguage ?? source,
     source,
-    translateAll:
-      requestedLanguage !== undefined &&
-      getPrimaryLanguageSubtag(requestedLanguage) !==
-        getPrimaryLanguageSubtag(currentWikiLanguage),
+    translateAll: isMeaningfulLanguageChange(
+      requestedLanguage,
+      currentWikiLanguage,
+    ),
   };
 }
 
