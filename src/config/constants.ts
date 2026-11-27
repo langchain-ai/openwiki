@@ -10,6 +10,8 @@ export const COPILOT_API_KEY_ENV_KEY = "COPILOT_API_KEY";
 export const COPILOT_BASE_URL_ENV_KEY = "COPILOT_BASE_URL";
 export const FIREWORKS_API_KEY_ENV_KEY = "FIREWORKS_API_KEY";
 export const FIREWORKS_BASE_URL_ENV_KEY = "FIREWORKS_BASE_URL";
+export const EXAONE_API_KEY_ENV_KEY = "EXAONE_API_KEY";
+export const EXAONE_BASE_URL_ENV_KEY = "EXAONE_BASE_URL";
 export const MISTRAL_API_KEY_ENV_KEY = "MISTRAL_API_KEY";
 export const MISTRAL_BASE_URL_ENV_KEY = "MISTRAL_BASE_URL";
 export const NEBIUS_API_KEY_ENV_KEY = "NEBIUS_API_KEY";
@@ -147,6 +149,7 @@ export type OpenWikiProvider =
   | "gemini"
   | "gemini-enterprise"
   | "mistral"
+  | "exaone"
   | "nebius"
   | "nvidia"
   | "openai"
@@ -292,6 +295,7 @@ export const SELECTABLE_OPENWIKI_PROVIDERS = [
   "nebius",
   "nvidia",
   "mistral",
+  "exaone",
 ] as const satisfies readonly SelectableOpenWikiProvider[];
 
 export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
@@ -378,6 +382,13 @@ export const PROVIDER_CONFIGS: Record<OpenWikiProvider, ProviderConfig> = {
       { id: "mistral-large-4", label: "Mistral Large 4" },
       { id: "codestral-2508", label: "Codestral" },
     ],
+  },
+  exaone: {
+    apiKeyEnvKey: EXAONE_API_KEY_ENV_KEY,
+    baseURL: "https://api.exaone.ai/v1",
+    baseUrlEnvKey: EXAONE_BASE_URL_ENV_KEY,
+    label: "EXAONE",
+    modelOptions: [{ id: "k-exaone_v2.5", label: "K-EXAONE 2.5" }],
   },
   nebius: {
     apiKeyEnvKey: NEBIUS_API_KEY_ENV_KEY,
@@ -1024,7 +1035,9 @@ export function resolveConfiguredProvider(
                             BEDROCK_AWS_SECRET_ACCESS_KEY_ENV_KEY,
                           )
                         ? "bedrock"
-                        : DEFAULT_PROVIDER)
+                        : hasNonEmptyEnvValue(env, EXAONE_API_KEY_ENV_KEY)
+                          ? "exaone"
+                          : DEFAULT_PROVIDER)
   );
 }
 

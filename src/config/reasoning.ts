@@ -58,6 +58,12 @@ const REASONING_CAPABILITIES: Partial<
     "gpt-5.6-luna": OPENAI_GPT_56_REASONING_CAPABILITY,
     "gpt-5.6-sol": OPENAI_GPT_56_REASONING_CAPABILITY,
   },
+  exaone: {
+    "k-exaone_v2.5": {
+      transport: "chat-completions-reasoning-effort",
+      values: ["low", "medium", "high", "max"],
+    },
+  },
   nvidia: {
     "nvidia/nemotron-3-super-120b-a12b": {
       transport: "chat-completions-reasoning-effort",

@@ -176,6 +176,15 @@ describe("resolveConfiguredProvider", () => {
     expect(resolveConfiguredProvider({ NVIDIA_API_KEY: "x" })).toBe("nvidia");
   });
 
+  test("registers K-EXAONE 2.5 and falls back to EXAONE when its key is present", () => {
+    expect(isValidProvider("exaone")).toBe(true);
+    expect(getDefaultModelId("exaone")).toBe("k-exaone_v2.5");
+    expect(resolveConfiguredProvider({ EXAONE_API_KEY: "x" })).toBe("exaone");
+    expect(resolveProviderBaseUrl("exaone", {})).toBe(
+      "https://api.exaone.ai/v1",
+    );
+  });
+
   test("falls back to mistral when only a Mistral key is present", () => {
     expect(resolveConfiguredProvider({ MISTRAL_API_KEY: "x" })).toBe("mistral");
   });
