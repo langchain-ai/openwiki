@@ -1,6 +1,7 @@
-import { cp, lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { cp, lstat, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { isWikiAgentGuide } from "../claims/brains/code/paths.js";
 import { OPEN_WIKI_DIR } from "../config/constants.js";
 import { isFileNotFoundError } from "../platform/fs-errors.js";
 
@@ -25,10 +26,10 @@ export interface RepositoryWikiReplacement {
 /**
  * Replaces an existing repository wiki with a blank generation target.
  *
- * `INSTRUCTIONS.md` is user-owned control metadata, so it is copied into the
- * blank target. Everything else below `openwiki/` is generated state and is
- * removed before the init agent sees the repository. A private temporary copy
- * remains available until the run either commits or rolls back.
+ * `INSTRUCTIONS.md` and exact-basename `AGENTS.md` folder guides are user-owned
+ * instructions, so they and the guides' parent directories survive replacement.
+ * Generated state is removed before authoring. A private temporary copy remains
+ * available until the run either commits or rolls back.
  *
  * SIGINT and SIGTERM restore the backup before exiting. This keeps an operator
  * cancellation from leaving the repository with a partial replacement wiki.
@@ -175,6 +176,7 @@ export async function beginRepositoryWikiReplacement(
         preserveTimestamps: true,
       });
     }
+    await preserveAgentGuides(backupDir, wikiDir);
   })();
 
   try {
@@ -193,6 +195,25 @@ export async function beginRepositoryWikiReplacement(
   }
 
   return replacement;
+}
+
+/** Copies user-owned guides without following directory or file symlinks. */
+async function preserveAgentGuides(source: string, target: string): Promise<void> {
+  for (const entry of await readdir(source, { withFileTypes: true })) {
+    const sourcePath = path.join(source, entry.name);
+    const targetPath = path.join(target, entry.name);
+    if (isWikiAgentGuide(entry.name)) {
+      if (!entry.isFile()) {
+        throw new Error(
+          `Refusing to preserve ${sourcePath}: expected a regular file.`,
+        );
+      }
+      await mkdir(target, { recursive: true });
+      await cp(sourcePath, targetPath, { preserveTimestamps: true });
+    } else if (entry.isDirectory()) {
+      await preserveAgentGuides(sourcePath, targetPath);
+    }
+  }
 }
 
 /** Returns an idempotent transaction for a first init with no prior wiki. */

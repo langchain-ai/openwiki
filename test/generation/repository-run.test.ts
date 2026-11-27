@@ -2562,6 +2562,89 @@ describe("finishRepositoryRun", () => {
     expect(metadata).not.toHaveProperty("gitHead");
   });
 
+  test("finish preserves unplanned folder guides and excludes them from manifests and Claims", async () => {
+    const root = await createRepository();
+    const run = await beginForcedUpdate(root);
+    const content = "# User-owned instructions\r\n\r\nKeep these exact bytes.\r\n";
+    for (const guide of ["AGENTS.md", "nested/AGENTS.md"]) {
+      await writeWikiPage(root, guide, content);
+    }
+    await submitRepositoryPlan(run, { pages: [] });
+    await finishRepositoryRun(run);
+    const manifest = await readRepositoryPageManifest(root);
+    for (const guide of ["AGENTS.md", "nested/AGENTS.md"]) {
+      expect(await readFile(path.join(root, "openwiki", guide), "utf8")).toBe(content);
+      expect(manifest.pages).not.toHaveProperty(`/openwiki/${guide}`);
+      await expect(
+        readFile(path.join(root, "openwiki/.claims", guide.replace(/\.md$/u, ".json"))),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+    }
+  });
+
+  test("updates legacy guide manifest entries without changing guides or their old sidecars", async () => {
+    const root = await createRepository();
+    const manifestPath = path.join(root, "openwiki/.page-manifest.json");
+    const manifest = await readRepositoryPageManifest(root);
+    const content = "# User-owned guide\r\nExact original bytes.\r\n";
+    const guides = ["AGENTS.md", "nested/AGENTS.md"];
+    for (const guide of guides) {
+      await writeWikiPage(root, guide, content);
+      manifest.pages[`/openwiki/${guide}`] = {
+        pageVersion: `sha256:${"c".repeat(64)}`,
+      };
+      const sidecar = path.join(root, "openwiki/.claims", guide.replace(/\.md$/u, ".json"));
+      await mkdir(path.dirname(sidecar), { recursive: true });
+      await writeFile(sidecar, "legacy guide sidecar\n");
+    }
+    await writeFile(manifestPath, JSON.stringify(manifest));
+
+    const run = await beginForcedUpdate(root);
+    expect(run.state.initialPages).not.toContain("/openwiki/AGENTS.md");
+    expect(run.state.initialPages).not.toContain("/openwiki/nested/AGENTS.md");
+    await submitRepositoryPlan(run, { pages: [] });
+    await finishRepositoryRun(run);
+
+    const persisted = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      pages: Record<string, unknown>;
+    };
+    expect(persisted.pages).toHaveProperty("/openwiki/quickstart.md");
+    for (const guide of guides) {
+      expect(persisted.pages).not.toHaveProperty(`/openwiki/${guide}`);
+      expect(await readFile(path.join(root, "openwiki", guide), "utf8")).toBe(content);
+      expect(await readFile(
+        path.join(root, "openwiki/.claims", guide.replace(/\.md$/u, ".json")),
+        "utf8",
+      )).toBe("legacy guide sidecar\n");
+    }
+  });
+
+  test.each(["agents.md", "Agents.md"])(
+    "updates and finishes existing factual page %s with legacy coverage intact",
+    async (name) => {
+      const root = await createRepository([name]);
+      const page = `/openwiki/${name}`;
+      const store = new ClaimsStore(root);
+      const entry = {
+        pageVersion: await store.hashPage(page),
+        gitHead: await git(root, ["rev-parse", "HEAD"]),
+      };
+      await writeRepositoryPageManifest(root, {
+        schemaVersion: 1,
+        pages: { [page]: entry },
+      });
+      const run = await beginForcedUpdate(root);
+      expect(run.state.initialPages).toContain(page);
+      await submitRepositoryPlan(run, { pages: [] });
+      await finishRepositoryRun(run);
+      const manifest = await readRepositoryPageManifest(root);
+      expect(manifest.pages[page]?.gitHead).toBe(entry.gitHead);
+      expect(manifest.pages[page]?.pageVersion).toBe(await store.hashPage(page));
+      await expect(store.loadPage(page)).resolves.not.toBeNull();
+      await expect(readFile(path.join(root, "openwiki", name), "utf8"))
+        .resolves.toContain(`# ${path.basename(name, ".md")}`);
+    },
+  );
+
   test("applies explicit existing-page deletions with Claims cleanup", async () => {
     const root = await createRepository(["delete-me.md", "keep-me.md"]);
     const keptBefore = await readFile(

@@ -35,6 +35,7 @@ Root agent instruction files:
 - Keep generated wiki content under the repository /openwiki directory.
 - /openwiki/INSTRUCTIONS.md is the shared, user-authored OpenWiki brief for this repository. Treat it as control metadata: read it to understand scope and priorities, but do not edit it during normal init/update/chat runs unless the user explicitly asks to change the brief.
 - Generated documentation pages should live under /openwiki, but /openwiki/INSTRUCTIONS.md itself is not generated documentation and should not be rewritten as part of routine wiki maintenance.
+- Exact-basename AGENTS.md files anywhere under /openwiki/ are user-authored folder instructions. Read applicable ancestor guides when working in a folder; preserve them rather than generating, editing, deleting, or treating them as factual documentation or Claims.
 - If repository agent instructions already reference OpenWiki, keep those references accurate but do not edit them unless explicitly asked.
 
 OpenWiki CLI reference:
