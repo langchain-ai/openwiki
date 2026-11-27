@@ -96,14 +96,16 @@ describe("normalizeConceptContent", () => {
     expect(result.content).toContain("openwiki_generated: true");
   });
 
-  test("regenerates duplicate-key YAML instead of throwing", () => {
+  test("keeps the last value of a duplicate key instead of throwing", () => {
     const result = normalizeConceptContent(
       "---\ntype: Reference\ndescription: First\ndescription: Second\n---\n\n# Dupes\n",
       PATH,
     );
 
-    expect(result.changed).toBe(true);
-    expect(result.content).toContain("openwiki_generated: true");
+    expect(result).toEqual({
+      changed: true,
+      content: "---\ntype: Reference\ndescription: Second\n---\n\n# Dupes\n",
+    });
   });
 
   test("carries a pending-translation marker across a regeneration", () => {
@@ -276,7 +278,7 @@ describe("repairOkfFrontmatter", () => {
 
   test("falls back to minimal valid metadata for an unusable YAML mapping", () => {
     const repaired = repairOkfFrontmatter(
-      "---\ntype: Guide\ntype: Domain\n---\n\n# Page\n\nBody.\n",
+      "---\ntype: [Guide\n---\n\n# Page\n\nBody.\n",
       PATH,
     );
 
@@ -286,6 +288,41 @@ describe("repairOkfFrontmatter", () => {
       type: "Reference",
     });
     expect(repaired.content).toContain("# Page\n\nBody.\n");
+    expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
+  });
+
+  test("keeps every other field when a block repeats a key", () => {
+    const content = [
+      "---",
+      "type: Referenz",
+      "title: B",
+      "description: my description",
+      "pfade: [a.py]",
+      "verified:",
+      '  - { by: "human:old", at: "2026-08-01T00:00:00Z" }',
+      'generated: { by: "claude-code", at: "2026-08-01T00:00:00Z" }',
+      "verified:",
+      '  - { by: "human:new", at: "2026-08-02T00:00:00Z" }',
+      "---",
+      "",
+      "# B",
+      "",
+      "Body.",
+      "",
+    ].join("\n");
+    const repaired = repairOkfFrontmatter(content, PATH);
+
+    expect(repaired.changed).toBe(true);
+    expect(parseFrontmatterFields(repaired.content)).toEqual({
+      type: "Referenz",
+      title: "B",
+      description: "my description",
+      pfade: ["a.py"],
+      generated: { by: "claude-code", at: "2026-08-01T00:00:00Z" },
+      verified: [{ by: "human:new", at: "2026-08-02T00:00:00Z" }],
+    });
+    expect(repaired.content).not.toContain("openwiki_generated");
+    expect(repaired.content).toContain("# B\n\nBody.\n");
     expect(validateOkfFrontmatter(repaired.content)).toEqual({ valid: true });
   });
 

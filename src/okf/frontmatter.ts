@@ -766,6 +766,9 @@ export function normalizeConceptContent(
  * than rewritten into a false assertion. Missing or invalid `type` receives the
  * localized fallback and marks the metadata as derived.
  *
+ * A top-level field repeated in the block keeps only its last occurrence, so a
+ * duplicate key alone never discards the rest of the mapping.
+ *
  * If the YAML mapping itself is unusable, or a raw representation cannot be
  * repaired safely, the deterministic last resort is a minimal valid block. In
  * all cases the returned content passes {@link validateOkfFrontmatter}.
@@ -777,6 +780,12 @@ export function repairOkfFrontmatter(
 ): FrontmatterRepair {
   if (validateOkfFrontmatter(content).valid) {
     return { changed: false, content };
+  }
+
+  const deduplicated = dropDuplicateFrontmatterFields(content);
+  if (deduplicated !== content) {
+    const repaired = repairOkfFrontmatter(deduplicated, filePath, conceptType);
+    return { changed: true, content: repaired.content };
   }
 
   const fields = parseFrontmatterFields(content);
@@ -855,6 +864,51 @@ export function repairOkfFrontmatter(
     return { changed: repaired !== content, content: repaired };
   }
   return rebuildMinimalConcept(content, body, derived);
+}
+
+/**
+ * Matches a plain top-level YAML mapping key at the start of a front-matter
+ * line and captures its name.
+ */
+const TOP_LEVEL_FIELD = /^([A-Za-z0-9_][\w.-]*)\s*:/u;
+
+/**
+ * Removes every earlier occurrence of a repeated top-level front-matter field,
+ * keeping the last one (the value a non-strict YAML parser would read) and
+ * preserving every other line byte-for-byte. A duplicate key is easy to get
+ * from a Git merge of two runs that each stamped the same field, and it must
+ * not make the whole mapping unusable. Returns the content unchanged when no
+ * top-level field repeats.
+ */
+function dropDuplicateFrontmatterFields(content: string): string {
+  const { block, body } = splitFrontmatter(content);
+  if (block === undefined) return content;
+
+  const lines = block.split("\n");
+  const fields: { end: number; key: string; start: number }[] = [];
+  for (let index = 0; index < lines.length;) {
+    const key = TOP_LEVEL_FIELD.exec(lines[index])?.[1];
+    if (key === undefined) {
+      index += 1;
+      continue;
+    }
+    const end = findFrontmatterFieldEnd(lines, index);
+    fields.push({ end, key, start: index });
+    index = end;
+  }
+
+  const lastStart = new Map(fields.map((field) => [field.key, field.start]));
+  const dropped = new Set<number>();
+  for (const field of fields) {
+    if (lastStart.get(field.key) === field.start) continue;
+    for (let index = field.start; index < field.end; index += 1) {
+      dropped.add(index);
+    }
+  }
+  if (dropped.size === 0) return content;
+
+  const kept = lines.filter((_, index) => !dropped.has(index));
+  return `---\n${kept.join("\n")}\n---\n${body}`;
 }
 
 /** Replaces unusable YAML with the smallest truthful valid OKF block. */

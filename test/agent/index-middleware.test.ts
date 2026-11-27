@@ -331,24 +331,33 @@ describe("synchronizeWikiIndexes", () => {
     expect(index).toContain("- [Folded](folded.md) - A folded description.");
   });
 
-  test("normalizes malformed and duplicate YAML instead of throwing", async () => {
-    for (const frontmatter of [
-      "type: [unterminated\ndescription: Page",
-      "type: Reference\ndescription: First\ndescription: Second",
-    ]) {
-      const { backend, rootDir } = await setup();
-      await backend.write("/openwiki/page.md", `---\n${frontmatter}\n---\n`);
+  test("normalizes malformed YAML instead of throwing", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/page.md",
+      "---\ntype: [unterminated\ndescription: Page\n---\n",
+    );
 
-      const report = await synchronizeWikiIndexes(backend, "repository");
-      expect(report.generatedPages).toEqual(["page.md"]);
+    const report = await synchronizeWikiIndexes(backend, "repository");
+    expect(report.generatedPages).toEqual(["page.md"]);
 
-      const page = await readFile(
-        path.join(rootDir, "openwiki/page.md"),
-        "utf8",
-      );
-      expect(page).toContain('type: "Reference"');
-      expect(page).toContain("openwiki_generated: true");
-    }
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toContain('type: "Reference"');
+    expect(page).toContain("openwiki_generated: true");
+  });
+
+  test("keeps the last value of a duplicate YAML key instead of throwing", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/page.md",
+      "---\ntype: Guide\ndescription: First\ndescription: Second\n---\n",
+    );
+
+    const report = await synchronizeWikiIndexes(backend, "repository");
+    expect(report.generatedPages).toEqual([]);
+
+    const page = await readFile(path.join(rootDir, "openwiki/page.md"), "utf8");
+    expect(page).toBe("---\ntype: Guide\ndescription: Second\n---\n");
   });
 
   test.each([
