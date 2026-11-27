@@ -439,7 +439,7 @@ function extractHeadings(content: string): string[] {
  * `-1`, `-2`, ... to duplicate slugs exactly as GitHub does.
  */
 function buildHeadingAnchors(headings: string[]): Set<string> {
-  const counts = new Map<string, number>();
+  const suffixes = new Map<string, number>();
   const anchors = new Set<string>();
 
   for (const heading of headings) {
@@ -448,9 +448,14 @@ function buildHeadingAnchors(headings: string[]): Set<string> {
       continue;
     }
 
-    const count = counts.get(base) ?? 0;
-    counts.set(base, count + 1);
-    anchors.add(count === 0 ? base : `${base}-${count}`);
+    let anchor = base;
+    let suffix = suffixes.get(base) ?? 0;
+    while (anchors.has(anchor)) {
+      suffix += 1;
+      anchor = `${base}-${suffix}`;
+    }
+    suffixes.set(base, suffix);
+    anchors.add(anchor);
   }
 
   return anchors;
