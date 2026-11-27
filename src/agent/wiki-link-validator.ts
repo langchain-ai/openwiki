@@ -247,6 +247,9 @@ async function validateLink(
   }
 
   const { anchor, path: linkPath } = parseLinkDestination(href);
+  if (isExternalHref(linkPath)) {
+    return null;
+  }
   if (!linkPath) {
     if (!anchor) {
       return null;
@@ -481,21 +484,26 @@ function slugifyHeading(text: string): string {
 
 /**
  * Splits a link destination into its path and optional `#anchor`, dropping any
- * trailing Markdown link title (e.g. `path "Title"`).
+ * trailing Markdown link title (e.g. `path "Title"`). A `<...>` destination is
+ * unwrapped and the path is percent-decoded, as Markdown renderers do, so
+ * `release%20notes.md` and `<release notes.md>` both name `release notes.md`.
  */
 function parseLinkDestination(rawHref: string): {
   anchor?: string;
   path: string;
 } {
   const withoutTitle = rawHref.replace(/\s+(["']).*\1\s*$/u, "").trim();
-  const hashIndex = withoutTitle.indexOf("#");
+  const destination = /^<[^<>]*>$/u.test(withoutTitle)
+    ? withoutTitle.slice(1, -1)
+    : withoutTitle;
+  const hashIndex = destination.indexOf("#");
   if (hashIndex === -1) {
-    return { path: withoutTitle };
+    return { path: decodeLinkPart(destination) };
   }
 
   return {
-    anchor: withoutTitle.slice(hashIndex + 1),
-    path: withoutTitle.slice(0, hashIndex),
+    anchor: destination.slice(hashIndex + 1),
+    path: decodeLinkPart(destination.slice(0, hashIndex)),
   };
 }
 
@@ -506,10 +514,18 @@ function parseLinkDestination(rawHref: string): {
  * would fail the whole run.
  */
 function decodeAnchor(anchor: string): string {
+  return decodeLinkPart(anchor);
+}
+
+/**
+ * Percent-decodes one link path or anchor, keeping a malformed escape as-is so
+ * the link is checked (and stamped) literally instead of throwing.
+ */
+function decodeLinkPart(value: string): string {
   try {
-    return decodeURIComponent(anchor);
+    return decodeURIComponent(value);
   } catch {
-    return anchor;
+    return value;
   }
 }
 
