@@ -3,6 +3,8 @@ import { formatEnvironmentDebugValue } from "../../src/agent/index.ts";
 import {
   OPENAI_COMPATIBLE_AUTH_ENV_KEY,
   OPENAI_COMPATIBLE_ENTRA_SCOPE_ENV_KEY,
+  OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
+  OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY,
   OPENWIKI_MODEL_ID_ENV_KEY,
   OPENWIKI_PROVIDER_ENV_KEY,
 } from "../../src/config/constants.ts";
@@ -42,6 +44,15 @@ describe("formatEnvironmentDebugValue – non-secret classification", () => {
     expect(
       formatEnvironmentDebugValue(OPENWIKI_PROVIDER_ENV_KEY, "anthropic"),
     ).toBe('set(value="anthropic")');
+    expect(
+      formatEnvironmentDebugValue(OPENWIKI_MAX_OUTPUT_TOKENS_ENV_KEY, "4096"),
+    ).toBe('set(value="4096")');
+    expect(
+      formatEnvironmentDebugValue(
+        OPENWIKI_BEDROCK_MAX_TOKENS_ENV_KEY,
+        "8192",
+      ),
+    ).toBe('set(value="8192")');
   });
 
   test("a short generic value is reported by length only", () => {
