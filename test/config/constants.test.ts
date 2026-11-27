@@ -38,6 +38,7 @@ import {
   providerRequiresSecretKey,
   providerUsesAwsSdkCredentials,
   resolveBedrockMaxTokens,
+  resolveCodexServiceTier,
   resolveConfiguredMaxOutputTokens,
   providerUsesStreaming,
   resolveConfiguredProvider,
@@ -735,6 +736,57 @@ describe("resolveOpenAiCompatibleStreaming", () => {
         OPENWIKI_OPENAI_COMPATIBLE_STREAMING: "false",
       }),
     ).toBe(false);
+  });
+});
+
+describe("resolveCodexServiceTier", () => {
+  test("returns undefined when unset", () => {
+    expect(resolveCodexServiceTier("openai-chatgpt", {})).toBeUndefined();
+  });
+
+  test("returns priority when fast mode is true", () => {
+    expect(
+      resolveCodexServiceTier("openai-chatgpt", { OPENWIKI_FAST_MODE: "true" }),
+    ).toBe("priority");
+    expect(
+      resolveCodexServiceTier("openai-chatgpt", {
+        OPENWIKI_FAST_MODE: " TRUE ",
+      }),
+    ).toBe("priority");
+  });
+
+  test("returns undefined when fast mode is false", () => {
+    expect(
+      resolveCodexServiceTier("openai-chatgpt", {
+        OPENWIKI_FAST_MODE: "false",
+      }),
+    ).toBeUndefined();
+    expect(
+      resolveCodexServiceTier("openai-chatgpt", {
+        OPENWIKI_FAST_MODE: " FALSE ",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("throws on invalid boolean value", () => {
+    expect(() =>
+      resolveCodexServiceTier("openai-chatgpt", { OPENWIKI_FAST_MODE: "on" }),
+    ).toThrow(/Invalid OPENWIKI_FAST_MODE/);
+  });
+
+  test("throws when used with non-chatgpt provider", () => {
+    expect(() =>
+      resolveCodexServiceTier("openai", { OPENWIKI_FAST_MODE: "true" }),
+    ).toThrow(/Fast mode requires the openai-chatgpt provider/);
+  });
+
+  test("accepts false with any provider", () => {
+    expect(
+      resolveCodexServiceTier("openai", { OPENWIKI_FAST_MODE: "false" }),
+    ).toBeUndefined();
+    expect(
+      resolveCodexServiceTier("anthropic", { OPENWIKI_FAST_MODE: " FALSE " }),
+    ).toBeUndefined();
   });
 });
 
