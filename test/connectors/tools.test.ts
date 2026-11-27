@@ -265,16 +265,19 @@ describe("mcp tool delegation", () => {
     expect(result.tools).toEqual([{ name: "discovered_tool" }]);
   });
 
-  test("list_mcp_tools rejects a connector that is not MCP-backed", async () => {
+  test("list_mcp_tools returns an error for a connector that is not MCP-backed", async () => {
     // Defense in depth beyond the schema enum: even a schema-valid connectorId
     // is refused if the runtime does not classify it as MCP-backed.
     const tools = await loadToolsWithMockMcpRuntime({ isMcp: false });
 
-    await expect(
-      getTool(tools, "openwiki_list_mcp_tools").invoke({
+    const result = String(
+      await getTool(tools, "openwiki_list_mcp_tools").invoke({
         connectorId: "notion",
       }),
-    ).rejects.toThrow(/not MCP-backed/u);
+    );
+
+    expect(result).toMatch(/^Tool error: /u);
+    expect(result).toMatch(/not MCP-backed/u);
   });
 
   test("call_mcp_tool forwards the exact tool name and args", async () => {
