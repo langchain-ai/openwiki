@@ -1,5 +1,17 @@
 # openwiki
 
+## 0.10.0
+
+### Minor Changes
+
+- [#1122](https://github.com/langchain-ai/openwiki/pull/1122) [`7807d84`](https://github.com/langchain-ai/openwiki/commit/7807d841b034add58afb9f42f76f4159b0e9b0ee) Thanks [@ewellinger](https://github.com/ewellinger)! - The `openrouter` provider honours an `OPENROUTER_BASE_URL` override, so it can target a regional endpoint such as `https://us.openrouter.ai/api/v1`. `--debug` OpenRouter request capture follows the overridden URL. The default endpoint is unchanged.
+
+### Patch Changes
+
+- [#600](https://github.com/langchain-ai/openwiki/pull/600) [`2e3293b`](https://github.com/langchain-ai/openwiki/commit/2e3293b983982bf4ef6282e5731bf08f9ea7c4fe) Thanks [@jkennedyvz](https://github.com/jkennedyvz)! - Use an ephemeral credential helper in the GitLab CI example so push credentials cannot persist in remote URLs or appear under shell tracing.
+
+- [#1097](https://github.com/langchain-ai/openwiki/pull/1097) [`dcb803e`](https://github.com/langchain-ai/openwiki/commit/dcb803e9634e3d5d7361404aa4f7ee92a3e8e5ad) Thanks [@dependabot](https://github.com/apps/dependabot)! - Reject parenthesized glob patterns and grep file filters to prevent an unpatched picomatch denial of service. Use simple wildcards or separate searches instead; literal grep queries are unchanged.
+
 ## 0.9.0
 
 ### Minor Changes
