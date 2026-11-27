@@ -21,12 +21,14 @@ export interface SampleCaps {
 /**
  * Selects the sample from two lean root-run pools within the window, biased
  * toward anomalies: errors first (up to errorCap), then latency outliers among
- * the non-errored runs (up to outlierCap, at most a quarter of the non-errored
- * pool so the bucket stays a genuine tail rather than swallowing a small pull,
- * and the remaining budget), then the most-recent non-errored runs to backfill
- * to `total`. With no errors/outliers it degrades to all-baseline — the same
- * recency behavior as before. Runs are deduped by id; `nonErrorRuns` is assumed
- * most-recent-first.
+ * the non-errored runs (up to outlierCap, at most a quarter of the runs with a
+ * measurable latency so the bucket stays a genuine tail rather than swallowing
+ * a small pull, and the remaining budget), then the most-recent non-errored
+ * runs to backfill to `total`. Only runs with a measurable latency are eligible
+ * for the outlier bucket — runs without one (still in flight, or with unusable
+ * timestamps) carry no latency evidence and backfill as baseline instead. With
+ * no errors/outliers it degrades to all-baseline — the same recency behavior as
+ * before. Runs are deduped by id; `nonErrorRuns` is assumed most-recent-first.
  */
 export function selectSampleBuckets(
   errorRuns: Run[],
@@ -48,17 +50,23 @@ export function selectSampleBuckets(
     take(run, "error");
   }
 
+  // Only runs with a measurable latency can be latency outliers; the rest
+  // carry no latency evidence and fall through to the baseline backfill.
+  const measurable = nonErrorRuns.flatMap((run) => {
+    const latency = latencyMs(run);
+    return latency === undefined || usedIds.has(run.id)
+      ? []
+      : [{ latency, run }];
+  });
   // Keep outliers a genuine tail: never more than the flat cap, the remaining
-  // budget, or a quarter of the non-errored pool (so a small pull stays mostly
+  // budget, or a quarter of the measurable pool (so a small pull stays mostly
   // baseline instead of being relabeled as outliers).
   const outlierBudget = Math.min(
     caps.outlierCap,
     caps.total - selected.length,
-    Math.floor(nonErrorRuns.length / 4),
+    Math.floor(measurable.length / 4),
   );
-  const byLatencyDesc = nonErrorRuns
-    .filter((run) => !usedIds.has(run.id))
-    .map((run) => ({ latency: latencyMs(run) ?? -1, run }))
+  const byLatencyDesc = measurable
     .sort((left, right) => right.latency - left.latency)
     .slice(0, outlierBudget);
   for (const { run } of byLatencyDesc) {
