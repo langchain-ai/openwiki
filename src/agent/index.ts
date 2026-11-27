@@ -9,6 +9,7 @@ import { ChatGoogle } from "@langchain/google/node";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatOpenRouter } from "@langchain/openrouter";
+import { ChatExaone } from "langchain-exaone";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { Event as ProtocolEvent } from "@langchain/protocol";
 import {
@@ -97,6 +98,7 @@ import {
   getProviderBaseUrlWarnings,
   getProviderFixedModel,
   getProviderModelOptions,
+  EXAONE_BASE_URL_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderRegionEnvKeys,
   MISTRAL_BASE_URL_ENV_KEY,
@@ -1180,6 +1182,21 @@ export function createModel(
     reasoningConfig?.transport === "gemini-thinking-level"
       ? { thinkingLevel: reasoningConfig.effort }
       : {};
+
+  if (provider === "exaone") {
+    const apiKey = getProviderApiKey(provider)?.trim();
+    if (!apiKey) {
+      throw new Error("EXAONE_API_KEY is required for the EXAONE provider.");
+    }
+    return new ChatExaone({
+      apiKey,
+      baseUrl: resolveProviderBaseUrl(provider),
+      model: modelId,
+      reasoningEffort: reasoningConfig?.effort,
+      ...maxTokensOptions,
+      ...retryOptions,
+    });
+  }
 
   if (provider === "gemini") {
     return new ChatGoogle({
@@ -2771,6 +2788,7 @@ export function formatEnvironmentDebugValue(
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
+    key === EXAONE_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
