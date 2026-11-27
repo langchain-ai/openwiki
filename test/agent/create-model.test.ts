@@ -507,21 +507,27 @@ describe("createModel OpenAI-compatible transport selection", () => {
     }
   });
 
-  test("routes Copilot GPT-5 models through the Responses API", () => {
-    const model = createModel("copilot", "gpt-5.5", 0) as {
-      useResponsesApi?: boolean;
-    };
+  test.each(["gpt-5.5", "gpt-6-luna", "gpt-6.1-terra", "gpt-6.2-sol"])(
+    "routes Copilot model %s through the Responses API",
+    (modelId) => {
+      const model = createModel("copilot", modelId, 0) as {
+        useResponsesApi?: boolean;
+      };
 
-    expect(model.useResponsesApi).toBe(true);
-  });
+      expect(model.useResponsesApi).toBe(true);
+    },
+  );
 
-  test("keeps non-GPT-5 Copilot models on chat completions", () => {
-    const model = createModel("copilot", "claude-sonnet-5", 0) as {
-      useResponsesApi?: boolean;
-    };
+  test.each(["gpt-4.1", "gpt-4o", "claude-sonnet-5", "gemini-2.5-pro"])(
+    "keeps Copilot model %s on chat completions",
+    (modelId) => {
+      const model = createModel("copilot", modelId, 0) as {
+        useResponsesApi?: boolean;
+      };
 
-    expect(model.useResponsesApi).toBe(false);
-  });
+      expect(model.useResponsesApi).toBe(false);
+    },
+  );
 
   test("forces streaming transport for Claude Copilot models", () => {
     // The Copilot API rejects non-streaming requests for Claude models,

@@ -21,10 +21,40 @@ describe("GitHub Copilot provider config", () => {
     expect(COPILOT_API_KEY_ENV_KEY).toBe("COPILOT_API_KEY");
   });
 
-  test("uses the Responses API only for Copilot GPT-5 models", () => {
-    expect(providerUsesResponsesApi("copilot", "gpt-5.5")).toBe(true);
-    expect(providerUsesResponsesApi("copilot", "claude-sonnet-5")).toBe(false);
+  test.each([
+    "gpt-5",
+    "gpt-5.5",
+    "gpt-5.6-terra",
+    "gpt-5.6-luna",
+    "gpt-5.6-sol",
+    "gpt-6",
+    "gpt-6-astra",
+    "gpt-6-luna",
+    "gpt-6-sol",
+    "gpt-6.1-sol",
+    "gpt-6.1-terra",
+    "gpt-6.2-astra",
+    "gpt-6.2-sol",
+    "gpt-9",
+    "gpt-10",
+    "gpt-100",
+  ])("uses the Responses API for Copilot model %s", (modelId) => {
+    expect(providerUsesResponsesApi("copilot", modelId)).toBe(true);
   });
+
+  test.each(["gpt-4.1", "gpt-4o", "claude-sonnet-5", "gemini-2.5-pro"])(
+    "keeps Copilot model %s on chat completions",
+    (modelId) => {
+      expect(providerUsesResponsesApi("copilot", modelId)).toBe(false);
+    },
+  );
+
+  test.each(["gpt-05", "gpt-6foo", "gpt-10foo", "custom-gpt-6"])(
+    "does not match malformed or prefixed GPT model ID %s",
+    (modelId) => {
+      expect(providerUsesResponsesApi("copilot", modelId)).toBe(false);
+    },
+  );
 
   test("always forces streaming transport for all Copilot models", () => {
     // The Copilot API rejects non-streaming requests for Claude and Gemini
