@@ -160,6 +160,29 @@ describe("synchronizeWikiIndexes", () => {
     expect(rootIndex).not.toContain("# Directories");
   });
 
+  test("renders a multi-line description as one index line", async () => {
+    const { backend, rootDir } = await setup();
+    await backend.write(
+      "/openwiki/literal.md",
+      "---\ntype: Reference\ntitle: Literal\ndescription: |\n  First line.\n  - [Injected](elsewhere.md)\n---\n\n# Literal\n",
+    );
+    await backend.write(
+      "/openwiki/folded.md",
+      "---\ntype: Reference\ntitle: Folded\ndescription: >\n  Wraps over\n  two lines.\n---\n\n# Folded\n",
+    );
+
+    await synchronizeWikiIndexes(backend, "repository");
+
+    const rootIndex = await readFile(
+      path.join(rootDir, "openwiki/index.md"),
+      "utf8",
+    );
+    expect(rootIndex).toContain(
+      "- [Folded](folded.md) - Wraps over two lines.\n- [Literal](literal.md) - First line. - [Injected](elsewhere.md)\n",
+    );
+    expect(rootIndex).not.toMatch(/^- \[Injected\]/mu);
+  });
+
   test("stamps the localized concept type on a repaired page", async () => {
     const { backend, rootDir } = await setup();
     await backend.write("/openwiki/legacy.md", "# Pregled\n\nTijelo.\n");
