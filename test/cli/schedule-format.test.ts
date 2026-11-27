@@ -38,8 +38,8 @@ function connectorStatus(
   return {
     description: "Daily refresh",
     expression: "0 9 * * *",
-    launchAgentLoaded: false,
-    launchAgentPlistExists: false,
+    nativeJobInstalled: false,
+    nativeJobPathExists: false,
     sourceInstanceId: "src-1",
     updatedAt: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -158,19 +158,19 @@ describe("formatPowerScheduleStatus", () => {
 });
 
 describe("formatScheduleStatus", () => {
-  test("reports not installed when there is no launch agent path", () => {
+  test("reports not installed when there is no native job path", () => {
     const result = formatScheduleStatus(connectorStatus());
 
-    expect(result).toContain("Launchd");
+    expect(result).toContain("Scheduler");
     expect(result).toContain("not installed");
   });
 
-  test("reports loaded when the launch agent is loaded", () => {
+  test("reports loaded when the native job is loaded", () => {
     const result = formatScheduleStatus(
       connectorStatus({
-        launchAgentLoaded: true,
-        launchAgentPath: "/tmp/agent.plist",
-        launchAgentPlistExists: true,
+        nativeJobInstalled: true,
+        nativeJobPath: "/tmp/agent.plist",
+        nativeJobPathExists: true,
       }),
     );
 
