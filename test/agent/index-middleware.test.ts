@@ -225,7 +225,14 @@ describe("synchronizeWikiIndexes", () => {
       "/openwiki/page.md",
       document("Page", "Current description."),
     );
-    await backend.write("/openwiki/INSTRUCTIONS.md", "No front matter.");
+    // The brief is user-authored control state, so seed it with direct
+    // filesystem access like a real repository would, not through the agent
+    // backend (which must refuse control-state writes).
+    await writeFile(
+      path.join(rootDir, "openwiki", "INSTRUCTIONS.md"),
+      "No front matter.",
+      "utf8",
+    );
     await synchronizeWikiIndexes(backend, "repository");
 
     const indexPath = "/openwiki/index.md";
