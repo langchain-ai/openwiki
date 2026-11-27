@@ -607,7 +607,7 @@ export function useInitSetup({
           getSavedEnvValue(OPENWIKI_MODEL_ID_ENV_KEY) ??
           getDefaultModelId(provider);
         setModelSelectionIndex(getModelSelectionIndex(provider, seededModelId));
-        // Preset-less providers (e.g. Bedrock) take the model as free text, so
+        // Preset-less providers (e.g. OpenAI-compatible) take the model as free text, so
         // restore the saved id into the field; selection-based providers drive
         // off the index and keep the input empty.
         setInput(

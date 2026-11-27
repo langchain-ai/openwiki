@@ -36,6 +36,8 @@ export const CODEX_ORIGINATOR = "openwiki";
 const CODEX_LUNA_MODEL_ID = "gpt-5.6-luna";
 const CODEX_LUNA_ORIGINATOR = "codex_cli_rs";
 const CODEX_LUNA_USER_AGENT = "codex_cli_rs/0.0.0";
+const CODEX_MODELS_WITHOUT_PROMPT_CACHE_RETENTION =
+  /^gpt-(?:5\.6|6(?:\.\d+)?)(?:-|$)/u;
 export const CODEX_RESPONSES_LITE_HEADER =
   "x-openai-internal-codex-responses-lite";
 
@@ -53,7 +55,7 @@ export function createCodexFetch(
     const isCodexRequest = isCodexResponsesRequest(input);
     const useLunaProtocol = modelId === CODEX_LUNA_MODEL_ID && isCodexRequest;
     const omitPromptCacheRetention =
-      (modelId === "gpt-5.6" || modelId.startsWith("gpt-5.6-")) &&
+      CODEX_MODELS_WITHOUT_PROMPT_CACHE_RETENTION.test(modelId) &&
       isCodexRequest;
 
     if (init?.body != null && typeof init.body === "string") {
@@ -67,7 +69,7 @@ export function createCodexFetch(
         let changed = false;
 
         // The ChatGPT-backed Codex endpoint rejects this LangChain Responses
-        // option for GPT-5.6 models. Strip it at the final request boundary so
+        // option for GPT-5.6 and GPT-6 models. Strip it at the final request boundary so
         // `zdrEnabled` can still independently enforce the required store:false.
         if (omitPromptCacheRetention && "prompt_cache_retention" in payload) {
           delete payload.prompt_cache_retention;

@@ -34,16 +34,19 @@ describe("openai-chatgpt provider config", () => {
     expect(getProviderLabel("openai-chatgpt")).toBe("OpenAI (ChatGPT login)");
   });
 
-  test("mirrors the openai model options", () => {
-    expect(getProviderModelOptions("openai-chatgpt")).toEqual(
-      getProviderModelOptions("openai"),
+  test("offers the openai models the ChatGPT-backed Codex endpoint accepts", () => {
+    expect(getProviderModelOptions("openai")).toEqual(
+      expect.arrayContaining(getProviderModelOptions("openai-chatgpt")),
     );
     expect(getProviderModelOptions("openai-chatgpt").map((m) => m.id)).toEqual([
       "gpt-5.6-terra",
       "gpt-5.6-luna",
       "gpt-5.6-sol",
-      "gpt-5.5",
-      "gpt-5.4-mini",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-6-astra",
+      "gpt-6-sol",
+      "gpt-6-luna",
     ]);
   });
 
