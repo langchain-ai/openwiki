@@ -87,6 +87,15 @@ describe("formatEnvironmentDebugValue – URL-typed keys", () => {
     }
   });
 
+  test("EXAONE base URL uses the same URL redaction as other providers", () => {
+    expect(
+      formatEnvironmentDebugValue(
+        "EXAONE_BASE_URL",
+        "https://user:pass@api.example.com/v1?token=abc#frag",
+      ),
+    ).toBe('set(url="https://api.example.com/v1", redacted=auth+query+hash)');
+  });
+
   test("a URL-typed key holding a non-URL value falls back to a length preview", () => {
     // If a base-URL env var is misconfigured with a non-URL string, new URL()
     // throws and the formatter degrades to the generic preview shape instead

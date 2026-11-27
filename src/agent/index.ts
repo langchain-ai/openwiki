@@ -98,6 +98,7 @@ import {
   getProviderBaseUrlWarnings,
   getProviderFixedModel,
   getProviderModelOptions,
+  EXAONE_BASE_URL_ENV_KEY,
   FIREWORKS_BASE_URL_ENV_KEY,
   getProviderRegionEnvKeys,
   MISTRAL_BASE_URL_ENV_KEY,
@@ -2787,6 +2788,7 @@ export function formatEnvironmentDebugValue(
     key === ANTHROPIC_BASE_URL_ENV_KEY ||
     key === BASETEN_BASE_URL_ENV_KEY ||
     key === COPILOT_BASE_URL_ENV_KEY ||
+    key === EXAONE_BASE_URL_ENV_KEY ||
     key === FIREWORKS_BASE_URL_ENV_KEY ||
     key === MISTRAL_BASE_URL_ENV_KEY ||
     key === NVIDIA_BASE_URL_ENV_KEY ||
