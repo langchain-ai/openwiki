@@ -116,7 +116,7 @@ export type OpenWikiRunOptions = {
   telemetryFile?: string;
 };
 
-export type UpdateRunStatus = "complete" | "interrupted";
+export type UpdateRunStatus = "complete" | "interrupted" | "running";
 
 export type UpdateMetadata = {
   updatedAt: string;
