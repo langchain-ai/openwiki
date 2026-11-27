@@ -66,6 +66,7 @@ describe("sanitizeDiagnosticText", () => {
   const originalCopilotKey = process.env.COPILOT_API_KEY;
   const originalNvidiaKey = process.env.NVIDIA_API_KEY;
   const originalMistralKey = process.env.MISTRAL_API_KEY;
+  const originalCrusoeKey = process.env.CRUSOE_API_KEY;
 
   beforeEach(() => {
     delete process.env.NEBIUS_API_KEY;
@@ -74,6 +75,7 @@ describe("sanitizeDiagnosticText", () => {
     delete process.env.COPILOT_API_KEY;
     delete process.env.NVIDIA_API_KEY;
     delete process.env.MISTRAL_API_KEY;
+    delete process.env.CRUSOE_API_KEY;
   });
 
   afterEach(() => {
@@ -110,6 +112,12 @@ describe("sanitizeDiagnosticText", () => {
       delete process.env.MISTRAL_API_KEY;
     } else {
       process.env.MISTRAL_API_KEY = originalMistralKey;
+    }
+
+    if (originalCrusoeKey === undefined) {
+      delete process.env.CRUSOE_API_KEY;
+    } else {
+      process.env.CRUSOE_API_KEY = originalCrusoeKey;
     }
   });
 
@@ -166,6 +174,17 @@ describe("sanitizeDiagnosticText", () => {
 
     expect(result).not.toContain("mistral-secret-value-24680");
     expect(result).toContain("[REDACTED:MISTRAL_API_KEY]");
+  });
+
+  test("redacts the exact value of CRUSOE_API_KEY when set", () => {
+    process.env.CRUSOE_API_KEY = "crusoe-secret-value-24680";
+
+    const result = sanitizeDiagnosticText(
+      "request failed with key crusoe-secret-value-24680 attached",
+    );
+
+    expect(result).not.toContain("crusoe-secret-value-24680");
+    expect(result).toContain("[REDACTED:CRUSOE_API_KEY]");
   });
 
   test("redacts OpenAI-style sk- tokens", () => {
