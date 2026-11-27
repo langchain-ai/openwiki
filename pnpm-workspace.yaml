@@ -21,10 +21,10 @@ allowBuilds:
 #           -v3r7-h72x-cjcm, -8xcm-r25x-g524, CVE-2026-19534,
 #           CVE-2026-84961
 overrides:
-  "@hono/node-server": 2.1.3
+  "@hono/node-server": 2.1.6
   brace-expansion: 5.0.12
   fast-uri: 3.1.9
-  hono: 4.13.11
+  hono: 4.13.16
   ip-address: 10.7.4
   js-yaml@3: ^3.15.1
   js-yaml@4: ^4.3.1
