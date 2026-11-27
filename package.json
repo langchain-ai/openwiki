@@ -81,6 +81,7 @@
     "@langchain/protocol": "^0.0.20",
     "@langchain/tavily": "1.2.0",
     "@modelcontextprotocol/sdk": "^1.32.1",
+    "brace-expansion": "5.0.12",
     "ci-info": "^4.4.0",
     "cron-parser": "5.10.2",
     "cronstrue": "3.38.0",

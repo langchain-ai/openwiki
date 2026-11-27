@@ -1,4 +1,5 @@
 import path from "node:path";
+import { expand as expandBraces } from "brace-expansion";
 import {
   LocalShellBackend,
   type DeleteResult,
@@ -108,6 +109,98 @@ function targetsGitMetadata(pattern: string, searchPath?: string): boolean {
   return [pattern, searchPath ?? ""].some((value) =>
     /(?:^|[\\/])\.git(?:[\\/]|$)/u.test(value),
   );
+}
+
+/**
+ * Credential-shaped file names the agent may never touch: environment files,
+ * TLS/SSH private key material, and netrc credentials.
+ */
+const CREDENTIAL_BASENAME_PATTERN = /^\.(?:env(?:\..+)?|netrc)$/u;
+const CREDENTIAL_EXTENSION_PATTERN = /\.(?:pem|key|p12|pfx)$/u;
+const SSH_PRIVATE_KEY_PATTERN = /^id_(?:rsa|dsa|ecdsa|ed25519)$/u;
+
+/**
+ * Whether a virtual path targets Git internals or credential-shaped files.
+ *
+ * This is the built-in companion to the user-authored `.openwikiignore` rules:
+ * `.git/**` (which under `persist-credentials` contains the checkout token in
+ * `.git/config`), `.env*` files, private key material, and netrc credentials are
+ * never agent-accessible, regardless of repository configuration. A
+ * prompt-injected agent therefore cannot exfiltrate CI credentials that merely
+ * happen to live in the working tree it documents.
+ *
+ * @param filePath - Candidate virtual repository path.
+ * @returns Whether the path holds repository credential material.
+ */
+export function isCredentialStatePath(filePath: string): boolean {
+  const normalized = normalizeVirtualPath(filePath).toLowerCase();
+  const segments = normalized.split("/").filter(Boolean);
+
+  if (segments.length === 0) {
+    return false;
+  }
+
+  if (segments.includes(".git")) {
+    return true;
+  }
+
+  const basename = segments[segments.length - 1];
+
+  return (
+    CREDENTIAL_BASENAME_PATTERN.test(basename) ||
+    CREDENTIAL_EXTENSION_PATTERN.test(basename) ||
+    SSH_PRIVATE_KEY_PATTERN.test(basename)
+  );
+}
+
+/**
+ * Whether a glob pattern or search path carries a `..` segment that could
+ * traverse outside the virtual repository root.
+ *
+ * @param value - Glob pattern or search path supplied by the agent.
+ * @returns Whether the value contains a `..` path segment.
+ */
+function containsTraversalSegment(value: string): boolean {
+  return value.replaceAll("\\", "/").split("/").includes("..");
+}
+
+/**
+ * Expand brace alternates so pattern checks see every spelling the glob engine
+ * can match. A pattern such as `{.git,.env}/**` hides its `.git` component from
+ * literal checks; checking each expansion closes that bypass. Falls back to the
+ * raw pattern when expansion is not possible.
+ *
+ * @param pattern - Glob pattern supplied by the agent.
+ * @returns The pattern's brace expansions (at least the raw pattern).
+ */
+function expandGlobCandidates(pattern: string): string[] {
+  try {
+    const expanded = expandBraces(pattern);
+
+    return expanded.length > 0 ? expanded : [pattern];
+  } catch {
+    return [pattern];
+  }
+}
+
+/**
+ * Resolve a search-relative discovery result to its repository-absolute virtual
+ * path so rules keyed on repository paths match regardless of the search root
+ * the agent picked.
+ *
+ * @param discoveredPath - Path returned by the underlying discovery operation.
+ * @param searchPath - Normalized virtual discovery root.
+ * @returns The repository-absolute virtual path of the discovered entry.
+ */
+function resolveDiscoveryPath(
+  discoveredPath: string,
+  searchPath?: string,
+): string {
+  if (!searchPath || searchPath === "/") {
+    return discoveredPath;
+  }
+
+  return path.posix.join(searchPath.replaceAll("\\", "/"), discoveredPath);
 }
 
 /**
@@ -259,7 +352,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   ): Promise<ReadResult> {
     const error =
       this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath);
+      this.getClaimsOwnershipError(filePath) ??
+      this.getCredentialBoundaryError(filePath);
 
     if (error) {
       return { error };
@@ -276,7 +370,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   override async readRaw(filePath: string): Promise<ReadRawResult> {
     const error =
       this.getIgnoredPathError(filePath) ??
-      this.getClaimsOwnershipError(filePath);
+      this.getClaimsOwnershipError(filePath) ??
+      this.getCredentialBoundaryError(filePath);
 
     if (error) {
       return { error };
@@ -298,6 +393,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
+      this.getCredentialBoundaryError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
 
     if (error) {
@@ -323,6 +419,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
+      this.getCredentialBoundaryError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
 
     if (error) {
@@ -348,6 +445,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     const error =
       this.getIgnoredPathError(filePath) ??
       this.getClaimsOwnershipError(filePath) ??
+      this.getCredentialBoundaryError(filePath) ??
       this.getDocsOnlyWriteError(filePath);
     if (error) {
       return { error };
@@ -364,7 +462,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   override async ls(dirPath: string): Promise<LsResult> {
     const error =
       this.getIgnoredPathError(dirPath, true) ??
-      this.getClaimsOwnershipError(dirPath);
+      this.getClaimsOwnershipError(dirPath) ??
+      this.getCredentialBoundaryError(dirPath);
 
     if (error) {
       return { error };
@@ -377,7 +476,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       files: result.files?.filter(
         (file) =>
           !this.openWikiIgnore.ignores(file.path, file.is_dir === true) &&
-          !this.isClaimsPath(file.path),
+          !this.isClaimsPath(file.path) &&
+          !isCredentialStatePath(file.path),
       ),
     };
   }
@@ -393,7 +493,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   ): Promise<GrepResult> {
     if (
       dirPath &&
-      (this.openWikiIgnore.ignores(dirPath, true) || this.isClaimsPath(dirPath))
+      (this.openWikiIgnore.ignores(dirPath, true) ||
+        this.isClaimsPath(dirPath) ||
+        isCredentialStatePath(dirPath))
     ) {
       return { matches: [] };
     }
@@ -405,7 +507,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       matches: result.matches?.filter(
         (match) =>
           !this.openWikiIgnore.ignores(match.path) &&
-          !this.isClaimsPath(match.path),
+          !this.isClaimsPath(match.path) &&
+          !isCredentialStatePath(match.path),
       ),
     };
   }
@@ -418,32 +521,59 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     pattern: string,
     searchPath?: string,
   ): Promise<GlobResult> {
-    if (isBroadRootGlob(pattern, searchPath)) {
+    // Brace alternates must be checked in expanded form: `{.git,.env}/**` hides
+    // its `.git` component from the literal checks below.
+    for (const candidate of expandGlobCandidates(pattern)) {
+      if (isBroadRootGlob(candidate, searchPath)) {
+        return {
+          error:
+            "Unbounded root globbing is disabled. Use ls at the repository root, then targeted glob or grep calls by directory and extension.",
+        };
+      }
+
+      if (targetsGitMetadata(candidate, searchPath)) {
+        return {
+          error:
+            "Git metadata is private repository state and is unavailable to glob. Use `git rev-parse HEAD` when the current commit is needed.",
+        };
+      }
+
+      if (containsTraversalSegment(candidate)) {
+        return {
+          error:
+            "Glob patterns cannot use `..` segments to traverse outside the repository root. Search a directory inside the repository instead.",
+        };
+      }
+    }
+
+    if (searchPath && containsTraversalSegment(searchPath)) {
       return {
         error:
-          "Unbounded root globbing is disabled. Use ls at the repository root, then targeted glob or grep calls by directory and extension.",
+          "Glob search paths cannot use `..` segments to escape the repository root. Search a directory inside the repository instead.",
       };
     }
 
-    if (targetsGitMetadata(pattern, searchPath)) {
-      return {
-        error:
-          "Git metadata is private repository state and is unavailable to glob. Use `git rev-parse HEAD` when the current commit is needed.",
-      };
-    }
+    const normalizedSearchPath =
+      searchPath === undefined || searchPath === "" || searchPath === "/"
+        ? "/"
+        : normalizeVirtualPath(searchPath);
 
-    if (searchPath && this.isClaimsPath(searchPath)) {
+    if (this.isClaimsPath(normalizedSearchPath)) {
       return { files: [] };
     }
 
-    if (searchPath && this.openWikiIgnore.ignores(searchPath, true)) {
+    if (this.openWikiIgnore.ignores(normalizedSearchPath, true)) {
+      return { files: [] };
+    }
+
+    if (isCredentialStatePath(normalizedSearchPath)) {
       return { files: [] };
     }
 
     let result: GlobResult;
 
     try {
-      result = await super.glob(pattern, searchPath);
+      result = await super.glob(pattern, normalizedSearchPath);
     } catch (error) {
       if (isWorktreeGitScandirError(error)) {
         return {
@@ -459,8 +589,15 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       ...result,
       files: result.files?.filter(
         (file) =>
-          !this.openWikiIgnore.ignores(file.path, file.is_dir === true) &&
-          !this.isClaimsDiscoveryPath(file.path, searchPath),
+          !containsTraversalSegment(file.path) &&
+          !this.openWikiIgnore.ignores(
+            resolveDiscoveryPath(file.path, normalizedSearchPath),
+            file.is_dir === true,
+          ) &&
+          !this.isClaimsDiscoveryPath(file.path, normalizedSearchPath) &&
+          !isCredentialStatePath(
+            resolveDiscoveryPath(file.path, normalizedSearchPath),
+          ),
       ),
     };
   }
@@ -508,7 +645,9 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
   ): Promise<FileDownloadResponse[]> {
     const allowedPaths = paths.filter(
       (filePath) =>
-        !this.openWikiIgnore.ignores(filePath) && !this.isClaimsPath(filePath),
+        !this.openWikiIgnore.ignores(filePath) &&
+        !this.isClaimsPath(filePath) &&
+        !isCredentialStatePath(filePath),
     );
 
     if (allowedPaths.length === paths.length) {
@@ -523,7 +662,8 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return paths.map((filePath) => {
       if (
         this.openWikiIgnore.ignores(filePath) ||
-        this.isClaimsPath(filePath)
+        this.isClaimsPath(filePath) ||
+        isCredentialStatePath(filePath)
       ) {
         return { content: null, error: "permission_denied", path: filePath };
       }
@@ -607,7 +747,12 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     filePath: string,
     isDirectory = false,
   ): string | null {
-    if (!this.openWikiIgnore.ignores(filePath, isDirectory)) {
+    // Decide on the same normalized path the operation will touch, so an
+    // alternate spelling such as a leading space cannot pass the check while
+    // the normalized operation still reaches the excluded file.
+    if (
+      !this.openWikiIgnore.ignores(normalizeVirtualPath(filePath), isDirectory)
+    ) {
       return null;
     }
 
@@ -626,6 +771,20 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     }
 
     return `OpenWiki Claims state is implementation-owned: ${filePath}`;
+  }
+
+  /**
+   * Returns a refusal when a path targets Git internals or credential files.
+   *
+   * @param filePath - Candidate virtual repository path.
+   * @returns Boundary error, or `null` when generic access is allowed.
+   */
+  private getCredentialBoundaryError(filePath: string): string | null {
+    if (!isCredentialStatePath(filePath)) {
+      return null;
+    }
+
+    return `Git internals and credential files are private repository state and unavailable to the agent: ${filePath}`;
   }
 
   /**
@@ -656,9 +815,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
       return false;
     }
 
-    return this.isClaimsPath(
-      path.posix.join(searchPath.replaceAll("\\", "/"), filePath),
-    );
+    return this.isClaimsPath(resolveDiscoveryPath(filePath, searchPath));
   }
 
   /**
@@ -671,6 +828,7 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
     return (
       this.openWikiIgnore.ignores(filePath) ||
       this.isClaimsPath(filePath) ||
+      isCredentialStatePath(filePath) ||
       this.getDocsOnlyWriteError(filePath) !== null
     );
   }
