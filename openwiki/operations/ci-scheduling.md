@@ -15,6 +15,8 @@ tags:
     pmset,
   ]
 sources:
+  - id: openwiki-source-3c0400fdd30d346d70175158
+    resource: repo://.changeset/quiet-gitlab-credentials.md
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
   - id: openwiki-source-aef084bf3022fb942ad29b90
@@ -35,12 +37,14 @@ sources:
     resource: repo://src/config/constants.ts
   - id: openwiki-source-c923e23504de7a6af7799a24
     resource: repo://src/scheduling/schedules.ts
+  - id: openwiki-source-619574be5673e1bc96e66fd0
+    resource: repo://test/gitlab-example-security.test.ts
   - id: openwiki-source-7cf549510278a62e11ae8280
     resource: repo://test/scheduling/schedules.test.ts
-generated: { by: "openwiki/0.7.1", at: "2026-10-07T08:10:39.081Z" }
+generated: { by: "openwiki/0.9.0", at: "2026-11-28T08:05:24.592Z" }
 verified:
-  - by: openwiki/0.7.3
-    at: 2026-11-02T08:07:01.639Z
+  - by: openwiki/0.9.0
+    at: 2026-11-28T08:05:24.592Z
 ---
 
 # CI Scheduling and Self-Update
@@ -210,8 +214,13 @@ Every example follows the same shape:
    GitLab and Bitbucket examples make the change check explicit: they run
    `git diff --quiet` over the documentation paths (`openwiki`, `AGENTS.md`,
    `CLAUDE.md`, and the workflow file) and exit early with "OpenWiki is already up
-   to date." when there is no diff; otherwise they create a branch, commit,
-   push, and open a merge/pull request through the provider's REST API.
+   to date." when there is no diff; otherwise they create a branch, commit, push,
+   and open a merge/pull request through the provider's REST API. The two differ
+   in how they authenticate the push: Bitbucket embeds the access token in the
+   remote URL (`https://x-token-auth:${OPENWIKI_BITBUCKET_TOKEN}@…`), while the
+   GitLab example uses an ephemeral credential helper so the token never appears
+   in a remote URL or traced command (see
+   [GitLab secure Git authentication](#gitlab-secure-git-authentication) below).
 4. **Annotate and propagate the outcome.** All GitHub workflows emit a run
    notice linking the created PR (`::notice title=OpenWiki update pull request`)
    when a PR was opened, then a trailing **"Propagate OpenWiki failure"** step
@@ -221,11 +230,12 @@ Every example follows the same shape:
 
 The PR is scoped to the documentation paths (`openwiki`, `AGENTS.md`, `CLAUDE.md`,
 and the workflow file), branched under `openwiki/update` (GitHub) or
-`openwiki/update-<pipeline id>` (GitLab/Bitbucket), with the commit and title
-`docs: update OpenWiki`. On GitHub, the workflow path is listed only when present
-(`AGENTS.md` and `CLAUDE.md` are optional); the explicit `git diff --quiet` check
-in the GitLab and Bitbucket examples lists the fixed path set including the
-workflow file.
+`openwiki/update-<pipeline id>` (GitLab/Bitbucket — the GitLab example uses
+`${CI_PIPELINE_ID}`, the Bitbucket example uses `${BITBUCKET_BUILD_NUMBER}`),
+with the commit and title `docs: update OpenWiki`. On GitHub, the workflow path
+is listed only when present (`AGENTS.md` and `CLAUDE.md` are optional); the
+explicit `git diff --quiet` check in the GitLab and Bitbucket examples lists the
+fixed path set including the workflow file.
 
 The GitHub example also models a **failure-tolerant** run. The `openwiki code
 --update` step sets `continue-on-error: true` so a failed generation does not
@@ -238,6 +248,37 @@ trailing **"Propagate OpenWiki failure"** step (`exit 1` when the outcome is
 Both the example and the live workflow delete the transient `openwiki/.run.json`
 run-state file before creating the PR, so the partial progress that survives is
 the committed wiki, not leftover in-process state.
+
+#### GitLab secure Git authentication
+
+The GitLab example authenticates the branch push without embedding the token in
+the remote URL, so the credential cannot persist in Git's remote configuration
+or leak under shell tracing. After the commit it performs the following secure
+push sequence:
+
+1. Disable tracing with `set +x` before any command that can read the token.
+2. Write an ephemeral credential helper script to a `mktemp` file (`chmod 700`)
+   via a quoted heredoc (`<<'EOF'`). The helper's `get` case prints
+   `username=oauth2` and `password=$OPENWIKI_GITLAB_TOKEN`.
+3. Run `git -c credential.helper= -c credential.helper="$credential_helper" push
+   "https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "$OPENWIKI_BRANCH"`. The
+   empty `credential.helper=` clears any inherited helper before the temporary
+   one is registered, and the push URL contains no embedded credentials.
+4. Remove the helper with `rm -f "$credential_helper"` and clear the cleanup
+   trap with `trap - EXIT` so tracing can safely resume for later script steps.
+
+Because the helper is created in the runner's ephemeral workspace and is
+explicitly deleted on exit, the token never lands in `git remote` configuration
+or in a traced command. The merge request is then created separately through the
+GitLab REST API with `curl --request POST … --header "PRIVATE-TOKEN:
+${OPENWIKI_GITLAB_TOKEN}"` against
+`${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests`, passing
+`source_branch`, `target_branch` (`${CI_DEFAULT_BRANCH}`), `title`, and
+`description`. `OPENWIKI_GITLAB_TOKEN` is expected to be a protected, masked
+GitLab CI/CD variable. `test/gitlab-example-security.test.ts` pins this
+contract: it asserts the example contains no `https?://[^/\s]+@` embedded-credentials
+URL, includes `set +x`, the `credential.helper="$credential_helper"` reference,
+the `<<'EOF'` heredoc, and `"$OPENWIKI_GITLAB_TOKEN"` in the push sequence.
 
 #### Trace thread per update
 
