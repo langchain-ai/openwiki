@@ -126,6 +126,19 @@ describe("canonical OpenWiki host skill", () => {
     expect(required).toContain("avoid exhaustive file-by-file inventory");
   });
 
+  test("requires page-relative internal link hrefs", async () => {
+    const skill = await readFile(SKILL_PATH, "utf8");
+    const contract = section(skill, "Page file contract");
+    expect(contract).toContain(
+      "use hrefs relative to the\nassigned page's directory",
+    );
+    expect(contract).toContain("not Markdown link destinations");
+    expect(contract).toContain("never write root-absolute internal hrefs");
+    expect(contract).toContain(
+      "`[Model Providers](../concepts/model-providers.md)`",
+    );
+  });
+
   test("defines page, Claim, and code-owned artifact boundaries", async () => {
     const skill = await readFile(SKILL_PATH, "utf8");
     expect(skill).toContain("write exactly the assigned Markdown page");

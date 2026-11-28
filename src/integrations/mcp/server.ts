@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { CLAIMS_RECONCILIATION_GUIDANCE } from "../../claims/guidance.js";
+import { WIKI_LINK_GUIDANCE } from "../../okf/link-guidance.js";
 import { OPENWIKI_VERSION } from "../../version.js";
 import { HostIntegrationError } from "../core/errors.js";
 import type { ProtocolTool } from "../core/protocol.js";
@@ -48,6 +49,7 @@ openwiki_inspect_page_claims only before intentionally revising or removing
 otherwise-current page content whose Claim ids are not in the pending job. Do
 not edit OpenWiki-owned Claims sidecars, indexes, logs, provenance, run metadata,
 setup blocks, or scheduled workflows.
+${WIKI_LINK_GUIDANCE}
 ${CLAIMS_RECONCILIATION_GUIDANCE}
 When openwiki_next_page returns complete, call openwiki_finish. Never report
 success before finish returns complete. If a lifecycle call reports that source

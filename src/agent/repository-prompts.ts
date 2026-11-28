@@ -8,6 +8,7 @@ import type {
   RepositoryPageUpdateWindow,
 } from "../generation/repository-run.js";
 import type { PageJob } from "../generation/run-state.js";
+import { WIKI_LINK_GUIDANCE } from "../okf/link-guidance.js";
 
 // Workers see one virtual filesystem; without this, weaker models search only
 // /openwiki/ and cite repository files they never read.
@@ -153,12 +154,7 @@ Page-specific global instructions:\n${formatList(job.instructions)}
 
 ${job.mode === "update" ? "Read the current page first. Preserve accurate unaffected content; change only what current repository evidence requires.\n" : ""}
 Write wiki prose and human-readable frontmatter values in ${language}. Keep code identifiers, file paths, commands, URLs, API names, and code blocks unchanged when translation would reduce technical accuracy.
-For Markdown links to wiki pages or repository files, use hrefs relative to this
-page's directory. Paths such as /openwiki/quickstart.md are virtual filesystem
-tool paths, not Markdown link destinations; never write root-absolute internal
-hrefs. For example, from /openwiki/architecture/agent-runtime.md, link to
-/openwiki/concepts/model-providers.md as
-[Model Providers](../concepts/model-providers.md).
+${WIKI_LINK_GUIDANCE}
 
 The page MUST begin with valid OKF concept frontmatter:
 ---

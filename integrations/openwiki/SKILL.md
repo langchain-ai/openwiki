@@ -155,6 +155,14 @@ fields. OpenWiki owns those. On update preserve accurate unknown producer-define
 frontmatter fields. openwiki_submit_page rejects an invalid assigned page, so
 fix the page and retry the same submit call if validation reports an error.
 
+For Markdown links to wiki pages or repository files, use hrefs relative to the
+assigned page's directory. Page paths such as `/openwiki/quickstart.md` in page
+jobs and tool calls are OpenWiki page paths, not Markdown link destinations;
+never write root-absolute internal hrefs. For example, from
+`/openwiki/architecture/agent-runtime.md`, link to
+`/openwiki/concepts/model-providers.md` as
+`[Model Providers](../concepts/model-providers.md)`.
+
 ## Claims contract
 
 A Claim is one substantive, independently falsifiable system truth. Prefer
