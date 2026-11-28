@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:16a5b271de28114ef64db7b8801b6ff09fb5c40342d7936d7027d8069287b919",
+  "pageVersion": "sha256:573964d324a81b25b747a70f95c36bbf40b6e50dd3bf915fa73a2d72420b8423",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -268,11 +268,19 @@
     },
     {
       "id": "claim_87cc3f5537bc499b9868678a5fdb4c26",
-      "statement": "createAgentBackend wraps the wiki backend in an OpenWikiCompositeBackend that adds two read-only virtual mounts, /conversation_history/ for DeepAgents history offload and /skills/ for bundled skills, and converts DeepAgents' recoverable broad-glob recursion overflow into a bounded model-facing narrow-your-search error.",
+      "statement": "createAgentBackend wraps the wiki backend in an OpenWikiCompositeBackend that adds two read-only virtual mounts, /conversation_history/ for DeepAgents history offload and /skills/ for bundled skills, and applies three pre-routing safety gates on glob and grep before delegating to the upstream CompositeBackend: a globPatternError gate rejects parenthesized patterns (/[()]/) with 'Parenthesized glob patterns are disabled for safety...', an exceedsGlobBraceNesting check (MAX_GLOB_BRACE_NESTING = 100) rejects deeply-nested braces with 'Glob pattern nesting is too deep...', and a catch converts DeepAgents' broad-glob recursion overflow into a bounded 'Glob search was too broad...' error, while ordinary file filters and literal grep queries still pass through.",
       "evidence": [
         {
-          "resource": "repo://src/agent/agent-backend.ts#L84-L138",
-          "version": "repo-lines-v1:sha256:011aeee1a5001cdba35f6a6e2488762450632f5cacc9046ed0af8f282b2304c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmE4Yjg3ZTBmYjM0ODIwZDY0NTY5ODQzYmE1YzNhMWRlMjZkNGE4Y2Y4MTU4OWEzYTliYzQxNWFlOTgwNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMGIxNjkyZTQ2ZmI4ODA0YmQ3N2QyNjczYzk0ODQ2MjJmZjdjNGFmYWNiOGVjOTIzNjkwYzliNzRlZGVhOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.changeset/safe-file-glob-patterns.md",
+          "version": "repo-file-v1:sha256:ea3880f49dced795fff54dc89544e2378c90e6d8fd1b77716ea5c6ec867137d5"
+        },
+        {
+          "resource": "repo://src/agent/agent-backend.ts#L84-L158",
+          "version": "repo-lines-v1:sha256:66d8d8361f08d10bc24d671f9b759daa910a4a0d4740022b3ea16780910ed009:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YTUxZjdhNjM5OGZmOWZiOGMzZjc1NzM1NDdjMGFlNGRlMDk4MjMyMTExMjIxYzM0OGQ2N2Q1YzhkNzIxNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZDFjNDJiMWM3N2UwM2UwZjJlYTE4OWU5MWI3YjYxZjYxMGYyZjVkYTg1MDFlYzQ0YmYxOTY1ZmM0MmZlYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://test/agent/conversation-history-offload.test.ts#L43-L138",
+          "version": "repo-lines-v1:sha256:f5ba03c2d962ba793316f895e34f2f66fa75a8567f04afa948aac9d288fd449e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MmQzN2JlM2FlNTkwNzdkNmFlYzQ4ZTBhNDYyZWZhODYxYTRiZDA5YmRmMWIzZjRmNmFiZDE2YWQ3MzYyYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NzRiNTVjYjAxNjM0NmM4MDVhNTA2YjRhOTBhODU3NzFkNjU4NGUyYTg2M2Y4ZWQ0YzNjZDVmN2FkZDZjNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5MjUxYjVjY2EzMTVmZTJkZjcxODY3OTNlZmE1Mzc2OGNhZGE4ODA3Y2I2N2Q5YjUxZjAxMGJhMjM1NmRmZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiZDcwYmIwNTZkODUyNTRhNDNjODY0YTFiYjQyZGZkNTQ3YjYwNDI3ZDcwZmQwNDcyZDY5ZTJkZTE2Mjk3YmQifQ"
         }
       ]
     },
@@ -281,7 +289,7 @@
       "statement": "AGENT_FILESYSTEM_PERMISSIONS deny writes under /skills/** and the conversation-history mount, and these permissions are passed to createDeepAgent so the agent cannot mutate the bundled skills or offloaded history.",
       "evidence": [
         {
-          "resource": "repo://src/agent/agent-backend.ts#L53-L60",
+          "resource": "repo://src/agent/agent-backend.ts#L65-L72",
           "version": "repo-lines-v1:sha256:4ecdbd7235f075582b17776050ba8c5edae5fc6d3ed1c10a92bc7fecb4879fbc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzNjVmZThlMmQ0ZWM0ZTYzZmM4MjY1NmJlOTZkNzE0NzgyMWMxM2UxMmRjNjRhNzgyMTI0YTMyMzEzOTIzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNhMzYzOGU5ZmQ4ZGI1OGUyZmIyNTg5YWZjNmJhMDAxOTBjZjYwMTM0NDI3MjM4MmJmMmY0ODVhYzk5MjkxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDE2MTU4ZTU0ODk2NDRkNzFlYjJmYjdiNWFjYTJhYTU0MmE0NTJlYmEyNmVjMjFjNzA0Y2M3OWQzMjc3OTRjMyJ9"
         },
         {
@@ -857,6 +865,6 @@
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-11T08:06:00.631Z"
+    "at": "2026-11-28T08:05:24.592Z"
   }
 }
