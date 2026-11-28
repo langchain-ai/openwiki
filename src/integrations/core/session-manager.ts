@@ -30,6 +30,11 @@ import { resolveRepositoryRoot } from "./repository-root.js";
 import { createRetrievalTools } from "./retrieval-tools.js";
 
 /**
+ * Host version token accepted for the OKF `<producer>/<version>` actor.
+ */
+const PRODUCER_VERSION_PATTERN = /^[0-9A-Za-z][0-9A-Za-z.+_-]{0,63}$/u;
+
+/**
  * Stable host identity and optional deterministic clock for the MCP adapter.
  */
 export interface HostSessionManagerOptions {
@@ -42,6 +47,15 @@ export interface HostSessionManagerOptions {
    * Provenance actor, defaulting to the host identity when omitted.
    */
   producerActor?: string;
+
+  /**
+   * Reads the host's version, which is known only once the host connects.
+   * A version that is absent or not a plain version token leaves the
+   * producer actor unversioned.
+   *
+   * @default undefined - the producer actor is recorded without a version.
+   */
+  producerVersion?: () => string | undefined;
 
   /**
    * Optional deterministic clock used by production metadata and tests.
@@ -74,6 +88,11 @@ export class HostSessionManager {
   private readonly producerActor: string;
 
   /**
+   * Host version source for the OKF actor convention.
+   */
+  private readonly producerVersion: (() => string | undefined) | undefined;
+
+  /**
    * Clock forwarded to the repository lifecycle core.
    */
   private readonly now: () => Date;
@@ -83,11 +102,18 @@ export class HostSessionManager {
    *
    * @param host - Validated host identity.
    * @param producerActor - Validated generated-content producer identity.
+   * @param producerVersion - Optional host version source.
    * @param now - Clock used by repository lifecycle operations.
    */
-  private constructor(host: string, producerActor: string, now: () => Date) {
+  private constructor(
+    host: string,
+    producerActor: string,
+    producerVersion: (() => string | undefined) | undefined,
+    now: () => Date,
+  ) {
     this.host = host;
     this.producerActor = producerActor;
+    this.producerVersion = producerVersion;
     this.now = now;
   }
 
@@ -116,6 +142,7 @@ export class HostSessionManager {
     return new HostSessionManager(
       options.host,
       producerActor,
+      options.producerVersion,
       options.now ?? (() => new Date()),
     );
   }
@@ -135,7 +162,7 @@ export class HostSessionManager {
         language: input.language,
         force: input.force,
         actor: {
-          producerActor: this.producerActor,
+          producerActor: this.versionedProducerActor(),
           metadataModel: getHostAgentIdentity(this.host),
         },
         now: this.now,
@@ -149,6 +176,19 @@ export class HostSessionManager {
       this.active = result.run;
       return toHostActiveBeginView(result.view);
     });
+  }
+
+  /**
+   * Returns the OKF actor for host-authored bodies, `<producer>/<version>`
+   * when the host reported a plain version token.
+   *
+   * @returns Producer actor recorded in `generated.by`.
+   */
+  private versionedProducerActor(): string {
+    const version = this.producerVersion?.();
+    return version !== undefined && PRODUCER_VERSION_PATTERN.test(version)
+      ? `${this.producerActor}/${version}`
+      : this.producerActor;
   }
 
   /**

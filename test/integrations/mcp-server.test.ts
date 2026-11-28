@@ -15,6 +15,8 @@ import {
   createOpenWikiMcpServer,
   type HostToolProvider,
 } from "../../src/integrations/mcp/server.ts";
+import { createOpenWikiHostServer } from "../../src/integrations/mcp/stdio.ts";
+import { readRepositoryRunState } from "../../src/generation/run-state.ts";
 
 const temporaryRoots: string[] = [];
 
@@ -94,6 +96,31 @@ afterEach(async () => {
 });
 
 describe("OpenWiki MCP adapter", () => {
+  test("records the connected host's client version in the producer actor", async () => {
+    const root = await createRepository();
+    const server = createOpenWikiHostServer({
+      host: "claude",
+      producerActor: "claude-code",
+    });
+    const client = new Client({ name: "claude-code", version: "3.4.5" });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    try {
+      const begin = await client.callTool({
+        name: "openwiki_begin",
+        arguments: { root, mode: "init" },
+      });
+      expect(begin.isError).not.toBe(true);
+      expect((await readRepositoryRunState(root))?.actor.producerActor).toBe(
+        "claude-code/3.4.5",
+      );
+    } finally {
+      await close({ client, server });
+    }
+  });
+
   test("advertises retrieval and lifecycle tools with workflow guidance", async () => {
     const schema = z.object({ runId: z.string().optional() }).strict();
     const handle = () => Promise.resolve({ status: "ok" });
