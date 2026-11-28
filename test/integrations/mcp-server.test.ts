@@ -206,6 +206,13 @@ describe("OpenWiki MCP adapter", () => {
       expect(instructions).toContain(
         "stale or unresolved marker as a requirement to recheck",
       );
+      expect(instructions).toContain("use hrefs relative to this");
+      expect(instructions).toContain(
+        "never write\nroot-absolute internal hrefs",
+      );
+      expect(instructions).toContain(
+        "[Model Providers](../concepts/model-providers.md)",
+      );
       expect(instructions).toContain("Never report\nsuccess before finish");
       expect(instructions).toContain("source\ndrift invalidated the plan");
       expect(instructions).not.toContain("openwiki_resolve_claims");
