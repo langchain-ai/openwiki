@@ -1,5 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -11,6 +18,7 @@ import {
   HOST_BEGIN_PATH_LIMIT,
   type HostActiveBeginView,
 } from "../../src/integrations/core/begin-view.ts";
+import { readRepositoryRunState } from "../../src/generation/run-state.ts";
 import { HostSessionManager } from "../../src/integrations/core/session-manager.ts";
 
 const RUN_TIMESTAMP = "2026-08-24T12:00:00.000Z";
@@ -376,6 +384,48 @@ describe("HostSessionManager", () => {
       message: "The requested OpenWiki page does not exist.",
     });
   });
+
+  test("records the host version in the producer actor", async () => {
+    const root = await createRepository();
+    const manager = HostSessionManager.create({
+      host: "claude",
+      producerActor: "claude-code",
+      producerVersion: () => "2.1.0",
+      now: () => new Date(RUN_TIMESTAMP),
+    });
+    const { view, page } = await beginPlannedInit(manager, root);
+    expect((await readRepositoryRunState(root))?.actor.producerActor).toBe(
+      "claude-code/2.1.0",
+    );
+
+    await completePlannedInit(manager, root, view, page);
+    const written = await readFile(
+      path.join(root, "openwiki/quickstart.md"),
+      "utf8",
+    );
+    expect(written).toMatch(/generated:.*by: "?claude-code\/2\.1\.0"?/u);
+  });
+
+  test.each([
+    ["absent", undefined],
+    ["empty", ""],
+    ["not a version token", "2.1 (beta)"],
+  ])(
+    "leaves the producer actor unversioned when the host version is %s",
+    async (_label, version) => {
+      const root = await createRepository();
+      const manager = HostSessionManager.create({
+        host: "claude",
+        producerActor: "claude-code",
+        producerVersion: () => version,
+        now: () => new Date(RUN_TIMESTAMP),
+      });
+      await manager.begin({ root, mode: "init" });
+      expect((await readRepositoryRunState(root))?.actor.producerActor).toBe(
+        "claude-code",
+      );
+    },
+  );
 
   test("validates host and producer identities", () => {
     expect(() => HostSessionManager.create({ host: "Codex Agent" })).toThrow(
